@@ -1,0 +1,96 @@
+root = true
+ 
+[*]
+indent_style = space
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+ 
+[*.cs]
+indent_size = 4
+tab_width = 4
+ 
+# ───────────────────────────────
+# 코드 스타일
+# ───────────────────────────────
+
+# this. 생략
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
+ 
+# var 사용
+csharp_style_var_when_type_is_apparent = true:suggestion
+ 
+# 중괄호 항상 사용
+csharp_prefer_braces = true:warning
+ 
+# 접근 한정자 명시
+dotnet_style_require_accessibility_modifiers = always:warning
+ 
+# ───────────────────────────────
+# 네이밍 룰
+# ───────────────────────────────
+ 
+# public 멤버 → PascalCase
+dotnet_naming_rule.public_members_pascal.symbols   = public_members
+dotnet_naming_rule.public_members_pascal.style     = pascal_case_style
+dotnet_naming_rule.public_members_pascal.severity  = warning
+ 
+dotnet_naming_symbols.public_members.applicable_kinds        = property,method,field,event
+dotnet_naming_symbols.public_members.applicable_accessibilities = public
+ 
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+ 
+# private 필드 → _camelCase
+dotnet_naming_rule.private_fields_underscore.symbols   = private_fields
+dotnet_naming_rule.private_fields_underscore.style     = underscore_camel_style
+dotnet_naming_rule.private_fields_underscore.severity  = warning
+ 
+dotnet_naming_symbols.private_fields.applicable_kinds          = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private,protected,internal
+ 
+dotnet_naming_style.underscore_camel_style.capitalization  = camel_case
+dotnet_naming_style.underscore_camel_style.required_prefix = _
+ 
+# 인터페이스 → IPascalCase
+dotnet_naming_rule.interfaces_prefix_i.symbols   = interfaces
+dotnet_naming_rule.interfaces_prefix_i.style     = interface_style
+dotnet_naming_rule.interfaces_prefix_i.severity  = warning
+ 
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+ 
+dotnet_naming_style.interface_style.capitalization  = pascal_case
+dotnet_naming_style.interface_style.required_prefix = I
+ 
+# 로컬 변수/파라미터 → camelCase
+dotnet_naming_rule.locals_camel.symbols   = locals
+dotnet_naming_rule.locals_camel.style     = camel_case_style
+dotnet_naming_rule.locals_camel.severity  = suggestion
+ 
+dotnet_naming_symbols.locals.applicable_kinds = local,parameter
+ 
+dotnet_naming_style.camel_case_style.capitalization = camel_case
+ 
+# ───────────────────────────────
+# 포맷팅
+# ───────────────────────────────
+ 
+# 중괄호 Allman 스타일 (Unity 기본)
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+ 
+# 공백
+csharp_space_after_cast = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+ 
+[*.json]
+indent_size = 2
+ 
+[*.md]
+trim_trailing_whitespace = false
