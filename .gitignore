@@ -100,3 +100,6 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Claude Code local settings (personal, machine-specific)
+.claude/settings.local.json
