@@ -298,6 +298,8 @@ GameObject:
   - component: {fileID: 497475714789487770}
   - component: {fileID: 7773223248348218326}
   - component: {fileID: 2036985881099013013}
+  - component: {fileID: 3854992093447366280}
+  - component: {fileID: 3485458011949860129}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -336,7 +338,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Temp
   model: {fileID: 6411115686134920114}
   rotationSmoothing: 15
-  movementSpeed: 5
 --- !u!195 &497475714789487770
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -407,6 +408,32 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3854992093447366280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3807656875026141361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4173692680304981872a082ed1c9d84b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentComponent
+  _currentWeapon: {fileID: 0}
+--- !u!114 &3485458011949860129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3807656875026141361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e98a37770b854bd1bd783379415d27e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.AbilitySystemComponent
+  attributeInitData: {fileID: 11400000, guid: 5c5fe3d119a6c1e49865dbb847edaad3, type: 2}
 --- !u!1 &3858255441895307191
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spectral Raid — 프로젝트 위키</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar__logo">
+    <div class="sidebar__title">⬡ Spectral Raid</div>
+    <div class="sidebar__subtitle">프로젝트 위키 — 포트폴리오</div>
+  </div>
+
+  <div class="sidebar__section-label">개요</div>
+  <a href="#overview" class="sidebar__link"><span class="icon">🎮</span> 게임 개요</a>
+  <a href="#mvp"      class="sidebar__link"><span class="icon">📋</span> MVP 현황</a>
+  <a href="#packages" class="sidebar__link"><span class="icon">📦</span> 패키지</a>
+
+  <div class="sidebar__section-label">아키텍처</div>
+  <a href="#arch"   class="sidebar__link"><span class="icon">🏗</span> 컨트롤러·캐릭터</a>
+  <a href="#scenes" class="sidebar__link"><span class="icon">🗺</span> 씬 구성</a>
+  <a href="#camera" class="sidebar__link"><span class="icon">🎥</span> 카메라</a>
+  <a href="#input"  class="sidebar__link"><span class="icon">⌨</span> 입력 액션맵</a>
+
+  <div class="sidebar__section-label">개발 가이드</div>
+  <a href="#convention" class="sidebar__link"><span class="icon">📐</span> 코드 컨벤션</a>
+  <a href="#todo"       class="sidebar__link"><span class="icon">✅</span> TODO</a>
+</nav>
+
+<!-- ══ MAIN ═════════════════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- Hero -->
+  <div class="hero" id="hero">
+    <div class="hero__eyebrow">Portfolio Project · Unity URP · C#</div>
+    <h1 class="hero__title"><span>Spectral Raid</span></h1>
+    <p class="hero__desc">
+      제한된 시야와 소리 기반 정보로 위험을 판단해 탈출을 결정하는<br>
+      <strong>5~8분 세션 기반 탑다운 전술 액션 게임.</strong>
+    </p>
+    <div class="hero__tags">
+      <span class="tag tag--accent">Extraction-lite</span>
+      <span class="tag tag--accent">Roguelite</span>
+      <span class="tag">싱글플레이 (멀티 확장 고려)</span>
+      <span class="tag">Unity URP</span>
+      <span class="tag">포트폴리오</span>
+    </div>
+  </div>
+
+  <!-- ① 게임 개요 -->
+  <section class="section" id="overview">
+    <div class="section__header">
+      <span class="section__num">01</span>
+      <h2>게임 개요</h2>
+    </div>
+
+    <div class="card-grid" style="margin-bottom:20px">
+      <div class="info-card">
+        <div class="info-card__label">핵심 차별점</div>
+        <div class="info-card__value">강하게 제한된 시야 + 사운드 중심 정보 인지</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card__label">세션 길이</div>
+        <div class="info-card__value">5 ~ 8분 / 세션</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card__label">세션 루프</div>
+        <div class="info-card__value">탐색 → 전투/레벨업 → 루팅 → 탈출 판단</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card__label">세션 간 성장</div>
+        <div class="info-card__value">Soul Shard로 영구 업그레이드·스킬 해금</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="callout__icon">💡</span>
+      <span>
+        <strong>포트폴리오 방향 원칙</strong> —
+        설계 결정에는 기술적 근거와 이유가 명확히 드러나야 한다.
+        단, 과설계로 실제 게임 완성을 저해하는 것은 지양한다.
+      </span>
+    </div>
+  </section>
+
+  <!-- ② MVP 현황 -->
+  <section class="section" id="mvp">
+    <div class="section__header">
+      <span class="section__num">02</span>
+      <h2>MVP 현황</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>시스템</th><th>구분</th><th>상태</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>이동 / Sprint</td>
+            <td><span class="badge badge--mvp">MVP</span></td>
+            <td><span class="badge badge--wip">진행 중</span></td>
+          </tr>
+          <tr>
+            <td>StatModifier 통합 / 기본 장비 (권총 1개)</td>
+            <td><span class="badge badge--mvp">MVP</span></td>
+            <td><span class="badge badge--todo">예정</span></td>
+          </tr>
+          <tr>
+            <td>전투 / 스킬 시스템</td>
+            <td><span class="badge badge--mvp">MVP</span></td>
+            <td><span class="badge badge--todo">예정</span></td>
+          </tr>
+          <tr>
+            <td>시야 시스템 / 적 AI / 스폰</td>
+            <td><span class="badge badge--mvp">MVP</span></td>
+            <td><span class="badge badge--todo">예정</span></td>
+          </tr>
+          <tr>
+            <td>루팅 / 탈출 / 사운드</td>
+            <td><span class="badge badge--mvp">MVP</span></td>
+            <td><span class="badge badge--todo">예정</span></td>
+          </tr>
+          <tr>
+            <td>장비 등급 / 영구 성장 / 미니맵</td>
+            <td><span class="badge badge--extra">추가목표</span></td>
+            <td><span class="badge badge--todo">예정</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout--warn" style="margin-top:16px">
+      <span class="callout__icon">🎯</span>
+      <span>
+        <strong>현재 목표</strong> —
+        장비·패시브·액티브 스킬·스탯의 확장성을 고려한 구조를 갖추면서,
+        권총 1개를 동작 가능한 수준으로 구현한다.
+      </span>
+    </div>
+  </section>
+
+  <!-- ③ 패키지 -->
+  <section class="section" id="packages">
+    <div class="section__header">
+      <span class="section__num">03</span>
+      <h2>패키지</h2>
+    </div>
+
+    <div class="pkg-grid">
+      <div class="pkg-card">
+        <div class="pkg-card__name">Input System</div>
+        <div class="pkg-card__ver">v1.19.0</div>
+        <div class="pkg-card__desc">신 Input System — 레거시 미사용</div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-card__name">Cinemachine</div>
+        <div class="pkg-card__ver">v2.10.7</div>
+        <div class="pkg-card__desc">카메라 추적·연출</div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-card__name">URP</div>
+        <div class="pkg-card__ver">v17.3.0</div>
+        <div class="pkg-card__desc">Universal Render Pipeline</div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-card__name">UniTask</div>
+        <div class="pkg-card__ver">Cysharp</div>
+        <div class="pkg-card__desc">async / await 최적화</div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-card__name">R3</div>
+        <div class="pkg-card__ver">Cysharp</div>
+        <div class="pkg-card__desc">반응형 확장 (Rx)</div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-card__name">AI Navigation</div>
+        <div class="pkg-card__ver">v2.0.11</div>
+        <div class="pkg-card__desc">NavMesh 기반 적 AI 경로</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ④ 아키텍처 -->
+  <section class="section" id="arch">
+    <div class="section__header">
+      <span class="section__num">04</span>
+      <h2>컨트롤러·캐릭터 분리 (Possession 패턴)</h2>
+    </div>
+
+    <p>입력을 소유하는 <strong>Controller</strong>와 실제 이동·전투 로직을 갖는 <strong>Character</strong>를 분리해 멀티플레이 확장과 AI 전환을 대비한다.</p>
+
+    <div class="arch-diagram">
+      <div><span class="node-abstract">ControllerBase (abstract)</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="node-abstract">CharacterBase (abstract)</span></div>
+      <div><span class="tree-char">└── </span><span class="node-name">PlayerController</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-char">├── </span><span class="node-name">PlayerCharacter</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="node-field">- _possessedCharacter</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-char">└── </span><span class="node-name">MonsterCharacter</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="node-field">- Input 구독 / 해제</span></div>
+    </div>
+
+    <div class="card-grid" style="margin-top:16px">
+      <div class="card">
+        <h3>ControllerBase</h3>
+        <p><code>Possess(CharacterBase)</code>, <code>HasAuthority()</code> — 현재 항상 true, 멀티플레이 대비 TODO</p>
+      </div>
+      <div class="card">
+        <h3>PlayerController</h3>
+        <p><code>OnEnable</code> / <code>OnDisable</code>에서 <code>PlayerInputActions</code> 구독·해제. 입력을 Character 메서드 호출로 전달.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="callout__icon">📌</span>
+      <span>이동 로직은 Controller가 아닌 <strong>Character가 소유</strong>한다. (<code>PlayerCharacter.MoveTo(Vector3)</code>)</span>
+    </div>
+  </section>
+
+  <!-- ⑤ 씬 구성 -->
+  <section class="section" id="scenes">
+    <div class="section__header">
+      <span class="section__num">05</span>
+      <h2>씬 구성</h2>
+    </div>
+
+    <div class="scene-flow">
+      <div class="scene-node">
+        <div class="scene-node__name">MainMenuScene</div>
+        <div class="scene-node__role">타이틀</div>
+      </div>
+      <div class="scene-arrow">→<small>Single Load</small></div>
+      <div class="scene-node">
+        <div class="scene-node__name">LobbyScene</div>
+        <div class="scene-node__role">스킬 슬롯 · 업그레이드</div>
+      </div>
+      <div class="scene-arrow">→<small>Single Load</small></div>
+      <div class="scene-node">
+        <div class="scene-node__name">GameScene</div>
+        <div class="scene-node__role">메인 게임플레이</div>
+      </div>
+      <div class="scene-arrow">→<small>Additive</small></div>
+      <div class="scene-node">
+        <div class="scene-node__name">ResultScene</div>
+        <div class="scene-node__role">세션 결과</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑥ 카메라 -->
+  <section class="section" id="camera">
+    <div class="section__header">
+      <span class="section__num">06</span>
+      <h2>카메라</h2>
+    </div>
+
+    <div class="card-grid">
+      <div class="info-card">
+        <div class="info-card__label">Projection / FOV</div>
+        <div class="info-card__value">Perspective · FOV 40</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card__label">Follow Target</div>
+        <div class="info-card__value"><code>PlayerCharacter</code> 자식 <code>CameraTarget</code></div>
+      </div>
+      <div class="info-card">
+        <div class="info-card__label">Body</div>
+        <div class="info-card__value">Transposer · Offset (0, 10, −10) · WorldSpace</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card__label">Aim</div>
+        <div class="info-card__value">Do Nothing — 카메라 회전 잠금</div>
+      </div>
+    </div>
+
+    <p style="margin-top:14px; font-size:13px">BindingMode = <strong>WorldSpace</strong> → 캐릭터 회전과 무관하게 카메라 방향 고정.</p>
+  </section>
+
+  <!-- ⑦ 입력 액션맵 -->
+  <section class="section" id="input">
+    <div class="section__header">
+      <span class="section__num">07</span>
+      <h2>입력 액션맵</h2>
+    </div>
+
+    <p style="font-size:13px;margin-bottom:14px">
+      <code>PlayerInputActions.inputactions</code>가 소스.
+      자동 생성된 <code>PlayerInputActions.cs</code>는 직접 수정 금지.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Action</th><th>Map</th><th>바인딩</th><th>타입</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Move</td><td>Gameplay</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>Vector2</td></tr>
+          <tr><td>Look</td><td>Gameplay</td><td><kbd>Mouse Position</kbd></td><td>Vector2</td></tr>
+          <tr><td>Fire</td><td>Gameplay</td><td><kbd>LMB</kbd></td><td>Button</td></tr>
+          <tr><td>Attack Melee</td><td>Gameplay</td><td><kbd>F</kbd></td><td>Button</td></tr>
+          <tr><td>Sprint</td><td>Gameplay</td><td><kbd>Shift</kbd> Hold</td><td>Button</td></tr>
+          <tr><td>Interact</td><td>Gameplay</td><td><kbd>E</kbd> Tap — 아이템 획득</td><td>Button</td></tr>
+          <tr><td>Interact Hold</td><td>Gameplay</td><td><kbd>E</kbd> Hold 1s — 보물상자 채널링</td><td>Button</td></tr>
+          <tr><td>Inventory</td><td>Gameplay + UI</td><td><kbd>Tab</kbd></td><td>Button</td></tr>
+          <tr><td>Skill_Q</td><td>Gameplay</td><td><kbd>Q</kbd></td><td>Button</td></tr>
+          <tr><td>Skill_R</td><td>Gameplay</td><td><kbd>R</kbd></td><td>Button</td></tr>
+          <tr><td>UseItem_1~6</td><td>Gameplay</td><td><kbd>1</kbd> ~ <kbd>6</kbd></td><td>Button</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ⑧ 코드 컨벤션 -->
+  <section class="section" id="convention">
+    <div class="section__header">
+      <span class="section__num">08</span>
+      <h2>코드 컨벤션</h2>
+    </div>
+
+    <p style="font-size:13px">네이밍·포맷팅 규칙은 <code>.editorconfig</code>에 의해 자동 적용된다.</p>
+
+    <h3>네이밍 규칙</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>대상</th><th>규칙</th><th>예시</th></tr></thead>
+        <tbody>
+          <tr><td>클래스 / 구조체</td><td>PascalCase</td><td><code>PlayerController</code></td></tr>
+          <tr><td>인터페이스</td><td><code>I</code> + PascalCase</td><td><code>IDamageable</code></td></tr>
+          <tr><td>메서드 / 프로퍼티</td><td>PascalCase</td><td><code>TakeDamage()</code></td></tr>
+          <tr><td>public 필드</td><td>PascalCase</td><td><code>MoveSpeed</code></td></tr>
+          <tr><td>private 필드</td><td><code>_</code> + camelCase</td><td><code>_health</code></td></tr>
+          <tr><td>지역 변수 / 매개변수</td><td>camelCase</td><td><code>deltaTime</code></td></tr>
+          <tr><td>상수</td><td>PascalCase</td><td><code>MaxHealth</code></td></tr>
+          <tr><td>이벤트</td><td><code>On</code> + PascalCase</td><td><code>OnDeath</code></td></tr>
+          <tr><td>열거형</td><td>PascalCase</td><td><code>GameState.Playing</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>MonoBehaviour 멤버 순서</h3>
+    <div class="code-block">
+      <div class="code-block__header">
+        <div class="code-block__dots"><span></span><span></span><span></span></div>
+        <span class="code-block__lang">C#</span>
+      </div>
+      <pre><span class="kw">public class</span> <span class="ty">Example</span> : <span class="ty">MonoBehaviour</span>
+{
+    <span class="cm">// 1. Fields</span>
+    <span class="cm">// 2. Properties</span>
+    <span class="cm">// 3. Unity Lifecycle  Awake → OnEnable → Start → Update → ...</span>
+    <span class="cm">// 4. public Methods</span>
+    <span class="cm">// 5. private Methods</span>
+    <span class="cm">// 6. Event Callbacks</span>
+}</pre>
+    </div>
+
+    <h3>중괄호 — Allman 스타일 (생략 금지)</h3>
+    <div class="diff-block">
+      <span class="diff-line diff-line--add">private void Update()</span>
+      <span class="diff-line diff-line--add">{</span>
+      <span class="diff-line diff-line--add">    if (IsGrounded)</span>
+      <span class="diff-line diff-line--add">    {</span>
+      <span class="diff-line diff-line--add">        Jump();</span>
+      <span class="diff-line diff-line--add">    }</span>
+      <span class="diff-line diff-line--add">}</span>
+      <span class="diff-line diff-line--ctx"></span>
+      <span class="diff-line diff-line--del">private void Update() {    // ❌ K&amp;R 스타일</span>
+      <span class="diff-line diff-line--del">    if (IsGrounded) Jump(); // ❌ 중괄호 생략</span>
+      <span class="diff-line diff-line--del">}</span>
+    </div>
+
+    <h3>var 사용</h3>
+    <div class="diff-block">
+      <span class="diff-line diff-line--add">var player = GetComponent&lt;PlayerController&gt;(); // ✅ 우변에서 타입 명확</span>
+      <span class="diff-line diff-line--del">var scoreMap = GetScoreMap();                  // ❌ 타입 불명확</span>
+    </div>
+
+    <h3>접근 한정자 — 항상 명시</h3>
+    <div class="diff-block">
+      <span class="diff-line diff-line--add">private int _health;</span>
+      <span class="diff-line diff-line--add">private void HandleInput() { }</span>
+      <span class="diff-line diff-line--del">int _health;            // ❌ 생략</span>
+      <span class="diff-line diff-line--del">void HandleInput() { } // ❌ 생략</span>
+    </div>
+
+    <h3>주석</h3>
+    <div class="code-block">
+      <div class="code-block__header">
+        <div class="code-block__dots"><span></span><span></span><span></span></div>
+        <span class="code-block__lang">C# — public API는 XML 문서화</span>
+      </div>
+      <pre><span class="cm">/// &lt;summary&gt;</span>
+<span class="cm">/// 플레이어에게 데미지를 줍니다.</span>
+<span class="cm">/// &lt;/summary&gt;</span>
+<span class="cm">/// &lt;param name="damage"&gt;입힐 데미지 양&lt;/param&gt;</span>
+<span class="kw">public void</span> <span class="fn">TakeDamage</span>(<span class="ty">int</span> damage) { }
+
+<span class="cm">// ✅ 인라인은 이유(WHY)만 설명</span>
+<span class="cm">// Rigidbody 이동은 FixedUpdate에서 처리해야 물리 연산이 정확함</span>
+<span class="kw">private void</span> <span class="fn">FixedUpdate</span>() { }</pre>
+    </div>
+
+    <h3>전체 예시</h3>
+    <div class="code-block">
+      <div class="code-block__header">
+        <div class="code-block__dots"><span></span><span></span><span></span></div>
+        <span class="code-block__lang">C#</span>
+      </div>
+      <pre><span class="kw">public class</span> <span class="ty">PlayerController</span> : <span class="ty">MonoBehaviour</span>
+{
+    <span class="kw">public float</span> MoveSpeed = <span class="nm">5f</span>;
+
+    <span class="at">[SerializeField]</span> <span class="kw">private float</span> _jumpForce = <span class="nm">8f</span>;
+    <span class="kw">private</span> <span class="ty">Rigidbody</span> _rigidbody;
+
+    <span class="kw">public event</span> <span class="ty">Action</span> OnDeath;
+
+    <span class="kw">public void</span> <span class="fn">TakeDamage</span>(<span class="ty">int</span> damage)
+    {
+        _health -= damage;
+    }
+}</pre>
+    </div>
+  </section>
+
+  <!-- ⑨ TODO -->
+  <section class="section" id="todo">
+    <div class="section__header">
+      <span class="section__num">09</span>
+      <h2>TODO</h2>
+    </div>
+
+    <h3>GitHub 설정</h3>
+    <ul class="todo-list">
+      <li>
+        <div class="todo-list__checkbox"></div>
+        <div>
+          PR 템플릿 추가 — <code>.github/PULL_REQUEST_TEMPLATE.md</code>
+          <div class="todo-list__note">구조: 목표 / 변경 내용 / 다음 작업(TODO)</div>
+        </div>
+      </li>
+      <li>
+        <div class="todo-list__checkbox"></div>
+        <div>
+          Issue 템플릿 추가 — <code>.github/ISSUE_TEMPLATE/</code>
+          <ul class="todo-list__sub">
+            <li>· bug_report.md</li>
+            <li>· feature_request.md</li>
+          </ul>
+        </div>
+      </li>
+    </ul>
+
+    <h3>AbilitySystem</h3>
+    <ul class="todo-list">
+      <li>
+        <div class="todo-list__checkbox"></div>
+        <div>
+          <code>AttributeCurrentValue</code> 계산 방식 결정
+          <ul class="todo-list__sub">
+            <li>· <strong>recalculate-on-read</strong> — 호출 시 즉석 계산, 항상 정확, 호출 빈도 높으면 비용 발생</li>
+            <li>· <strong>dirty-on-write</strong> — Effect 적용·해제 시 갱신, 읽기 비용 없음, Effect 관리 복잡</li>
+          </ul>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <div class="spacer"></div>
+</main>
+
+<script src="src/main.js"></script>
+</body>
+</html>

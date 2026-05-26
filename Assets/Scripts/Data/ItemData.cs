@@ -1,7 +1,7 @@
 
 using UnityEngine;
 
-public class ItemData : ScriptableObject
+public abstract class ItemData : ScriptableObject
 {
     public uint uid;
     public string name;

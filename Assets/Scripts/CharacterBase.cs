@@ -5,7 +5,6 @@ public abstract class CharacterBase : MonoBehaviour
 {
     protected ControllerBase _controller;
 
-    public WeaponInstance CurrentWeapon { get; private set; }
 
     public bool IsAlive { get; private set; } = true;
 
