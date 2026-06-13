@@ -14,21 +14,7 @@
     <div class="sidebar__title">⬡ Spectral Raid</div>
     <div class="sidebar__subtitle">프로젝트 위키 — 포트폴리오</div>
   </div>
-
-  <div class="sidebar__section-label">개요</div>
-  <a href="#overview" class="sidebar__link"><span class="icon">🎮</span> 게임 개요</a>
-  <a href="#mvp"      class="sidebar__link"><span class="icon">📋</span> MVP 현황</a>
-  <a href="#packages" class="sidebar__link"><span class="icon">📦</span> 패키지</a>
-
-  <div class="sidebar__section-label">아키텍처</div>
-  <a href="#arch"   class="sidebar__link"><span class="icon">🏗</span> 컨트롤러·캐릭터</a>
-  <a href="#scenes" class="sidebar__link"><span class="icon">🗺</span> 씬 구성</a>
-  <a href="#camera" class="sidebar__link"><span class="icon">🎥</span> 카메라</a>
-  <a href="#input"  class="sidebar__link"><span class="icon">⌨</span> 입력 액션맵</a>
-
-  <div class="sidebar__section-label">개발 가이드</div>
-  <a href="#convention" class="sidebar__link"><span class="icon">📐</span> 코드 컨벤션</a>
-  <a href="#todo"       class="sidebar__link"><span class="icon">✅</span> TODO</a>
+  <div id="sidebar-nav"></div>
 </nav>
 
 <!-- ══ MAIN ═════════════════════════════════════════════════════ -->
@@ -106,7 +92,7 @@
             <td><span class="badge badge--wip">진행 중</span></td>
           </tr>
           <tr>
-            <td>StatModifier 통합 / 기본 장비 (권총 1개)</td>
+            <td>ItemModule 구조 / 규칙 기반 EquipmentSystem</td>
             <td><span class="badge badge--mvp">MVP</span></td>
             <td><span class="badge badge--todo">예정</span></td>
           </tr>
@@ -138,8 +124,7 @@
       <span class="callout__icon">🎯</span>
       <span>
         <strong>현재 목표</strong> —
-        장비·패시브·액티브 스킬·스탯의 확장성을 고려한 구조를 갖추면서,
-        권총 1개를 동작 가능한 수준으로 구현한다.
+        아이템 모듈 조합, 장비 슬롯 규칙, 스탯 연동 확장성을 고려한 구조를 먼저 갖춘다.
       </span>
     </div>
   </section>
@@ -196,34 +181,443 @@
 
     <p>입력을 소유하는 <strong>Controller</strong>와 실제 이동·전투 로직을 갖는 <strong>Character</strong>를 분리해 멀티플레이 확장과 AI 전환을 대비한다.</p>
 
-    <div class="arch-diagram">
-      <div><span class="node-abstract">ControllerBase (abstract)</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="node-abstract">CharacterBase (abstract)</span></div>
-      <div><span class="tree-char">└── </span><span class="node-name">PlayerController</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-char">├── </span><span class="node-name">PlayerCharacter</span></div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="node-field">- _possessedCharacter</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-char">└── </span><span class="node-name">MonsterCharacter</span></div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="node-field">- Input 구독 / 해제</span></div>
-    </div>
-
-    <div class="card-grid" style="margin-top:16px">
-      <div class="card">
-        <h3>ControllerBase</h3>
-        <p><code>Possess(CharacterBase)</code>, <code>HasAuthority()</code> — 현재 항상 true, 멀티플레이 대비 TODO</p>
+    <div class="class-layout">
+      <div class="class-tree">
+        <div class="class-card class-card--abstract">
+          <div class="class-card__header">
+            <span class="class-card__name">ControllerBase</span>
+            <span class="class-card__tag">abstract</span>
+          </div>
+          <div class="class-card__body">
+            <span class="class-card__field">_possessedCharacter (protected)</span>
+            <span class="class-card__field">Possess(CharacterBase)</span>
+            <span class="class-card__field">HasAuthority() — 멀티 대비 TODO</span>
+          </div>
+        </div>
+        <div class="class-tree__children">
+          <div class="class-tree__branch">
+            <div class="class-card">
+              <div class="class-card__header">
+                <span class="class-card__name">PlayerController</span>
+              </div>
+              <div class="class-card__body">
+                <span class="class-card__field">OnEnable/OnDisable 입력 구독·해제</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <h3>PlayerController</h3>
-        <p><code>OnEnable</code> / <code>OnDisable</code>에서 <code>PlayerInputActions</code> 구독·해제. 입력을 Character 메서드 호출로 전달.</p>
+
+      <div class="class-tree">
+        <div class="class-card class-card--abstract">
+          <div class="class-card__header">
+            <span class="class-card__name">CharacterBase</span>
+            <span class="class-card__tag">abstract</span>
+          </div>
+        </div>
+        <div class="class-tree__children">
+          <div class="class-tree__branch">
+            <div class="class-card">
+              <div class="class-card__header">
+                <span class="class-card__name">PlayerCharacter</span>
+              </div>
+              <div class="class-card__body">
+                <span class="class-card__field">MoveDelta(Vector3, float) — 이동 로직 소유</span>
+              </div>
+            </div>
+          </div>
+          <div class="class-tree__branch">
+            <div class="class-card">
+              <div class="class-card__header">
+                <span class="class-card__name">MonsterCharacter</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="callout">
       <span class="callout__icon">📌</span>
-      <span>이동 로직은 Controller가 아닌 <strong>Character가 소유</strong>한다. (<code>PlayerCharacter.MoveTo(Vector3)</code>)</span>
+      <span>이동 로직은 Controller가 아닌 <strong>Character가 소유</strong>한다. (<code>PlayerCharacter.MoveDelta(Vector3, float)</code>)</span>
     </div>
   </section>
 
-  <!-- ⑤ 씬 구성 -->
-  <section class="section" id="scenes">
+  <!-- ⑤ AbilitySystem (GAS-like) -->
+  <section class="section" id="ability-system">
     <div class="section__header">
       <span class="section__num">05</span>
+      <h2>AbilitySystem — GAS-like</h2>
+    </div>
+
+    <p>
+      UE5 Gameplay Ability System(GAS) 개념을 Unity에 맞게 경량화한 수치·이펙트 관리 시스템.
+      <code>Assets/Scripts/Core/AbilitySystem/</code>
+    </p>
+
+    <div class="callout" style="margin-bottom:0">
+      <span class="callout__icon">🎯</span>
+      <span>
+        <strong>설계 의도</strong> —
+        장비·스킬·디버프 등 수십 개의 출처가 수치를 동시에 변경할 때,
+        각 시스템이 필드를 직접 조작하면 적용 순서 의존성과 잔류 값 문제가 발생한다.
+        GAS-like는 모든 수치 변경을 <code>GameplayEffect</code> 단일 채널로 추상화해
+        적용·해제가 서로 독립적으로 동작하도록 보장한다.
+      </span>
+    </div>
+
+    <!-- 탭 -->
+    <div class="tab-bar" id="ability-tabs">
+      <button class="tab-btn is-active" data-tab="attr">Attribute</button>
+      <button class="tab-btn" data-tab="ge">GameplayEffect</button>
+      <button class="tab-btn" data-tab="api">API</button>
+    </div>
+
+    <!-- ── Tab: Attribute ──────────────────────────────────── -->
+    <div class="tab-panel" data-panel="attr" data-tabs="ability-tabs">
+      <div class="group-label" id="attr-system" style="margin-top:4px;border-top:none">Attribute 시스템</div>
+
+      <details class="accordion" open>
+        <summary class="accordion__header">레이어 구조</summary>
+        <div class="accordion__body">
+          <div class="class-flow">
+            <div class="class-card class-card--so">
+              <div class="class-card__header">
+                <span class="class-card__name">AttributeInitData</span>
+                <span class="class-card__tag">ScriptableObject</span>
+              </div>
+              <div class="class-card__body">
+                <span class="class-card__field">AttributeSetInitData[]</span>
+                <span class="class-card__field">↳ typeName + AttributeFieldInitData[]</span>
+                <span class="class-card__field">&nbsp;&nbsp;↳ { fieldName, BaseValue }</span>
+              </div>
+            </div>
+            <div class="class-flow__arrow">
+              <span>→</span>
+              <span class="class-flow__arrow-label">Awake 초기화</span>
+            </div>
+            <div class="class-card">
+              <div class="class-card__header">
+                <span class="class-card__name">AbilitySystemComponent</span>
+                <span class="class-card__tag">MonoBehaviour</span>
+              </div>
+              <div class="class-card__body">
+                <span class="class-card__field">Dictionary&lt;Type, AttributeSet&gt;</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="class-layout">
+            <div class="class-tree">
+              <div class="class-card class-card--abstract">
+                <div class="class-card__header">
+                  <span class="class-card__name">AttributeSet</span>
+                  <span class="class-card__tag">abstract</span>
+                </div>
+              </div>
+              <div class="class-tree__children">
+                <div class="class-tree__branch">
+                  <div class="class-card">
+                    <div class="class-card__header">
+                      <span class="class-card__name">CharacterAttributeSet</span>
+                    </div>
+                    <div class="class-card__body">
+                      <span class="class-card__field">Health, MaxHealth</span>
+                      <span class="class-card__field">Stamina, MaxStamina, Speed</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="class-tree__branch">
+                  <div class="class-card">
+                    <div class="class-card__header">
+                      <span class="class-card__name">CombatAttributeSet</span>
+                    </div>
+                    <div class="class-card__body">
+                      <span class="class-card__field">Damage</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div class="class-card">
+                <div class="class-card__header">
+                  <span class="class-card__name">AttributeHandle</span>
+                  <span class="class-card__tag">readonly struct</span>
+                </div>
+                <div class="class-card__body">
+                  <span class="class-card__field">SetType + fieldName + FieldInfo</span>
+                </div>
+              </div>
+              <div class="class-card">
+                <div class="class-card__header">
+                  <span class="class-card__name">AttributeData</span>
+                  <span class="class-card__tag">struct</span>
+                </div>
+                <div class="class-card__body">
+                  <span class="class-card__field">BaseValue / CurrentValue</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary class="accordion__header">BaseValue / CurrentValue 이중 구조</summary>
+        <div class="accordion__body">
+          <p style="margin-bottom:12px">
+            <code>BaseValue</code>는 영구 원본값, <code>CurrentValue</code>는 활성 GE 모디파이어를 누산한 결과값이다.
+            UI·전투 판정은 CurrentValue를 읽고, Effect 해제 후에는 BaseValue만 남는다.
+          </p>
+          <div class="callout">
+            <span class="callout__icon">📌</span>
+            <span>
+              <strong>dirty-on-write 전략</strong> —
+              CurrentValue는 Effect 적용·해제 시점에만 재계산한다.
+              읽기 호출 빈도와 무관하게 비용이 없으며,
+              매 읽기마다 활성 Effect를 전부 순회하는 <em>recalculate-on-read</em>와의 핵심 차이다.
+            </span>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary class="accordion__header">AttributeHandle — Reflection 비용 격리</summary>
+        <div class="accordion__body">
+          <p>
+            GE Modifier가 대상 어트리뷰트를 지정하는 경량 식별자.
+            <code>static readonly</code>로 선언해 앱 수명 동안 Reflection(<code>FieldInfo</code>)을 단 1회만 수행하고,
+            이후 런타임 읽기·쓰기는 캐싱된 참조만 사용한다. 런타임 string 탐색 비용 없음.
+          </p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary class="accordion__header">SO 초기화 흐름 — 코드 없이 초기 스탯 설정</summary>
+        <div class="accordion__body">
+          <p style="margin-bottom:12px">캐릭터마다 다른 초기 스탯을 코드 변경 없이 Inspector에서 관리한다. SO에 정의된 fieldName·BaseValue 목록을 <code>Awake()</code>에서 읽어 AttributeSet 인스턴스를 생성한다.</p>
+          <div class="class-flow">
+            <div class="class-card class-card--so">
+              <div class="class-card__header">
+                <span class="class-card__name">AttributeInitData</span>
+                <span class="class-card__tag">Inspector 할당</span>
+              </div>
+              <div class="class-card__body">
+                <span class="class-card__field">typeName: "CharacterAttributeSet, …"</span>
+                <span class="class-card__field">attributes: [{ "Health", 100 }, …]</span>
+              </div>
+            </div>
+            <div class="class-flow__arrow">
+              <span>→</span>
+              <span class="class-flow__arrow-label">Awake Reflection</span>
+            </div>
+            <div class="class-card class-card--runtime">
+              <div class="class-card__header">
+                <span class="class-card__name">AttributeSet</span>
+                <span class="class-card__tag">런타임 인스턴스</span>
+              </div>
+              <div class="class-card__body">
+                <span class="class-card__field">fieldName → FieldInfo → BaseValue 세팅</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- ── Tab: GameplayEffect ─────────────────────────────── -->
+    <div class="tab-panel is-hidden" data-panel="ge" data-tabs="ability-tabs">
+      <div class="group-label" id="ge-system" style="margin-top:4px;border-top:none">GameplayEffect 시스템</div>
+
+      <details class="accordion" open>
+        <summary class="accordion__header">에셋 / 런타임 레이어 분리</summary>
+        <div class="accordion__body">
+          <p style="margin-bottom:12px">
+            GE는 <strong>불변 정의(ScriptableObject 에셋)</strong>와
+            <strong>적용 인스턴스(런타임 Spec)</strong>로 철저히 분리된다.
+            SO는 여러 캐릭터가 공유해도 상태가 섞이지 않고,
+            Spec은 적용 시점의 Level·Context를 스냅샷해 독립적으로 관리된다.
+          </p>
+          <div class="class-flow">
+            <div class="class-card class-card--so">
+              <div class="class-card__header">
+                <span class="class-card__name">GameplayEffect</span>
+                <span class="class-card__tag">ScriptableObject</span>
+              </div>
+              <div class="class-card__body">
+                <span class="class-card__field">type: GameplayEffectType</span>
+                <span class="class-card__field">duration, period</span>
+                <span class="class-card__field">modifiers: GameplayModifier[]</span>
+                <span class="class-card__field">executions: GameplayEffectExecution[]</span>
+              </div>
+            </div>
+            <div class="class-flow__arrow">
+              <span>→</span>
+              <span class="class-flow__arrow-label">ApplyEffect</span>
+            </div>
+            <div class="class-card class-card--runtime">
+              <div class="class-card__header">
+                <span class="class-card__name">GameplayEffectSpec</span>
+                <span class="class-card__tag">런타임</span>
+              </div>
+              <div class="class-card__body">
+                <span class="class-card__field">Definition: GE (불변 참조)</span>
+                <span class="class-card__field">Context: GEContextHandle</span>
+                <span class="class-card__field">Level: float</span>
+                <span class="class-card__field">Modifiers: GEModifierSpec[]</span>
+              </div>
+            </div>
+            <div class="class-flow__arrow">
+              <span>→</span>
+              <span class="class-flow__arrow-label">Duration/Infinite</span>
+            </div>
+            <div class="class-card class-card--runtime">
+              <div class="class-card__header">
+                <span class="class-card__name">ActiveGameplayEffect</span>
+                <span class="class-card__tag">_activeEffects</span>
+              </div>
+              <div class="class-card__body">
+                <span class="class-card__field">Handle: AGEHandle</span>
+                <span class="class-card__field">Spec: GameplayEffectSpec</span>
+                <span class="class-card__field">RemainingDuration</span>
+                <span class="class-card__field">PeriodTimer</span>
+              </div>
+            </div>
+          </div>
+          <div class="callout" style="margin-top:12px">
+            <span class="callout__icon">📌</span>
+            <span>
+              <strong>Spec 생성 시 Modifier를 미리 resolve하는 이유</strong> —
+              <code>GameplayModifier</code>는 대상 어트리뷰트를 문자열로 직렬화한다.
+              이를 <code>AttributeHandle</code>(<code>FieldInfo</code> 캐싱)로 변환하는 비용이 있으므로
+              Spec 생성 시점에 단 1회만 수행한다. GE SO 하나가 수십 개의 Active Effect로
+              동시에 적용되더라도 resolve 비용은 각 Spec마다 1회뿐이다.
+            </span>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary class="accordion__header">GameplayEffectType — Instant / Infinite / Duration</summary>
+        <div class="accordion__body">
+          <div class="card-grid" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="info-card">
+              <div class="info-card__label">Instant</div>
+              <div class="info-card__value">
+                <code>BaseValue</code>를 즉시 영구 변경 후 종료.
+                Active Effect로 등록되지 않으므로 Handle 없음.
+                <br><small style="color:var(--text-muted)">예: 체력 회복, 데미지</small>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-card__label">Infinite</div>
+              <div class="info-card__value">
+                명시적 <code>Remove</code> 전까지 <code>CurrentValue</code>에 지속 반영.
+                <br><small style="color:var(--text-muted)">예: 장비 스탯 버프, 패시브</small>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-card__label">Duration</div>
+              <div class="info-card__value">
+                지정 시간 후 자동 해제. Period 설정 시 주기마다 추가 실행.
+                <br><small style="color:var(--text-muted)">예: 버프·디버프, DoT·HoT</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary class="accordion__header">Apply 흐름</summary>
+        <div class="accordion__body">
+          <p style="margin-bottom:12px">
+            <code>ApplyGameplayEffectToSelf</code>는 GE SO로부터 Spec(런타임 인스턴스)을 생성하고 타입에 따라 분기한다.
+            <strong>Instant</strong>는 즉시 BaseValue를 변경 후 Handle 없이 종료.
+            <strong>Duration / Infinite</strong>는 <code>_activeEffects</code>에 등록하고 Handle을 반환 — 핸들로 명시적 해제 가능.
+          </p>
+          <div class="callout">
+            <span class="callout__icon">⏱</span>
+            <span>
+              <strong>Period &gt; 0</strong>이면 매 프레임 경과 시간을 누적하고 주기 도달 시 BaseValue를 직접 변경한다.
+              CurrentValue를 수정하는 persistent modifier와 달리 원본 수치를 반복 수정하므로 DoT·HoT에 적합하다.
+            </span>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary class="accordion__header">ModifierOperation — CurrentValue 계산</summary>
+        <div class="accordion__body">
+          <p style="margin-bottom:12px">
+            6가지 연산(<code>AddBase</code>, <code>MultiplyAdditive</code>, <code>DivideAdditive</code>,
+            <code>MultiplyCompound</code>, <code>AddFinal</code>, <code>Override</code>)을 조합해
+            활성 GE 전체를 한 번의 aggregation으로 처리한다.
+          </p>
+          <p style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);background:var(--code-bg);padding:12px 16px;border-radius:var(--radius-sm);border:1px solid var(--code-border)">
+            CurrentValue = ((Base + ΣAddBase) × MultiplyAdditive / DivideAdditive × ΠMultiplyCompound) + ΣAddFinal
+          </p>
+          <p style="margin-top:10px;font-size:12.5px;color:var(--text-muted)">
+            Override가 하나라도 있으면 위 계산 전체를 무시하고 해당 값으로 고정. — <em>예: 스턴 시 Speed = 0</em>
+          </p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary class="accordion__header">GameplayEffectContext — 발동 맥락</summary>
+        <div class="accordion__body">
+          <p>
+            GE 적용 시 발동 주체(<code>Instigator</code> ASC)와 실제 원인 오브젝트(<code>EffectCauser</code>)를 함께 전달한다.
+            <code>GameplayEffectContextHandle</code>은 null-safe struct 래퍼로, 맥락이 불필요하면 <code>default</code>로 생략 가능하다.
+            Execution 내부에서 Source·Target의 Context를 읽어 크리티컬·관통 등 조건부 계산에 활용할 수 있다.
+          </p>
+        </div>
+      </details>
+
+      <details class="accordion">
+        <summary class="accordion__header">GameplayEffectExecution — 복합 계산 <span class="badge badge--wip" style="margin-left:8px;font-size:10px">서브클래스 없음</span></summary>
+        <div class="accordion__body">
+          <div class="callout callout--warn">
+            <span class="callout__icon">🔧</span>
+            <span>
+              단순 Modifier로 표현할 수 없는 복합 계산
+              (예: Source.Damage − Target.Armor × 관통률)을
+              <code>GameplayEffectExecution</code> ScriptableObject 서브클래스로 캡슐화한다.
+              <code>Execute(parameters)</code> 안에서 Source·Target ASC를 읽고
+              <code>parameters.AddOutput(handle, magnitude)</code>으로 결과를 출력하면
+              ASC가 <code>AddBase</code> / <code>Override</code> 연산으로 BaseValue에 즉시 반영한다.
+            </span>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- ── Tab: API ───────────────────────────────────────────── -->
+    <div class="tab-panel is-hidden" data-panel="api" data-tabs="ability-tabs">
+      <div class="group-label" style="margin-top:4px;border-top:none">AbilitySystemComponent 주요 API</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>메서드</th><th>용도</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>ApplyGameplayEffectToSelf(GE, ctx, level)</code></td><td>GE SO → Spec 생성 후 자신에게 적용. Instant는 즉시 실행 후 Invalid Handle 반환.</td></tr>
+            <tr><td><code>RemoveActiveGameplayEffect(handle)</code></td><td>핸들로 이펙트 제거. Period == 0이었으면 CurrentValue 재계산.</td></tr>
+            <tr><td><code>GetAttributeCurrentValue(handle)</code></td><td>모디파이어 누산 후 CurrentValue 반환 (캐싱된 값, 재계산 없음).</td></tr>
+            <tr><td><code>GetAttributeBaseValue(handle)</code></td><td>원본 BaseValue 반환.</td></tr>
+            <tr><td><code>SetBaseAttributeValue(handle, float)</code></td><td>BaseValue 직접 설정 후 CurrentValue 재계산.</td></tr>
+            <tr><td><code>AddAttributeSet(set)</code></td><td>AttributeSet 등록. 같은 타입은 하나만 허용 (<code>TryAdd</code>).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑥ 씬 구성 -->
+  <section class="section" id="scenes">
+    <div class="section__header">
+      <span class="section__num">06</span>
       <h2>씬 구성</h2>
     </div>
 
@@ -250,10 +644,10 @@
     </div>
   </section>
 
-  <!-- ⑥ 카메라 -->
+  <!-- ⑦ 카메라 -->
   <section class="section" id="camera">
     <div class="section__header">
-      <span class="section__num">06</span>
+      <span class="section__num">07</span>
       <h2>카메라</h2>
     </div>
 
@@ -279,10 +673,10 @@
     <p style="margin-top:14px; font-size:13px">BindingMode = <strong>WorldSpace</strong> → 캐릭터 회전과 무관하게 카메라 방향 고정.</p>
   </section>
 
-  <!-- ⑦ 입력 액션맵 -->
+  <!-- ⑧ 입력 액션맵 -->
   <section class="section" id="input">
     <div class="section__header">
-      <span class="section__num">07</span>
+      <span class="section__num">08</span>
       <h2>입력 액션맵</h2>
     </div>
 
@@ -315,40 +709,73 @@
 
   <hr class="divider">
 
-  <!-- ⑧ 코드 컨벤션 -->
+  <!-- ⑨ 코드 컨벤션 -->
   <section class="section" id="convention">
     <div class="section__header">
-      <span class="section__num">08</span>
+      <span class="section__num">09</span>
       <h2>코드 컨벤션</h2>
     </div>
 
-    <p style="font-size:13px">네이밍·포맷팅 규칙은 <code>.editorconfig</code>에 의해 자동 적용된다.</p>
+    <p style="font-size:13px;margin-bottom:16px">네이밍·포맷팅 규칙은 <code>.editorconfig</code>에 의해 자동 적용된다.</p>
 
-    <h3>네이밍 규칙</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>대상</th><th>규칙</th><th>예시</th></tr></thead>
-        <tbody>
-          <tr><td>클래스 / 구조체</td><td>PascalCase</td><td><code>PlayerController</code></td></tr>
-          <tr><td>인터페이스</td><td><code>I</code> + PascalCase</td><td><code>IDamageable</code></td></tr>
-          <tr><td>메서드 / 프로퍼티</td><td>PascalCase</td><td><code>TakeDamage()</code></td></tr>
-          <tr><td>public 필드</td><td>PascalCase</td><td><code>MoveSpeed</code></td></tr>
-          <tr><td>private 필드</td><td><code>_</code> + camelCase</td><td><code>_health</code></td></tr>
-          <tr><td>지역 변수 / 매개변수</td><td>camelCase</td><td><code>deltaTime</code></td></tr>
-          <tr><td>상수</td><td>PascalCase</td><td><code>MaxHealth</code></td></tr>
-          <tr><td>이벤트</td><td><code>On</code> + PascalCase</td><td><code>OnDeath</code></td></tr>
-          <tr><td>열거형</td><td>PascalCase</td><td><code>GameState.Playing</code></td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>MonoBehaviour 멤버 순서</h3>
-    <div class="code-block">
-      <div class="code-block__header">
-        <div class="code-block__dots"><span></span><span></span><span></span></div>
-        <span class="code-block__lang">C#</span>
+    <details class="accordion" id="convention-naming" open>
+      <summary class="accordion__header">네이밍 규칙</summary>
+      <div class="accordion__body">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>대상</th><th>규칙</th><th>예시</th></tr></thead>
+            <tbody>
+              <tr><td>클래스 / 구조체</td><td>PascalCase</td><td><code>PlayerController</code></td></tr>
+              <tr><td>인터페이스</td><td><code>I</code> + PascalCase</td><td><code>IDamageable</code></td></tr>
+              <tr><td>메서드 / 프로퍼티</td><td>PascalCase</td><td><code>TakeDamage()</code></td></tr>
+              <tr><td>public 필드</td><td>PascalCase</td><td><code>MoveSpeed</code></td></tr>
+              <tr><td>private 필드</td><td><code>_</code> + camelCase</td><td><code>_health</code></td></tr>
+              <tr><td>지역 변수 / 매개변수</td><td>camelCase</td><td><code>deltaTime</code></td></tr>
+              <tr><td>상수</td><td>PascalCase</td><td><code>MaxHealth</code></td></tr>
+              <tr><td>이벤트</td><td><code>On</code> + PascalCase</td><td><code>OnDeath</code></td></tr>
+              <tr><td>열거형</td><td>PascalCase</td><td><code>GameState.Playing</code></td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <pre><span class="kw">public class</span> <span class="ty">Example</span> : <span class="ty">MonoBehaviour</span>
+    </details>
+
+    <details class="accordion" id="convention-style">
+      <summary class="accordion__header">스타일 규칙 — 중괄호 · var · 접근 한정자</summary>
+      <div class="accordion__body">
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Allman 스타일 중괄호 (생략 금지), 4스페이스 들여쓰기, 접근 한정자 항상 명시</p>
+        <div class="diff-block">
+          <span class="diff-line diff-line--add">private void Update()</span>
+          <span class="diff-line diff-line--add">{</span>
+          <span class="diff-line diff-line--add">    if (IsGrounded)</span>
+          <span class="diff-line diff-line--add">    {</span>
+          <span class="diff-line diff-line--add">        Jump();</span>
+          <span class="diff-line diff-line--add">    }</span>
+          <span class="diff-line diff-line--add">}</span>
+          <span class="diff-line diff-line--ctx"></span>
+          <span class="diff-line diff-line--del">private void Update() {    // ❌ K&amp;R 스타일</span>
+          <span class="diff-line diff-line--del">    if (IsGrounded) Jump(); // ❌ 중괄호 생략</span>
+          <span class="diff-line diff-line--del">}</span>
+        </div>
+        <div class="diff-block" style="margin-top:8px">
+          <span class="diff-line diff-line--add">var player = GetComponent&lt;PlayerController&gt;(); // ✅ 우변에서 타입 명확</span>
+          <span class="diff-line diff-line--del">var scoreMap = GetScoreMap();                  // ❌ 타입 불명확</span>
+          <span class="diff-line diff-line--ctx"></span>
+          <span class="diff-line diff-line--add">private int _health;</span>
+          <span class="diff-line diff-line--del">int _health;            // ❌ 접근 한정자 생략</span>
+        </div>
+      </div>
+    </details>
+
+    <details class="accordion">
+      <summary class="accordion__header">MonoBehaviour 멤버 순서 · 주석</summary>
+      <div class="accordion__body">
+        <div class="code-block">
+          <div class="code-block__header">
+            <div class="code-block__dots"><span></span><span></span><span></span></div>
+            <span class="code-block__lang">C#</span>
+          </div>
+          <pre><span class="kw">public class</span> <span class="ty">PlayerController</span> : <span class="ty">MonoBehaviour</span>
 {
     <span class="cm">// 1. Fields</span>
     <span class="cm">// 2. Properties</span>
@@ -356,119 +783,204 @@
     <span class="cm">// 4. public Methods</span>
     <span class="cm">// 5. private Methods</span>
     <span class="cm">// 6. Event Callbacks</span>
-}</pre>
-    </div>
 
-    <h3>중괄호 — Allman 스타일 (생략 금지)</h3>
-    <div class="diff-block">
-      <span class="diff-line diff-line--add">private void Update()</span>
-      <span class="diff-line diff-line--add">{</span>
-      <span class="diff-line diff-line--add">    if (IsGrounded)</span>
-      <span class="diff-line diff-line--add">    {</span>
-      <span class="diff-line diff-line--add">        Jump();</span>
-      <span class="diff-line diff-line--add">    }</span>
-      <span class="diff-line diff-line--add">}</span>
-      <span class="diff-line diff-line--ctx"></span>
-      <span class="diff-line diff-line--del">private void Update() {    // ❌ K&amp;R 스타일</span>
-      <span class="diff-line diff-line--del">    if (IsGrounded) Jump(); // ❌ 중괄호 생략</span>
-      <span class="diff-line diff-line--del">}</span>
-    </div>
-
-    <h3>var 사용</h3>
-    <div class="diff-block">
-      <span class="diff-line diff-line--add">var player = GetComponent&lt;PlayerController&gt;(); // ✅ 우변에서 타입 명확</span>
-      <span class="diff-line diff-line--del">var scoreMap = GetScoreMap();                  // ❌ 타입 불명확</span>
-    </div>
-
-    <h3>접근 한정자 — 항상 명시</h3>
-    <div class="diff-block">
-      <span class="diff-line diff-line--add">private int _health;</span>
-      <span class="diff-line diff-line--add">private void HandleInput() { }</span>
-      <span class="diff-line diff-line--del">int _health;            // ❌ 생략</span>
-      <span class="diff-line diff-line--del">void HandleInput() { } // ❌ 생략</span>
-    </div>
-
-    <h3>주석</h3>
-    <div class="code-block">
-      <div class="code-block__header">
-        <div class="code-block__dots"><span></span><span></span><span></span></div>
-        <span class="code-block__lang">C# — public API는 XML 문서화</span>
-      </div>
-      <pre><span class="cm">/// &lt;summary&gt;</span>
-<span class="cm">/// 플레이어에게 데미지를 줍니다.</span>
-<span class="cm">/// &lt;/summary&gt;</span>
-<span class="cm">/// &lt;param name="damage"&gt;입힐 데미지 양&lt;/param&gt;</span>
-<span class="kw">public void</span> <span class="fn">TakeDamage</span>(<span class="ty">int</span> damage) { }
-
-<span class="cm">// ✅ 인라인은 이유(WHY)만 설명</span>
-<span class="cm">// Rigidbody 이동은 FixedUpdate에서 처리해야 물리 연산이 정확함</span>
-<span class="kw">private void</span> <span class="fn">FixedUpdate</span>() { }</pre>
-    </div>
-
-    <h3>전체 예시</h3>
-    <div class="code-block">
-      <div class="code-block__header">
-        <div class="code-block__dots"><span></span><span></span><span></span></div>
-        <span class="code-block__lang">C#</span>
-      </div>
-      <pre><span class="kw">public class</span> <span class="ty">PlayerController</span> : <span class="ty">MonoBehaviour</span>
-{
     <span class="kw">public float</span> MoveSpeed = <span class="nm">5f</span>;
-
     <span class="at">[SerializeField]</span> <span class="kw">private float</span> _jumpForce = <span class="nm">8f</span>;
-    <span class="kw">private</span> <span class="ty">Rigidbody</span> _rigidbody;
-
     <span class="kw">public event</span> <span class="ty">Action</span> OnDeath;
 
-    <span class="kw">public void</span> <span class="fn">TakeDamage</span>(<span class="ty">int</span> damage)
-    {
-        _health -= damage;
-    }
+    <span class="cm">/// &lt;summary&gt;플레이어에게 데미지를 줍니다.&lt;/summary&gt;</span>
+    <span class="kw">public void</span> <span class="fn">TakeDamage</span>(<span class="ty">int</span> damage) { }
+
+    <span class="cm">// Rigidbody 이동은 FixedUpdate에서 처리해야 물리 연산이 정확함</span>
+    <span class="kw">private void</span> <span class="fn">FixedUpdate</span>() { }
 }</pre>
-    </div>
+        </div>
+      </div>
+    </details>
   </section>
 
-  <!-- ⑨ TODO -->
+  <!-- ⑩ TODO -->
   <section class="section" id="todo">
     <div class="section__header">
-      <span class="section__num">09</span>
+      <span class="section__num">10</span>
       <h2>TODO</h2>
     </div>
 
-    <h3>GitHub 설정</h3>
-    <ul class="todo-list">
-      <li>
-        <div class="todo-list__checkbox"></div>
-        <div>
-          PR 템플릿 추가 — <code>.github/PULL_REQUEST_TEMPLATE.md</code>
-          <div class="todo-list__note">구조: 목표 / 변경 내용 / 다음 작업(TODO)</div>
-        </div>
-      </li>
-      <li>
-        <div class="todo-list__checkbox"></div>
-        <div>
-          Issue 템플릿 추가 — <code>.github/ISSUE_TEMPLATE/</code>
-          <ul class="todo-list__sub">
-            <li>· bug_report.md</li>
-            <li>· feature_request.md</li>
-          </ul>
-        </div>
-      </li>
-    </ul>
+    <!-- GitHub 설정 -->
+    <div class="todo-group" id="todo-github" data-group="github">
+      <div class="todo-group__header">
+        <span class="todo-group__title">GitHub 설정</span>
+        <span class="todo-group__progress"></span>
+      </div>
+      <div class="todo-group__bar"><div class="todo-group__bar-fill" style="width:0%"></div></div>
+      <ul class="todo-list">
+        <li>
+          <div class="todo-list__checkbox" data-id="github-pr-template"></div>
+          <div class="todo-list__content">
+            PR 템플릿 추가 — <code>.github/PULL_REQUEST_TEMPLATE.md</code>
+            <div class="todo-list__note">구조: 목표 / 변경 내용 / 다음 작업(TODO)</div>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="github-issue-template"></div>
+          <div class="todo-list__content">
+            Issue 템플릿 추가 — <code>.github/ISSUE_TEMPLATE/</code>
+            <ul class="todo-list__sub">
+              <li>· bug_report.md</li>
+              <li>· feature_request.md</li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+    </div>
 
-    <h3>AbilitySystem</h3>
-    <ul class="todo-list">
-      <li>
-        <div class="todo-list__checkbox"></div>
-        <div>
-          <code>AttributeCurrentValue</code> 계산 방식 결정
-          <ul class="todo-list__sub">
-            <li>· <strong>recalculate-on-read</strong> — 호출 시 즉석 계산, 항상 정확, 호출 빈도 높으면 비용 발생</li>
-            <li>· <strong>dirty-on-write</strong> — Effect 적용·해제 시 갱신, 읽기 비용 없음, Effect 관리 복잡</li>
-          </ul>
-        </div>
-      </li>
-    </ul>
+    <!-- AbilitySystem -->
+    <div class="todo-group" id="todo-ability" data-group="ability">
+      <div class="todo-group__header">
+        <span class="todo-group__title">AbilitySystem</span>
+        <span class="todo-group__progress"></span>
+      </div>
+      <div class="todo-group__bar"><div class="todo-group__bar-fill" style="width:0%"></div></div>
+      <ul class="todo-list">
+        <li>
+          <div class="todo-list__checkbox" data-id="ability-take-damage"></div>
+          <div class="todo-list__content">
+            <code>CharacterBase.TakeDamage()</code> 완성 — <code>GameplayEffect</code> 적용으로 <code>Health</code> 감산 연결
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="ability-ge-execution"></div>
+          <div class="todo-list__content">
+            GE Execution 구현 — <code>GameplayEffectExecution</code> 서브클래스로 복잡한 스탯 계산 로직 분리
+            <ul class="todo-list__sub">
+              <li>· <code>Execute(GameplayEffectExecutionParameters)</code> 오버라이드로 커스텀 연산 구현</li>
+              <li>· <code>GameplayEffectExecutionOutput</code>에 결과 기록 후 ASC가 BaseValue에 반영</li>
+              <li>· 용도 예시: 방어력 관통 계산, 크리티컬 배율 등 단순 Modifier로 표현 불가한 로직</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="ability-ga"></div>
+          <div class="todo-list__content">
+            GameplayAbility (GA) 구현 — 스킬·액션을 GE와 연결하는 실행 단위
+            <ul class="todo-list__sub">
+              <li>· <code>ActivateAbility()</code> / <code>EndAbility()</code> 진입·종료 생명주기</li>
+              <li>· 코스트(Stamina 소모) / 쿨다운(Duration GE)을 GE로 표현</li>
+              <li>· <code>AbilitySystemComponent</code>에 GA 목록 등록·슬롯 관리</li>
+              <li>· 입력 바인딩: Skill_Q / Skill_R 액션과 GA 슬롯 연결</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="ability-ge-stack"></div>
+          <div class="todo-list__content">
+            GE 스택 구현 — 같은 GE를 중복 적용할 때 스택 수 관리 및 Overflow 정책 결정
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="ability-gameplay-cue"></div>
+          <div class="todo-list__content">
+            Gameplay Cue 구현 — GE 적용·해제 시 VFX·SFX 트리거 연결
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Item Module / Equipment -->
+    <div class="todo-group" id="todo-item" data-group="item-module">
+      <div class="todo-group__header">
+        <span class="todo-group__title">Item Module · Equipment</span>
+        <span class="todo-group__progress"></span>
+      </div>
+      <div class="todo-group__bar"><div class="todo-group__bar-fill" style="width:0%"></div></div>
+      <ul class="todo-list">
+        <li>
+          <div class="todo-list__checkbox" data-id="item-data-module-structure"></div>
+          <div class="todo-list__content">
+            <code>ItemData</code> 모듈 조합 구조 정의
+            <ul class="todo-list__sub">
+              <li>· <code>uid</code>, <code>displayName</code>, <code>icon</code>은 공통 필드로 유지</li>
+              <li>· 기능과 규칙은 <code>ItemModule</code> 조합으로 분리</li>
+              <li>· Particle System처럼 필수 모듈 + 선택 모듈 구조로 구성</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="item-module-types"></div>
+          <div class="todo-list__content">
+            1차 <code>ItemModule</code> 타입 구현
+            <ul class="todo-list__sub">
+              <li>· <code>EquipmentModule</code>: 장착 슬롯, 장착 프리팹</li>
+              <li>· <code>WeaponGripModule</code>: 한손 전용, 양손 전용, 한손/양손 전환 가능</li>
+              <li>· <code>SlotBlockModule</code>: 장착 시 차단할 슬롯</li>
+              <li>· <code>StatModifierModule</code>: AttributeSystem에 적용할 스탯 보정</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="item-archetype-validation"></div>
+          <div class="todo-list__content">
+            <code>ItemArchetype</code> 기반 필수 모듈 검증
+            <ul class="todo-list__sub">
+              <li>· <code>Weapon</code>: <code>EquipmentModule</code>, <code>WeaponGripModule</code> 필수</li>
+              <li>· <code>Armor</code>, <code>Accessory</code>, <code>MeleeSubWeapon</code>: <code>EquipmentModule</code> 필수</li>
+              <li>· Archetype과 <code>EquipmentSlot</code> 불일치 시 경고 또는 장착 실패</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="equipment-slot-rules"></div>
+          <div class="todo-list__content">
+            장비 슬롯 규칙 구현
+            <ul class="todo-list__sub">
+              <li>· <code>Weapon</code> 1개, <code>Armor</code> 1개, <code>Accessory</code> 4개</li>
+              <li>· <code>MeleeSubWeapon</code> 1개 (근접 보조 무기 한정)</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="equipment-component-item-equip"></div>
+          <div class="todo-list__content">
+            <code>EquipmentComponent.Equip(ItemData)</code> 구현
+            <ul class="todo-list__sub">
+              <li>· <code>EquipmentModule</code>이 없는 아이템은 장착 실패</li>
+              <li>· 슬롯 최대 수량 검사 + <code>SlotBlockModule</code> 기반 충돌 검사</li>
+              <li>· 단일 슬롯은 기존 장비 자동 교체, 장신구 5번째 장착은 실패</li>
+              <li>· 장착 프리팹 생성 및 손/장착 위치 Attach</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="equipment-active-state"></div>
+          <div class="todo-list__content">
+            장착 상태와 활성 상태 분리
+            <ul class="todo-list__sub">
+              <li>· 한손/양손 전환 가능 무기는 양손 상태에서 <code>MeleeSubWeapon</code> 비활성</li>
+              <li>· 양손 전용 무기는 기존 <code>MeleeSubWeapon</code> 자동 해제</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="inventory-component"></div>
+          <div class="todo-list__content">
+            <code>InventoryComponent</code> 구현
+            <ul class="todo-list__sub">
+              <li>· <code>AddItem(ItemData)</code> / <code>RemoveItem(ItemData)</code></li>
+              <li>· 아이템 목록 + 최대 슬롯 수 제한</li>
+              <li>· <kbd>Tab</kbd> 인벤토리 토글 및 UI 연결 포인트 준비</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="todo-list__checkbox" data-id="item-pickup"></div>
+          <div class="todo-list__content">
+            월드 아이템 픽업 — <kbd>E</kbd> Tap 입력 → <code>InventoryComponent.AddItem()</code>
+            <div class="todo-list__note">WorldItem MonoBehaviour: Collider trigger + ItemData 참조 보유</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
   </section>
 
   <div class="spacer"></div>

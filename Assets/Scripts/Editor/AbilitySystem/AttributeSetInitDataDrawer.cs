@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Core.AbilitySystem.Attribute;
+using Editor.Utility;
 using UnityEditor;
 using UnityEngine;
 
@@ -36,14 +37,12 @@ namespace Editor.AbilitySystem
 
             SerializedProperty attributesProperty = property.FindPropertyRelative(AttributesPropertyName);
 
-            float dragHandleWidth = EditorGUIUtility.singleLineHeight;
-
             Type resolvedType = ResolveType(attributeSetTypeNameProperty.stringValue);
             GUIContent foldoutLabel = resolvedType != null ? new GUIContent(resolvedType.Name) : label;
 
-            Rect foldoutRect = new Rect(position.x + dragHandleWidth, position.y, position.width - dragHandleWidth, EditorGUIUtility.singleLineHeight);
+            Rect foldoutRect = EditorDrawUtility.GetFoldoutRect(position);
 
-            property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, foldoutLabel, true);
+            property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, foldoutLabel, true, EditorDrawUtility.BoldFoldoutStyle);
 
             if (!property.isExpanded)
             {
