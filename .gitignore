@@ -103,3 +103,6 @@ InitTestScene*.unity*
 
 # Claude Code local settings (personal, machine-specific)
 .claude/settings.local.json
+
+# MCP server config (machine-specific absolute paths; off by default, approve via /mcp when needed)
+.mcp.json
