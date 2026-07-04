@@ -19,13 +19,13 @@
 ```
 dev-docs/
 ├── agent/                      # 에이전트 작업용 (본 규약이 관리하는 대상)
-│   ├── HARNESS.md              # 본 문서 (작업 규약)
+│   ├── HARNESS.md              # 본 문서 (프로세스 규약: feature 추적·세션 프로토콜)
 │   ├── feature-list.md         # 전체 feature 목록 및 상태 대시보드
 │   ├── feature-progress-TEMPLATE.md
 │   └── feature/
-│       ├── <feature-id>-progress.md   # feature별 진행 문서
-│       ├── combat-core-progress.md    # 예시
-│       └── item-system-progress.md    # 예시
+│       └── <feature-id>/           # feature별 폴더
+│           ├── progress.md          # 진행 문서 (필수)
+│           └── HARNESS.md           # feature 전용 하네스/설계·기획 문서 (선택)
 └── project/                    # 프로젝트 자료 (작업 규약 대상 아님)
     ├── design.md               # 게임 기획
     ├── CODE_CONVENTION.md      # 코드 컨벤션
@@ -33,9 +33,10 @@ dev-docs/
     └── architecture/           # 시스템 구조·설계 문서
 ```
 
-- feature-id는 **kebab-case 영문 소문자**로 짓는다. (예: `combat-core`, `enemy-ai`, `save-load`)
-- progress 파일명은 반드시 `<feature-id>-progress.md` 형식을 지킨다.
-- `feature-list.md`에 없는 feature의 progress 파일을 만들지 않는다. (등록이 먼저다)
+- feature-id는 **kebab-case 영문 소문자**로 짓는다. (예: `combat-core`, `enemy-ai`, `item-system`)
+- 각 feature는 `feature/<feature-id>/` 폴더를 가지며, 진행 문서는 반드시 그 안에 `progress.md`로 둔다.
+- feature 고유의 **구현 방향·불변 조건·로드맵 또는 설계/기획**이 방대하면 같은 폴더에 `HARNESS.md`(feature 전용 하네스/설계 문서)를 둔다. 본 문서(일반 HARNESS)는 **프로세스 규약**, feature `HARNESS.md`는 **그 feature의 구현 규약/설계**로 역할이 다르다. 충돌 시 일반 HARNESS의 프로세스 규약이 우선하되 충돌을 보고한다.
+- `feature-list.md`에 없는 feature의 폴더를 만들지 않는다. (등록이 먼저다)
 
 ---
 
@@ -45,7 +46,7 @@ dev-docs/
 
 1. `dev-docs/agent/HARNESS.md` (본 문서)를 읽는다.
 2. `dev-docs/agent/feature-list.md`를 읽고 전체 현황을 파악한다.
-3. 작업 대상 feature의 `dev-docs/agent/feature/<feature-id>-progress.md`를 읽는다.
+3. 작업 대상 feature의 `dev-docs/agent/feature/<feature-id>/progress.md`를 읽는다. (같은 폴더에 `HARNESS.md`가 있으면 그 feature의 구현 규약/설계이므로 함께 읽는다)
 4. progress의 `## 다음 작업` 섹션과 사용자의 지시를 대조한다.
    - 충돌 시 사용자 지시가 우선하며, 변경 사유를 progress에 기록한다.
 5. progress 내용과 실제 코드의 정합성을 간단히 확인한다. (핵심 파일 존재 여부, 최근 작업 반영 여부)
@@ -96,7 +97,7 @@ PLANNED → IN-PROGRESS → DONE
 ```markdown
 | ID | Feature | 상태 | 우선순위 | 의존 | Progress |
 |---|---|---|---|---|---|
-| combat-core | 근접 전투 코어 | 🔧 IN-PROGRESS | P0 | - | [링크](feature/combat-core-progress.md) |
+| combat-core | 근접 전투 코어 | 🔧 IN-PROGRESS | P0 | - | [링크](feature/combat-core/progress.md) |
 ```
 
 - 우선순위: `P0`(필수) / `P1`(중요) / `P2`(여유 시)
@@ -161,7 +162,7 @@ PLANNED → IN-PROGRESS → DONE
 
 ### 신규 feature 등록
 1. `feature-list.md`에 행 추가 (`📋 PLANNED`)
-2. 템플릿 기반으로 `dev-docs/agent/feature/<feature-id>-progress.md` 생성
+2. `feature/<feature-id>/` 폴더를 만들고, 템플릿 기반으로 `progress.md` 생성 (구현 방향·불변 조건·로드맵이 방대하면 같은 폴더에 `HARNESS.md`도 작성)
 3. `목표`, `수용 기준`, `범위`를 반드시 채운 후 작업 착수
 
 ### 완료 처리

@@ -10,16 +10,16 @@
 
 | ID | Feature | 상태 | 우선순위 | 의존 | Progress |
 |---|---|---|---|---|---|
-| _(아직 등록된 feature 없음)_ | | | | | |
+| item-system | 전투 아이템 시스템 | 🔧 IN-PROGRESS | P0 | - | [progress](feature/item-system/progress.md) · [HARNESS](feature/item-system/HARNESS.md) |
 
-<!-- 행 형식 예시 (실제 등록 시 위 안내 행을 지우고 추가):
-| combat-core | 근접 전투 코어 | 🔧 IN-PROGRESS | P0 | - | [progress](feature/combat-core-progress.md) |
+<!-- 행 형식 예시 (실제 등록 시 참고):
+| combat-core | 근접 전투 코어 | 🔧 IN-PROGRESS | P0 | - | [progress](feature/combat-core/progress.md) |
 -->
 
 ## 상태 요약
 
 - 📋 PLANNED: 0
-- 🔧 IN-PROGRESS: 0
+- 🔧 IN-PROGRESS: 1
 - ⏸️ BLOCKED: 0
 - ✅ DONE: 0
 - 🗄️ ARCHIVED: 0
