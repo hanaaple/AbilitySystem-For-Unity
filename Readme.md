@@ -1,159 +1,34 @@
-# Code Convention
+# Spectral-Raid
 
-Unity C# 코드 컨벤션 문서입니다.  
-네이밍/포맷팅 규칙은 `.editorconfig`에 의해 자동 적용되며, 이 문서는 그 기준을 설명합니다.
+**Spectral-Raid** — 제한된 시야와 소리 기반 정보로 위험을 판단해 탈출을 결정하는 5~8분 세션 기반 탑다운 전술 액션 게임.
 
----
+- 장르: Extraction-lite 액션 + Roguelite 성장 (싱글플레이, 멀티플레이 확장 고려 구조)
+- 핵심 차별점: 강하게 제한된 시야 + 사운드 중심 정보 인지
+- 세션 구조: 탐색 → 전투/레벨업 → 루팅 → 탈출 판단 (세션 타이머 5~8분)
+- 세션 간 성장: Soul Shard로 영구 업그레이드, 스킬 해금
 
-## 네이밍
+## 패키지
 
-| 대상 | 규칙 | 예시 |
-|---|---|---|
-| 클래스 / 구조체 | PascalCase | `PlayerController` |
-| 인터페이스 | `I` + PascalCase | `IDamageable` |
-| 메서드 | PascalCase | `TakeDamage()` |
-| 프로퍼티 | PascalCase | `IsGrounded` |
-| public 필드 | PascalCase | `MoveSpeed` |
-| private 필드 | `_` + camelCase | `_health`, `_rigidbody` |
-| 지역 변수 | camelCase | `deltaTime` |
-| 매개 변수 | camelCase | `damage` |
-| 상수 | PascalCase | `MaxHealth` |
-| 이벤트 | `On` + PascalCase | `OnDeath`, `OnDamaged` |
-| 열거형 | PascalCase | `GameState.Playing` |
+- **Input System** v1.19.0 — 신 Input System (레거시 미사용)
+- **Cinemachine** v2.10.7
+- **URP** v17.3.0
+- **UniTask** (Cysharp) — async/await
+- **R3** (Cysharp) — 반응형 확장
+- **AI Navigation** v2.0.11
 
-```csharp
-public class PlayerController : MonoBehaviour
-{
-    public float MoveSpeed = 5f;
+## 프로젝트 위키
 
-    [SerializeField] private float _jumpForce = 8f;
-    private Rigidbody _rigidbody;
+기술 설계와 **선택 이유**를 한 페이지로 정리한 포트폴리오용 위키 → [wiki/index.html](wiki/index.html) (브라우저로 바로 열기)
 
-    public event Action OnDeath;
+- 마지막 갱신: 2026-06-13
+- ⚠️ 진행 중인 ItemSystem / EquipmentSystem은 아직 미반영 (수동 갱신)
 
-    public void TakeDamage(int damage)
-    {
-        _health -= damage;
-    }
-}
-```
+## 문서
 
----
+작업용 문서는 [dev-docs/](dev-docs/)에 모여 있다. (`agent/` 에이전트 작업용, `project/` 프로젝트 자료)
 
-## 포맷팅
-
-### 중괄호 — Allman 스타일
-
-```csharp
-// ✅
-private void Update()
-{
-    if (IsGrounded)
-    {
-        Jump();
-    }
-}
-
-// ❌
-private void Update() {
-    if (IsGrounded) {
-        Jump();
-    }
-}
-```
-
-### 중괄호 생략 금지
-
-```csharp
-// ✅
-if (isDead)
-{
-    return;
-}
-
-// ❌
-if (isDead)
-    return;
-```
-
-### var 사용
-
-타입이 명확한 경우 외에는 `var` 사용을 권장하지 않습니다.
-
-```csharp
-// ✅
-var player = GetComponent<PlayerController>();
-
-// ❌ 타입이 불명확한 경우 명시
-var scoreMap = GetScoreMap();
-```
-
-### this 생략
-
-```csharp
-// ✅
-_health = 100;
-
-// ❌
-this._health = 100;
-```
-
----
-
-## 접근 한정자
-
-접근 한정자는 항상 명시합니다.
-
-```csharp
-// ✅
-private int _health;
-private void HandleInput() { }
-
-// ❌
-int _health;
-void HandleInput() { }
-```
-
----
-
-## Unity 특이사항
-
-### MonoBehaviour 메서드 순서
-
-```csharp
-public class Example : MonoBehaviour
-{
-    // 1. Fields
-    // 2. Properties
-    // 3. Unity Lifecycle (Awake → OnEnable → Start → Update → ...)
-    // 4. public Methods
-    // 5. private Methods
-    // 6. Event Callbacks
-}
-```
-
----
-
-## 주석
-
-### 공개 API는 XML 주석 사용
-
-```csharp
-/// <summary>
-/// 플레이어에게 데미지를 줍니다.
-/// </summary>
-/// <param name="damage">입힐 데미지 양</param>
-public void TakeDamage(int damage) { }
-```
-
-### 인라인 주석은 이유를 설명
-
-```csharp
-// ✅ 이유 설명
-// Rigidbody 이동은 FixedUpdate에서 처리해야 물리 연산이 정확함
-private void FixedUpdate() { }
-
-// ❌ 코드 반복
-// FixedUpdate 함수
-private void FixedUpdate() { }
-```
+- 게임 기획 (세션 구조·MVP 로드맵·씬 흐름·조작 스펙) — [dev-docs/project/design.md](dev-docs/project/design.md)
+- 아키텍처 (시스템 구조·설계) — [dev-docs/project/architecture/overview.md](dev-docs/project/architecture/overview.md)
+- 개발 도구(Unity MCP) 설정 — [dev-docs/project/dev-tools.md](dev-docs/project/dev-tools.md)
+- 코드 컨벤션 — [dev-docs/project/CODE_CONVENTION.md](dev-docs/project/CODE_CONVENTION.md)
+- 작업 규약 (Claude Code 가이드) — [CLAUDE.md](CLAUDE.md)

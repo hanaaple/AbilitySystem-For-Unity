@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"[작업 규약] feature(구현) 작업을 시작하기 전에 dev-docs/agent/feature-list.md와 dev-docs/agent/HARNESS.md를 읽고, 대상 feature의 dev-docs/agent/feature/<feature-id>-progress.md를 확인한다. 세션 종료 전 progress를 갱신한다. (문서 미기록 작업은 없었던 작업으로 간주)\"}}'",
+            "statusMessage": "작업 규약(HARNESS) 리마인더 주입"
+          }
+        ]
+      }
+    ]
+  }
+}
