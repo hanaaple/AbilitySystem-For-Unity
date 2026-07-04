@@ -38,8 +38,8 @@ Always respond in Korean (한국어).
 필요할 때만 열고, 코드 구조·설계를 바꿨으면 **같은 세션에서** 관련 `project/` 문서(특히 architecture)도 갱신한다.
 
 - Agent 작업 규약 (세션 프로토콜·기록 규칙) — `dev-docs/agent/HARNESS.md` (구현 작업 착수 전 읽는다)
-- feature 현황·진행 추적 — `dev-docs/agent/feature-list.md` (대시보드) · `dev-docs/agent/feature/<feature-id>-progress.md` (feature별 진행 문서)
+- feature 현황·진행 추적 — `dev-docs/agent/feature-list.md` (대시보드) · `dev-docs/agent/feature/<feature-id>/progress.md` (feature별 진행 문서; 구현 방향·불변조건·로드맵이 있으면 같은 폴더의 `HARNESS.md` = feature 전용 하네스/설계 문서). **해당 feature 구현 작업에 착수할 때만** 그 feature 폴더 문서를 연다 — 무관한 작업에선 열지 않는다 (토큰 낭비 금지)
 - 프로젝트 소개·패키지 — `Readme.md` (외부인이 프로젝트를 처음 볼 때를 위한 소개용. wiki 등 하위 링크는 작업에 불필요하므로 열어보지 않는다 — 토큰 낭비 금지)
 - 게임 기획 (컨셉·세션 구조·MVP 로드맵·씬 흐름·조작 스펙) — `dev-docs/project/design.md` (필요할 때만 참고. feature 문서(`feature-list.md`·progress)로 충분하면 깊이 확인하지 않는다)
-- 아키텍처 (시스템 구조·설계) — `dev-docs/project/architecture/overview.md` (전투·아이템 등 시스템 코드 작업 전 해당 시스템 문서 확인)
+- 아키텍처 (시스템 구조·설계) — `dev-docs/project/architecture/overview.md`. **해당 시스템 코드를 실제로 건드릴 때만** 그 시스템 문서를 연다 — 무관한 작업·평소엔 열지 않는다 (토큰 낭비 금지)
 - 개발 도구(Unity MCP) 설정 — `dev-docs/project/dev-tools.md`
