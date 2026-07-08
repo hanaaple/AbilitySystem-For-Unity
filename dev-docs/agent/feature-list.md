@@ -4,22 +4,34 @@
 > 상태 정의 및 전이 규칙은 [HARNESS.md](HARNESS.md) §4 참조.
 > **이 표와 각 progress 문서의 상태는 항상 동기화되어야 한다.**
 
-최종 갱신: 2026-07-04
+최종 갱신: 2026-07-06 (KST)
 
 ## 현황
 
+> feature는 **그룹(대분류)** 아래 하위 feature로 묶는다. 그룹 폴더에 공유 하네스/설계가 있으면 그룹 헤더에 링크한다. (구조 규약: [HARNESS.md](HARNESS.md) §2)
+
+### 🧩 ability-system — 어빌리티 시스템 그룹 (GAS-like)
+아키텍처: [overview](../project/architecture/ability-system/overview.md)
+
 | ID | Feature | 상태 | 우선순위 | 의존 | Progress |
 |---|---|---|---|---|---|
-| item-system | 전투 아이템 시스템 | 🔧 IN-PROGRESS | P0 | - | [progress](feature/item-system/progress.md) · [HARNESS](feature/item-system/HARNESS.md) |
+| attribute | 어트리뷰트 (수치·Set·Handle·SO 초기화) | ✅ DONE | P0 | - | [progress](feature/ability-system/attribute/progress.md) |
+| gameplay-effect | 게임플레이 이펙트 (GE·Spec·Active·Modifier) | 🔧 IN-PROGRESS | P0 | attribute | [progress](feature/ability-system/gameplay-effect/progress.md) |
+| gameplay-ability | 게임플레이 어빌리티 (GA·스킬 실행) | 📋 PLANNED | P1 | attribute, gameplay-effect | [progress](feature/ability-system/gameplay-ability/progress.md) |
 
-<!-- 행 형식 예시 (실제 등록 시 참고):
-| combat-core | 근접 전투 코어 | 🔧 IN-PROGRESS | P0 | - | [progress](feature/combat-core/progress.md) |
--->
+### 🧩 item-system — 아이템 시스템 그룹
+공유 하네스: [HARNESS](feature/item-system/HARNESS.md)
+
+| ID | Feature | 상태 | 우선순위 | 의존 | Progress |
+|---|---|---|---|---|---|
+| item | 아이템 코어 (데이터·인스턴스·모듈·런타임) | 🔧 IN-PROGRESS | P0 | - | [progress](feature/item-system/item/progress.md) |
+| inventory | 인벤토리 (개수·스택) | 🔧 IN-PROGRESS | P1 | item | [progress](feature/item-system/inventory/progress.md) |
+| equipment | 장비 장착 | 🔧 IN-PROGRESS | P1 | item, inventory | [progress](feature/item-system/equipment/progress.md) |
 
 ## 상태 요약
 
-- 📋 PLANNED: 0
-- 🔧 IN-PROGRESS: 1
+- 📋 PLANNED: 1
+- 🔧 IN-PROGRESS: 4
 - ⏸️ BLOCKED: 0
-- ✅ DONE: 0
+- ✅ DONE: 1
 - 🗄️ ARCHIVED: 0

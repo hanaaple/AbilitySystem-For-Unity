@@ -2,7 +2,7 @@
 
 `Assets/Scripts/Core/ItemSystem/` · `Assets/Scripts/Item/`
 
-> **설계 권위:** 이 시스템의 설계 방향은 [`feature/item-system/HARNESS.md`](../../agent/feature/item-system/HARNESS.md)(feature 전용 하네스)가 **단일 진실**이다. 이 문서는 그 설계를 아키텍처 altitude로 요약할 뿐이며, 불변 조건(INV)·검증·로드맵의 상세는 harness를 본다. 문서·코드가 harness와 어긋나면 harness가 우선.
+> **설계 권위:** 이 시스템의 설계 방향은 [`feature/item-system/HARNESS.md`](../../agent/feature/item-system/HARNESS.md)(item-system 그룹 공유 하네스)가 **단일 진실**이다. 이 문서는 그 설계를 아키텍처 altitude로 요약할 뿐이며, 불변 조건(INV)·검증·로드맵의 상세는 harness를 본다. 문서·코드가 harness와 어긋나면 harness가 우선.
 
 아이템을 **모듈 조합**으로 정의하고, 장착 시 런타임 인스턴스가 모듈을 읽어 동작한다. 아이템별 상속 없이 — 특수화는 Module·인터페이스 조합으로만 — 확장한다.
 
@@ -36,6 +36,6 @@ ItemBehaviour (MonoBehaviour)  표현·이벤트 중계만. 동작 로직 없음
 
 - **코어:** `Assets/Scripts/Core/ItemSystem/` — `ItemData` · `ItemInstance` · `ItemBehaviour` · `Module/ItemModule` · `Module/ModuleContext`
 - **모듈·아이템 정의:** `Assets/Scripts/Item/` — `Module/`(StatModifier·Input 등), 아이템별 데이터
-- **장비 슬롯:** `EquipmentComponent` — 장착 슬롯·규칙 관리. *아이템 모듈 조합*과 *슬롯 규칙*은 분리된 축이다. (세부는 코드 참고)
+- **장비:** `Assets/Scripts/Core/ItemSystem/Equipment/`(`Core.ItemSystem.Equipment`) — 시스템 컴포넌트 `EquipmentComponent`(장착 슬롯·규칙·표현 겸함). Inventory·Module과 대등한 ItemSystem 서브시스템. 단, 장착 계약 `IEquippable`·`SlotType`은 **능력 인터페이스 계열**이라 서브시스템이 아니라 카테고리 SO 옆(`EquipItem.cs`, `Core.ItemSystem` — `ConsumeItem.cs`의 `IStackable`과 대칭)에 둔다. *아이템 모듈 조합*과 *슬롯 규칙*은 분리된 축이다. (세부는 코드 참고)
 
-> **이관 중:** 현재 코드에는 상속 기반 잔재(아이템별 `~ItemInstance` 클래스 등)가 남아 있을 수 있으며, 이는 INV-2 위반으로 **제거·이관 대상**이다. 목표는 상속이 아닌 모듈 조합 + POCO `ItemInstance`. 진행 상황은 [`feature/item-system/progress.md`](../../agent/feature/item-system/progress.md) 참조.
+> **이관 중:** 현재 코드에는 상속 기반 잔재(아이템별 `~ItemInstance` 클래스 등)가 남아 있을 수 있으며, 이는 INV-2 위반으로 **제거·이관 대상**이다. 목표는 상속이 아닌 모듈 조합 + POCO `ItemInstance`. 진행 상황은 [`feature/item-system/item/progress.md`](../../agent/feature/item-system/item/progress.md) 참조.
