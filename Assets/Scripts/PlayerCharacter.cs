@@ -10,7 +10,7 @@ public class PlayerCharacter : CharacterBase
 {
     [SerializeField] private Transform model;
     [SerializeField] private float rotationSmoothing = 15f;
-    [SerializeField] private GameplayEffect possessEffect;
+    [SerializeField] private GameplayEffectAsset possessEffect;
 
     private AbilitySystemComponent _asc;
     private EquipmentComponent _equipment;

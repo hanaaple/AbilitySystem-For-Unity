@@ -29,7 +29,7 @@ namespace Core.ItemSystem.Inventory.Editor
             }
 
             // --- 소비(스택): maxStack=3 으로 병합·오버플로 ---
-            ConsumeItem potion = MakeConsume(maxStack: 3);
+            ConsumeItemAsset potion = MakeConsume(maxStack: 3);
             ItemSystem.Inventory.Inventory inv = new ItemSystem.Inventory.Inventory();
             int changed = 0;
             inv.OnChanged += () => changed++;
@@ -42,7 +42,7 @@ namespace Core.ItemSystem.Inventory.Editor
             Check("OnChanged Add마다 1회 = 2회", changed == 2);
 
             // --- 장비(비스택): 개별 엔트리 + per-item ItemInstance ---
-            EquipItem sword = MakeEquip();
+            EquipItemAsset sword = MakeEquip();
             ItemSystem.Inventory.Inventory inv2 = new ItemSystem.Inventory.Inventory();
             inv2.Add(sword, 2);
             Check("장비는 IStackable 아님", !(sword is IStackable));
@@ -71,18 +71,18 @@ namespace Core.ItemSystem.Inventory.Editor
         }
 
         // maxStack은 private 직렬화 필드라 테스트 값 주입에 리플렉션을 쓴다(에디터 전용 검증 한정).
-        private static ConsumeItem MakeConsume(int maxStack)
+        private static ConsumeItemAsset MakeConsume(int maxStack)
         {
-            ConsumeItem item = ScriptableObject.CreateInstance<ConsumeItem>();
-            typeof(ConsumeItem)
+            ConsumeItemAsset item = ScriptableObject.CreateInstance<ConsumeItemAsset>();
+            typeof(ConsumeItemAsset)
                 .GetField("maxStack", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(item, maxStack);
             return item;
         }
 
-        private static EquipItem MakeEquip()
+        private static EquipItemAsset MakeEquip()
         {
-            return ScriptableObject.CreateInstance<EquipItem>();
+            return ScriptableObject.CreateInstance<EquipItemAsset>();
         }
     }
 }

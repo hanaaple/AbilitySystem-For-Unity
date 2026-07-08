@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Core.AbilitySystem.Effect
 {
     [CreateAssetMenu(menuName = "Ability System/Gameplay Effect", fileName = "GE_New")]
-    public sealed class GameplayEffect : ScriptableObject
+    public sealed class GameplayEffectAsset : ScriptableObject
     {
         [SerializeField] private GameplayEffectType type;
         [Min(0f)] [SerializeField] private float duration;
@@ -15,7 +15,7 @@ namespace Core.AbilitySystem.Effect
         [SerializeField] private bool executePeriodicEffectOnApplication = true;
 
         [SerializeField] private List<GameplayModifier> modifiers;
-        [SerializeField] private List<GameplayEffectExecution> executions;
+        [SerializeField] private List<GameplayEffectExecutionAsset> executions;
 
         // TODO GE 스택 구현
 
@@ -26,6 +26,6 @@ namespace Core.AbilitySystem.Effect
         public float Period => period;
         public bool ExecutePeriodicEffectOnApplication => executePeriodicEffectOnApplication;
         public IReadOnlyList<GameplayModifier> Modifiers => modifiers;
-        public IReadOnlyList<GameplayEffectExecution> Executions => executions;
+        public IReadOnlyList<GameplayEffectExecutionAsset> Executions => executions;
     }
 }

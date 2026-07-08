@@ -5,15 +5,15 @@ using UnityEngine;
 namespace Core.AbilitySystem.Attribute
 {
     [Serializable]
-    public sealed class AttributeSetInitData
+    public sealed class AttributeSetDefinition
     {
         [SerializeField]
         private string attributeSetTypeName;
 
         [SerializeField]
-        private List<AttributeFieldInitData> attributes = new();
+        private List<AttributeFieldDefinition> attributes = new();
 
-        public IReadOnlyList<AttributeFieldInitData> Attributes => attributes;
+        public IReadOnlyList<AttributeFieldDefinition> Attributes => attributes;
 
         public Type GetAttributeSetType()
         {

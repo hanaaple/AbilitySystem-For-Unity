@@ -15,8 +15,8 @@
 
 ## ScriptableObject 초기화
 
-`AttributeInitData`(SO) → `AttributeSetInitData[]` → `AttributeFieldInitData`(fieldName + BaseValue).
-`ASC.Awake()`가 Reflection(`Activator.CreateInstance` + `FieldInfo.SetValue`)으로 AttributeSet 인스턴스를 생성하고 BaseValue를 세팅한다. 에디터 배선은 `AttributeInitDataDrawer` / `AttributeSetInitDataDrawer` / `AttributeReflectionUtility`(Editor)가 담당.
+`AttributeDefinitionAsset`(SO) → `AttributeSetDefinition[]` → `AttributeFieldDefinition`(fieldName + BaseValue). (초기값 정의 계층. 런타임 `AttributeSet`/`AttributeData`와 이름으로 구분.)
+`ASC.Awake()`가 Reflection(`Activator.CreateInstance` + `FieldInfo.SetValue`)으로 AttributeSet 인스턴스를 생성하고 BaseValue를 세팅한다. 에디터 배선은 `AttributeDefinitionAssetDrawer` / `AttributeSetDefinitionDrawer` / `AttributeReflectionUtility`(Editor)가 담당.
 
 ## ASC — Attribute API
 

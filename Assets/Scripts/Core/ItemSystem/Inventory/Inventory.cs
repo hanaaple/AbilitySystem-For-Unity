@@ -17,7 +17,7 @@ namespace Core.ItemSystem.Inventory
         public event Action OnChanged;
 
         // count개를 담는다. 스택 아이템은 병합, 그 외(장비 등)는 개별 엔트리.
-        public void Add(ItemData data, int count = 1)
+        public void Add(ItemDataAsset data, int count = 1)
         {
             if (data == null || count <= 0)
             {
@@ -42,7 +42,7 @@ namespace Core.ItemSystem.Inventory
         }
 
         // 원자적 제거: 총 보유량이 부족하면 아무것도 지우지 않고 false를 돌려준다(부분 소비 방지).
-        public bool Remove(ItemData data, int count = 1)
+        public bool Remove(ItemDataAsset data, int count = 1)
         {
             if (data == null || count <= 0 || CountOf(data) < count)
             {
@@ -84,7 +84,7 @@ namespace Core.ItemSystem.Inventory
             return true;
         }
 
-        public int CountOf(ItemData data)
+        public int CountOf(ItemDataAsset data)
         {
             int sum = 0;
             for (int i = 0; i < _entries.Count; i++)
@@ -99,7 +99,7 @@ namespace Core.ItemSystem.Inventory
         }
 
         // 카테고리 파생 질의(D5) — 저장은 단일 컬렉션, 필터는 질의로. 예: Query(d => d is IEquippable).
-        public IEnumerable<InventoryEntry> Query(Func<ItemData, bool> predicate)
+        public IEnumerable<InventoryEntry> Query(Func<ItemDataAsset, bool> predicate)
         {
             for (int i = 0; i < _entries.Count; i++)
             {
@@ -122,7 +122,7 @@ namespace Core.ItemSystem.Inventory
             OnChanged?.Invoke();
         }
 
-        private void AddStackable(ItemData data, int maxStack, int count)
+        private void AddStackable(ItemDataAsset data, int maxStack, int count)
         {
             // 1) 같은 아이템의 미충족(Count < maxStack) 엔트리부터 채운다.
             for (int i = 0; i < _entries.Count && count > 0; i++)

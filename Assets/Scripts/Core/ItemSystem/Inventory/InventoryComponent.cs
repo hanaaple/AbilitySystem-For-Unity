@@ -13,7 +13,7 @@ namespace Core.ItemSystem.Inventory
     public class InventoryComponent : MonoBehaviour
     {
         // 시작 시 담을 아이템(인스펙터에서 지정). 테스트/초기 지급용.
-        [SerializeField] private List<ItemData> startingItems = new();
+        [SerializeField] private List<ItemDataAsset> startingItems = new();
 
         private readonly ItemSystem.Inventory.Inventory _inventory = new();
         private CharacterBase _owner;
@@ -24,7 +24,7 @@ namespace Core.ItemSystem.Inventory
         {
             _owner = GetComponent<CharacterBase>();
 
-            foreach (ItemData item in startingItems)
+            foreach (ItemDataAsset item in startingItems)
             {
                 if (item != null)
                 {

@@ -10,7 +10,7 @@ namespace Item
     [RequireComponent(typeof(Collider))]
     public class ItemPickup : MonoBehaviour
     {
-        [SerializeField] private ItemData item;
+        [SerializeField] private ItemDataAsset item;
 
         private void Reset()
         {

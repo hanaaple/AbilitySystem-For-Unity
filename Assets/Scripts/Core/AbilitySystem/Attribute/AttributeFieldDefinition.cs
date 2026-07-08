@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Core.AbilitySystem.Attribute
 {
     [Serializable]
-    public sealed class AttributeFieldInitData
+    public sealed class AttributeFieldDefinition
     {
         [SerializeField]
         private string fieldName;

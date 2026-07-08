@@ -16,9 +16,9 @@ namespace Core.ItemSystem.Module
 
         public abstract IModuleState CreateState();
 
-        public virtual bool IsValidFor(ItemData itemData)
+        public virtual bool IsValidFor(ItemDataAsset ItemDataAsset)
         {
-            return itemData != null;
+            return ItemDataAsset != null;
         }
 
         // 상태가 필요한 모듈을 위해 자기 상태를 함께 받는다(무상태 모듈은 state=null).

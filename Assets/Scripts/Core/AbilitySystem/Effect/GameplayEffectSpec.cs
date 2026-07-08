@@ -4,18 +4,18 @@ using UnityEngine;
 namespace Core.AbilitySystem.Effect
 {
     /// <summary>
-    /// GameplayEffect(에셋)의 런타임 인스턴스.
+    /// GameplayEffectAsset(에셋)의 런타임 인스턴스.
     /// 생성 시점에 각 Modifier를 GameplayModifierSpec으로 변환해 캐싱한다.
     /// </summary>
     public sealed class GameplayEffectSpec
     {
-        public GameplayEffect Definition { get; }
+        public GameplayEffectAsset Definition { get; }
         public GameplayEffectContextHandle Context { get; }
         public float Level { get; }
 
         public IReadOnlyList<GameplayModifierSpec> Modifiers { get; }
 
-        public GameplayEffectSpec(GameplayEffect definition, GameplayEffectContextHandle context = default, float level = 1f)
+        public GameplayEffectSpec(GameplayEffectAsset definition, GameplayEffectContextHandle context = default, float level = 1f)
         {
             Definition = definition;
             Context = context;
