@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"[작업 규약] feature(구현) 작업을 시작하기 전에 dev-docs/agent/feature-list.md와 dev-docs/agent/HARNESS.md를 읽고, 대상 feature의 dev-docs/agent/feature/<feature-id>-progress.md를 확인한다. 세션 종료 전 progress를 갱신한다. (문서 미기록 작업은 없었던 작업으로 간주)\"}}'",
-            "statusMessage": "작업 규약(HARNESS) 리마인더 주입"
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"[재개] 이어하기(\\u0027하던거 하자\\u0027 등)면 dev-docs/agent/NOW.md 하나만 읽고 곧장 그 액션부터 실행한다 — feature-list·progress·worklog·코드를 미리 훑지 않는다(필요할 때만 링크로 연다). 세션 종료 전 NOW.md를 갱신한다(feature 상태가 바뀌었으면 progress·feature-list도). 문서 미기록 작업은 없었던 작업으로 간주.\"}}'",
+            "statusMessage": "재개 지점(NOW.md) 리마인더 주입"
           }
         ]
       }

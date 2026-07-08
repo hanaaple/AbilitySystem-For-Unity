@@ -1,7 +1,9 @@
 // ─── Right panel metadata ─────────────────────────────────────
+// `synced`: 이 섹션이 반영한 상류(코드/feature progress) 상태 시각 (KST). 상류의 `최종 갱신`보다
+// 오래되면 그 섹션은 낡음(갱신 후보) — dev-docs/agent/HARNESS.md §3.4. 비교용 데이터(렌더링 안 함).
 const SECTION_META = {
-  overview: null,
-  mvp: null,
+  overview: { synced: '2026-07-05 20:18' },
+  mvp: { synced: '2026-07-05 20:18' },
   packages: {
     decisions: [
       'UniTask / R3로 async·반응형 패턴 통일 — 코루틴 혼용 없이 일관된 비동기 처리',
@@ -9,6 +11,7 @@ const SECTION_META = {
       'AI Navigation으로 NavMesh 경로 — 직접 구현 대신 검증된 솔루션 채택',
     ],
     sources: ['Packages/manifest.json'],
+    synced: '2026-07-05 20:18',
   },
   arch: {
     decisions: [
@@ -21,6 +24,7 @@ const SECTION_META = {
       'Scripts/Core/PlayerController.cs',
       'Scripts/PlayerCharacter.cs',
     ],
+    synced: '2026-07-05 20:18',
   },
   'ability-system': {
     decisions: [
@@ -30,6 +34,7 @@ const SECTION_META = {
       'Spec 생성 시 Reflection 1회 격리 — AttributeHandle이 FieldInfo 캐싱, 이후 런타임 string 탐색 없음',
     ],
     sources: ['Scripts/Core/AbilitySystem/'],
+    synced: '2026-07-05 20:18',
   },
   scenes: {
     decisions: [
@@ -37,6 +42,7 @@ const SECTION_META = {
       'GameScene 세션마다 Single Load 리셋 — 상태 누적 없이 매 세션 클린 스타트 보장',
     ],
     sources: ['Scenes/'],
+    synced: '2026-07-05 20:18',
   },
   camera: {
     decisions: [
@@ -44,6 +50,7 @@ const SECTION_META = {
       'CameraTarget 자식 오브젝트로 Follow 분리 — 카메라 오프셋을 코드 없이 Inspector 조정 가능',
     ],
     sources: ['Prefabs/Player.prefab'],
+    synced: '2026-07-05 20:18',
   },
   input: {
     decisions: [
@@ -51,6 +58,7 @@ const SECTION_META = {
       'PlayerInputActions.cs 자동 생성 — 소스는 .inputactions, 직접 수정 금지',
     ],
     sources: ['Input/PlayerInputActions.inputactions'],
+    synced: '2026-07-05 20:18',
   },
   convention: {
     decisions: [
@@ -59,8 +67,8 @@ const SECTION_META = {
       '접근 한정자 항상 명시 — 의도하지 않은 internal 노출 방지',
     ],
     sources: ['.editorconfig'],
+    synced: '2026-07-05 20:18',
   },
-  todo: null,
 };
 
 // ─── Meta card (floating) ─────────────────────────────────────
@@ -131,11 +139,6 @@ const NAV = [
       { href: '#convention', icon: '📐', text: '코드 컨벤션', children: [
         { href: '#convention-naming', text: '네이밍 규칙' },
         { href: '#convention-style',  text: '스타일 규칙' },
-      ]},
-      { href: '#todo', icon: '✅', text: 'TODO', children: [
-        { href: '#todo-github',  text: 'GitHub 설정' },
-        { href: '#todo-ability', text: 'AbilitySystem' },
-        { href: '#todo-item',    text: 'Item Module · Equipment' },
       ]},
     ],
   },
@@ -316,54 +319,6 @@ function initCodeCopy() {
   });
 }
 
-// ─── Todo checkboxes ──────────────────────────────────────────
-function initTodoCheckboxes() {
-  const STORAGE_KEY = 'spectral-raid-todo';
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-
-  function save(id, checked) {
-    saved[id] = checked;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-  }
-
-  function setChecked(checkbox, checked) {
-    const li = checkbox.closest('li');
-    checkbox.classList.toggle('is-checked', checked);
-    if (li) li.classList.toggle('is-done', checked);
-  }
-
-  function updateGroupProgress(group) {
-    const checkboxes = group.querySelectorAll('.todo-list__checkbox');
-    const total = checkboxes.length;
-    if (total === 0) return;
-    const done = group.querySelectorAll('.todo-list__checkbox.is-checked').length;
-    const pct = Math.round((done / total) * 100);
-
-    const progressEl = group.querySelector('.todo-group__progress');
-    if (progressEl) progressEl.textContent = `${done} / ${total}`;
-
-    const barFill = group.querySelector('.todo-group__bar-fill');
-    if (barFill) barFill.style.width = `${pct}%`;
-  }
-
-  document.querySelectorAll('.todo-list__checkbox').forEach((checkbox) => {
-    const id = checkbox.dataset.id;
-    if (!id) return;
-
-    if (saved[id]) setChecked(checkbox, true);
-
-    checkbox.addEventListener('click', () => {
-      const next = !checkbox.classList.contains('is-checked');
-      setChecked(checkbox, next);
-      save(id, next);
-      const group = checkbox.closest('.todo-group');
-      if (group) updateGroupProgress(group);
-    });
-  });
-
-  document.querySelectorAll('.todo-group').forEach(updateGroupProgress);
-}
-
 // ─── Dot nav ──────────────────────────────────────────────────
 const dotNav = (() => {
   let el = null;
@@ -442,5 +397,4 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   initAccordionExclusive();
   initCodeCopy();
-  initTodoCheckboxes();
 });
