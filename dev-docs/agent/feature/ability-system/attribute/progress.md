@@ -12,14 +12,14 @@
 ## 수용 기준 (Definition of Done)
 - [x] `AttributeSet` 타입별 등록/해제 (같은 타입 중복 불가)
 - [x] `AttributeHandle`로 BaseValue 읽기·쓰기 (FieldInfo 캐싱, string 탐색 없음)
-- [x] `AttributeInitData`(SO)로 초기값을 Reflection 세팅
+- [x] `AttributeDefinitionAsset`(SO)로 초기값을 Reflection 세팅
 - [x] 에디터 드로어로 Set·필드·초기값 배선
 
 ## 범위
 ### 포함
 - `AttributeSet`(마커) / `AttributeData` / `AttributeHandle`, `Character`·`CombatAttributeSet`
-- SO 초기화(`AttributeInitData`→`AttributeSetInitData`→`AttributeFieldInitData`) + ASC `AddAttributeSet`/`Get`/`SetBaseAttributeValue`
-- Editor 드로어(`AttributeInitDataDrawer`/`AttributeSetInitDataDrawer`/`AttributeReflectionUtility`)
+- SO 초기화(`AttributeDefinitionAsset`→`AttributeSetDefinition`→`AttributeFieldDefinition`) + ASC `AddAttributeSet`/`Get`/`SetBaseAttributeValue`
+- Editor 드로어(`AttributeDefinitionAssetDrawer`/`AttributeSetDefinitionDrawer`/`AttributeReflectionUtility`)
 ### 제외 (명시적으로 하지 않을 것)
 - CurrentValue 연산·Modifier(→ [gameplay-effect](../gameplay-effect/progress.md)) / 저장 / 네트워크
 

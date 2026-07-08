@@ -8,8 +8,8 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Attribute.Editor
 {
-    [CustomPropertyDrawer(typeof(AttributeSetInitData))]
-    public sealed class AttributeSetInitDataDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(AttributeSetDefinition))]
+    public sealed class AttributeSetDefinitionDrawer : PropertyDrawer
     {
         private const float LineGap = 4f;
         private const float SectionGap = 10f;
@@ -50,7 +50,7 @@ namespace Core.AbilitySystem.Attribute.Editor
             float y = position.y + EditorGUIUtility.singleLineHeight + LineGap;
 
             // 타입 선택 UI는 SubclassSelector 드로어를 재사용하되, 중복 제외 대상은 전용 드로어인 여기서 수집해 넘긴다.
-            // (AttributeSetInitData[] 배열 안의 중복 방지는 이 케이스의 특수 요구라, 범용 드로어에 넣지 않고 여기서 조립한다.)
+            // (AttributeSetDefinition[] 배열 안의 중복 방지는 이 케이스의 특수 요구라, 범용 드로어에 넣지 않고 여기서 조립한다.)
             Rect typeRect = new Rect(position.x, y, position.width, EditorGUIUtility.singleLineHeight);
             HashSet<string> usedByOthers = SubclassSelectorDrawer.CollectSiblingValues(attributeSetTypeNameProperty);
             SubclassSelectorDrawer.DrawSelector(typeRect, attributeSetTypeNameProperty, typeof(AttributeSet), usedByOthers, new GUIContent("Attribute Set"));

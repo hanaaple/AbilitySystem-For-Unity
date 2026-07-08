@@ -9,8 +9,8 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Attribute.Editor
 {
-    [CustomEditor(typeof(AttributeInitData))]
-    public sealed class AttributeInitDataDrawer : UnityEditor.Editor
+    [CustomEditor(typeof(AttributeDefinitionAsset))]
+    public sealed class AttributeDefinitionAssetDrawer : UnityEditor.Editor
     {
         private const string AttributeSetsPropertyName = "attributeSets";
         private const string TypeNamePropertyName = "attributeSetTypeName";
@@ -57,7 +57,7 @@ namespace Core.AbilitySystem.Attribute.Editor
         }
 
         // AttributeSet은 타입당 하나만 — 이미 쓰인 타입은 후보에서 제외(모듈과 달리 중복 불가).
-        // 수집 코어는 요소 드로어(AttributeSetInitDataDrawer)의 중복 제외와 공유한다(SubclassSelectorDrawer.CollectArrayValues).
+        // 수집 코어는 요소 드로어(AttributeSetDefinitionDrawer)의 중복 제외와 공유한다(SubclassSelectorDrawer.CollectArrayValues).
         // 여기선 "새로 추가"할 타입이라 제외 인덱스 없이 배열 전체를 본다.
         private IEnumerable<Type> GetAddableTypes()
         {

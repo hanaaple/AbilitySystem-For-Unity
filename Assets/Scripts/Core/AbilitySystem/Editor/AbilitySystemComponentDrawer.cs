@@ -184,7 +184,7 @@ namespace Core.AbilitySystem.Editor
 
         private static void DrawActiveEffect(int index, ActiveGameplayEffect active)
         {
-            GameplayEffect def = active.Spec.Definition;
+            GameplayEffectAsset def = active.Spec.Definition;
 
             EditorGUILayout.LabelField($"[{index}] {def.name}  ({def.Type})", EditorStyles.boldLabel);
 

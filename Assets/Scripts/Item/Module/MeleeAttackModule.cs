@@ -11,7 +11,7 @@ namespace Item.Module
     {
         // 명중 대상에게 적용할 데미지 효과. 모듈은 "무엇을" 적용할지 결정만 하고(INV-3),
         // 실제 오버랩 감지·적용은 시스템(EquipmentComponent)이 한다.
-        GameplayEffect DamageEffect { get; }
+        GameplayEffectAsset DamageEffect { get; }
 
         // 판정 반경(전방). 실제 판정도 시스템 몫이다.
         float Range { get; }
@@ -22,10 +22,10 @@ namespace Item.Module
     [Serializable]
     public sealed class MeleeAttackModule : StatelessModule, IWeaponAttack
     {
-        [SerializeField] private GameplayEffect damageEffect;
+        [SerializeField] private GameplayEffectAsset damageEffect;
         [SerializeField] private float range = 2f;
 
-        public GameplayEffect DamageEffect => damageEffect;
+        public GameplayEffectAsset DamageEffect => damageEffect;
         public float Range => range;
     }
 }

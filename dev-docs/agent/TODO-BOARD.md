@@ -11,10 +11,10 @@
 
 ## 📋 TODO (당장 목표)
 - [ ] Item Instance - Item Behaviour, Socket에 Item prefab 장착까지
-- [ ] Ability System에 Attribute 쪽에 Class 명이 헷갈리게 만들어놨는데 어떻게 해야 좋지
 
 ## 📋 TODO (순서 무관 우선순위 낮음)
 
+- [ ] **(docs)** SO→Asset 네이밍 문서 반영 — architecture 문서(`gameplay-effect`·`item-equipment`·`overview` 등)의 **클래스명 언급**을 `GameplayEffectAsset`·`ItemDataAsset` 등으로 **문맥별** 갱신(UE 개념 설명 `FGameplayEffect` 등은 유지). ⚠ `overview.md`의 "클래스명은 UE 용어 그대로" 원칙과 충돌 → "UE 용어 + SO는 Asset 접미어"로 원칙 서술도 조정. 코드는 이미 rename 완료. _(2026-07-08 등록)_
 - [ ] **(editor)** `SubclassSelector` 중복 제외 **다른 스코프** 지원 — 현재 구조: 범용 `SubclassSelectorDrawer`는 `excluded`를 받아 **그리기만**(`DrawSelector`), 수집은 **호출측(전용 드로어)**이 `CollectSiblingValues`(자기 배열)로 트리거. 리스트 외부(같은 오브젝트 등) 스코프가 필요하면 **전용 드로어가 다른 수집 로직**(`SerializedProperty` 순회 등)으로 `excluded`를 만들어 넘기면 됨 — 범용 드로어 변경 불필요. 지금은 List로 충분해 추가 수집기 미구현. _(2026-07-08 등록)_
 - [ ] Inventory/Equipment System 구현
 - [ ] **(code)** `GameplayEffectType` Instant/Duration 실전 상태 확정 — enum 주석은 '미구현'이나 ASC에 실행 경로 존재. **유저가 직접 확인 예정.** 확정 후 `architecture/ability-system/gameplay-effect.md` §확인 필요 + `overview.md` 요약 표 반영. (feature `gameplay-effect` 블로커에도 추적) _(2026-07-05 등록 — GAS 문서화 중 발견)_
@@ -31,6 +31,7 @@
 
 ## ✅ Done
 
+- [x] **(refactor)** Attribute·SO 네이밍 정리 — Attribute 초기화 3층 헷갈림 해소(`AttributeInitData`→`AttributeDefinitionAsset` / `AttributeSetInitData`→`AttributeSetDefinition` / `AttributeFieldInitData`→`AttributeFieldDefinition`, 런타임 `AttributeSet`/`AttributeData`와 구분) + 모든 SO에 `Asset` 접미어 통일(`GameplayEffect(Execution)`·`ItemData`·`EquipItem`·`ConsumeItem`→`...Asset`). 대응 드로어·참조 갱신, `.meta`/GUID 보존. 문서 문맥별 갱신은 위 (docs) TODO로 분리. _(2026-07-08)_
 - [x] **(docs)** 코드 설계 규칙 문서화 — `CODE_CONVENTION.md`에 ① **설계 원칙**(필요할 때만 범용화·과설계 지양, 좁은 스코프/설계 갈림은 착수 전 확인, 범용 코드는 정책 모름) ② **에디터 확장(드로어) 가이드**(범용/전용 분리, `SubclassSelector` 예시, 런타임/에디터 경계) 섹션 신설. _(2026-07-08)_
 - [x] **(editor)** `SubclassSelector` 필드를 오브젝트 참조 필드처럼 개선 — 선택된 타입의 소스 스크립트를 `ObjectField` 스타일로 표시(단일클릭 ping / 더블클릭 open), 타입 선택은 우측 버튼 → **검색 가능한 네이티브 팝업**(`AdvancedDropdown`, Add Component 창과 동일). `EditorTypeUtility.FindScript`(타입→MonoScript, 캐시) + `SubclassAdvancedDropdown` 추가. 범용이라 ItemData `runtimeClass` 등 모든 `[SubclassSelector]`에 적용. (New Class 생성은 안 함 — 유저 결정) 이후 `uniqueInList` 옵션 추가(리스트 내 이미 쓰인 타입 제외 — 형제 배열 훑는 로직 범용화)하고, `AttributeSetInitData.attributeSetTypeName`을 커스텀 `EditorGUI.Popup` → `[SubclassSelector(typeof(AttributeSet), uniqueInList:true)]`로 전환(드로어 죽은코드 `DrawAttributeSetPopup`·`GetUsedTypeNamesByOthers` 제거). _(2026-07-08)_
 - [x] **(refactor)** 에디터 스크립트 배치를 `Editor/<feature>` 미러 구조 → **feature-local `Core/<feature>/.../Editor`** 로 통일. 입도는 **서브시스템 레벨**(기존 `ItemSystem/Inventory/Editor` 선례와 일치): 드로어를 대상 타입 옆에 둠(Attribute·Effect·ItemSystem 각각 Editor). feature 무관 공통 에디터 유틸(ConditionalShow·SubclassSelectorDrawer·EditorDrawUtility·EditorTypeUtility·TypeChoiceList)은 `Core/Common/Editor`. `.meta`(폴더 meta 포함) 그대로 이동해 GUID 보존, asmdef 없어 참조 영향 없음. _(2026-07-08)_

@@ -8,7 +8,7 @@ namespace Core.ItemSystem
 {
     // 모든 아이템(장비/소비/중요)의 공통 정보만 보유한다.
     // 종류별 데이터(장비의 부위 등)는 서브클래스가 갖는다 — 소비 아이템에 slot 같은 무의미한 필드가 붙지 않도록.
-    public abstract class ItemData : ScriptableObject
+    public abstract class ItemDataAsset : ScriptableObject
     {
         public uint uid;
         public string displayName;
@@ -35,7 +35,7 @@ namespace Core.ItemSystem
             Type type = Type.GetType(runtimeClass);
             if (type == null)
             {
-                Debug.LogWarning($"[ItemData] ItemRuntime 타입을 찾지 못했습니다: {runtimeClass}");
+                Debug.LogWarning($"[ItemDataAsset] ItemRuntime 타입을 찾지 못했습니다: {runtimeClass}");
                 return null;
             }
 

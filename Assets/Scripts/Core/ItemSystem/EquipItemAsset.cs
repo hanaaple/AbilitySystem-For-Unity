@@ -16,8 +16,8 @@ namespace Core.ItemSystem
         SlotType Slot { get; }
     }
 
-    [CreateAssetMenu(menuName = "Item/Equip Item", fileName = "EquipItem")]
-    public class EquipItem : ItemData, IEquippable
+    [CreateAssetMenu(menuName = "Item/Equip Item", fileName = "EquipItemAsset")]
+    public class EquipItemAsset : ItemDataAsset, IEquippable
     {
         [SerializeField] private SlotType slot;
 

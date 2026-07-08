@@ -9,7 +9,7 @@ namespace Core.AbilitySystem
 {
     public class AbilitySystemComponent : MonoBehaviour
     {
-        [SerializeField] private AttributeInitData attributeInitData;
+        [SerializeField] private AttributeDefinitionAsset attributeInitData;
 
         private readonly Dictionary<Type, AttributeSet> _spawnedAttributeSets = new();
         private readonly Dictionary<ActiveGameplayEffectHandle, ActiveGameplayEffect> _activeEffects = new();
@@ -75,10 +75,10 @@ namespace Core.AbilitySystem
         // ── Apply / Remove ────────────────────────────────────────────────────────
 
         /// <summary>
-        /// GameplayEffect SO로부터 Spec을 생성해 자신에게 적용한다.
+        /// GameplayEffectAsset SO로부터 Spec을 생성해 자신에게 적용한다.
         /// Instant는 즉시 실행 후 Invalid Handle 반환. Duration/Infinite는 핸들 반환.
         /// </summary>
-        public ActiveGameplayEffectHandle ApplyGameplayEffectToSelf(GameplayEffect effect, GameplayEffectContextHandle context = default, float level = 1f)
+        public ActiveGameplayEffectHandle ApplyGameplayEffectToSelf(GameplayEffectAsset effect, GameplayEffectContextHandle context = default, float level = 1f)
         {
             var spec = new GameplayEffectSpec(effect, context, level);
             return ApplyGameplayEffectSpecToSelf(spec);
@@ -91,7 +91,7 @@ namespace Core.AbilitySystem
                 return ActiveGameplayEffectHandle.Invalid;
             }
 
-            GameplayEffect def = spec.Definition;
+            GameplayEffectAsset def = spec.Definition;
 
             if (def.Type == GameplayEffectType.Instant)
             {
@@ -140,7 +140,7 @@ namespace Core.AbilitySystem
 
             foreach (ActiveGameplayEffect active in _activeEffects.Values)
             {
-                GameplayEffect def = active.Spec.Definition;
+                GameplayEffectAsset def = active.Spec.Definition;
 
                 if (def.Period > 0f)
                 {
@@ -228,14 +228,14 @@ namespace Core.AbilitySystem
 
         private void RunExecutions(GameplayEffectSpec spec)
         {
-            IReadOnlyList<GameplayEffectExecution> executions = spec.Definition.Executions;
+            IReadOnlyList<GameplayEffectExecutionAsset> executions = spec.Definition.Executions;
             if (executions == null || executions.Count == 0)
             {
                 return;
             }
 
             var execParams = new GameplayEffectExecutionParameters(this, spec);
-            foreach (GameplayEffectExecution execution in executions)
+            foreach (GameplayEffectExecutionAsset execution in executions)
             {
                 if (execution == null)
                 {
@@ -419,7 +419,7 @@ namespace Core.AbilitySystem
                 return;
             }
 
-            foreach (AttributeSetInitData attributeSetData in attributeInitData.AttributeSets)
+            foreach (AttributeSetDefinition attributeSetData in attributeInitData.AttributeSets)
             {
                 Type attributeSetType = attributeSetData.GetAttributeSetType();
                 if (attributeSetType == null || !typeof(AttributeSet).IsAssignableFrom(attributeSetType))
@@ -429,7 +429,7 @@ namespace Core.AbilitySystem
                 }
 
                 var set = (AttributeSet)Activator.CreateInstance(attributeSetType);
-                foreach (AttributeFieldInitData fieldData in attributeSetData.Attributes)
+                foreach (AttributeFieldDefinition fieldData in attributeSetData.Attributes)
                 {
                     FieldInfo field = attributeSetType.GetField(fieldData.FieldName, BindingFlags.Public | BindingFlags.Instance);
                     if (field == null)

@@ -11,11 +11,11 @@ namespace Item.Module
         public ActiveGameplayEffectHandle Handle;
     }
 
-    /// <summary>장착 시 지정한 GameplayEffect(Infinite 타입)를 소유자 ASC에 적용하고, 해제 시 제거한다.</summary>
+    /// <summary>장착 시 지정한 GameplayEffectAsset(Infinite 타입)를 소유자 ASC에 적용하고, 해제 시 제거한다.</summary>
     [Serializable]
     public sealed class StatModifierModule : ItemModule<StatModifierState>
     {
-        [SerializeField] private GameplayEffect effect;
+        [SerializeField] private GameplayEffectAsset effect;
 
         protected override void OnEquip(ModuleContext context, StatModifierState state)
         {

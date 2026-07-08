@@ -77,7 +77,7 @@ namespace Core.ItemSystem.Equipment.Editor
 
         private static void DrawSlot(SlotType slot, ItemInstance instance)
         {
-            ItemData data = instance?.Data;
+            ItemDataAsset data = instance?.Data;
             string itemName = data == null
                 ? "<empty>"
                 : (string.IsNullOrEmpty(data.displayName) ? data.name : data.displayName);

@@ -177,7 +177,7 @@ public class Example : MonoBehaviour
 
 - **에디터 스크립트는 feature-local `Editor/` 폴더**에 둔다 (위 [네임스페이스 · 폴더 구조](#네임스페이스--폴더-구조) 참고).
 - **범용 드로어와 전용 정책을 분리한다.** 범용 `PropertyDrawer`는 "그리기·입력"만 담당하고, 특정 데이터의 정책(중복 제외 스코프, 필터, 정렬 등)은 그 데이터의 **전용 드로어**가 조립한다. 범용 드로어는 결과(예: 제외 목록)를 **인자로 받을 뿐**, 스스로 수집·판단하지 않는다. 범용 쪽에 특정 사용처 전용 플래그를 심지 않는다.
-  - *예 — 타입 선택 `SubclassSelector`:* 범용 `SubclassSelectorDrawer`는 그리기 `DrawSelector(rect, prop, baseType, excluded, label)` 와 수집 헬퍼 `CollectSiblingValues(prop)`를 **노출만** 한다. "AttributeSet은 같은 리스트에서 중복 금지" 같은 정책은 전용 `AttributeSetInitDataDrawer`가 `CollectSiblingValues`로 모아 `DrawSelector`의 `excluded`로 넘겨 조립한다. (범용 드로어에 `uniqueInList` 같은 특수 플래그를 넣지 않는다.)
+  - *예 — 타입 선택 `SubclassSelector`:* 범용 `SubclassSelectorDrawer`는 그리기 `DrawSelector(rect, prop, baseType, excluded, label)` 와 수집 헬퍼 `CollectSiblingValues(prop)`를 **노출만** 한다. "AttributeSet은 같은 리스트에서 중복 금지" 같은 정책은 전용 `AttributeSetDefinitionDrawer`가 `CollectSiblingValues`로 모아 `DrawSelector`의 `excluded`로 넘겨 조립한다. (범용 드로어에 `uniqueInList` 같은 특수 플래그를 넣지 않는다.)
 - **런타임 / 에디터 경계.** 런타임 직렬화 데이터(`[Serializable]` 값 클래스)는 부모·외부 구조를 모른다(부모 참조가 없다). "형제·외부 요소를 참조하는" 로직은 런타임이 아니라 **에디터의 `SerializedProperty`**(`serializedObject`로 전체 트리 접근 가능)에서 한다. `propertyPath`를 파싱해 배열/부모/형제로 이동한다.
 
 ---

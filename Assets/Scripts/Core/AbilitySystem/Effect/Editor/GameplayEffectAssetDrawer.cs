@@ -9,8 +9,8 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Effect.Editor
 {
-    [CustomEditor(typeof(GameplayEffect))]
-    public sealed class GameplayEffectDrawer : UnityEditor.Editor
+    [CustomEditor(typeof(GameplayEffectAsset))]
+    public sealed class GameplayEffectAssetDrawer : UnityEditor.Editor
     {
         private const string TypePropertyName = "type";
         private const string DurationPropertyName = "duration";

@@ -4,12 +4,12 @@ using Core.ItemSystem.Module;
 namespace Core.ItemSystem
 {
     // 아이템의 런타임 상태를 소유하는 POCO.
-    // ItemData(SO)는 무상태 템플릿이고(INV-1), 아이템별 가변 상태는 여기서만 산다.
+    // ItemDataAsset(SO)는 무상태 템플릿이고(INV-1), 아이템별 가변 상태는 여기서만 산다.
     // 아이템별 상속은 두지 않는다(INV-2) — 특수화는 modules 조합으로.
     public class ItemInstance
     {
         // 템플릿 참조. 읽기 전용으로만 다룬다 — SO에 런타임 값을 쓰지 않는다(INV-1).
-        private readonly ItemData _data;
+        private readonly ItemDataAsset _data;
 
         // _data.modules와 인덱스 1:1로 정렬된 모듈별 상태(INV-5). 무상태 모듈 슬롯은 null.
         private readonly IModuleState[] _states;
@@ -17,10 +17,10 @@ namespace Core.ItemSystem
         // 아이템 전용 자유형 로직(INV-10). 합성 멤버 — 상속 아님(INV-2). SO는 타입만, 여기서 per-instance 생성. 미지정이면 null.
         private readonly ItemRuntime _runtime;
 
-        public ItemData Data => _data;
+        public ItemDataAsset Data => _data;
         public ItemRuntime Runtime => _runtime;
 
-        public ItemInstance(ItemData data)
+        public ItemInstance(ItemDataAsset data)
         {
             _data = data;
 

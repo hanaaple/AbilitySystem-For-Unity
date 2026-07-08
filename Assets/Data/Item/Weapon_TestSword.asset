@@ -16,7 +16,8 @@ MonoBehaviour:
   displayName: "\uD14C\uC2A4\uD2B8 \uAC80"
   icon: {fileID: 0}
   prefab: {fileID: 0}
-  runtimeClass: 
+  runtimeClass: Item.ItemRuntimetest, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+    PublicKeyToken=null
   modules:
   - rid: -2
   - rid: -2

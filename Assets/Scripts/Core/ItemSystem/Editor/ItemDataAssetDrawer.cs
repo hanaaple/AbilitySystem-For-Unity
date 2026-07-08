@@ -8,9 +8,9 @@ using UnityEngine;
 
 namespace Core.ItemSystem.Editor
 {
-    // ItemData는 abstract — 실제 에셋은 EquipItem/ConsumeItem 등 서브클래스라 editorForChildClasses가 없으면 이 에디터가 적용되지 않는다(기본 인스펙터로 떨어져 Add 팝업이 안 뜸).
-    [CustomEditor(typeof(ItemData), editorForChildClasses: true)]
-    public sealed class ItemDataDrawer : UnityEditor.Editor
+    // ItemData는 abstract — 실제 에셋은 EquipItemAsset/ConsumeItemAsset 등 서브클래스라 editorForChildClasses가 없으면 이 에디터가 적용되지 않는다(기본 인스펙터로 떨어져 Add 팝업이 안 뜸).
+    [CustomEditor(typeof(ItemDataAsset), editorForChildClasses: true)]
+    public sealed class ItemDataAssetDrawer : UnityEditor.Editor
     {
         private const string UidPropertyName = "uid";
         private const string DisplayNamePropertyName = "displayName";
