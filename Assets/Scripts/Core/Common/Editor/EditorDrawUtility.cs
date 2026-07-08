@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor.Utility
+namespace Core.Common.Editor
 {
     /// <summary>
     /// CustomEditor·PropertyDrawer 사이에서 반복되는 GUI 그리기 헬퍼 모음.

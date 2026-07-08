@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using Core.AbilitySystem;
 using Core.AbilitySystem.Attribute;
+using Core.AbilitySystem.Attribute.Editor;
 using Core.AbilitySystem.Effect;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor.AbilitySystem
+namespace Core.AbilitySystem.Editor
 {
     [CustomEditor(typeof(AbilitySystemComponent))]
     public sealed class AbilitySystemComponentDrawer : UnityEditor.Editor
