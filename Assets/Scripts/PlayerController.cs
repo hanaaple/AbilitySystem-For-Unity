@@ -57,6 +57,7 @@ public class PlayerController : ControllerBase
         _playerCharacter = playableCharacter;
         _playerInputActions.Player.Move.performed += OnMoveInput;
         _playerInputActions.Player.Move.canceled += OnMoveInput;
+        _playerInputActions.Player.Attack.performed += OnAttackInput;
     }
 
     public override void UnPossess()
@@ -65,6 +66,7 @@ public class PlayerController : ControllerBase
         {
             _playerInputActions.Player.Move.performed -= OnMoveInput;
             _playerInputActions.Player.Move.canceled -= OnMoveInput;
+            _playerInputActions.Player.Attack.performed -= OnAttackInput;
             _playerCharacter = null;
         }
 
@@ -74,5 +76,10 @@ public class PlayerController : ControllerBase
     private void OnMoveInput(InputAction.CallbackContext ctx)
     {
         _moveInput = ctx.ReadValue<Vector2>();
+    }
+
+    private void OnAttackInput(InputAction.CallbackContext ctx)
+    {
+        _playerCharacter.Attack();
     }
 }
