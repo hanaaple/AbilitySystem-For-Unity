@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.AbilitySystem.Attribute.Editor;
 using Core.AbilitySystem.Effect;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace Editor.AbilitySystem.Effect
+namespace Core.AbilitySystem.Effect.Editor
 {
     [CustomEditor(typeof(GameplayEffect))]
     public sealed class GameplayEffectDrawer : UnityEditor.Editor

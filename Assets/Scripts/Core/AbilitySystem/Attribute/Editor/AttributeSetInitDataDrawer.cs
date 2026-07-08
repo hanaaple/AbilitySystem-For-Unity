@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Core.AbilitySystem.Attribute;
-using Editor.Utility;
+using Core.Common.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor.AbilitySystem
+namespace Core.AbilitySystem.Attribute.Editor
 {
     [CustomPropertyDrawer(typeof(AttributeSetInitData))]
     public sealed class AttributeSetInitDataDrawer : PropertyDrawer
@@ -24,10 +23,6 @@ namespace Editor.AbilitySystem
         private static readonly Dictionary<string, Type> _typeCache = new();
         private static readonly Dictionary<string, string> _nicifyVariableName = new();
         private static readonly Dictionary<string, SerializedProperty> _fieldMapBuffer = new();
-        private static readonly HashSet<string> _usedTypeNamesBuffer = new();
-
-        // propertyPath → 마지막으로 sync한 타입 이름 (변경 시에만 sync 실행)
-        private static readonly Dictionary<string, string> _lastSyncedTypeName = new();
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -54,14 +49,22 @@ namespace Editor.AbilitySystem
 
             float y = position.y + EditorGUIUtility.singleLineHeight + LineGap;
 
-            // resolvedType을 내려보내 중복 ResolveType 호출 방지
-            Type selectedType = DrawAttributeSetPopup(position, ref y, attributeSetTypeNameProperty, resolvedType);
+            // 타입 선택 UI는 SubclassSelector 드로어를 재사용하되, 중복 제외 대상은 전용 드로어인 여기서 수집해 넘긴다.
+            // (AttributeSetInitData[] 배열 안의 중복 방지는 이 케이스의 특수 요구라, 범용 드로어에 넣지 않고 여기서 조립한다.)
+            Rect typeRect = new Rect(position.x, y, position.width, EditorGUIUtility.singleLineHeight);
+            HashSet<string> usedByOthers = SubclassSelectorDrawer.CollectSiblingValues(attributeSetTypeNameProperty);
+            SubclassSelectorDrawer.DrawSelector(typeRect, attributeSetTypeNameProperty, typeof(AttributeSet), usedByOthers, new GUIContent("Attribute Set"));
+            y += EditorGUIUtility.singleLineHeight + LineGap;
 
-            if (selectedType != null)
+            // DrawSelector의 선택 변경은 팝업 콜백으로 다음 프레임에 반영되므로, 이번 프레임은 위에서 구한 resolvedType으로 그린다.
+            if (resolvedType != null)
             {
-                SyncAttributeFieldsIfChanged(selectedType, attributesProperty, attributeSetTypeNameProperty);
+                // 매 OnGUI마다 sync한다. SyncAttributeFields는 불일치가 있을 때만 배열을 바꾸는 self-guard라
+                // 이미 맞으면 no-op이므로 비용이 없고, 인덱스 경로 기반 "이미 sync했다" 캐시(Add/Remove로
+                // 요소가 밀리면 stale)로 인해 빈 attributes가 그대로 렌더되던 버그를 제거한다.
+                SyncAttributeFields(resolvedType, attributesProperty);
 
-                DrawAttributeFields(position, ref y, selectedType, attributesProperty);
+                DrawAttributeFields(position, ref y, resolvedType, attributesProperty);
             }
 
             EditorGUI.indentLevel--;
@@ -98,45 +101,6 @@ namespace Editor.AbilitySystem
             return height;
         }
 
-        private static Type DrawAttributeSetPopup(Rect position, ref float y, SerializedProperty typeNameProperty, Type currentType)
-        {
-            HashSet<string> usedByOthers = GetUsedTypeNamesByOthers(typeNameProperty);
-
-            Type[] setTypes = AttributeReflectionUtility.GetAttributeSetTypes()
-                .Where(t => !usedByOthers.Contains(t.AssemblyQualifiedName) || t.AssemblyQualifiedName == typeNameProperty.stringValue)
-                .ToArray();
-
-            Rect rect = new Rect(position.x, y, position.width, EditorGUIUtility.singleLineHeight);
-
-            if (setTypes.Length == 0)
-            {
-                EditorGUI.LabelField(rect, "Attribute Set", "No AttributeSet found");
-                y += EditorGUIUtility.singleLineHeight + LineGap;
-                return null;
-            }
-
-            string[] options = setTypes.Select(t => t.Name).ToArray();
-
-            int currentIndex = 0;
-            for (int i = 0; i < setTypes.Length; i++)
-            {
-                if (setTypes[i] == currentType)
-                {
-                    currentIndex = i;
-                    break;
-                }
-            }
-
-            int selectedIndex = EditorGUI.Popup(rect, "Attribute Set", currentIndex, options);
-
-            Type selectedType = setTypes[selectedIndex];
-            typeNameProperty.stringValue = selectedType.AssemblyQualifiedName;
-
-            y += EditorGUIUtility.singleLineHeight + LineGap;
-
-            return selectedType;
-        }
-
         private static void DrawAttributeFields(Rect position, ref float y, Type selectedType, SerializedProperty attributesProperty)
         {
             y += SectionGap;
@@ -164,23 +128,6 @@ namespace Editor.AbilitySystem
 
                 y += dataHeight + LineGap;
             }
-        }
-
-        /// <summary>
-        /// 첫 로드 or 타입 변경 시 AttributeSetType Change 발생으로 인한 Sync
-        /// </summary>
-        private static void SyncAttributeFieldsIfChanged(Type selectedType, SerializedProperty attributesProperty, SerializedProperty attributeSetTypeNameProperty)
-        {
-            string path = attributeSetTypeNameProperty.propertyPath;
-            string currentTypeName = attributeSetTypeNameProperty.stringValue;
-
-            if (_lastSyncedTypeName.TryGetValue(path, out string last) && last == currentTypeName)
-            {
-                return;
-            }
-
-            SyncAttributeFields(selectedType, attributesProperty);
-            _lastSyncedTypeName[path] = currentTypeName;
         }
 
         private static void SyncAttributeFields(Type selectedType, SerializedProperty attributesProperty)
@@ -231,52 +178,6 @@ namespace Editor.AbilitySystem
             }
 
             return _fieldMapBuffer;
-        }
-
-        private static HashSet<string> GetUsedTypeNamesByOthers(SerializedProperty typeNameProperty)
-        {
-            _usedTypeNamesBuffer.Clear();
-
-            string path = typeNameProperty.propertyPath;
-
-            int arrayDataIdx = path.IndexOf(".Array.data[", StringComparison.Ordinal);
-            if (arrayDataIdx < 0)
-            {
-                return _usedTypeNamesBuffer;
-            }
-
-            string arrayPath = path.Substring(0, arrayDataIdx);
-
-            int bracketStart = path.IndexOf('[', arrayDataIdx) + 1;
-            int bracketEnd = path.IndexOf(']', bracketStart);
-            if (!int.TryParse(path.Substring(bracketStart, bracketEnd - bracketStart), out int currentIndex))
-            {
-                return _usedTypeNamesBuffer;
-            }
-
-            SerializedProperty arrayProp = typeNameProperty.serializedObject.FindProperty(arrayPath);
-
-            if (arrayProp == null || !arrayProp.isArray)
-            {
-                return _usedTypeNamesBuffer;
-            }
-
-            for (int i = 0; i < arrayProp.arraySize; i++)
-            {
-                if (i == currentIndex)
-                {
-                    continue;
-                }
-
-                SerializedProperty siblingTypeName = arrayProp.GetArrayElementAtIndex(i).FindPropertyRelative(AttributeSetTypeNamePropertyName);
-
-                if (!string.IsNullOrEmpty(siblingTypeName.stringValue))
-                {
-                    _usedTypeNamesBuffer.Add(siblingTypeName.stringValue);
-                }
-            }
-
-            return _usedTypeNamesBuffer;
         }
 
         private static Type ResolveType(string assemblyQualifiedName)

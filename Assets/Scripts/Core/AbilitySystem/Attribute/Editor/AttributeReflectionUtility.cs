@@ -6,7 +6,7 @@ using Core.AbilitySystem.Attribute;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor.AbilitySystem
+namespace Core.AbilitySystem.Attribute.Editor
 {
     public static class AttributeReflectionUtility
     {
