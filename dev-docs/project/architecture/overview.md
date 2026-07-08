@@ -20,7 +20,7 @@ ControllerBase ──possess──> CharacterBase
 
 ## 시스템 문서
 
-- [AbilitySystem (GAS-like)](ability-system.md)
+- [AbilitySystem (GAS-like)](ability-system/overview.md) — [Attribute](ability-system/attribute.md) · [GameplayEffect](ability-system/gameplay-effect.md) · [GameplayAbility](ability-system/gameplay-ability.md)
 - [컨트롤러-캐릭터 분리 (Possession)](controller-character.md)
 - [ItemSystem / EquipmentSystem](item-equipment.md)
 - [카메라](camera.md)
