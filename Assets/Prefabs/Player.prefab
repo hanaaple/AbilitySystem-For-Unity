@@ -300,6 +300,7 @@ GameObject:
   - component: {fileID: 2036985881099013013}
   - component: {fileID: 3854992093447366280}
   - component: {fileID: 3485458011949860129}
+  - component: {fileID: 2912671407775542552}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -338,6 +339,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Temp
   model: {fileID: 6411115686134920114}
   rotationSmoothing: 15
+  possessEffect: {fileID: 11400000, guid: d1247d7b1202b15458a40e5361fc02f0, type: 2}
 --- !u!195 &497475714789487770
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -420,7 +422,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4173692680304981872a082ed1c9d84b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentComponent
-  _currentWeapon: {fileID: 0}
 --- !u!114 &3485458011949860129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -434,6 +435,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.AbilitySystemComponent
   attributeInitData: {fileID: 11400000, guid: 5c5fe3d119a6c1e49865dbb847edaad3, type: 2}
+--- !u!114 &2912671407775542552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3807656875026141361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd39f42622756104d9d78ab5fc8d5e78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Core.ItemSystem.InventoryComponent
+  startingItems: []
 --- !u!1 &3858255441895307191
 GameObject:
   m_ObjectHideFlags: 0

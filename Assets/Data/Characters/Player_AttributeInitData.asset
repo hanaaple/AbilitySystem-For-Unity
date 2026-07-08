@@ -25,4 +25,9 @@ MonoBehaviour:
     - fieldName: maxStamina
       baseValue: 0
     - fieldName: speed
-      baseValue: 10
+      baseValue: 0
+  - attributeSetTypeName: Character.CombatAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+    attributes:
+    - fieldName: damage
+      baseValue: 0
