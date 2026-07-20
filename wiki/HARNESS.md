@@ -85,7 +85,7 @@ wiki는 뒤늦게 따라잡는 문서이므로, 갱신은 곧 **이미 확정된
 2. **요청 범위만 최소 변경한다.** 유저가 직접 큐레이션·편집한 문서이므로, 요청받지 않은 섹션·문구·톤·레이아웃을 임의로 손대거나 전면 재작성하지 않는다.
 3. 대응 지점(§2 표)을 함께 맞춘다 — 섹션 본문(`index.html`) · 메타(`main.js`) · `sources` 경로.
 4. 반영한 범위와, 확정됐지만 이번에 반영하지 않은 부분이 있으면 유저에게 간단히 보고한다.
-5. **반영 기준 타임스탬프(동기화 판별):** wiki는 하류 문서다. 각 섹션 메타(`SECTION_META[<id>]`)에 **`반영 기준: <상류 feature-id> @ <ts>`**(`YYYY-MM-DD HH:MM` KST)를 두고, 그 섹션을 갱신할 때 현재 시각으로 stamp한다. 상류 feature `progress.md`의 `최종 갱신`보다 오래된 섹션이 **낡은 섹션**(갱신 후보)이다 — 판별 규약은 `dev-docs/agent/HARNESS.md` §3.4. 섹션 id는 상류 feature-id에 매핑한다(예: `ability-system` 섹션 ↔ feature 그룹 `ability-system`).
+5. **반영 기준 타임스탬프(동기화 판별):** wiki는 하류 문서다. 각 섹션 메타(`SECTION_META[<id>]`)에 **`반영 기준: <상류 feature-id> @ <ts>`**(`YYYY-MM-DD` KST — 시:분 없이 날짜만)를 두고, 그 섹션을 갱신할 때 그날 날짜로 stamp한다. 상류 feature `progress.md`의 `최종 갱신`보다 오래된 섹션이 **낡은 섹션**(갱신 후보)이다 — 판별 규약은 `dev-docs/agent/HARNESS.md` §3.4. 섹션 id는 상류 feature-id에 매핑한다(예: `ability-system` 섹션 ↔ feature 그룹 `ability-system`).
 
 ## 4. 콘텐츠 작성 규약 (갱신 요청을 받았을 때)
 

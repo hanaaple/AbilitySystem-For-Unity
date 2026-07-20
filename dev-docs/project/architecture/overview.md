@@ -9,12 +9,12 @@ Spectral-Raid의 런타임 구조와 시스템 간 관계를 정리한다.
 ControllerBase ──possess──> CharacterBase
                               ├── AbilitySystemComponent   (수치 관리)
                               └── EquipmentComponent        (장비 슬롯)
-                                    └── ItemInstance        (장착 런타임, 모듈 동작)
+                                    └── ItemInstance        (장착 런타임 — ⚠ 구조 미정)
 ```
 
 - **컨트롤러-캐릭터 분리 (Possession)** — 입력/제어 주체(Controller)와 피제어 객체(Character)를 분리. 멀티플레이·AI 빙의 확장을 염두에 둔 구조.
 - **AbilitySystem (GAS-like)** — 캐릭터 수치(체력·스태미나·데미지 등)를 Attribute/GameplayEffect로 관리.
-- **ItemSystem / EquipmentSystem** — 아이템을 모듈 조합으로 정의하고, 슬롯 규칙에 따라 장착. 장착 시 런타임 인스턴스가 모듈을 읽어 동작.
+- **ItemSystem / EquipmentSystem** — ⚠ **설계 미정 (재검토 중).** 아이템을 무엇으로 정의할지(모듈 조합 / 종류별 런타임 / 어빌리티) 확정되지 않았다. 이전의 "모듈 조합" 서술은 폐기 — [item-equipment.md](item-equipment.md) 참조.
 
 핵심 시스템 코드는 `Assets/Scripts/Core/` 아래에 위치.
 

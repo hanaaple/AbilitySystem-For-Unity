@@ -3,7 +3,7 @@
 캐릭터 수치(체력·스태미나·데미지 등)를 담고 읽고/쓰는 계층. 상위 개요는 [overview](overview.md).
 
 > UE GAS의 `UAttributeSet`/`FGameplayAttribute`를 참고해 **필요한 축만 직접 구현**한 것 — UE 대응·축소 지점은 [overview §UE GAS 대비](overview.md#ue-gas-대비--채택생략-범위) 표 참조.
-> **반영 기준:** feature `ability-system/attribute` @ 2026-07-05 20:18 (KST) — HARNESS §3.4.
+> **반영 기준:** feature `ability-system/attribute` @ 2026-07-05 (KST) — HARNESS §3.4.
 
 ## Attribute 계층
 

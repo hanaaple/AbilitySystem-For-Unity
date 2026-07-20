@@ -54,6 +54,7 @@ public class PlayerController : MonoBehaviour
 ## 네임스페이스 · 폴더 구조
 
 - **namespace = 폴더 경로** (`Assets/Scripts/` 기준). 예: `Assets/Scripts/Core/ItemSystem/Inventory/` → `Core.ItemSystem.Inventory`. 폴더를 옮기면 namespace도 함께 맞춘다.
+- **`Core/` = 메인 시스템(도메인 코어)만.** 재사용 가능한 시스템 구조(장착·인벤토리·어빌리티 등)가 들어가고, 그 시스템을 **소비하는 세세한 게임플레이 구현부**(공격 드라이버·픽업·개별 모듈 등)는 Core 밖 게임 레이어(`Item/`·`Character/` 등)에 둔다. 예: `Core/ItemSystem/Equipment/EquipmentComponent`(장착 시스템) vs `Item/WeaponAttackComponent`(장착 무기 공격 구현)·`Item/ItemPickup`. 판별: "다른 게임에 시스템만 떼어가도 남을 코드인가?" — 아니면 Core 밖.
 - **에디터 스크립트는 feature-local `Editor/` 폴더**에 둔다 — 상단에 `Editor/` 트리를 따로 두지 않고, 대상 코드 옆 서브시스템 레벨에 배치한다. 예: `Core/AbilitySystem/Attribute/Editor/`, `Core/ItemSystem/Equipment/Editor/`. (Unity는 이름이 `Editor`인 폴더를 위치·깊이와 무관하게 에디터 전용 어셈블리로 컴파일하므로, 배치는 순수하게 응집도 기준으로 정한다.)
 
 ---
