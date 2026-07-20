@@ -2,7 +2,7 @@
 
 - 상태: ✅ DONE
 - 우선순위: P0
-- 최종 갱신: 2026-07-05 20:18 (KST)
+- 최종 갱신: 2026-07-05 (KST — HARNESS §3.4)
 
 > `ability-system` 그룹의 하위 feature. 형제: [gameplay-effect](../gameplay-effect/progress.md) · [gameplay-ability](../gameplay-ability/progress.md).
 

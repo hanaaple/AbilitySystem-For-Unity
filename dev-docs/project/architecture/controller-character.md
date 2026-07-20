@@ -43,7 +43,7 @@ ControllerBase (abstract)                 CharacterBase (abstract)
 - **평타**: `Attack.performed` → `PlayerCharacter.Attack()` → `EquipmentComponent.TriggerAttack()`. 실제 공격 판정은 장착 무기(장비 시스템)가 수행.
 
 ### PlayerCharacter의 빙의 부수효과 (시스템 연결점)
-- `OnPossessed` 시 `possessEffect`(GameplayEffect)를 자기 자신에게 적용(`ApplyGameplayEffectToSelf`)하고 핸들 보관, `OnUnPossessed` 시 제거. → **Possession과 AbilitySystem이 만나는 지점**.
+- `OnPossessed` 시 `possessEffect`(`GameplayEffectAsset`)를 자기 자신에게 적용(`ApplyGameplayEffectToSelf`)하고 핸들 보관, `OnUnPossessed` 시 제거. → **Possession과 AbilitySystem이 만나는 지점**.
 - `MoveDelta`는 ASC의 `Speed` Attribute(`GetAttributeCurrentValue`)를 읽어 속도를 결정. 모델 회전은 `rotationSmoothing`으로 Slerp. → 이동 속도가 Attribute/GameplayEffect의 영향을 받는다.
 - `[RequireComponent]`로 `EquipmentComponent`, `AbilitySystemComponent`를 강제.
 

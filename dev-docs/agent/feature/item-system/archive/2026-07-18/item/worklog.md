@@ -3,6 +3,59 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로. 과거 기록은 삭제·수정하지 않는다(오기 정정은 취소선).
 > 결정을 가리킬 땐 `(→D#)`(decisions.md), 로드맵 작업은 `(S#)` 코드로 링크한다.
 
+### 2026-07-12 — 규약 백지화 + 새 설계 판단 기준 채택 (설계 논의)
+
+**배경.** 유저: "규약이 수단을 위한 목적이 되어버렸다 — 깔끔한 설계를 좇다 보니 규약(INV·D)이 오히려 판단을 왜곡한다." 외부 문헌으로 판단 기준을 다시 찾기로 함.
+
+**논의 결론(사실).**
+- Module에 종류별 로직(검/총)을 넣기 빡세다는 유저 직관이 문헌과 일치. Nystrom *Game Programming Patterns*의 **Type Object(=현행 SO+modules 조합) vs Subclass Sandbox(=GunRuntime/SwordRuntime + 얕은 상속)** 대립으로 정식화됨. Type Object는 "행동을 데이터로" 표현하는 한계("member 변수가 override 메서드를 대체 → 알고리즘 차이 표현이 어렵다")가 있고, 검/총은 스탯이 아니라 알고리즘이 다르므로 서브클래스가 자연스러움.
+- 판단 축 4개 채택(HARNESS §2): ①데이터냐 알고리즘이냐 ②직교냐 배타냐 ③누가·언제 확장하나 ④결합을 어디 모으나. 특히 ③으로 "코드 0줄 조합"(구 S9)의 기술적 동기가 약함이 드러남(1인 개발·런타임 확장 없음 → 시연 가치와 구분).
+- 이전 INV-3(Module 씬 접근 금지)의 목표는 Subclass Sandbox의 "제공 연산(provided operations) 파사드"로 대체 가능 — 금지 규약이 아니라 베이스가 툴박스를 내어주는 구조로.
+
+**이 세션에서 일어난 일.**
+- **유저 결정: 규약 거의 전부 백지화(아카이브 보존).** `feature/item-system/archive/`에 이전 HARNESS·decisions 전문 보존(구속력 없음). 본문: HARNESS는 §1 방향성 + §2 새 판단 기준 + §3 문서 규약만, decisions는 비움(D1~D12 이관), progress의 수용기준·로드맵·결정표는 백지화 반영.
+- 코드는 **아직 손대지 않음** — 새 설계(Runtime/Module 역할 분담, 컨텍스트 형태) 결론 후 구현.
+
+**검증 상태.** 해당 없음(문서·설계 단계). 재개 앵커는 NOW.md.
+
+### 2026-07-10 — 아이템 시스템 신규 설계 착수 (유저 숙고 중 — 구현 중단)
+
+**배경.** IWeaponAttack 개명·D12 분리 후 유저가 설계 전반을 재검토. 유저가 밝힌 의도를 목적으로 **새로 설계**하기로 함(목적 목록은 TODO-BOARD "진행 중" 항목이 원본 — 캐릭터 무관 자동 작동 / 아이템 종속 로직의 외부 작성 금지 / 종류별 로직 자리(전략 패턴은 유저 언급) / 저작 시 알아야 하는 것 최소화·과설계 배제 / 표현부·Combat 연동 재검토). **구체 구조 미정 — 결론 전 구현 금지.**
+
+**이 세션에서 일어난 일(사실).**
+- 에이전트가 논의 중 Strategy 파일 3개(IWeaponAttack 재정의·Melee/HitscanAttackStrategy)를 선구현했다가 유저 지시로 **전량 삭제·원복**(설계 논의 단계에서 구현 금지 — 에이전트 메모리에 기록).
+- 유저가 `AbilitySystemModuleContext.cs` **직접 삭제**(빈 베이스 `ModuleContext`+상속+캐스트 구조에서 컨텍스트 재설계 예정). 사용처는 주석+TODO 처리: `EquipmentComponent.Equip/Unequip`의 `instance.OnEquip/OnUnEquip` 호출, `StatModifierModule` OnEquip/OnUnEquip 본문.
+- 결과 상태: 컴파일 정상, 공격 경로(D11/D12) 동작, **장착 시 모듈 lifecycle 미호출 → StatModifier(이속 −5) 미작동**. S5 play 검증은 설계 결론까지 보류.
+
+**검증 상태.** 해당 없음(설계 단계). 재개 앵커는 NOW.md.
+
+### 2026-07-09 (2) — 공격 실행을 WeaponAttackComponent로 분리 (→D12)
+
+**배경/의도.** 유저 지적 "EquipComponent에서 공격까지 하는 건 책임 분리가 안 됐다". D8이 예고한 재평가 트리거(공격 실행부 성장)가 D11 히트스캔 분기로 실질 발동.
+
+**변경 파일.**
+- CREATE `Core/ItemSystem/Equipment/WeaponAttackComponent.cs`(guid `3d0535caba7e43ceb12c377d859b5a63`) — `[RequireComponent(EquipmentComponent, ASC)]`, `TriggerAttack`/`SwingMelee`/`FireHitscan`/`TryGetAbility<T>` 이동(로직 불변).
+- MODIFY `EquipmentComponent.cs` — 공격 로직·버퍼·오프셋 제거, 경계 API `TryGetEquipped(SlotType, out ItemInstance)` 추가. 이제 장착 상태 + 소켓 표현(D10)만.
+- MODIFY `PlayerCharacter.cs` — `Attack()` 호출부를 `WeaponAttackComponent`로, RequireComponent 교체.
+- MODIFY `Player.prefab` — `WeaponAttackComponent` 컴포넌트 블록 추가(fileID `8815294731046512733`). ※ 이 과정에서 유저가 소켓을 전용 `Socket` GO(fileID `410514379887756245`, Model (1) 자식)로 교체해둔 것 확인 — test-harness-state 반영.
+- 모듈 주석의 실행 주체 표기 EquipmentComponent → WeaponAttackComponent(MeleeAttack·GunAttack).
+
+**검증 상태.** V1 정합성 OK(TriggerAttack 잔여 호출부 0, using 정리) / INV: 로직 이동만이라 전부 기존과 동일 준수. V2·V3(유저): S5 검증 겸 기존 S1 근접 재현 재실행(로직 불변이나 컴포넌트 배선이 바뀜 — 프리팹 YAML 배선 정상 로드 확인 필요).
+
+**추가(유저 지적, 같은 날).** `WeaponAttackComponent`를 `Core/ItemSystem/Equipment/` → **`Assets/Scripts/Item/`**(namespace `Item`)로 이동 — "Core = 메인 시스템, 세세한 구현부는 밖" 원칙. meta 동반 이동(guid 보존, 프리팹 참조 유지), 프리팹 `m_EditorClassIdentifier` 갱신, PlayerCharacter using 교체. 원칙은 CODE_CONVENTION "네임스페이스·폴더 구조"에 명문화(판별: "다른 게임에 시스템만 떼어가도 남을 코드인가"), architecture/item-equipment.md 코드 위치 갱신.
+
+### 2026-07-09 — S5 총기(히트스캔) 착수: GunAttackModule + IHitscanAttack (→D11)
+
+**배경/의도.** 유저 요청 "간단하게 Gun 구현". 로드맵상 S5(총기)를 S2보다 선착수(순서 변경 보고함). 투사체 vs 히트스캔 트레이드오프 제시 후 유저가 포트폴리오 관점 판단 위임 → **히트스캔 채택**(S5 정의 그대로, 같은 파이프라인 증명이 목표 — D11).
+
+**변경 파일.**
+- CREATE `Item/Module/GunAttackModule.cs` — 무상태 모듈 + `IHitscanAttack{ DamageEffect; Range }` 능력(파일 배치는 `MeleeAttackModule.cs`의 능력 동거 패턴과 대칭). D7 재평가 트리거(판정 형태 분화) 발동으로 능력 세분.
+- RENAME `IWeaponAttack` → **`IMeleeAttack`**(유저 지적): 총 등장으로 "무기 공격 전체"를 아우르는 이름이 근접 전용 능력에 부정확해짐. 코드 전 사용처 치환(MeleeAttackModule·EquipmentComponent). 과거 worklog/D7 원문은 아카이브 규칙상 미수정 — D7에 개명 각주만.
+- MODIFY `Core/ItemSystem/Equipment/EquipmentComponent.cs` — `TriggerAttack`이 능력으로 분기: `IHitscanAttack` 보유 시 `FireHitscan`(전방 Raycast, 자기·비ASC 히트 스킵, **최근접 1기**에만 GE — 관통 없음), 아니면 `SwingMelee`(기존 오버랩 로직 추출·동작 불변). `TryGetAttack` → 제네릭 `TryGetAbility<T>`로 일반화(사용처 2). `RaycastHit[16]` 버퍼 추가.
+- CREATE `Assets/Data/Item/Weapon_TestGun.asset`(+meta, guid `454230b16b124009b26ea3bdc95dd742`) — EquipItemAsset, slot=Weapon, modules=[`GunAttackModule`{damageEffect→GE_MeleeDamage, range 20}]. prefab 없음(비주얼 없이 장착).
+
+**검증 상태.** V1 정합성 OK / INV 자가점검: INV-1·3(모듈은 결정만, 레이캐스트는 시스템)·10(총격은 여러 총기 재사용→Module)·11(능력 분기)·12 준수, 나머지 해당 없음. V2(유저): 씬의 ItemPickup에 Weapon_TestGun 할당(또는 복제) → Play → 픽업 → 원거리(≤20m)에서 LMB → TestEnemy HP −10. V3 회귀: 근접 경로는 로직 추출만이라 동작 불변 — 단 **`Weapon_TestSword.asset` modules가 현재 비어 있음을 발견**(문서와 불일치, 검 평타 동작 안 할 상태) → 유저에게 보고, 원인 미상(유저 편집 추정).
+
 ### 2026-07-08 — 에디터 저작 툴링: `ItemData` Module Add 팝업 버그픽스 + 다형 리스트 빌더 추출
 
 **배경/의도.** `ItemData`(EquipItem/ConsumeItem) 인스펙터에서 Modules 리스트 `+`를 눌러도 타입 선택 팝업이 안 떴음. 겸사겸사 `AttributeInitDataDrawer`의 동일한 "타입 팝업 달린 add 리스트" 패턴과 공통분모를 정리(유저 요청).

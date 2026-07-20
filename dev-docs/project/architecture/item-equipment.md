@@ -2,40 +2,39 @@
 
 `Assets/Scripts/Core/ItemSystem/` · `Assets/Scripts/Item/`
 
-> **설계 권위:** 이 시스템의 설계 방향은 [`feature/item-system/HARNESS.md`](../../agent/feature/item-system/HARNESS.md)(item-system 그룹 공유 하네스)가 **단일 진실**이다. 이 문서는 그 설계를 아키텍처 altitude로 요약할 뿐이며, 불변 조건(INV)·검증·로드맵의 상세는 harness를 본다. 문서·코드가 harness와 어긋나면 harness가 우선.
+> # ⚠ 설계 미정 (2026-07-13)
+>
+> **이 시스템의 설계는 확정된 것이 없다.** 아이템의 구조 — `ItemModule` · `ItemInstance` · `ItemRuntime`,
+> "모듈 조합" · "아이템별 상속 금지" · 무상태 경계 등 — 은 **전부 재검토 중이며 권위가 없다.**
+> 이전 문서가 이것들을 확정 설계로 서술했으나(모듈 조합이 단일 진실, INV-1~12 등), **그 서술은 폐기했다.**
+>
+> - 다른 문서·코드 주석이 위 개념을 확정된 규약처럼 인용하더라도 **구속력 없음.**
+> - 논의 중인 후보와 미결 쟁점: [`agent/feature/item-system/design-draft.md`](../../agent/feature/item-system/design-draft.md)
+> - 결론이 서면 그때 이 문서를 아키텍처 요약으로 다시 쓴다. **그 전까지 이 문서는 "지금 코드에 무엇이 있는가"만 기술한다.**
 
-아이템을 **모듈 조합**으로 정의하고, 장착 시 런타임 인스턴스가 모듈을 읽어 동작한다. 아이템별 상속 없이 — 특수화는 Module·인터페이스 조합으로만 — 확장한다.
+---
 
-## 계층 (단방향 흐름)
+## 현재 코드에 존재하는 것 (사실 — 설계 주장 아님)
 
-```
-ItemData (ScriptableObject)    무상태 정의 — 모듈 목록·기본값. 런타임 값 쓰기 금지
-   │  (모듈 목록 참조)
-ItemModule (abstract)          재사용 가능한 동작 단위. 무상태·씬/UI 미접근 — "결정"만 한다
-   │
-ItemInstance (POCO)            장착 시 생성. per-item 상태 소유(IModuleState[] 병렬 배열).
-   │                           아이템별 상속 없음 — 상태 캐스트는 제네릭 베이스 한 곳에만
-   ▼
-소유자 (CombatActor)           공유 상태(콤보·스태미나·타깃) 소유
-   ▼
-ItemBehaviour (MonoBehaviour)  표현·이벤트 중계만. 동작 로직 없음 — UI는 이벤트 구독으로 갱신
-```
+아래는 지금 리포지토리에 실제로 있는 타입들이다. **이 배치가 옳다는 뜻이 아니다.** 재검토 대상이다.
 
-흐름은 **Module → Instance → 소유자 → Behaviour/UI 단방향**이며 역방향 참조를 두지 않는다.
-호출 단위로만 필요한 값은 상태로 보관하지 않고 `ModuleContext` 파라미터로 전달한다.
+- `ItemDataAsset` (SO) — 아이템 템플릿. 모듈 리스트와 표현 프리팹을 담고 있다.
+- `ItemModule` — SO에 `[SerializeReference]`로 담기는 동작/데이터 단위. 현재 `StatModifier` · `MeleeAttack` · `GunAttack` 등.
+- `ItemInstance` (POCO) — 장착 시 생성되는 런타임 개체. 모듈별 상태 배열과 `ItemRuntime`을 보유.
+- `ItemRuntime` — 클래스와 lifecycle 훅만 있고 **로직은 비어 있다.**
+- `ItemBehaviour` (MonoBehaviour) — 장착 시 소켓에 소환되는 표현 오브젝트를 인스턴스와 연결.
+- `EquipmentComponent` — 슬롯별 장착 상태 + 소켓에 프리팹 부착.
+- `WeaponAttackComponent` — 장착 무기의 모듈을 능력 인터페이스로 찾아 **판정(오버랩/레이)과 데미지 GE 적용을 직접 수행**하는 전투 드라이버.
 
-## 핵심 규칙 (harness INV 요약 — 상세·전체는 HARNESS §2)
+### 알려진 결함 (설계 결론 대기 중이라 방치)
 
-- **상속 금지:** `ItemData`/`ItemInstance`에 아이템별 상속을 두지 않는다. 특수화는 Module·인터페이스 조합.
-- **무상태 경계:** `ItemData`(SO)와 `ItemModule`은 무상태. per-item 상태는 `ItemInstance`, 공유 상태는 `CombatActor`가 소유.
-- **표현 분리:** Module·Instance는 씬/UI/GameObject를 모른다. 표현은 `ItemBehaviour`·시스템으로 넘긴다.
-- **능력은 인터페이스로:** 시스템의 필수 요구는 구체 Module이 아니라 인터페이스 능력(`I~Provider`/`I~Contributor`)으로 선언·검증한다.
-- **재사용 판별식:** 여러 아이템에 붙으면 Module, 한 아이템 전용이면 통짜 Module 또는 전용 Runtime.
+- `ModuleContext`가 **빈 클래스**다. 그 결과 `EquipmentComponent`의 장착/해제 시 **모듈 lifecycle 호출이 주석 처리**돼 있고,
+  `StatModifierModule`(장착 중 이속 −5)이 **동작하지 않는다.** 씬/ASC 접근 경로를 어떻게 줄지가 미결이기 때문이다.
+- 적/아군 판별이 없다. 현재는 "자기 자신이 아니면 때린다"로 임시 동작한다.
 
 ## 코드 위치
 
-- **코어:** `Assets/Scripts/Core/ItemSystem/` — `ItemData` · `ItemInstance` · `ItemBehaviour` · `Module/ItemModule` · `Module/ModuleContext`
-- **모듈·아이템 정의:** `Assets/Scripts/Item/` — `Module/`(StatModifier·Input 등), 아이템별 데이터
-- **장비:** `Assets/Scripts/Core/ItemSystem/Equipment/`(`Core.ItemSystem.Equipment`) — 시스템 컴포넌트 `EquipmentComponent`(장착 슬롯·규칙·표현 겸함). Inventory·Module과 대등한 ItemSystem 서브시스템. 단, 장착 계약 `IEquippable`·`SlotType`은 **능력 인터페이스 계열**이라 서브시스템이 아니라 카테고리 SO 옆(`EquipItem.cs`, `Core.ItemSystem` — `ConsumeItem.cs`의 `IStackable`과 대칭)에 둔다. *아이템 모듈 조합*과 *슬롯 규칙*은 분리된 축이다. (세부는 코드 참고)
-
-> **이관 중:** 현재 코드에는 상속 기반 잔재(아이템별 `~ItemInstance` 클래스 등)가 남아 있을 수 있으며, 이는 INV-2 위반으로 **제거·이관 대상**이다. 목표는 상속이 아닌 모듈 조합 + POCO `ItemInstance`. 진행 상황은 [`feature/item-system/item/progress.md`](../../agent/feature/item-system/item/progress.md) 참조.
+- **코어:** `Assets/Scripts/Core/ItemSystem/` — `ItemDataAsset` · `ItemInstance` · `ItemRuntime` · `ItemBehaviour` · `Module/ItemModule` · `Module/ModuleContext`
+- **장비:** `Assets/Scripts/Core/ItemSystem/Equipment/` — `EquipmentComponent`. 장착 계약(`IEquippable` · `SlotType`)은 카테고리 SO 옆(`EquipItemAsset.cs`).
+- **모듈·게임 구현부:** `Assets/Scripts/Item/` — `Module/`(StatModifier · MeleeAttack · GunAttack), `WeaponAttackComponent`, `ItemPickup`.
+  (Core는 메인 시스템만, 소비 구현부는 게임 레이어에 — CODE_CONVENTION "네임스페이스·폴더 구조".)

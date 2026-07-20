@@ -1,11 +1,12 @@
 # item-system 테스트 하네스 — 현재 상태 (S1: Inventory → Equip → Item)
 
 > **목적:** 이 슬라이스의 씬/에셋 배선과 GUID를 한 곳에. 다음 작업 때 씬·프리팹·에셋을 재스캔하지 말고 **이 문서만 읽어** 이어간다. 상태가 바뀌면 여기부터 갱신.
-> 최종 갱신: 2026-07-06 (KST)
+> 최종 갱신: 2026-07-09 (KST)
 
 ## 재현 (play 검증)
 플레이어는 **초기 무기 없음(노 item)**. SampleScene Play →
 1. `ItemPickup`(구체, (0,0.5,1.5))에 걸어 들어감 → 콘솔 `[Pickup] '테스트 검' 획득 · 장착`, 픽업 소멸. (Inventory Add + Equip)
+   - 장착 순간 무기 프리팹(`Tset Weapon`)이 Weapon 소켓에 소환됨 (장착 표현 검증됨 2026-07-09).
 2. `TestEnemy`(큐브, (0,0,3))에 붙어 **LMB** → 적 Health 100→90 (S1 평타 검증됨 2026-07-06).
 3. 장착 순간 플레이어 **이동속도 −5**(Speed 10→5) — `StatModifierModule`(Infinite GE) 효과.
 
@@ -15,7 +16,7 @@
 - `TestEnemy` (씬 상주): Cube(BoxCollider) + ASC(`Enemy_AttributeInitData`, HP 100). (0,0.5,3).
 
 ## Player.prefab 컴포넌트
-`PlayerCharacter` · `NavMeshAgent` · `CapsuleCollider` · `CharacterController` · `EquipmentComponent` · `AbilitySystemComponent`(attributeInitData=`Player_AttributeInitData`) · `InventoryComponent`(**startingItems 빈 리스트 — 노 item**)
+`PlayerCharacter` · `NavMeshAgent` · `CapsuleCollider` · `CharacterController` · `EquipmentComponent`(**sockets: Weapon→`Socket` Transform**(Model (1) 자식, 유저가 전용 부착점으로 교체), fileID `410514379887756245`) · `WeaponAttackComponent`(공격 드라이버 — D12 분리, 2026-07-09) · `AbilitySystemComponent`(attributeInitData=`Player_AttributeInitData`) · `InventoryComponent`(**startingItems 빈 리스트 — 노 item**)
 (※ EquipmentTestBootstrap은 제거됨 — 지급·장착은 ItemPickup이 담당.)
 
 ## 에셋 GUID
@@ -26,6 +27,7 @@
 | Weapon_TestSword | Assets/Data/Item/Weapon_TestSword.asset | `e58ae273b92f75947b2b9a2133165a43` | 11400000 / 2 |
 | Enemy_AttributeInitData | Assets/Data/Characters/Enemy_AttributeInitData.asset | `5a8f827867c82f944aba40549245dfd3` | 11400000 / 2 |
 | Player.prefab | Assets/Prefabs/Player.prefab | `d6d1ae8a0d9981b438aa4902eb54c009` | — |
+| Tset Weapon.prefab (무기 표현) | Assets/Prefabs/Tset Weapon.prefab | `5d562c7de933a4a42a16b7670661fdef` | 7195199736472917969 / 3 |
 | ItemPickup.prefab | Assets/Prefabs/ItemPickup.prefab | (조회 시) | — |
 
 ### 스크립트 GUID (m_Script)
@@ -36,7 +38,7 @@
 ## 에셋 값 (현재)
 - **GE_MeleeDamage**: Instant(0), Health AddBase −10.
 - **GE_EquipSpeedDown**: Infinite(1), Speed AddBase −5.
-- **Weapon_TestSword**: EquipItem, slot=Weapon. modules = [`MeleeAttackModule`{damageEffect→GE_MeleeDamage, range 2}, `StatModifierModule`{effect→GE_EquipSpeedDown}].
+- **Weapon_TestSword**: EquipItem, slot=Weapon, prefab→`Tset Weapon.prefab`. modules = [`MeleeAttackModule`{damageEffect→GE_MeleeDamage, range 2}, `StatModifierModule`{effect→GE_EquipSpeedDown}].
 - **Enemy_AttributeInitData**: Health/MaxHealth 100.
 - **ItemPickup.prefab**: Sphere + Rigidbody(kinematic) + SphereCollider(trigger) + `ItemPickup`{item→Weapon_TestSword}.
 

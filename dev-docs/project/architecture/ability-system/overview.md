@@ -4,7 +4,7 @@
 
 > 이 문서군은 **구현된 것 / 미구현(계획)**을 명확히 구분한다. 범례: ✅ 구현·동작 · ⚠️ 코드 존재하나 상태 확인 필요 · ❌ 미구현(계획).
 > **심화 문서:** [Attribute](attribute.md) · [GameplayEffect](gameplay-effect.md) · [GameplayAbility](gameplay-ability.md)
-> **반영 기준:** feature `ability-system` @ 2026-07-05 20:18 (KST) — 상류 progress의 `최종 갱신`보다 오래되면 갱신 대상(dev-docs HARNESS §3.4).
+> **반영 기준:** feature `ability-system` @ 2026-07-05 (KST) — 상류 progress의 `최종 갱신`보다 오래되면 갱신 대상(dev-docs HARNESS §3.4).
 
 ## 구현 현황 요약
 
@@ -15,7 +15,7 @@
 | Modifier 연산(6종) + CurrentValue 누산 | ✅ | Add/Multiply/Divide/Override |
 | GE 적용/해제·주기(Period)·지속(Duration) 틱 | ✅ | ASC에 실행 경로 존재 |
 | GE 타입별(Instant/Duration) 실전 상태 | ⚠️ | enum 주석은 '미구현' 표기 — [gameplay-effect §확인 필요](gameplay-effect.md) |
-| `GameplayEffectExecution` (프레임워크·concrete 전체) | ❌ | 껍데기 클래스 — 에디터 미배선·미검증, concrete 0 |
+| `GameplayEffectExecutionAsset` (프레임워크·concrete 전체) | ❌ | 껍데기 클래스 — 에디터 미배선·미검증, concrete 0 |
 | GameplayAbility(GA) — 스킬 실행 단위 | ❌ | 클래스 자체 없음 → [gameplay-ability](gameplay-ability.md) |
 | GE 스택 / Gameplay Cue / GameplayTag | ❌ | 코드 내 TODO 마커 |
 | Magnitude: AttributeBased / SetByCaller | ❌ | enum 주석 처리 상태 |
@@ -35,7 +35,7 @@ AttributeSet (abstract, 빈 마커)                 ← 수치 컨테이너
 AttributeHandle (readonly struct)               ← 경량 식별자 (SetType + fieldName + FieldInfo 캐싱, IEquatable)
 AttributeData  (struct)                         ← BaseValue / CurrentValue 쌍
 
-GameplayEffect (ScriptableObject)               ← 불변 정의 (type·duration·period·modifiers·executions)
+GameplayEffectAsset (ScriptableObject)          ← 불변 정의 (type·duration·period·modifiers·executions)
 GameplayEffectSpec                              ← 런타임 인스턴스 (Level·Context 스냅샷, Modifier resolve 캐싱)
 ActiveGameplayEffect                            ← 활성 상태 (Handle, RemainingDuration, PeriodTimer)
 ```
@@ -48,7 +48,7 @@ ActiveGameplayEffect                            ← 활성 상태 (Handle, Remai
 - **완전 자작(from scratch) 거부** — "수치 변경을 단일 채널(GE)로 통과", "정의(SO)/인스턴스(Spec) 분리", "쓰기 시 재계산·읽기 캐시" 같은 UE GAS의 **검증된 아키텍처 판단**은 그대로 이득이라 버릴 이유가 없다.
 - **채택: 필요한 축만 이식** — 수치(Attribute)·이펙트(GameplayEffect) 두 축을 UE 개념·용어 그대로 가져와 Unity에 재구현하고, 실행 계층(GA)·태그·연출은 필요해질 때 얹는다.
 
-> **포트폴리오 관점:** 이 문서군은 "UE GAS를 안다"가 아니라 **"UE GAS의 어느 부분을 왜 취하고 왜 뺐는지 판단할 수 있다"**를 보이는 게 목적이다. 코드 클래스명(`AttributeSet`·`GameplayEffect`·`Spec`·`ActiveGameplayEffect`·`Modifier`·`Execution`)은 대응을 명확히 하려고 UE 용어를 의도적으로 따랐다.
+> **포트폴리오 관점:** 이 문서군은 "UE GAS를 안다"가 아니라 **"UE GAS의 어느 부분을 왜 취하고 왜 뺐는지 판단할 수 있다"**를 보이는 게 목적이다. 코드 클래스명(`AttributeSet`·`GameplayEffectAsset`·`Spec`·`ActiveGameplayEffect`·`Modifier`·`Execution`)은 대응을 명확히 하려고 UE 용어를 의도적으로 따르되, **SO(에셋 정의)에는 `Asset` 접미어**를 붙여 런타임 타입과 구분한다.
 
 ## UE GAS 대비 — 채택/생략 범위
 
@@ -59,7 +59,7 @@ ActiveGameplayEffect                            ← 활성 상태 (Handle, Remai
 | `FGameplayEffectSpec` / `FActiveGameplayEffect` | `GameplayEffectSpec` / `ActiveGameplayEffect` | ✅ | 정의(SO)/런타임 인스턴스 분리 그대로 채택 → [gameplay-effect](gameplay-effect.md) |
 | `FGameplayModifierInfo` + Aggregator mod channels | `GameplayModifier` 6종 + CurrentValue 공식 | ✅(단순화) | UE의 다채널 aggregator를 **6종 연산 단일 공식**으로 축소 |
 | `FGameplayEffectContext` | `GameplayEffectContext`(+Handle) | ✅ | 출처·타깃 스냅샷 채택 |
-| `FGameplayEffectExecutionCalculation` | `GameplayEffectExecution` | ⚠️ 껍데기 | 복합 계산 계층 — 배관만, 실제 필요 트리거 전 보류 |
+| `FGameplayEffectExecutionCalculation` | `GameplayEffectExecutionAsset` | ⚠️ 껍데기 | 복합 계산 계층 — 배관만, 실제 필요 트리거 전 보류 |
 | `UGameplayAbility` | (계획) | ❌ | 실행 계층 — 수치 계층 뒤로 → [gameplay-ability](gameplay-ability.md) |
 | `SetByCaller` / `ScalableFloat`(CurveTable) | (미채택) | ❌ | Magnitude 확장 — 현재 고정 float로 충분 |
 | `GameplayTag` / `GameplayCue` / GE Stack | (미채택) | ❌ | 태그·연출·스택 — 현재 스코프 밖 |
