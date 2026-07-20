@@ -9,18 +9,28 @@ namespace Core.AbilitySystem.Effect
     public class GameplayEffectContext
     {
         /// <summary>GE를 발동한 주체의 ASC. 장비·패시브 등 자가 적용 시 Target과 동일.</summary>
-        public AbilitySystemComponent Instigator { get; }
+        public AbilitySystemComponent Instigator { get; private set; }
 
         /// <summary>실제 원인 오브젝트. 총알·폭발물 등 Instigator와 다를 수 있음.</summary>
-        public GameObject EffectCauser { get; }
+        public GameObject EffectCauser { get; private set; }
+
+        /// <summary>이 GE의 출처 오브젝트(무기·아이템·능력 등). Instigator(주체 ASC)와 별개로 전달한다.</summary>
+        public Object SourceObject { get; private set; }
 
         // TODO: RaycastHit? HitResult
         // TODO: Vector3? WorldOrigin
 
-        public GameplayEffectContext(AbilitySystemComponent instigator, GameObject effectCauser = null)
+        /// <summary>발동 주체(Instigator)와 원인 오브젝트(EffectCauser)를 지정한다. (UE: FGameplayEffectContext::AddInstigator)</summary>
+        public void AddInstigator(AbilitySystemComponent instigator, GameObject effectCauser = null)
         {
             Instigator = instigator;
             EffectCauser = effectCauser;
+        }
+
+        /// <summary>출처 오브젝트를 지정한다. (UE: FGameplayEffectContext::AddSourceObject)</summary>
+        public void AddSourceObject(Object sourceObject)
+        {
+            SourceObject = sourceObject;
         }
     }
 }

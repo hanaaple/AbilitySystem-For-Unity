@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Core.Common;
 using UnityEngine;
 
 
@@ -15,7 +16,11 @@ namespace Core.AbilitySystem.Effect
         [SerializeField] private bool executePeriodicEffectOnApplication = true;
 
         [SerializeField] private List<GameplayModifier> modifiers;
-        [SerializeField] private List<GameplayEffectExecutionAsset> executions;
+
+        // Execution은 SO가 아니라 클래스라(→decisions D7) 타입 이름(AQN)만 저장한다.
+        // 실제 인스턴스화는 GameplayEffectSpec 생성 시 1회 수행(→D2 resolve 캐싱과 같은 방식).
+        [SerializeField] [SubclassSelector(typeof(GameplayEffectExecution))]
+        private List<string> executionTypeNames;
 
         // TODO GE 스택 구현
 
@@ -26,6 +31,6 @@ namespace Core.AbilitySystem.Effect
         public float Period => period;
         public bool ExecutePeriodicEffectOnApplication => executePeriodicEffectOnApplication;
         public IReadOnlyList<GameplayModifier> Modifiers => modifiers;
-        public IReadOnlyList<GameplayEffectExecutionAsset> Executions => executions;
+        public IReadOnlyList<string> ExecutionTypeNames => executionTypeNames;
     }
 }

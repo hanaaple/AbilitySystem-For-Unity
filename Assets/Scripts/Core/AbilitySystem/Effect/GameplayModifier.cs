@@ -14,8 +14,11 @@ namespace Core.AbilitySystem.Effect
 
         [SerializeField] private MagnitudeCalculationType magnitudeCalculationType;
 
-        // TODO ScalableFloat — Level 기반 커브 테이블로 교체 예정. 현재는 고정 float.
+        // ScalableFloat 전용. TODO Level 기반 커브 테이블로 교체 예정. 현재는 고정 float.
         [SerializeField] private float magnitude;
+
+        // AttributeBased 전용. 캡처 어트리뷰트 기반 magnitude 계산 정의.
+        [SerializeField] private AttributeBasedMagnitude attributeBased;
 
         public GameplayModifierOperation Operation => operation;
 
