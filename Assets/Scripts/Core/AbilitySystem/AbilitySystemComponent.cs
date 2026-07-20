@@ -72,6 +72,37 @@ namespace Core.AbilitySystem
             RecalculateAttributeCurrentValue(handle);
         }
 
+        // ── Context / Spec 팩토리 ─────────────────────────────────────────────────
+
+        /// <summary>
+        /// 자신(this)을 Instigator(주체 ASC)로 하는 GE 컨텍스트를 만든다.
+        /// SourceObject(무기·아이템 등 출처)가 필요하면 호출처에서 AddSourceObject로 따로 넣는다.
+        /// (UE: MakeEffectContext)
+        /// </summary>
+        public GameplayEffectContextHandle MakeEffectContext()
+        {
+            var context = new GameplayEffectContextHandle(new GameplayEffectContext());
+            context.AddInstigator(this);
+            return context;
+        }
+
+        /// <summary>GameplayEffectAsset(SO)로부터 적용 대기 상태의 Spec을 만든다. (UE: MakeOutgoingSpec)</summary>
+        public GameplayEffectSpec MakeOutgoingSpec(GameplayEffectAsset effect, GameplayEffectContextHandle context = default, float level = 1f)
+        {
+            if (effect == null)
+            {
+                Debug.LogWarning($"[ASC] '{name}' 에서 GameplayEffectAsset이 null이라 Spec을 만들 수 없습니다.");
+                return null;
+            }
+
+            if (!context.IsValid)
+            {
+                context = MakeEffectContext();
+            }
+
+            return new GameplayEffectSpec(effect, context, level);
+        }
+
         // ── Apply / Remove ────────────────────────────────────────────────────────
 
         /// <summary>
@@ -80,13 +111,18 @@ namespace Core.AbilitySystem
         /// </summary>
         public ActiveGameplayEffectHandle ApplyGameplayEffectToSelf(GameplayEffectAsset effect, GameplayEffectContextHandle context = default, float level = 1f)
         {
-            var spec = new GameplayEffectSpec(effect, context, level);
-            return ApplyGameplayEffectSpecToSelf(spec);
+            return ApplyGameplayEffectSpecToSelf(MakeOutgoingSpec(effect, context, level));
         }
 
         public ActiveGameplayEffectHandle ApplyGameplayEffectSpecToSelf(GameplayEffectSpec spec)
         {
-            if (spec.Modifiers.Count == 0)
+            if (spec == null)
+            {
+                return ActiveGameplayEffectHandle.Invalid;
+            }
+
+            // Modifier 없이 Execution만 가진 GE도 유효하다(데미지 계산을 전부 Execution에 두는 경우).
+            if (spec.Modifiers.Count == 0 && spec.Executions.Count == 0)
             {
                 return ActiveGameplayEffectHandle.Invalid;
             }
@@ -95,7 +131,7 @@ namespace Core.AbilitySystem
 
             if (def.Type == GameplayEffectType.Instant)
             {
-                ExecuteModifiers(spec);
+                ExecuteGameplayEffect(spec);
                 return ActiveGameplayEffectHandle.Invalid;
             }
 
@@ -105,7 +141,7 @@ namespace Core.AbilitySystem
 
             if (def.Period > 0f && def.ExecutePeriodicEffectOnApplication)
             {
-                ExecuteModifiers(spec);
+                ExecuteGameplayEffect(spec);
             }
 
             // period == 0인 경우만 persistent modifier로서 CurrentValue에 반영
@@ -115,6 +151,35 @@ namespace Core.AbilitySystem
             }
 
             return handle;
+        }
+
+        /// <summary>
+        /// GameplayEffectAsset SO로부터 Spec을 생성해 대상 ASC에 적용한다. 자신(this)이 Instigator가 된다.
+        /// context가 비어 있으면 자신을 Instigator로 하는 context를 생성한다(AttributeBased의 Source 캡처용).
+        /// (UE: ApplyGameplayEffectToTarget → MakeOutgoingSpec → Target->ApplyGameplayEffectSpecToSelf)
+        /// </summary>
+        public ActiveGameplayEffectHandle ApplyGameplayEffectToTarget(GameplayEffectAsset effect, AbilitySystemComponent target, GameplayEffectContextHandle context = default, float level = 1f)
+        {
+            if (!context.IsValid)
+            {
+                context = MakeEffectContext();
+            }
+
+            return ApplyGameplayEffectSpecToTarget(MakeOutgoingSpec(effect, context, level), target);
+        }
+
+        /// <summary>
+        /// 이미 만들어진 Spec을 대상 ASC에 적용한다. 실제 적용은 대상 ASC가 자신에게 수행한다.
+        /// (UE: ApplyGameplayEffectSpecToTarget → Target->ApplyGameplayEffectSpecToSelf)
+        /// </summary>
+        public ActiveGameplayEffectHandle ApplyGameplayEffectSpecToTarget(GameplayEffectSpec spec, AbilitySystemComponent target)
+        {
+            if (target == null)
+            {
+                return ActiveGameplayEffectHandle.Invalid;
+            }
+
+            return target.ApplyGameplayEffectSpecToSelf(spec);
         }
 
         public bool RemoveActiveGameplayEffect(ActiveGameplayEffectHandle handle)
@@ -148,7 +213,7 @@ namespace Core.AbilitySystem
                     while (active.PeriodTimer >= def.Period)
                     {
                         active.PeriodTimer -= def.Period;
-                        ExecuteModifiers(active.Spec);
+                        ExecuteGameplayEffect(active.Spec);
                     }
                 }
 
@@ -168,105 +233,103 @@ namespace Core.AbilitySystem
             }
         }
 
-        // ── Modifier 실행 (Instant / Periodic) ───────────────────────────────────
+        // ── GE 실행 (Instant / Periodic) ─────────────────────────────────────────
 
         /// <summary>
-        /// Instant / Periodic GE의 Execute 경로. GAS의 ExecuteGameplayEffect와 동일한 방식으로 동작한다.
+        /// Instant / Periodic GE의 Execute 경로 — Modifier 적용과 Execution 실행을 모두 수행한다.
+        /// (UE: FActiveGameplayEffectsContainer::ExecuteActiveEffectsFrom)
         /// Modifiers 배열 순서대로 BaseValue에 순차 적용된다. 각 Modifier는 이전 Modifier가 쓴 결과를
         /// 읽어 연산하므로, 같은 어트리뷰트를 대상으로 하는 Modifier가 여러 개일 때 순서가 결과에 영향을 준다.
         /// (Aggregator로 CurrentValue만 수정하는 persistent modifier와 달리, BaseValue를 영구 변경한다.)
+        ///
+        /// BaseValue를 쓸 때마다 그 자리에서 CurrentValue까지 재계산해 둘의 정합을 항상 유지한다.
+        /// (UE: InternalExecuteMod → SetAttributeBaseValue가 어그리게이터를 MarkDirty해 즉시 갱신.)
+        /// 마지막에 몰아서 갱신하면 뒤따르는 Modifier·Execution이 stale CurrentValue를 읽게 된다.
         /// </summary>
-        private void ExecuteModifiers(GameplayEffectSpec spec)
+        private void ExecuteGameplayEffect(GameplayEffectSpec spec)
         {
-            _tempHandles.Clear();
-
             foreach (GameplayModifierSpec modSpec in spec.Modifiers)
             {
-                if (!TryGetAttributeData(modSpec.Handle, out AttributeData data))
-                {
-                    continue;
-                }
-
-                float mag = modSpec.EvaluatedMagnitude;
-                switch (modSpec.Operation)
-                {
-                    case GameplayModifierOperation.AddBase:
-                    case GameplayModifierOperation.AddFinal:
-                    {
-                        data.BaseValue += mag;
-                        break;
-                    }
-                    case GameplayModifierOperation.MultiplyAdditive:
-                    case GameplayModifierOperation.MultiplyCompound:
-                    {
-                        data.BaseValue *= mag;
-                        break;
-                    }
-                    case GameplayModifierOperation.DivideAdditive:
-                    {
-                        data.BaseValue /= (mag != 0f ? mag : 1f);
-                        break;
-                    }
-                    case GameplayModifierOperation.Override:
-                    {
-                        data.BaseValue = mag;
-                        break;
-                    }
-                }
-
-                TrySetAttributeData(modSpec.Handle, data);
-                _tempHandles.Add(modSpec.Handle);
+                ApplyEvaluatedModifier(new GameplayModifierEvaluatedData(modSpec.Handle, modSpec.EvaluatedMagnitude, modSpec.Operation));
             }
 
             RunExecutions(spec);
-
-            foreach (AttributeHandle handle in _tempHandles)
-            {
-                RecalculateAttributeCurrentValue(handle);
-            }
         }
 
+        /// <summary>
+        /// Execution을 하나씩 실행하고, **각 Execution의 출력을 다음 Execution 전에 반영**한다.
+        /// 따라서 Execution[1]은 Execution[0]이 바꾼 어트리뷰트를 본다.
+        /// (UE: ExecuteActiveEffectsFrom에서 ExecutionParams·ExecutionOutput이 executions 루프 내부의 지역 변수라,
+        ///  출력을 execution 간에 누적하는 것 자체가 불가능하다.)
+        /// </summary>
         private void RunExecutions(GameplayEffectSpec spec)
         {
-            IReadOnlyList<GameplayEffectExecutionAsset> executions = spec.Definition.Executions;
-            if (executions == null || executions.Count == 0)
+            IReadOnlyList<GameplayEffectExecution> executions = spec.Executions;
+            if (executions.Count == 0)
             {
                 return;
             }
 
-            var execParams = new GameplayEffectExecutionParameters(this, spec);
-            foreach (GameplayEffectExecutionAsset execution in executions)
+            foreach (GameplayEffectExecution execution in executions)
             {
-                if (execution == null)
-                {
-                    continue;
-                }
+                // 둘 다 execution 스코프 지역 변수다(UE도 동일). output은 내부 List 때문에 호출당
+                // 소량 할당이 있지만, 재사용(Clear)으로 아끼는 양보다 스코프가 명확한 쪽이 낫다고 보고 감수한다.
+                GameplayEffectExecutionParameters execParams = new GameplayEffectExecutionParameters(this, spec);
+                GameplayEffectExecutionOutput execOutput = GameplayEffectExecutionOutput.Create();
 
-                execution.Execute(execParams);
+                execution.Execute(execParams, execOutput);
+
+                foreach (GameplayModifierEvaluatedData evaluated in execOutput.OutputModifiers)
+                {
+                    ApplyEvaluatedModifier(evaluated);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 평가가 끝난 모디파이어 1건을 BaseValue에 적용하고 CurrentValue까지 즉시 재계산한다.
+        /// **Execute 경로의 유일한 쓰기 지점**이다 — Modifier와 Execution 출력이 같은 경로를 타야
+        /// 둘의 연산 지원 범위가 어긋나지 않는다.
+        /// (UE: FActiveGameplayEffectsContainer::InternalExecuteMod → ApplyModToAttribute → SetAttributeBaseValue)
+        /// </summary>
+        private void ApplyEvaluatedModifier(GameplayModifierEvaluatedData evaluated)
+        {
+            if (!TryGetAttributeData(evaluated.Handle, out AttributeData data))
+            {
+                return;
             }
 
-            foreach (GameplayEffectExecutionOutput output in execParams.Outputs)
+            data.BaseValue = ExecuteModOnBaseValue(data.BaseValue, evaluated.Operation, evaluated.Magnitude);
+            TrySetAttributeData(evaluated.Handle, data);
+            RecalculateAttributeCurrentValue(evaluated.Handle);
+        }
+
+        /// <summary>
+        /// Execute 경로에서 연산을 BaseValue에 직접 적용한다.
+        /// persistent 경로(aggregator 누산)와 달리 즉시·영구 변경이라, 가산 계열(AddBase/AddFinal)과
+        /// 배율 계열(MultiplyAdditive/MultiplyCompound)은 각각 같은 연산으로 수렴한다.
+        /// (UE: FAggregator::StaticExecModOnBaseValue)
+        /// </summary>
+        private static float ExecuteModOnBaseValue(float baseValue, GameplayModifierOperation operation, float magnitude)
+        {
+            switch (operation)
             {
-                if (!TryGetAttributeData(output.Handle, out AttributeData data))
-                {
-                    continue;
-                }
+                case GameplayModifierOperation.AddBase:
+                case GameplayModifierOperation.AddFinal:
+                    return baseValue + magnitude;
 
-                switch (output.Operation)
-                {
-                    case GameplayModifierOperation.AddBase:
-                        data.BaseValue += output.Magnitude;
-                        break;
-                    case GameplayModifierOperation.Override:
-                        data.BaseValue = output.Magnitude;
-                        break;
-                    default:
-                        Debug.LogWarning($"[ASC] Execution output '{output.Operation}'은 AddBase 또는 Override만 지원합니다.");
-                        continue;
-                }
+                case GameplayModifierOperation.MultiplyAdditive:
+                case GameplayModifierOperation.MultiplyCompound:
+                    return baseValue * magnitude;
 
-                TrySetAttributeData(output.Handle, data);
-                _tempHandles.Add(output.Handle);
+                case GameplayModifierOperation.DivideAdditive:
+                    return Mathf.Approximately(magnitude, 0f) ? baseValue : baseValue / magnitude;
+
+                case GameplayModifierOperation.Override:
+                    return magnitude;
+
+                default:
+                    return baseValue;
             }
         }
 
