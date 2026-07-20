@@ -29,7 +29,7 @@ MonoBehaviour:
         Culture=neutral, PublicKeyToken=null
       fieldName: damage
       captureValueType: 1
-      coefficient: 0
+      coefficient: 1
       preMultiplyAdditive: 0
       postMultiplyAdditive: 0
   - attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
