@@ -12,4 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca4b1177d8884bb48e6bc94b25dd4b0c, type: 3}
   m_Name: Enemy_AttributeInitData
   m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Attribute.AttributeInitData
-  attributeSets: []
+  attributeSets:
+  - attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+    attributes:
+    - fieldName: health
+      baseValue: 0
+    - fieldName: maxHealth
+      baseValue: 0
+    - fieldName: stamina
+      baseValue: 0
+    - fieldName: maxStamina
+      baseValue: 0
+    - fieldName: speed
+      baseValue: 0

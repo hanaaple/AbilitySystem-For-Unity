@@ -10,30 +10,51 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fbfbc065558b85245af777d65720a126, type: 3}
-  m_Name: GE_MeleeDamage
+  m_Name: GE_Speed
   m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Effect.GameplayEffect
-  type: 0
-  duration: 0
-  period: 0
+  type: 2
+  duration: 100
+  period: 100
   executePeriodicEffectOnApplication: 1
   modifiers:
   - attribute:
       attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
-      fieldName: maxHealth
+      fieldName: maxStamina
     operation: 0
     magnitudeCalculationType: 1
-    magnitude: -10
+    magnitude: 0
     attributeBased:
       backingAttribute:
-        captureSource: 1
+        captureSource: 0
+        attribute:
+          attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
+            Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+          fieldName: health
+        snapshot: 0
+      captureValueType: 0
+      coefficient: 1
+      preMultiplyAdditive: 0
+      postMultiplyAdditive: 0
+  - attribute:
+      attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      fieldName: speed
+    operation: 0
+    magnitudeCalculationType: 1
+    magnitude: 0
+    attributeBased:
+      backingAttribute:
+        captureSource: 0
         attribute:
           attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
             Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
           fieldName: stamina
         snapshot: 0
       captureValueType: 0
-      coefficient: 0
+      coefficient: 1
       preMultiplyAdditive: 0
       postMultiplyAdditive: 0
-  executionTypeNames: []
+  executionTypeNames:
+  - Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+    PublicKeyToken=null
