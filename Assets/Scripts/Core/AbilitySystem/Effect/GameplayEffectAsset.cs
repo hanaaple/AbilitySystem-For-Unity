@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
 {
+
+    /// <summary>
+    /// GE의 정적 정의(무엇을·얼마나·어떻게 적용할지)를 담는 데이터 에셋 (UE: <c>UGameplayEffect</c>).
+    /// 런타임 적용 시 이 에셋으로부터 <see cref="GameplayEffectSpec"/>(UE: <c>FGameplayEffectSpec</c>)이 만들어진다.
+    /// </summary>
     [CreateAssetMenu(menuName = "Ability System/Gameplay Effect", fileName = "GE_New")]
     public sealed class GameplayEffectAsset : ScriptableObject
     {

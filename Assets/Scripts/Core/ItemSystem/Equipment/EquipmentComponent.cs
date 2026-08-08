@@ -126,7 +126,7 @@ namespace Core.ItemSystem.Equipment
                     continue;
                 }
 
-                // GAS 재사용: 대상이 자신에게 Instant 데미지 효과를 적용 → Health BaseValue 감소.
+                // Ability System 재사용: 대상이 자신에게 Instant 데미지 효과를 적용 → Health BaseValue 감소.
                 targetAsc.ApplyGameplayEffectToSelf(attack.DamageEffect);
             }
         }

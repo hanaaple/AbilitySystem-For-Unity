@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Attribute
 {
-    [CreateAssetMenu(menuName = "GAS/Attribute Definition Asset")]
+    [CreateAssetMenu(menuName = "Ability System/Attribute Definition Asset")]
     public sealed class AttributeDefinitionAsset : ScriptableObject
     {
         [SerializeField]
