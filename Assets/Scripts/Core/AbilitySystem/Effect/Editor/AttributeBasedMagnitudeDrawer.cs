@@ -1,4 +1,3 @@
-using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,28 +12,33 @@ namespace Core.AbilitySystem.Effect.Editor
     [CustomPropertyDrawer(typeof(AttributeBasedMagnitude))]
     public sealed class AttributeBasedMagnitudeDrawer : PropertyDrawer
     {
-        // Capture From / Attribute Set / Attribute / Value Type / Coefficient / Pre-Add / Post-Add
-        private const int RowCount = 7;
         private const float RowGap = 2f;
 
-        private const string CaptureSourceName = "captureSource";
-        private const string AttributeSetTypeNameName = "attributeSetTypeName";
-        private const string FieldNameName = "fieldName";
+        // 캡처 대상(captureSource/attribute/snapshot)은 중첩된 backingAttribute(GameplayEffectAttributeCaptureDefinition) 안에 있다.
+        // Set/Attribute 팝업은 attribute(GameplayAttribute)의 전용 드로어가 그린다.
+        private const string CaptureSourceName = "backingAttribute.captureSource";
+        private const string AttributeName = "backingAttribute.attribute";
+        private const string SnapshotName = "backingAttribute.snapshot";
         private const string CaptureValueTypeName = "captureValueType";
         private const string CoefficientName = "coefficient";
         private const string PreMultiplyAdditiveName = "preMultiplyAdditive";
         private const string PostMultiplyAdditiveName = "postMultiplyAdditive";
 
+        // 단일행: Capture From / Snapshot / Value Type / Coefficient / Pre-Add / Post-Add
+        private const int SingleLineRowCount = 6;
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUIUtility.singleLineHeight * RowCount + RowGap * (RowCount - 1);
+            float lineH = EditorGUIUtility.singleLineHeight;
+            float attributeH = EditorGUI.GetPropertyHeight(property.FindPropertyRelative(AttributeName), true);
+            return lineH * SingleLineRowCount + attributeH + RowGap * SingleLineRowCount;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             SerializedProperty captureSource = property.FindPropertyRelative(CaptureSourceName);
-            SerializedProperty typeName      = property.FindPropertyRelative(AttributeSetTypeNameName);
-            SerializedProperty fieldName     = property.FindPropertyRelative(FieldNameName);
+            SerializedProperty attribute     = property.FindPropertyRelative(AttributeName);
+            SerializedProperty snapshot      = property.FindPropertyRelative(SnapshotName);
             SerializedProperty valueType     = property.FindPropertyRelative(CaptureValueTypeName);
             SerializedProperty coefficient   = property.FindPropertyRelative(CoefficientName);
             SerializedProperty preAdd        = property.FindPropertyRelative(PreMultiplyAdditiveName);
@@ -46,37 +50,13 @@ namespace Core.AbilitySystem.Effect.Editor
 
             EditorGUI.PropertyField(row, captureSource, new GUIContent("Capture From"));
 
-            // Attribute Set (0 = None → 하위 Field 초기화)
+            // Attribute Set + Attribute — GameplayAttribute 전용 드로어가 2행으로 그린다.
             row.y += step;
-            Type[] setTypes = AttributeReferenceGUI.GetSetTypes();
-            string[] setNames = AttributeReferenceGUI.GetSetDisplayNames(setTypes);
-            int setIndex = AttributeReferenceGUI.GetSetPopupIndex(setTypes, typeName.stringValue);
-            int newSetIndex = EditorGUI.Popup(row, "Attribute Set", setIndex, setNames);
-            if (newSetIndex != setIndex)
-            {
-                typeName.stringValue = newSetIndex == 0
-                    ? string.Empty
-                    : setTypes[newSetIndex - 1].AssemblyQualifiedName;
-                fieldName.stringValue = string.Empty;
-            }
+            float attributeH = EditorGUI.GetPropertyHeight(attribute, true);
+            EditorGUI.PropertyField(new Rect(row.x, row.y, row.width, attributeH), attribute, GUIContent.none, true);
+            row.y += attributeH + RowGap;
 
-            // Attribute (field) — Set이 정해진 경우만 선택 가능
-            row.y += step;
-            if (newSetIndex > 0)
-            {
-                string[] fieldNames = AttributeReferenceGUI.GetFieldNames(setTypes[newSetIndex - 1]);
-                int fieldIndex = Array.IndexOf(fieldNames, fieldName.stringValue);
-                int newFieldIndex = EditorGUI.Popup(row, "Attribute", fieldIndex, fieldNames);
-                if (newFieldIndex >= 0 && newFieldIndex < fieldNames.Length)
-                {
-                    fieldName.stringValue = fieldNames[newFieldIndex];
-                }
-            }
-            else
-            {
-                EditorGUI.LabelField(row, "Attribute", "—");
-            }
-
+            EditorGUI.PropertyField(row, snapshot, new GUIContent("Snapshot", "true면 캡처(적용) 시점 값을 고정, false면 조회 시점 라이브 값"));
             row.y += step;
             EditorGUI.PropertyField(row, valueType, new GUIContent("Value Type"));
             row.y += step;

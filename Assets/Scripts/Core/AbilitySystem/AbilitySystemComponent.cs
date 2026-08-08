@@ -21,7 +21,7 @@ namespace Core.AbilitySystem
 
         private void Awake()
         {
-            InitAttributeSets();
+            AddSet(attributeInitData);
         }
 
         private void Update()
@@ -37,7 +37,7 @@ namespace Core.AbilitySystem
         // ── AttributeSet ──────────────────────────────────────────────────────────
 
         /// <summary>같은 타입의 AttributeSet은 하나만 등록 가능.</summary>
-        public bool AddAttributeSet(AttributeSet set)
+        public bool AddSpawnedAttribute(AttributeSet set)
         {
             return _spawnedAttributeSets.TryAdd(set.GetType(), set);
         }
@@ -127,27 +127,35 @@ namespace Core.AbilitySystem
                 return ActiveGameplayEffectHandle.Invalid;
             }
 
-            GameplayEffectAsset def = spec.Definition;
+            // 적용 경계에서 spec을 한 번 복제하고 그 복사본에 Target(this=적용 대상)을 캡처한다 —
+            // Instant·Duration 공통. 복사본에 캡처해야 여러 대상에 같은 spec을 적용해도 서로의 캡처값을 덮어쓰지 않고(→D14/D19),
+            // 하나의 복사본이 캡처→실행→저장을 관통한다.
+            // (UE: Duration은 ApplyGameplayEffectSpec 내부 복사본에, Instant는 StackSpec 복사본에 각각 CaptureAttributeDataFromTarget —
+            //  두 경로 모두 복사본에 캡처한다. 우리 구조에선 이중 복사가 없어 이 한 곳으로 통일한다.)
+            GameplayEffectSpec appliedSpec = spec.Clone();
+            appliedSpec.CaptureAttributeDataFromTarget(this);
+
+            GameplayEffectAsset def = appliedSpec.Definition;
 
             if (def.Type == GameplayEffectType.Instant)
             {
-                ExecuteGameplayEffect(spec);
+                ExecuteGameplayEffect(appliedSpec);
                 return ActiveGameplayEffectHandle.Invalid;
             }
 
             var handle = new ActiveGameplayEffectHandle(++_handleIdCounter);
-            var active = new ActiveGameplayEffect(handle, spec);
+            var active = new ActiveGameplayEffect(handle, appliedSpec, this);
             _activeEffects.Add(handle, active);
 
             if (def.Period > 0f && def.ExecutePeriodicEffectOnApplication)
             {
-                ExecuteGameplayEffect(spec);
+                ExecuteGameplayEffect(appliedSpec);
             }
 
             // period == 0인 경우만 persistent modifier로서 CurrentValue에 반영
             if (def.Period <= 0f)
             {
-                RecalculateAffectedAttributes(spec);
+                RecalculateAffectedAttributes(appliedSpec);
             }
 
             return handle;
@@ -475,14 +483,18 @@ namespace Core.AbilitySystem
 
         // ── 초기화 ────────────────────────────────────────────────────────────────
 
-        private void InitAttributeSets()
+        /// <summary>
+        /// 주어진 정의(SO)로 AttributeSet들을 생성해 등록한다. 이미 같은 타입이 등록돼 있으면 건너뛴다(AddSpawnedAttribute=TryAdd).
+        /// Awake의 자체 초기화(attributeInitData) 외에, 외부(예: BoxRoom)가 Source 캡처용 어트리뷰트를 주입할 때도 쓴다.
+        /// </summary>
+        public void AddSet(AttributeDefinitionAsset data)
         {
-            if (attributeInitData == null)
+            if (data == null)
             {
                 return;
             }
 
-            foreach (AttributeSetDefinition attributeSetData in attributeInitData.AttributeSets)
+            foreach (AttributeSetDefinition attributeSetData in data.AttributeSets)
             {
                 Type attributeSetType = attributeSetData.GetAttributeSetType();
                 if (attributeSetType == null || !typeof(AttributeSet).IsAssignableFrom(attributeSetType))
@@ -503,7 +515,7 @@ namespace Core.AbilitySystem
                     field.SetValue(set, fieldData.Data);
                 }
 
-                AddAttributeSet(set);
+                AddSpawnedAttribute(set);
             }
         }
     }

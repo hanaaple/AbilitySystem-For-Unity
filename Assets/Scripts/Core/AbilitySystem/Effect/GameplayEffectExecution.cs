@@ -1,3 +1,6 @@
+using System;
+using Core.AbilitySystem.Attribute;
+
 namespace Core.AbilitySystem.Effect
 {
     /// <summary>
@@ -9,6 +12,13 @@ namespace Core.AbilitySystem.Effect
     /// </summary>
     public abstract class GameplayEffectExecution
     {
+        /// <summary>
+        /// 이 Execution이 계산에 쓰려고 캡처할 어트리뷰트 정의들. <see cref="GameplayEffectSpec"/>이 이 목록을 읽어
+        /// 캡처 컨테이너에 등록한다(UE: GetAttributeCaptureDefinitions). 캡처 대상은 타입 상수이므로 하위는 보통
+        /// <c>static</c> 배열을 돌려준다. 캡처가 필요 없으면 override하지 않는다(기본 빈 목록).
+        /// </summary>
+        public virtual ReadOnlySpan<GameplayEffectAttributeCaptureDefinition> Defs() => default;
+
         public abstract void Execute(GameplayEffectExecutionParameters parameters, GameplayEffectExecutionOutput output);
     }
 }
