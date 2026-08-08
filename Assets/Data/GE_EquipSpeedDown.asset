@@ -17,31 +17,39 @@ MonoBehaviour:
   period: 0
   executePeriodicEffectOnApplication: 1
   modifiers:
-  - attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-    fieldName: speed
+  - attribute:
+      attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      fieldName: speed
     operation: 0
     magnitudeCalculationType: 1
     magnitude: -5
     attributeBased:
-      captureSource: 0
-      attributeSetTypeName: Character.CombatAttributeSet, Assembly-CSharp, Version=0.0.0.0,
-        Culture=neutral, PublicKeyToken=null
-      fieldName: damage
+      backingAttribute:
+        captureSource: 0
+        attribute:
+          attributeSetTypeName: Character.CombatAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+            Culture=neutral, PublicKeyToken=null
+          fieldName: damage
+        snapshot: 0
       captureValueType: 1
       coefficient: 1
       preMultiplyAdditive: 0
       postMultiplyAdditive: 0
-  - attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-    fieldName: speed
+  - attribute:
+      attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      fieldName: speed
     operation: 0
     magnitudeCalculationType: 0
     magnitude: -5
     attributeBased:
-      captureSource: 0
-      attributeSetTypeName: 
-      fieldName: 
+      backingAttribute:
+        captureSource: 0
+        attribute:
+          attributeSetTypeName:
+          fieldName:
+        snapshot: 0
       captureValueType: 0
       coefficient: 0
       preMultiplyAdditive: 0

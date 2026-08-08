@@ -296,7 +296,6 @@ GameObject:
   - component: {fileID: 348142427196330486}
   - component: {fileID: 5190580206662595096}
   - component: {fileID: 497475714789487770}
-  - component: {fileID: 7773223248348218326}
   - component: {fileID: 2036985881099013013}
   - component: {fileID: 3854992093447366280}
   - component: {fileID: 3485458011949860129}
@@ -362,29 +361,6 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
---- !u!136 &7773223248348218326
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3807656875026141361}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!143 &2036985881099013013
 CharacterController:
   m_ObjectHideFlags: 0
@@ -422,6 +398,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4173692680304981872a082ed1c9d84b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentComponent
+  sockets: []
 --- !u!114 &3485458011949860129
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -17,12 +17,12 @@ MonoBehaviour:
       Culture=neutral, PublicKeyToken=null
     attributes:
     - fieldName: health
-      baseValue: 0
+      baseValue: 1
     - fieldName: maxHealth
-      baseValue: 0
+      baseValue: 10
     - fieldName: stamina
-      baseValue: 0
+      baseValue: 100
     - fieldName: maxStamina
-      baseValue: 0
+      baseValue: 1000
     - fieldName: speed
       baseValue: 10
