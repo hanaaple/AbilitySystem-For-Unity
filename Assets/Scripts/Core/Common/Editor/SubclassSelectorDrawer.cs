@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Core.Common;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
@@ -34,7 +35,7 @@ namespace Core.Common.Editor
         /// <paramref name="excluded"/>에 AQN을 넘기면 그 타입들을 팝업 목록에서 뺀다(예: 리스트 내 중복 제외). null이면 제외 없음.
         /// 어느 범위에서 제외할지(수집)는 이 드로어가 하지 않는다 — 호출측이 스스로 모아 넘긴다(<see cref="CollectSiblingValues"/> 등).
         /// </summary>
-        public static void DrawSelector(Rect position, SerializedProperty property, Type baseType, IReadOnlyCollection<string> excluded, GUIContent label)
+        public static void DrawSelector(Rect position, SerializedProperty property, Type baseType, IReadOnlyCollection<string> excluded, GUIContent label, bool allowCreateNew = false)
         {
             position = EditorGUI.PrefixLabel(position, label);
 
@@ -56,7 +57,11 @@ namespace Core.Common.Editor
                     popupRect.width = SubclassAdvancedDropdown.MinWidth;
                 }
 
-                ShowTypeDropdown(popupRect, property, baseType, excluded);
+                // New Script 팝업은 이 필드 영역 기준으로 띄우므로 화면 좌표를 지금(OnGUI 안) 계산해 넘긴다.
+                Rect activatorScreenRect = allowCreateNew
+                    ? new Rect(GUIUtility.GUIToScreenPoint(position.position), position.size)
+                    : default;
+                ShowTypeDropdown(popupRect, property, baseType, excluded, allowCreateNew, activatorScreenRect);
             }
         }
 
@@ -97,13 +102,26 @@ namespace Core.Common.Editor
             }
         }
 
-        private static void ShowTypeDropdown(Rect rect, SerializedProperty property, Type baseType, IReadOnlyCollection<string> excluded)
+        private static void ShowTypeDropdown(Rect rect, SerializedProperty property, Type baseType, IReadOnlyCollection<string> excluded, bool allowCreateNew, Rect activatorScreenRect)
         {
             // SerializedProperty는 콜백 시점에 무효화될 수 있어 serializedObject + path로 재조회한다.
             SerializedObject so = property.serializedObject;
             string path = property.propertyPath;
+            UnityEngine.Object target = so.targetObject;
 
-            var dropdown = new SubclassAdvancedDropdown(baseType, excluded, type => Assign(so, path, type), new AdvancedDropdownState());
+            IReadOnlyList<Type> types = EditorTypeUtility.GetConcreteSubclasses(baseType);
+            if (excluded != null && excluded.Count > 0)
+            {
+                types = types.Where(type => !excluded.Contains(type.AssemblyQualifiedName)).ToList();
+            }
+
+            Action onNewScript = allowCreateNew
+                ? () => NewSubclassScript.OpenForField(activatorScreenRect, baseType, target, path)
+                : null;
+
+            var dropdown = new SubclassAdvancedDropdown(
+                ObjectNames.NicifyVariableName(baseType.Name), types, includeNone: true,
+                type => Assign(so, path, type), onNewScript, emptyMessage: null, new AdvancedDropdownState());
             dropdown.Show(rect);
         }
 

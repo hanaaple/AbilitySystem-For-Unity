@@ -33,7 +33,10 @@ namespace Core.AbilitySystem.Attribute.Editor
                 AddAttributeSet,
                 "추가 가능한 AttributeSet 없음",
                 drawElement: DrawElement,
-                elementHeight: GetElementHeight);
+                elementHeight: GetElementHeight,
+                newScriptBaseType: typeof(AttributeSet),
+                newScriptTypeRelPath: TypeNamePropertyName,
+                newScriptClearArrayRelPath: AttributesPropertyName);
         }
 
         public override void OnInspectorGUI()

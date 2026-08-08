@@ -53,7 +53,7 @@ namespace Core.AbilitySystem.Attribute.Editor
             // (AttributeSetDefinition[] 배열 안의 중복 방지는 이 케이스의 특수 요구라, 범용 드로어에 넣지 않고 여기서 조립한다.)
             Rect typeRect = new Rect(position.x, y, position.width, EditorGUIUtility.singleLineHeight);
             HashSet<string> usedByOthers = SubclassSelectorDrawer.CollectSiblingValues(attributeSetTypeNameProperty);
-            SubclassSelectorDrawer.DrawSelector(typeRect, attributeSetTypeNameProperty, typeof(AttributeSet), usedByOthers, new GUIContent("Attribute Set"));
+            SubclassSelectorDrawer.DrawSelector(typeRect, attributeSetTypeNameProperty, typeof(AttributeSet), usedByOthers, new GUIContent("Attribute Set"), allowCreateNew: true);
             y += EditorGUIUtility.singleLineHeight + LineGap;
 
             // DrawSelector의 선택 변경은 팝업 콜백으로 다음 프레임에 반영되므로, 이번 프레임은 위에서 구한 resolvedType으로 그린다.
