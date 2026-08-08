@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -8,8 +7,9 @@ using UnityEngine;
 namespace Core.Common.Editor
 {
     /// <summary>
-    /// baseType의 구체 서브클래스를 검색 가능한 네이티브 팝업(Add Component 창과 동일한 AdvancedDropdown)으로 고른다.
-    /// 첫 항목은 None(선택 해제). 선택 결과는 onSelected 콜백으로 넘긴다.
+    /// 타입 목록을 검색 가능한 네이티브 팝업(Add Component 창과 동일한 AdvancedDropdown)으로 고른다.
+    /// 후보 타입·None 포함 여부·"New Script..." 노출은 호출부가 정한다(필드 셀렉터·다형 리스트 add 공용).
+    /// 선택 결과는 onSelected, "New Script..."는 onNewScript 콜백으로 넘긴다.
     /// </summary>
     internal sealed class SubclassAdvancedDropdown : AdvancedDropdown
     {
@@ -17,18 +17,33 @@ namespace Core.Common.Editor
         public const float MinWidth = 260f;
         public const float MinHeight = 320f;
 
-        private readonly Type _baseType;
+        private readonly string _title;
+        private readonly IReadOnlyList<Type> _types;
+        private readonly bool _includeNone;
         private readonly Action<Type> _onSelected;
 
-        // 목록에서 제외할 타입의 AssemblyQualifiedName(중복 선택 방지). null이면 제외 없음.
-        private readonly IReadOnlyCollection<string> _excludedAqns;
+        // "New Script..." 선택 시 콜백. null이면 항목을 아예 넣지 않는다(호출부별 opt-in).
+        private readonly Action _onNewScript;
 
-        public SubclassAdvancedDropdown(Type baseType, IReadOnlyCollection<string> excludedAqns, Action<Type> onSelected, AdvancedDropdownState state)
+        // 후보가 하나도 없을 때 보여줄 비활성 안내(무반응처럼 보이지 않게). null이면 표시 안 함.
+        private readonly string _emptyMessage;
+
+        public SubclassAdvancedDropdown(
+            string title,
+            IReadOnlyList<Type> types,
+            bool includeNone,
+            Action<Type> onSelected,
+            Action onNewScript,
+            string emptyMessage,
+            AdvancedDropdownState state)
             : base(state)
         {
-            _baseType = baseType;
-            _excludedAqns = excludedAqns;
+            _title = title;
+            _types = types;
+            _includeNone = includeNone;
             _onSelected = onSelected;
+            _onNewScript = onNewScript;
+            _emptyMessage = emptyMessage;
             minimumSize = new Vector2(MinWidth, MinHeight);
         }
 
@@ -45,22 +60,39 @@ namespace Core.Common.Editor
             }
         }
 
+        // "New Script..." 전용 마커 항목. 타입 선택이 아니라 새 스크립트 생성 흐름으로 분기시킨다.
+        private sealed class NewScriptItem : AdvancedDropdownItem
+        {
+            public NewScriptItem(string name, int id) : base(name) => this.id = id;
+        }
+
         protected override AdvancedDropdownItem BuildRoot()
         {
-            var root = new AdvancedDropdownItem(ObjectNames.NicifyVariableName(_baseType.Name));
+            var root = new AdvancedDropdownItem(_title);
 
             int id = 1;
-            root.AddChild(new TypeItem("None", null, id++));
-            root.AddSeparator();
 
-            foreach (Type type in EditorTypeUtility.GetConcreteSubclasses(_baseType))
+            if (_includeNone)
             {
-                if (_excludedAqns != null && _excludedAqns.Contains(type.AssemblyQualifiedName))
-                {
-                    continue;
-                }
+                root.AddChild(new TypeItem("None", null, id++));
+                root.AddSeparator();
+            }
 
+            foreach (Type type in _types)
+            {
                 root.AddChild(new TypeItem(ObjectNames.NicifyVariableName(type.Name), type, id++));
+            }
+
+            if (_onNewScript != null)
+            {
+                root.AddSeparator();
+                root.AddChild(new NewScriptItem("New Script...", id++));
+            }
+
+            // 고를 수 있는 항목(None·타입·New Script)이 하나도 없으면 안내를 비활성으로 보여준다.
+            if (!_includeNone && _types.Count == 0 && _onNewScript == null && !string.IsNullOrEmpty(_emptyMessage))
+            {
+                root.AddChild(new AdvancedDropdownItem(_emptyMessage) { enabled = false });
             }
 
             return root;
@@ -68,6 +100,12 @@ namespace Core.Common.Editor
 
         protected override void ItemSelected(AdvancedDropdownItem item)
         {
+            if (item is NewScriptItem)
+            {
+                _onNewScript();
+                return;
+            }
+
             if (item is TypeItem typeItem)
             {
                 _onSelected(typeItem.Type);
