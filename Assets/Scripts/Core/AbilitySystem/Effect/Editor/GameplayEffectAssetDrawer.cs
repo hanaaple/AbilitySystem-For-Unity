@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Core.AbilitySystem.Effect;
+using Core.Common.Editor;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -18,14 +19,19 @@ namespace Core.AbilitySystem.Effect.Editor
         private const string ModifiersPropertyName = "modifiers";
         private const string ExecutionsPropertyName = "executionTypeNames";
 
-        private const string AttributeSetTypeNamePropertyName = "attributeSetTypeName";
-        private const string FieldNamePropertyName = "fieldName";
+        // 대상 어트리뷰트는 GameplayModifier.attribute(GameplayAttribute) 안에 있다.
+        // Set/Attribute 팝업은 그 전용 드로어가 그리고, 여기선 요약·높이 계산을 위해 중첩 경로로 읽는다.
+        private const string AttributePropertyName = "attribute";
+        private const string AttributeSetTypeNamePropertyName = "attribute.attributeSetTypeName";
+        private const string FieldNamePropertyName = "attribute.fieldName";
         private const string OperationPropertyName = "operation";
         private const string MagnitudeCalculationTypePropertyName = "magnitudeCalculationType";
         private const string MagnitudePropertyName = "magnitude";
 
         // AttributeBased payload는 자체 PropertyDrawer(AttributeBasedMagnitudeDrawer)가 그린다. 여기선 위임만.
         private const string AttributeBasedPropertyName = "attributeBased";
+
+        // 새 modifier 추가 시 coefficient 기본값(1)을 세팅하기 위한 중첩 경로 조각(attributeBased.coefficient).
         private const string CoefficientPropertyName = "coefficient";
 
         private const float LineGap = 4f;
@@ -58,6 +64,7 @@ namespace Core.AbilitySystem.Effect.Editor
         private SerializedProperty _executions;
 
         private ReorderableList _list;
+        private ReorderableList _executionList;
 
         private void OnEnable()
         {
@@ -69,6 +76,7 @@ namespace Core.AbilitySystem.Effect.Editor
             _executions = serializedObject.FindProperty(ExecutionsPropertyName);
 
             BuildReorderableList();
+            BuildExecutionList();
         }
 
         public override void OnInspectorGUI()
@@ -80,9 +88,7 @@ namespace Core.AbilitySystem.Effect.Editor
             DrawModifiersList();
 
             EditorGUILayout.Space(6f);
-            EditorGUILayout.PropertyField(_executions, new GUIContent("Executions",
-                "Modifier로 표현할 수 없는 커스텀 계산(GameplayEffectExecution 서브클래스).\n" +
-                "Instant 또는 Period > 0 인 GE에서만 실행된다."), true);
+            _executionList.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -136,20 +142,70 @@ namespace Core.AbilitySystem.Effect.Editor
             };
         }
 
-        // Unity는 struct 필드 초기화값을 직렬화에 반영하지 않으므로(새 요소=전부 0),
-        // AttributeBased의 coefficient 기본값 1을 요소 추가 시점에 세팅한다(나머지는 0이 기본).
         private static void OnAddModifier(ReorderableList list)
         {
             int newIndex = list.serializedProperty.arraySize;
             list.serializedProperty.arraySize++;
             list.index = newIndex;
 
-            SerializedProperty added = list.serializedProperty.GetArrayElementAtIndex(newIndex);
-            added.FindPropertyRelative(AttributeBasedPropertyName)
-                 .FindPropertyRelative(CoefficientPropertyName).floatValue = 1f;
-
             // 새로 추가한 요소는 바로 편집할 수 있게 펼친 상태로 시작한다(isExpanded 기본값은 false).
+            SerializedProperty added = list.serializedProperty.GetArrayElementAtIndex(newIndex);
             added.isExpanded = true;
+
+            // AttributeBased coefficient 기본값 1: AttributeBasedMagnitude의 `coefficient = 1f` 필드 이니셜라이저는
+            // C# new 경로에서만 돌고, arraySize++ 직렬화 경로에선 실행되지 않아 float 기본값 0이 된다(class여도 동일).
+            // 0이면 (value+Pre)*coef+Post 식이 통째로 0이 되므로 여기서 명시적으로 1을 넣는다.
+            SerializedProperty coefficient = added.FindPropertyRelative(AttributeBasedPropertyName + "." + CoefficientPropertyName);
+            if (coefficient != null)
+            {
+                coefficient.floatValue = 1f;
+            }
+        }
+
+        // executionTypeNames는 AQN 문자열 리스트라, Modifiers와 달리 "타입 골라 추가"가 자연스럽다.
+        // AttributeSet 리스트와 같은 검색형 Add(TypeChoiceList)를 쓴다. (New Script는 GameplayEffectExecution의
+        // abstract Execute 때문에 빈 템플릿이 컴파일되지 않아 제외 — 필요하면 override 스텁 생성이 선행돼야 한다.)
+        private void BuildExecutionList()
+        {
+            _executionList = TypeChoiceList.Create(
+                serializedObject,
+                _executions,
+                "Executions",
+                GetAddableExecutions,
+                AddExecution,
+                "추가 가능한 Execution 없음",
+                drawElement: DrawExecutionElement,
+                elementHeight: _ => EditorGUIUtility.singleLineHeight + 4f);
+        }
+
+        // 후보: GameplayEffectExecution 구체 서브클래스 중 이미 담긴 것은 제외(같은 Execution 중복 추가 방지).
+        private IEnumerable<Type> GetAddableExecutions()
+        {
+            var used = new HashSet<string>();
+            for (int i = 0; i < _executions.arraySize; i++)
+            {
+                string aqn = _executions.GetArrayElementAtIndex(i).stringValue;
+                if (!string.IsNullOrEmpty(aqn))
+                {
+                    used.Add(aqn);
+                }
+            }
+
+            return EditorTypeUtility.GetConcreteSubclasses(typeof(GameplayEffectExecution))
+                .Where(type => !used.Contains(type.AssemblyQualifiedName));
+        }
+
+        // 요소 자체가 타입 이름(AQN)이라 새 요소에 바로 넣는다.
+        private static void AddExecution(SerializedProperty element, Type type)
+        {
+            element.stringValue = type.AssemblyQualifiedName;
+        }
+
+        // 각 요소는 [SubclassSelector]가 붙은 문자열이라 그 전용 드로어(스크립트 필드 + 검색 드롭다운)로 그려진다.
+        private void DrawExecutionElement(Rect rect, int index, bool isActive, bool isFocused)
+        {
+            Rect line = new Rect(rect.x, rect.y + 2f, rect.width, EditorGUIUtility.singleLineHeight);
+            EditorGUI.PropertyField(line, _executions.GetArrayElementAtIndex(index), GUIContent.none);
         }
 
         /// <summary>
@@ -209,15 +265,23 @@ namespace Core.AbilitySystem.Effect.Editor
             }
 
             float spacing = lineH + LineGap;
-            SerializedProperty typeName = modifier.FindPropertyRelative(AttributeSetTypeNamePropertyName);
+            SerializedProperty attribute = modifier.FindPropertyRelative(AttributePropertyName);
+            float attributeH = EditorGUI.GetPropertyHeight(attribute, true);
 
-            if (string.IsNullOrEmpty(typeName.stringValue))
+            // foldout 헤더 + Attribute(Set/Field, 가변).
+            float height = spacing + attributeH;
+
+            // Set 미지정이면 이하(Op·Magnitude) 숨김.
+            if (string.IsNullOrEmpty(attribute.FindPropertyRelative("attributeSetTypeName").stringValue))
             {
-                return spacing + lineH + ElementVerticalPadding * 2;
+                return height + ElementVerticalPadding * 2;
             }
 
-            // foldout 헤더 + 고정 5행(Attribute Set / Attribute / Modifier Op / Magnitude 라벨 / Calc Type) + magnitude 값 영역(가변).
-            return spacing + spacing * 5 + SectionGap * 2 + GetMagnitudeValueHeight(modifier) + ElementVerticalPadding * 2;
+            // Modifier Op + Magnitude(라벨 + Calc Type + 값 영역, 가변). SectionGap은 Op↔Magnitude 분리 + 하단 박스 여백.
+            height += LineGap + lineH                                   // Modifier Op
+                    + spacing + SectionGap + spacing * 2 + GetMagnitudeValueHeight(modifier)  // Magnitude 섹션
+                    + SectionGap;                                       // 박스 하단 여백 버퍼
+            return height + ElementVerticalPadding * 2;
         }
 
         /// <summary>접힘 상태에서 요소를 식별할 수 있게 하는 한 줄 요약.</summary>
@@ -252,9 +316,8 @@ namespace Core.AbilitySystem.Effect.Editor
 
         private void DrawModifierElement(Rect rect, int index, bool isActive, bool isFocused)
         {
-            SerializedProperty modifier = _modifiers.GetArrayElementAtIndex(index);
-            SerializedProperty typeName  = modifier.FindPropertyRelative(AttributeSetTypeNamePropertyName);
-            SerializedProperty fieldName = modifier.FindPropertyRelative(FieldNamePropertyName);
+            SerializedProperty modifier  = _modifiers.GetArrayElementAtIndex(index);
+            SerializedProperty attribute = modifier.FindPropertyRelative(AttributePropertyName);
             SerializedProperty operation = modifier.FindPropertyRelative(OperationPropertyName);
             SerializedProperty calcType  = modifier.FindPropertyRelative(MagnitudeCalculationTypePropertyName);
             SerializedProperty magnitude = modifier.FindPropertyRelative(MagnitudePropertyName);
@@ -279,56 +342,29 @@ namespace Core.AbilitySystem.Effect.Editor
 
             EditorGUIUtility.labelWidth = ModifierLabelWidth;
 
-            Type[] setTypes = AttributeReferenceGUI.GetSetTypes();
-            string[] setDisplayNames = AttributeReferenceGUI.GetSetDisplayNames(setTypes);
+            // Attribute Set + Attribute — GameplayAttribute 전용 드로어가 2행으로 그린다.
+            float attributeH = EditorGUI.GetPropertyHeight(attribute, true);
+            float attrY = rect.y + spacing;
+            EditorGUI.PropertyField(new Rect(rect.x, attrY, rect.width, attributeH), attribute, GUIContent.none, true);
 
-            // Row 0: Attribute Set (popup index 0 = None, 1+ = 실제 타입)
-            float row0Y = rect.y + spacing;
-            int setPopupIndex = AttributeReferenceGUI.GetSetPopupIndex(setTypes, typeName.stringValue);
-            int newSetPopupIndex = EditorGUI.Popup(new Rect(rect.x, row0Y, rect.width, lineH), "Attribute Set", setPopupIndex, setDisplayNames);
-
-            if (newSetPopupIndex != setPopupIndex)
+            // Set 미지정이면 이하(Op·Magnitude) 전체 무시.
+            if (string.IsNullOrEmpty(attribute.FindPropertyRelative("attributeSetTypeName").stringValue))
             {
-                typeName.stringValue = newSetPopupIndex == 0
-                    ? string.Empty
-                    : setTypes[newSetPopupIndex - 1].AssemblyQualifiedName;
-                fieldName.stringValue = string.Empty;
-            }
-
-            EditorGUIUtility.labelWidth = prevLabelWidth;
-
-            // None이면 이하 전체 무시
-            if (newSetPopupIndex == 0)
-            {
+                EditorGUIUtility.labelWidth = prevLabelWidth;
                 return;
             }
 
-            EditorGUIUtility.labelWidth = ModifierLabelWidth;
-
-            // Row 1: Attribute Field (SectionGap으로 Attribute Set과 분리)
-            int resolvedTypeIndex = newSetPopupIndex - 1;
-            float row1Y = row0Y + spacing + SectionGap;
-            Rect row1 = new Rect(rect.x, row1Y, rect.width, lineH);
-
-            string[] fieldNames = AttributeReferenceGUI.GetFieldNames(setTypes[resolvedTypeIndex]);
-            int fieldIndex = Array.IndexOf(fieldNames, fieldName.stringValue);
-            int newFieldIndex = EditorGUI.Popup(row1, "Attribute", fieldIndex, fieldNames);
-
-            if (newFieldIndex >= 0 && newFieldIndex < fieldNames.Length)
-            {
-                fieldName.stringValue = fieldNames[newFieldIndex];
-            }
-
-            // Row 2: Modifier Op
+            // Modifier Op
+            float opY = attrY + attributeH + LineGap;
             GameplayModifierOperation currentOp = (GameplayModifierOperation)operation.enumValueIndex;
             int opPopupIndex = Array.IndexOf(_operationValues, currentOp);
             int newOpPopupIndex = EditorGUI.Popup(
-                new Rect(rect.x, row1Y + spacing, rect.width, lineH),
+                new Rect(rect.x, opY, rect.width, lineH),
                 "Modifier Op", opPopupIndex, _operationPopupOptions);
             operation.enumValueIndex = (int)_operationValues[newOpPopupIndex];
 
             DrawMagnitudeSection(
-                new Rect(rect.x, row1Y + spacing * 2 + SectionGap, rect.width, lineH),
+                new Rect(rect.x, opY + spacing + SectionGap, rect.width, lineH),
                 lineH, spacing, modifier, calcType, magnitude);
 
             EditorGUIUtility.labelWidth = prevLabelWidth;
