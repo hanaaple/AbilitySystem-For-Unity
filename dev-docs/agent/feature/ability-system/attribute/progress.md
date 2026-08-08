@@ -2,7 +2,7 @@
 
 - 상태: ✅ DONE
 - 우선순위: P0
-- 최종 갱신: 2026-07-05 (KST — HARNESS §3.4)
+- 최종 갱신: 2026-08-07 (KST — HARNESS §3.4)
 
 > `ability-system` 그룹의 하위 feature. 형제: [gameplay-effect](../gameplay-effect/progress.md) · [gameplay-ability](../gameplay-ability/progress.md).
 
@@ -40,6 +40,7 @@
 | D1 | 2026-05-26 | `AttributeHandle`이 FieldInfo를 캐싱하는 불변 struct — 런타임 string 탐색 제거 |
 | D2 | 2026-05-26 | `AttributeSet`은 빈 추상 마커, 구체 Set이 `public AttributeData` 필드 보유 |
 | D3 | 2026-05-26 | 초기값은 SO + Reflection 세팅 (하드코딩 아님) |
+| D4 | 2026-08-07 | Attribute Set 셀렉터에 "New Script..." — 템플릿 생성 후 리로드 넘겨 자동 배정(GlobalObjectId+SessionState) |
 
 ## 작업 로그
 → [worklog.md](worklog.md) (시간순 이력·아카이브). 재개 앵커는 아래 `## 다음 작업`.

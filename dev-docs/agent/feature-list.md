@@ -4,7 +4,7 @@
 > 상태 정의 및 전이 규칙은 [HARNESS.md](HARNESS.md) §4 참조.
 > **이 표와 각 progress 문서의 상태는 항상 동기화되어야 한다.**
 
-최종 갱신: 2026-07-20 (KST — HARNESS §3.4)
+최종 갱신: 2026-08-07 (KST — HARNESS §3.4)
 
 ## 현황
 
@@ -18,6 +18,7 @@
 | attribute | 어트리뷰트 (수치·Set·Handle·SO 초기화) | ✅ DONE | P0 | - | [progress](feature/ability-system/attribute/progress.md) |
 | gameplay-effect | 게임플레이 이펙트 (GE·Spec·Active·Modifier) | 🔧 IN-PROGRESS | P0 | attribute | [progress](feature/ability-system/gameplay-effect/progress.md) |
 | gameplay-ability | 게임플레이 어빌리티 (GA·스킬 실행) | 📋 PLANNED | P1 | attribute, gameplay-effect | [progress](feature/ability-system/gameplay-ability/progress.md) |
+| aggregator | 어트리뷰트 반응성 / Aggregator (라이브 재평가) | 🔧 IN-PROGRESS | P1 | attribute, gameplay-effect | [progress](feature/ability-system/aggregator/progress.md) |
 
 ### 🧩 item-system — 아이템 시스템 그룹
 공유 하네스: [HARNESS](feature/item-system/HARNESS.md)
@@ -31,7 +32,7 @@
 ## 상태 요약
 
 - 📋 PLANNED: 1
-- 🔧 IN-PROGRESS: 4
+- 🔧 IN-PROGRESS: 5
 - ⏸️ BLOCKED: 0
 - ✅ DONE: 1
 - 🗄️ ARCHIVED: 0
