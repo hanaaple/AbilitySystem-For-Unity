@@ -24,6 +24,7 @@ ControllerBase ──possess──> CharacterBase
 - [컨트롤러-캐릭터 분리 (Possession)](controller-character.md)
 - [ItemSystem / EquipmentSystem](item-equipment.md)
 - [카메라](camera.md)
+- 에디터 툴: [New Script (서브클래스 생성기)](editor-new-subclass-script.md)
 
 ## 관련 문서
 

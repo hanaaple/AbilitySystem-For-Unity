@@ -3,7 +3,7 @@
 `Assets/Scripts/Core/AbilitySystem/` — 캐릭터 수치 관리를 위한 경량 Ability System. **UE5의 GAS를 참고해, 이 게임에 필요한 축만 골라 Unity에 직접 구현**한 것이다 — 라이브러리 이식이 아니라 개념의 선택적 재구현. 구현 진행 중이며, 채택/생략 범위는 아래 매핑 표에 정리한다.
 
 > 이 문서군은 **구현된 것 / 미구현(계획)**을 명확히 구분한다. 범례: ✅ 구현·동작 · ⚠️ 코드 존재하나 상태 확인 필요 · ❌ 미구현(계획).
-> **심화 문서:** [Attribute](attribute.md) · [GameplayEffect](gameplay-effect.md) · [GameplayAbility](gameplay-ability.md)
+> **심화 문서:** [Attribute](attribute.md) · [GameplayEffect](gameplay-effect.md) · [GameplayAbility](gameplay-ability.md) · [Aggregator (라이브 재평가·설계 준비)](aggregator.md)
 > **반영 기준:** feature `ability-system` @ 2026-07-05 (KST) — 상류 progress의 `최종 갱신`보다 오래되면 갱신 대상(dev-docs HARNESS §3.4).
 
 ## 구현 현황 요약
