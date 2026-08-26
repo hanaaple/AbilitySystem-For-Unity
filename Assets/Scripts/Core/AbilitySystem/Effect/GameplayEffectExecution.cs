@@ -8,16 +8,18 @@ namespace Core.AbilitySystem.Effect
     /// 단순 Modifier로 표현하기 어려운 복합 계산(예: Source의 Damage - Target의 Armor)에 사용한다.
     /// Execute() 안에서 output.AddOutputModifier()로 결과를 출력하면 ASC가 BaseValue에 즉시 적용한다.
     ///
-    /// 입력(parameters)과 출력(output)을 분리해 받는다 — UE: Execute_Implementation(ExecutionParams, OUT ExecutionOutput).
+    /// 입력(parameters)과 출력(output)을 분리해 받는다.
     /// </summary>
     public abstract class GameplayEffectExecution
     {
         /// <summary>
-        /// 이 Execution이 계산에 쓰려고 캡처할 어트리뷰트 정의들. <see cref="GameplayEffectSpec"/>이 이 목록을 읽어
-        /// 캡처 컨테이너에 등록한다(UE: GetAttributeCaptureDefinitions). 캡처 대상은 타입 상수이므로 하위는 보통
-        /// <c>static</c> 배열을 돌려준다. 캡처가 필요 없으면 override하지 않는다(기본 빈 목록).
+        /// 이 Execution이 캡처할 어트리뷰트 정의들. <see cref="GameplayEffectSpec"/>이 읽어 캡처 컨테이너에 등록한다.
+        /// 하위는 보통 <c>static</c> 배열을 돌려준다. 캡처가 필요 없으면 override하지 않는다(기본 빈 목록).
         /// </summary>
-        public virtual ReadOnlySpan<GameplayEffectAttributeCaptureDefinition> Defs() => default;
+        public virtual ReadOnlySpan<GameplayEffectAttributeCaptureDefinition> Defs()
+        {
+            return default;
+        }
 
         public abstract void Execute(GameplayEffectExecutionParameters parameters, GameplayEffectExecutionOutput output);
     }

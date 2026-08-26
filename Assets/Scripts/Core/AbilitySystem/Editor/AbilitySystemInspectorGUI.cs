@@ -17,7 +17,7 @@ namespace Core.AbilitySystem.Editor
     public static class AbilitySystemInspectorGUI
     {
         private const string SpawnedAttributeSetsFieldName = "_spawnedAttributeSets";
-        private const string ActiveEffectsFieldName = "_activeEffects";
+        private const string ActiveEffectsFieldName = "activeGameplayEffects";
         private const string SourceSpecsFieldName = "_sourceSpecs";
         private const string TargetSpecsFieldName = "_targetSpecs";
 
@@ -115,8 +115,8 @@ namespace Core.AbilitySystem.Editor
             Rect currentRect = new Rect(rect.x + rect.width * CurrentColumnX, rect.y, rect.width * CurrentColumnWidth, rect.height);
 
             EditorGUI.LabelField(nameRect, fieldName);
-            EditorGUI.LabelField(baseRect, $"Base: {data.BaseValue:0.###}");
-            EditorGUI.LabelField(currentRect, $"Current: {data.CurrentValue:0.###}");
+            EditorGUI.LabelField(baseRect, $"Base: {data.GetBaseValue():0.###}");
+            EditorGUI.LabelField(currentRect, $"Current: {data.GetCurrentValue():0.###}");
         }
 
         // ── Active Effects ────────────────────────────────────────────────────────
@@ -145,7 +145,9 @@ namespace Core.AbilitySystem.Editor
                 return;
             }
 
-            var activeEffects = ActiveEffectsField.GetValue(asc) as IReadOnlyDictionary<ActiveGameplayEffectHandle, ActiveGameplayEffect>;
+            // ASC의 활성 이펙트 소유는 ActiveGameplayEffectsContainer(class)다. 리플렉션으로 인스턴스를 꺼내
+            // 읽기 전용 뷰를 얻는다(참조 타입이라 그대로 캐스팅 — 미할당이면 null).
+            var activeEffects = (ActiveEffectsField.GetValue(asc) as ActiveGameplayEffectsContainer)?.ActiveGameplayEffects;
 
             if (activeEffects == null || activeEffects.Count == 0)
             {
@@ -198,15 +200,16 @@ namespace Core.AbilitySystem.Editor
             EditorGUILayout.LabelField("Modifiers", EditorStyles.miniLabel);
             EditorGUI.indentLevel++;
 
-            if (spec.Modifiers.Count == 0)
+            if (spec.Modifiers.Length == 0)
             {
                 EditorGUILayout.LabelField("(none)");
             }
             else
             {
-                foreach (GameplayModifierSpec mod in spec.Modifiers)
+                for (int i = 0; i < spec.Modifiers.Length; i++)
                 {
-                    EditorGUILayout.LabelField($"{mod.Handle}  {mod.Operation}  {mod.EvaluatedMagnitude:0.###}");
+                    GameplayModifier def = spec.Definition.Modifiers[i];
+                    EditorGUILayout.LabelField($"{def.ToResolvedAttribute()}  {def.Operation}  {spec.Modifiers[i].EvaluatedMagnitude:0.###}");
                 }
             }
 

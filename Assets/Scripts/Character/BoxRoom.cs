@@ -56,6 +56,8 @@ namespace Character
             // Room ASC를 Source로 캡처하려면 이 ASC에 어트리뷰트가 초기화돼 있어야 한다.
             // TryAdd라 ASC 자체 attributeInitData와 중복돼도 안전(먼저 등록된 쪽 유지).
             _roomAsc.AddSet(sourceAttributes);
+
+            _roomAsc.TryGetAttributeData(CharacterAttributeSet.Health, out AttributeData health);
         }
 
         // 에디터에서 컴포넌트 추가 시 트리거로 자동 설정(방 영역은 트리거 콜라이더).
