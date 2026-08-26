@@ -3,14 +3,14 @@
 수치 변경을 통과시키는 단일 채널. 상위 개요는 [overview](overview.md), 대상 수치는 [attribute](attribute.md).
 
 > UE GAS의 `FGameplayEffect(Spec)`·`FActiveGameplayEffect`·`FGameplayModifierInfo`를 참고해 **필요한 축만 직접 구현** — UE 대응·축소 지점은 [overview §UE GAS 대비](overview.md#ue-gas-대비--채택생략-범위) 표 참조.
-> **반영 기준:** feature `ability-system/gameplay-effect` @ 2026-07-19 (KST) — HARNESS §3.4.
+> **반영 기준:** feature `ability-system/gameplay-effect` @ 2026-07-19 (KST).
 
 ## GameplayEffect 계층
 
 - **`GameplayEffectAsset`(SO, 불변 정의):** `type`, `duration`, `period`, `executePeriodicEffectOnApplication`, `modifiers[]`, `executionTypeNames[]`.
 - **`GameplayEffectExecution`(순수 클래스):** 복합 계산 훅. **SO가 아니다** — 공유할 '데이터'가 아니라 '로직'이라 에셋으로 존재할 이유가 없다(→decisions D7). GE 에셋은 AQN(타입 이름)만 저장하고 Spec 생성 시 인스턴스화한다. 여러 GE가 같은 타입을 참조하므로 **런타임 가변 상태를 가지면 안 된다**(D2와 같은 원리).
-- **`GameplayModifier`(struct 정의):** `attributeSetTypeName`(AssemblyQualifiedName) + `fieldName` → `AttributeHandle`, `operation`, `magnitudeCalculationType`, `magnitude`.
-- **런타임 분리 — Spec:** `GameplayEffectSpec`은 생성 시점에 각 `GameplayModifier`를 `GameplayModifierSpec`으로 변환하며 **AttributeHandle resolve와 Magnitude 계산을 1회 완료해 캐싱**한다(이후 런타임 재해석 없음). resolve 실패 modifier는 경고 후 skip.
+- **`GameplayModifier`(struct 정의):** `attributeSetTypeName`(AssemblyQualifiedName) + `fieldName` → `ResolvedGameplayAttribute`, `operation`, `magnitudeCalculationType`, `magnitude`.
+- **런타임 분리 — Spec:** `GameplayEffectSpec`은 생성 시점에 각 `GameplayModifier`를 `GameplayModifierSpec`으로 변환하며 **ResolvedGameplayAttribute resolve와 Magnitude 계산을 1회 완료해 캐싱**한다(이후 런타임 재해석 없음). resolve 실패 modifier는 경고 후 skip.
 - **활성 상태 — Active:** `ActiveGameplayEffect`가 `Handle`·`Spec`·`RemainingDuration`(Duration용)·`PeriodTimer`(Period용)를 들고 ASC의 활성 목록에 등록된다.
 
 ## CurrentValue 계산 (Modifier 연산)
@@ -124,7 +124,7 @@ magnitude는 Spec 생성 시 `EvaluatedMagnitude`로 **미리 확정**된다(→
 **⑤ 입력/출력 타입 분리, 둘 다 struct**
 `ExecutionParameters`(입력: Target/Source ASC·Spec)와 `ExecutionOutput`(출력: `GameplayModifierEvaluatedData` 목록)을 나눴다 — UE의 `FGameplayEffectCustomExecutionParameters` / `FGameplayEffectCustomExecutionOutput` 대응.
 - params는 참조 몇 개뿐이라 struct로 두면 **할당 0** → execution마다 만들어도 공짜라 UE와 같은 스코프를 유지할 수 있다.
-- output도 타입 성격 통일을 위해 struct지만 **내부 버퍼는 힙 List**다. 원소 `GameplayModifierEvaluatedData`가 `AttributeHandle`을 통해 관리 참조(`Type`·`string`·`FieldInfo`)를 물고 있어 `stackalloc`이 불가능하다. 값으로 넘겨도 같은 List를 가리키므로 추가 내용은 호출측에 반영된다.
+- output도 타입 성격 통일을 위해 struct지만 **내부 버퍼는 힙 List**다. 원소 `GameplayModifierEvaluatedData`가 `ResolvedGameplayAttribute`를 통해 관리 참조(`Type`·`string`·`FieldInfo`)를 물고 있어 `stackalloc`이 불가능하다. 값으로 넘겨도 같은 List를 가리키므로 추가 내용은 호출측에 반영된다.
 - struct는 파라미터 없는 생성자를 정의할 수 없어 `default`면 버퍼가 null이다 → `GameplayEffectExecutionOutput.Create()` 팩토리로 만들고, null 상태는 경고 후 무시한다.
 
 **⑥ Execution 출력은 `AddBase`/`Override` 외 연산도 지원**

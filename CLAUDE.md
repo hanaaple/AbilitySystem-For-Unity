@@ -1,60 +1,59 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 세션 시작 시 자동으로 로드되는 최상위 진입 문서다. 세부 규약·문서는 아래에서 연결한다.
 
-## Language
-
-Always respond in Korean (한국어).
+## 하네스 업데이트 중
+~~규칙 본문 ↔ 사례 아카이브를 파일 분리 필요.~~ (완료 2026-08-23 — 규칙 문서마다 형제 `*.cases.md`로 분리: `HARNESS.cases.md`·`session-protocol.cases.md`·`feature/HARNESS.cases.md`. 본문은 `→ 사례 [C-NN]` 포인터, ID는 파일별 로컬 번호)
+now.md 관련 업데이트 (임시 메모인데 너무 크다. 정리 필요.)
 
 ## 행동 원칙
 
-모르거나 애매한 것은 추정하지 않는다. 막연한 추측으로 스스로 판단하고 진행하는 대신, 추가 정보를 요청하거나 질문한다.
+모르거나 사용자의 의도가 부정확한 상태에서 추정하지 않는다.
+막연한 추측으로 스스로 판단하고 진행하는 대신, 추가 정보를 요청하거나 질문한다.
 
-- 외부 API·엔진 동작·설계 의도가 불확실하면 → 직접 조사(검색, 문서 확인)하거나 질문한다
-- 요구사항이 여러 해석으로 읽히면 → 구현 전에 먼저 확인한다
-- 확인 없이 진행했다가 틀리는 것보다 질문 한 번이 낫다
-
-## 이어하기 (세션 재개)
-
-유저가 "하던거 하자"류로 이어하기를 요청하면 → **`dev-docs/agent/NOW.md` 하나만 읽고 곧장 그 액션부터 실행한다.** feature-list·progress·worklog·코드를 미리 훑거나 전체를 확인하지 않는다(막힐 때만 NOW.md의 링크로 연다). 세션 종료 시 NOW.md를 다음 재개 지점으로 갱신한다. — 상세 프로토콜은 `dev-docs/agent/HARNESS.md` §3.
 
 ## 빌드·검증
 
-이 프로젝트에는 CLI 빌드·테스트가 없다. 컴파일·플레이 검증은 **유저가 Unity 에디터에서 수행한다.**
-에이전트는 코드 정합성(참조·시그니처·구조)까지만 책임지며, `read_console`로 컴파일 에러를 확인하지 않는다.
+이 프로젝트에는 CLI 빌드·테스트가 없다. 에이전트는 코드 정합성(참조·시그니처·구조)까지만 책임진다.
 
 ## 개발 방향
 
 포트폴리오를 목적으로 하므로, 설계 결정에는 **기술적 근거와 선택 이유**가 명확히 드러나야 한다.  
 단, 기술적 완성도에 대한 집착으로 실제 게임 완성을 저해하는 과설계(over-engineering)는 지양한다.
 
-- 좋음: "이 패턴을 쓴 이유를 한 문장으로 설명할 수 있다"
-- 나쁨: "실제로 필요하지 않지만 기술적으로 인상적으로 보이기 위해 추가한다"
+## Routing Table
 
-## 코드 컨벤션
+```
+./ (Root)
+├── CLAUDE.md (최상위 하네스)
+├── Readme.md (프로젝트 소개)
+└── dev-docs/ (작업 규약·프로젝트 내용·설계 문서)
+    ├── agent/ (에이전트 작업 자료)
+    │   └── feature/ (프로젝트 작업 피처)
+    └── project/ (프로젝트 정리 자료)
+        └── architecture/
+        └── wiki/
+```
+- 각 파일을 확인 시, Root로부터 해당 경로까지의 `HARNESS.md`들을 우선하여 따른다.
+- 현재 필요하지 않은 문서를 미리 열지 않는다.
+- 필요 이상으로 광범위한 검색·파일 전체 읽기 등 **과한 탐색을 하지 않는다** — 목표를 좁혀 최소한으로 조회한다.
 
-`.editorconfig` 자동 적용. 상세 규칙은 `dev-docs/project/CODE_CONVENTION.md` 참고.
+### 관련 문서
+- 프로젝트 소개 — `Readme.md`
+- 최상위 하네스 — `CLAUDE.md`
+- 코드 컨벤션 — `.editorconfig` 자동 적용. `dev-docs/project/CODE_CONVENTION.md`
+- feature 현황·진행 추적 — `dev-docs/agent/feature/feature-list.md` (대시보드) · `dev-docs/agent/feature/<feature-id>`
+- 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/TODO-BOARD.md`
+- 게임 기획 — `dev-docs/project/design.md`
+- 아키텍처 — `dev-docs/project/architecture`. (프로젝트 정리용으로, 업데이트가 최신이 아닐 수 있다.)
+- 개발 도구 설정 — `dev-docs/project/dev-tools.md`
+- 커밋·PR 등 git 관련 규약 — `dev-docs/project/git-convention.md`
+- 세션 프로토콜 — `dev-docs/agent/session-protocol.md`.
+- wiki 편집 규약 — `wiki/HARNESS.md`.
 
-## 관련 문서
 
-작업 규약·프로젝트 내용·설계 문서는 루트를 깔끔히 유지하기 위해 전부 `dev-docs/`에 모아둔다 (루트에는 `CLAUDE.md`·`Readme.md`만). `dev-docs/`는 `agent/`(에이전트 작업용)와 `project/`(프로젝트 자료)로 나뉜다.
-필요할 때만 열고, 코드 구조·설계를 바꿨으면 **같은 세션에서** 관련 `project/` 문서(특히 architecture)도 갱신한다.
-
-**탐색 규율 (토큰 낭비 방지 — 이 원칙 하나로 통일):** 문서·코드 탐색은 지금 작업에 필요한 범위로만 한다. ① 무관한 문서를 미리 열지 않는다(아래 각 항목의 '언제 여는지' 조건에서만 연다). ② 필요 이상으로 광범위한 검색·파일 전체 읽기 등 **과한 탐색을 하지 않는다** — 목표를 좁혀 최소한으로 조회한다.
-
-- Agent 작업 규약 (세션 프로토콜·기록 규칙) — `dev-docs/agent/HARNESS.md`
-  - **읽는 시점 ① 게임 feature에 해당하는 내용을 다루기 시작하면 — 구현이 아니어도 읽는다.** 코드 작성뿐 아니라 **질문 답변·개념 설명·설계 논의**도 포함한다. feature 얘기가 나오는 그 턴에 연다.
-  - **읽는 시점 ② `dev-docs/` 문서를 작성·수정하기 직전 — 대상이 무엇이든 무조건 읽는다.** feature와 무관한 문서라도 예외 없다. 편집 도구를 부르기 **전에** 연다.
-  - **읽는 시점 ③ 외부 자료를 검색하거나, 자료를 해석해 판단을 내리기 직전.** 웹 검색·문서 조회를 하려는 순간, 또는 "이건 이렇다"고 결론을 말하려는 순간에 연다. §1.1(에이전트 판단은 틀릴 수 있다 — 근거·확신도 표기)과 §1.2(일반화·섣부른 판단 금지)가 바로 그 순간에 적용되는 규칙이다.
-  - 이유 ①: 대화는 보통 "설명 → 논의 → 어느새 편집"으로 미끄러져서, "구현 착수"라는 명확한 시점이 생기지 않는다. 그 트리거만 두면 규약(특히 §3.2 결정 즉시 기록·§3.5 대화 규율)이 끝까지 안 켜진 채로 작업이 끝난다. (2026-07-19 실제 발생 — GAS Execution 세션 전체를 CLAUDE.md만 보고 진행)
-  - 이유 ②: 문서 작성 규약(특히 **§8.4 "왜"는 지어내지 않는다** — 유저가 말하지 않은 근거를 추론해 채우기 금지)은 편집하는 순간에 필요한데, "feature 관련이냐"를 먼저 따지다 보면 그 판단 자체를 건너뛴다. (2026-07-20 실제 발생 — 유저가 말한 설계 목적 한 줄에 에이전트가 채택 이유를 지어내 덧붙임)
-  - 이유 ③: 검색·판단은 feature 작업과 무관하게 아무 때나 튀어나오는데, 정작 가장 틀리기 쉬운 순간이다. 트리거를 ①②에만 걸면 "엔진 동작이 어떻냐"는 질문에 답하면서 규약이 안 켜진다. (2026-07-20 실제 발생 — 포럼 글 1건과 중의적 문서 한 문장으로 UE 동작을 단언)
-- 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/TODO-BOARD.md` (feature-list와 별개 레이어. `TODO/진행 중/Done` 3칸. 채팅·작업 중 나온 할 일을 놓치지 않게 잡아 두고 상태를 옮긴다 — HARNESS.md §7)
-- feature 현황·진행 추적 — `dev-docs/agent/feature-list.md` (대시보드) · `dev-docs/agent/feature/<feature-id>/progress.md` (feature별 진행 문서; 구현 방향·불변조건·로드맵이 있으면 같은 폴더의 `HARNESS.md` = feature 전용 하네스/설계 문서). **해당 feature 구현 작업에 착수할 때만** 그 feature 폴더 문서를 연다 — 무관한 작업에선 열지 않는다
-- 프로젝트 소개·패키지 — `Readme.md` (외부인이 프로젝트를 처음 볼 때를 위한 소개용. wiki 등 하위 링크는 작업에 불필요하므로 열어보지 않는다)
-- 게임 기획 (컨셉·세션 구조·MVP 로드맵·씬 흐름·조작 스펙) — `dev-docs/project/design.md` (필요할 때만 참고. feature 문서(`feature-list.md`·progress)로 충분하면 깊이 확인하지 않는다)
-- 아키텍처 (시스템 구조·설계) — `dev-docs/project/architecture/overview.md`. **해당 시스템 코드를 실제로 건드릴 때만** 그 시스템 문서를 연다 — 무관한 작업·평소엔 열지 않는다
-- 개발 도구(Unity MCP) 설정 — `dev-docs/project/dev-tools.md`
-- 커밋·PR 규약 — `dev-docs/project/git-convention.md` (커밋 타입·메시지·PR 작성. **커밋/push 전 참고** — 특히 refactor(동작 불변) vs feat 구분)
-- 포트폴리오 wiki 편집 규약 — `wiki/HARNESS.md`. **wiki를 실제로 편집할 때만** 연다. 핵심: 에이전트는 wiki를 자동 갱신하지 않고 **유저가 명시적으로 요청할 때만** 편집한다 (그 외엔 열지 않는다)
+### 세부 탐색 규율
+#### dev-docs/agent/HARNESS.md
+ - 게임 feature에 해당하는 내용을 다루기 시작하면 — 구현이 아니어도 읽는다.** 코드 작성뿐 아니라 **질문 답변·개념 설명·설계 논의**도 포함한다. feature 얘기가 나오는 그 턴에 연다.
+ - `dev-docs/` 문서를 작성·수정하기 직전
+ - 프로젝트 개발, 구현과 관련하여 외부 자료를 검색하거나, 자료를 해석해 판단을 내리기 직전.

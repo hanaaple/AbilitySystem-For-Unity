@@ -1,8 +1,8 @@
 # AbilitySystem — Aggregator (어트리뷰트 반응성 / 라이브 재평가)
 
-> **상태: 설계 준비 — 미구현.** 코드가 생기면 이 문서를 실제 구조로 채운다. 지금은 UE 확인 결과 + 채택 방향의 스켈레톤.
+> **⚠ 낡음 — 재작성 대기(2026-08-10).** 아래 본문은 폐기된 "경량 R3-only" 채택 방향(D1/D2) 기준이다. 실제 구현은 UE `FAggregator`에 준하는 **어트리뷰트별·채널별 `AttributeAggregator`**(BaseValue+mod 채널 소유, `Evaluate()`가 유일 계산 경로 — →D5·D7·D8)로 2026-08-10에 작성됐다(미검증·미커밋). 유저 Play 검증 후 이 문서를 실제 구조로 재작성한다. 현재 코드 요지는 [aggregator/progress.md](../../../agent/feature/ability-system/aggregator/progress.md)·[worklog 2026-08-10](../../../agent/feature/ability-system/aggregator/worklog.md). UE 소유관계 정리는 [ue-reference.md](../../../agent/feature/ability-system/aggregator/ue-reference.md).
 > feature: [ability-system/aggregator](../../../agent/feature/ability-system/aggregator/progress.md). 상위 개요는 [overview](overview.md).
-> **반영 기준:** feature `ability-system/aggregator` @ 2026-08-07 (KST) — HARNESS §3.4. (미구현이라 구현 시 갱신)
+> **반영 기준:** feature `ability-system/aggregator` @ 2026-08-07 (KST). (구현 반영 재작성 대기)
 
 캡처(non-snapshot) 값이 바뀌면 그에 의존하는 모디파이어 magnitude를 **즉시 재평가**하는 반응성 계층. UE `FAggregator`의 dirty/dependents 책임만 축소 재현한다.
 
