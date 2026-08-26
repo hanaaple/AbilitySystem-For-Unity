@@ -9,7 +9,7 @@ namespace Core.ItemSystem.Inventory
         // 스택 아이템: 1..MaxStack / 비스택(장비 등): 항상 1.
         public int Count { get; internal set; }
 
-        // INV-5: 비스택 아이템의 per-item 상태. 스택 아이템은 상태가 없어 null.
+        // 비스택 아이템의 per-item 상태. 스택 아이템은 상태가 없어 null.
         public ItemInstance Instance { get; }
 
         internal InventoryEntry(ItemDataAsset data, int count, ItemInstance instance)

@@ -5,10 +5,7 @@ namespace Core.AbilitySystem.Effect
         public ActiveGameplayEffectHandle Handle { get; }
         public GameplayEffectSpec Spec { get; }
 
-        /// <summary>
-        /// 이 effect가 적용된 대상(target) ASC. UE는 이를 컨테이너에 하나 두지만
-        /// (FActiveGameplayEffectsContainer::Owner), 컨테이너를 당장 도입하지 않아 effect가 직접 보유한다(→D18).
-        /// </summary>
+        /// <summary>이 effect가 적용된 대상 ASC. 컨테이너를 아직 두지 않아 effect가 직접 보유한다.</summary>
         public AbilitySystemComponent Owner { get; }
 
         /// <summary>Duration 타입일 때만 유효. 남은 지속 시간(초).</summary>

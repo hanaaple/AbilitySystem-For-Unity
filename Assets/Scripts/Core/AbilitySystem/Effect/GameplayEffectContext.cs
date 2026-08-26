@@ -20,14 +20,12 @@ namespace Core.AbilitySystem.Effect
         // TODO: RaycastHit? HitResult
         // TODO: Vector3? WorldOrigin
 
-        /// <summary>발동 주체(Instigator)와 원인 오브젝트(EffectCauser)를 지정한다. (UE: FGameplayEffectContext::AddInstigator)</summary>
         public void AddInstigator(AbilitySystemComponent instigator, GameObject effectCauser = null)
         {
             Instigator = instigator;
             EffectCauser = effectCauser;
         }
 
-        /// <summary>출처 오브젝트를 지정한다. (UE: FGameplayEffectContext::AddSourceObject)</summary>
         public void AddSourceObject(Object sourceObject)
         {
             SourceObject = sourceObject;

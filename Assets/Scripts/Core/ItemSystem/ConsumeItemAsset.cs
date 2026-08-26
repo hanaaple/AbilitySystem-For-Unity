@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Core.ItemSystem
 {
-    // INV-11: 인벤토리는 구체 타입이 아니라 이 능력으로 "스택되는 아이템"을 판별한다.
+    // 인벤토리는 구체 타입이 아니라 이 능력으로 "스택되는 아이템"을 판별한다.
     // 스택은 일부 아이템의 능력이지 전 아이템 속성이 아니다 — 장비(EquipItemAsset)는 이 능력이 없어 스택되지 않는다.
     // (IEquippable과 동형: 능력 인터페이스는 그 능력을 가진 카테고리 서브클래스에만 붙인다 — ItemDataAsset 베이스엔 두지 않음.)
     public interface IStackable
