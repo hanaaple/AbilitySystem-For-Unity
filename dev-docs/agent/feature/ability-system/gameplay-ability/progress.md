@@ -2,7 +2,7 @@
 
 - 상태: 📋 PLANNED
 - 우선순위: P1
-- 최종 갱신: 2026-07-05 (KST — HARNESS §3.4)
+- 최종 갱신: 2026-07-05 (KST)
 
 > `ability-system` 그룹의 하위 feature. 형제: [attribute](../attribute/progress.md) ✅ · [gameplay-effect](../gameplay-effect/progress.md) 🔧.
 > **미착수.** 수치 계층(attribute·gameplay-effect)이 서야 GA가 코스트·쿨다운·효과를 GE로 표현할 수 있어 후행.

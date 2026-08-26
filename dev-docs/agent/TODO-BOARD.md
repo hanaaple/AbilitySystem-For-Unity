@@ -1,9 +1,9 @@
 # TODO-BOARD — 작업 현황 보드
 
 > feature 단위 추적은 `feature-list.md`가 담당한다. **이 보드는 그보다 잘게 쪼개진 잡다한 작업·개인 TODO·이슈**를 모은다 — 문서 정비, 인프라(GitHub 설정 등), 실험, 리팩터, 아이디어 등 feature로 묶기 애매한 것들.
-> 관리 규약은 `HARNESS.md` §7. 항목은 상태가 바뀌면 아래 칸 사이를 이동한다.
+> 관리 규약은 `todo-board-convention.md`. 항목은 상태가 바뀌면 아래 칸 사이를 이동한다.
 
-- 최종 갱신: 2026-08-07 (KST — HARNESS §3.4)
+- 최종 갱신: 2026-08-25 (KST)
 
 ---
 
@@ -11,10 +11,20 @@
 
 ## 📋 TODO (당장 목표)
 
+- [ ] **(design)** ⭐ **데모 씬 한 장면 확정** — 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../project/design.md))의 **다음 액션.** 씬을 정하면 필요한 GAS 최소 집합이 역산된다. 초안: 플레이어 도트뎀+스턴 / 자버프 / 적 피격→반격, 스탯·상태·쿨다운 UI Toolkit HUD. **확정 전 GA/Tag/… feature 폴더 신설 금지**(등록 먼저 — HARNESS '디렉토리 구조'). _(2026-08-09 등록)_
 - [ ] **(verify/setup)** **BoxRoom 검증 세팅 완성** — 디버그 도구는 만들어짐(2026-08-05, `BoxRoom.cs`+`.prefab`, ASC Inspector 창). 남은 세팅: ① 프리팹의 BoxRoom이 **Missing Script면** `m_Script` guid를 실제 값으로 교체(에이전트가 `.cs.meta` GUID `3a9f2b7c…` 발급). ② 3모드 GE 슬롯 꽂기 — 특히 **Buff에 `GE_EquipSpeedDown`**(Source damage 기반 speed 감소) → 5b evaluate end-to-end 검증과 직결. ③ **Room ASC `attributeInitData`**(Source 캡처 테스트 시) + **Player ASC에 `CombatAttributeSet`**(없으면 캡처 무효→경고+0). ④ 씬 배치·시각화(선택). 검증 항목 = [gameplay-effect/tests.md](feature/ability-system/gameplay-effect/tests.md). _(2026-08-05 등록)_
 - [ ] Item Instance - Item Behaviour, Socket에 Item prefab 장착까지
 
 ## 📋 TODO (순서 무관 우선순위 낮음)
+
+> **아래 GAS 대분류·기술은 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../project/design.md))의 목표 기능이다.** 데모 씬 확정 후 필요분만 착수·feature 등록한다. 각 기능은 UE-complete가 아니라 "최소한 진짜 도는 버전". (기존 GA/Cue/Stack/Execution 항목도 이 방향에 포함.)
+
+- [ ] **(code)** **Gameplay Tag 시스템** (신규 대분류) — 계층 태그(`Status.Stun`)+매칭, `GameplayTagContainer`(HasAny/HasAll), ASC `GameplayTagCountContainer`(레퍼런스 카운트·변경 이벤트), GE 훅(GrantedTags·Ongoing/Application/Removal 요구). UE 툴링(에디터 레지스트리·복제·`FGameplayTagQuery`)은 제외. **Cue·Event·GE 태그조건의 선행이라 레버리지 큼.** _(2026-08-09 등록)_
+- [ ] **(code)** **Gameplay Event** (신규) — `HandleGameplayEvent`/`SendGameplayEventToActor`, 이벤트 기반 능력 발동(예: 피격→반격). 선행: Tag. _(2026-08-09 등록)_
+- [ ] **(code)** **AttributeSet Hook** (신규) — `PreAttributeChange`(클램핑)·`PostGameplayEffectExecute`(파생·후처리)·meta attribute(Damage 등). 현재 `AttributeSet`은 빈 base class라 후크 없음. _(2026-08-09 등록)_
+- [ ] **(ui)** **UI Toolkit HUD** — 데모 HUD(어트리뷰트 바·쿨다운·상태/Tag 아이콘)를 UI Toolkit으로. AttributeChanged(컨테이너 이벤트) 바인딩. 저비용 원칙(AI 스캐폴딩, 씨름 시 uGUI 후퇴) — 스킬 투자 아님. _(2026-08-09 등록)_
+- [ ] **(fx)** **DOTween — Cue juice** — Cue 레이어 전용(피격 `DOPunch`·스턴 `DOShake`·버프 pulse·데미지 숫자·카메라 shake). GAS 코어엔 넣지 않고 Cue 이음새 뒤에. `SetLink`로 오브젝트 파괴 시 자동 kill. _(2026-08-09 등록)_
+- [ ] **(editor, bonus)** **에셋 그래프(노드) 에디터** — 시각적 payoff 크나 GraphView 직렬화 rabbit hole. **맨 마지막 선택적 보너스.** 1~2일 스파이크로 리스크 확인 후, 가장 좁은 조각(GE 하나 저작→SO)으로만. 데모 성공을 여기 걸지 않음. _(2026-08-09 등록)_
 
 - [ ] **(chore)** **아트 에셋 폴더 관례 적용** — 관례 확정(2026-08-05, 유저): **오브젝트 단위 co-locate** `Assets/Art/<모델>/`에 mesh·texture·material 다 같이(모델 통째 임포트에 강함), **여러 곳 공유하는 것만** `Assets/Art/_Shared/`. 미실행 — 필요 시 폴더 생성 + 루트에 뜬 `Lit.mat`을 공용이면 `_Shared/`로 이관(Room 전용이면 `Art/Room/`에 새로). _(2026-08-05 등록)_
 - [ ] **(docs)** **UE Execution 실행조건 원문 확정분 반영 여부** — 2026-08-05 ylyking UE 미러 원문으로 "period 0 Duration/Infinite에선 Execution 안 돎"을 확정(근거: `ExecuteGameplayEffect` asc.cpp:820 `check(...)` assert + Execute 경로 라인). 이걸 `architecture/ability-system/gameplay-effect.md`나 gameplay-effect `decisions.md`에 근거(파일·라인)와 함께 남길지 **유저 판단 대기**. 위 19번(GameplayEffectType 실전 상태 확정)과 인접하나 별개(enum 확정 ≠ Execution 실행조건). _(2026-08-05 등록)_
@@ -25,7 +35,7 @@
 - [ ] **(wiki)** 설계 문서 상호 연결 — 각 섹션 요약에서 `dev-docs/project/architecture/*` 심화 문서로 링크. 로컬/Pages에선 `.md`가 raw로 뜨므로 **GitHub blob URL** 사용. 저장소 public 전제. `SECTION_META.sources`도 같은 방식으로 클릭 가능하게. _(2026-07-05 등록)_
 - [ ] GameplayAbility (GA) 구현
 - [ ] GE Execution 구현
-- [ ] **(docs/refactor)** **에이전트 생성 "왜"의 유저 소유화 — 이번 세션(2026-08-04) 산출물 정리** — 유저 지적: 코드 주석·decisions(특히 D21)에 에이전트가 만든 근거가 많고 본인 생각이 반영 안 됨(§8.4/§8.5). 방침: **코드 주석은 사실(무엇/어떻게+함정)만 lean하게, "왜"는 decisions에만·유저가 소유한 것만.** 접근 미정 — ① `GameplayModifierSpec` 시범 후 세션 파일(`AttributeBasedMagnitude`·`GameplayModifier`·`GameplayModifierSpec`·`GameplayEffectSpec`) 톤 일괄 적용(추천) ② D21부터 같이 훑으며 근거 재작성/삭제. 하네스 규칙화(주석 lean·왜는 유저 소유)도 유저 승인 시 §3.2/§8.4에 추가. _(2026-08-04 등록)_
+- [ ] **(docs/refactor)** **에이전트 생성 "왜"의 유저 소유화 — 이번 세션(2026-08-04) 산출물 정리** — 유저 지적: 코드 주석·decisions(특히 D21)에 에이전트가 만든 근거가 많고 본인 생각이 반영 안 됨(HARNESS '왜는 지어내지 않는다'/'왜의 근거는 유저 의도 → UE 원본'). 방침: **코드 주석은 사실(무엇/어떻게+함정)만 lean하게, "왜"는 decisions에만·유저가 소유한 것만.** 접근 미정 — ① `GameplayModifierSpec` 시범 후 세션 파일(`AttributeBasedMagnitude`·`GameplayModifier`·`GameplayModifierSpec`·`GameplayEffectSpec`) 톤 일괄 적용(추천) ② D21부터 같이 훑으며 근거 재작성/삭제. 하네스 규칙화(주석 lean·왜는 유저 소유)도 유저 승인 시 session-protocol '작업 중'/HARNESS '왜는 지어내지 않는다'에 추가. _(2026-08-04 등록)_
 - [ ] **(code, low)** GE 캡처 **Target 기반 AttributeBased의 생성 시점 경고 억제** — `GameplayEffectSpec.Initialize`가 캡처 후 `CalculateModifierMagnitudes`를 1회 도는데, Target 기반 AttributeBased는 이 시점 target 미캡처라 `AttributeBasedMagnitude.Evaluate`가 캡처 실패 경고를 낸다(그 결과는 소비 안 됨 — 적용 시 재평가본만 소비). Source 기반(현 검증 대상 `GE_EquipSpeedDown`)은 무영향. 지금은 warn-always로 단순하게 뒀음. 억제하려면 UE `CanCalculateMagnitude`류(캡처 준비됐을 때만 경고)가 필요 — 필요해지면 처리. _(2026-08-04 등록 — 5b evaluate 구현 중 도출)_
 - [ ] **(code)** GE **AttributeCapture 계층** 도입 — **방향 확정(유저).** 반대 결정이던 D6은 폐기·결번 처리됨. Modifier(AttributeBased)·Execution 양쪽이 소비하며, Execution엔 UE `RelevantAttributesToCapture`에 해당하는 캡처 선언 멤버가 필요. 계획 초안(파일 9개 단위)은 2026-07-19 세션 대화에 있음. **진행 중 ~9/9(코드)** — 정의(D12)·결과 계층(D13)·Spec 소유+compose+Source 캡처(D14)·`_definitions` 제거 UE정렬(D16)·`GameplayAttribute`(D15)·Execution 캡처 선언 `Defs()`+Spec 등록(D17)·Target 캡처+spec 복사(D18/D19/D20)·**evaluate 5b(✅ 2026-08-04 — `EvaluateMagnitude`+`CalculateModifierMagnitudes`)** 완료. **남음: 유저 에디터 검증**(관측 변화 0→유의미 첫 지점 — `GE_EquipSpeedDown`이 Source damage 기반 speed 감소하는지) + 소비처 Execute 배선·SetByCaller는 별도. 진행 추적은 progress.md 세부 TODO 3. _(2026-07-19 등록)_
 - [ ] **(code)** GE **Calculation Modifiers** 구현 (UE: `FGameplayEffectExecutionScopedModifierInfo`) — Execution 실행 스코프 동안만 캡처 값을 보정하는 GE 에셋별 데이터(실제 어트리뷰트 불변). 같은 계산 클래스를 쓰면서 GE마다 "방어력 50% 무시"·"공격력 1.5배"를 코드 수정 없이 지정하는 용도. **선행 조건: AttributeCapture 계층**(→gameplay-effect decisions D6에서 미도입) — 현재는 Execution이 ASC를 직접 읽어 개입 지점이 없다. 코드 TODO는 `GameplayEffectExecutionParameters.cs`에 기록. _(2026-07-19 등록 — UE Execution 분석 중 도출)_
@@ -39,13 +49,15 @@
   - 필드명 주의: `CharacterBase._controller`는 possess 하는 `ControllerBase`라 이름이 겹친다.
   - 관련: 이동 모드가 상태로 갈리는 장르(구르기·공격 중 이동·피격 경직)라 GA 착수 시 "어빌리티가 이동을 어떻게 점유하는가" 경계와 함께 봐야 한다. _(2026-07-20 등록 — GE 픽업 트리거 2회 원인 추적 중 발견)_
 - [ ] **(code)** `ItemPickup.OnTriggerEnter` **중복 적용 버그** — `GameplayEffectPickup`과 동일 원인(콜라이더 단위 콜백 + `Destroy` 프레임 지연)으로 인벤토리에 아이템이 2번 들어간다. `GameplayEffectPickup`에는 프레임+대상 가드를 넣었으나 `ItemPickup`은 파킹 중이라 손대지 않았다. 무기 재설계 때 함께 처리. _(2026-07-20 등록)_
-- [ ] **(design)** GE 캡처 **사양 확정 2건 (소비처 배선 전에 정해야 함)** — 2026-08-04 설계 감사에서 도출. ① **"spec 생성 시점 = 시전 시점"이 이 프로젝트 의도인가** — Source를 `GameplayEffectSpec` ctor에서 캡처(`CaptureDataFromSource`)하는 전제다. `MakeOutgoingSpec`을 시전보다 훨씬 먼저 만들어 들고 있다가 적용하는 사용을 허용할 거면 ctor 캡처가 어긋난다(snapshot이 시전이 아닌 생성 시점에 얼어붙음). 코드·UE가 아니라 **유저 사양**으로 확정 필요. ② 확정되면 그 근거를 gameplay-effect `decisions.md`에 D로 남긴다(§8.4 — 지어내지 말고 유저 답을 적음). _(2026-08-04 등록)_
+- [ ] **(design)** GE 캡처 **사양 확정 2건 (소비처 배선 전에 정해야 함)** — 2026-08-04 설계 감사에서 도출. ① **"spec 생성 시점 = 시전 시점"이 이 프로젝트 의도인가** — Source를 `GameplayEffectSpec` ctor에서 캡처(`CaptureDataFromSource`)하는 전제다. `MakeOutgoingSpec`을 시전보다 훨씬 먼저 만들어 들고 있다가 적용하는 사용을 허용할 거면 ctor 캡처가 어긋난다(snapshot이 시전이 아닌 생성 시점에 얼어붙음). 코드·UE가 아니라 **유저 사양**으로 확정 필요. ② 확정되면 그 근거를 gameplay-effect `decisions.md`에 D로 남긴다(HARNESS '왜는 지어내지 않는다' — 지어내지 말고 유저 답을 적음). _(2026-08-04 등록)_
 - [ ] **(verify)** GE 캡처 **end-to-end 유저 검증** — 5b evaluate로 소비처가 생겼다(`GameplayModifier.EvaluateMagnitude` → `AttributeBasedMagnitude.Evaluate`가 캡처값 조회). 이제 **유저가 에디터에서 Source·snapshot·evaluate 경로가 실제로 맞게 캡처·계산하는지 처음 확인**한다 — `GE_EquipSpeedDown`이 Source `CombatAttributeSet.damage` 기반으로 speed를 깎는지. ⚠ 선행: `Player_AttributeInitData`에 `CombatAttributeSet` 존재(없으면 캡처 무효→경고+0). (`SpeedBoostExecution.Execute`는 여전히 +10 고정 — Execute 경로의 캡처 소비는 별도.) **검증 절차·항목 = [gameplay-effect/tests.md](feature/ability-system/gameplay-effect/tests.md).** _(2026-08-04 갱신 — 5b로 소비처 배선됨, 검증만 남음)_
 - [ ] **(bug)** GE 캡처 **snapshot=false 라이브 재조회 시 소스 ASC 파괴 → NRE 잠복** — `GameplayEffectAttributeCaptureSpec.TryGetCapturedValue`(`:87-89`)가 `_capturedAsc.GetAttribute*`를 직접 역참조하는데, `_isValid`는 **캡처 시점 1회만** 검사한다(`:58`). Infinite/Duration GE가 살아 있는 동안 캡처 대상(예: 적 Source)이 파괴되면 파괴된 MonoBehaviour 접근으로 `MissingReferenceException`. 지금은 라이브 캡처 소비 경로(5b·Target)가 없어 **잠복**이나, snapshot=false를 실제로 쓰기 시작하면 걸린다. UE는 aggregator 링크 해제로 처리 — 조회 시 `_capturedAsc` 유효성 재검사(Unity null 체크) 필요. _(2026-08-04 등록 — 캡처 경로 분석 중 발견)_
 - [ ] **(code)** GE 캡처 **params 조회 함정 3종 (5b·Execute 작성 시 주의)** — 캡처를 실제로 읽는 코드를 쓸 때 걸리기 쉬운 지점. ① **false가 조용하다:** `AttemptCalculateCapturedAttribute*`(`GameplayEffectExecutionParameters.cs:47·54`)는 실패 사유(미등록/캡처 무효/Target 미캡처)를 전부 `false`+`0`으로 뭉개고 **경고 로그 없음** — 호출측이 bool을 안 보면 0이 계산식에 샌다. ② **값-동등성 key 취약:** 조회는 `BackingDefinition.Equals`(captureSource+attribute AQN+snapshot)라 **셋 중 하나만 달라도 매치 실패→false**. 조회 정의는 선언 정의와 완전히 같아야 함(SpeedBoost처럼 같은 static 필드 재사용이 안전). ③ **captureValueType 라우팅:** params 메서드가 Magnitude=Current / BaseValue=Base로 고정 분기인데 authoring의 `AttributeBasedMagnitude.captureValueType`(`:33`)가 Base/Current를 데이터로 지정 — 5b/Execute가 이 값에 맞춰 올바른 메서드를 호출해야 authoring 의도와 맞는다. _(2026-08-04 등록 — 캡처 조회 경로 분석 중 발견)_
 - [ ] **(editor)** **GE Executions 리스트에 New Script 지원** — Attribute Sets 리스트엔 New Script가 있으나 Executions엔 없음(2026-08-07 Add만 붙임). 이유: `GameplayEffectExecution.Execute`가 abstract라 빈 서브클래스 템플릿(`: GameplayEffectExecution {}`)이 컴파일 안 됨. 붙이려면 New Script 템플릿(`SubclassScriptTemplate.BuildSource`)이 **abstract 멤버의 override 스텁 생성**을 해야 함(예: `Execute(...) => throw new NotImplementedException();`). 그 스텁 생성만 추가하면 GE Executions·다른 abstract-base 셀렉터에도 켤 수 있음. _(2026-08-07 등록)_
 - [ ] **(code)** **타입 참조를 rename-safe 하게 (AttributeSet·GE Execution)** — 지금 둘 다 타입을 **AQN 문자열**로 저장(`attributeSetTypeName`·`executionTypeNames`)해, 클래스명·네임스페이스·asmdef 이동 중 뭐든 하면 `Type.GetType` 실패→"Missing"으로 링크가 끊긴다. **지금은 미룸** — 규모 작고(서브클래스 몇 개), 깨져도 인스펙터에 보이고 검색 드롭다운에서 다시 고르면 됨. 고치는 값이 큼(포맷·리졸버·드로어·런타임·New Script 자동배정·기존 에셋 마이그레이션 전부)이라 과설계에 가깝다. **재평가 트리거:** rename이 잦아져 여러 에셋을 반복해 다시 잇게 되면. **하게 되면:** 안정 GUID id(`[StableTypeId(guid)]` + id→Type 리졸버, AQN 폴백 가능) — 둘 다 문자열 저장이라 통일 적용됨. (`[MovedFrom]`은 커스텀 `Type.GetType` 방식엔 안 먹혀 탈락, SerializeReference는 GE만 가능.) _(2026-08-07 등록 — New Script 툴 논의 중 도출)_
-- [ ] **(docs)** architecture 하류 문서 **반영 기준 마커 정비** — `camera.md`·`item-equipment.md`·`controller-character.md`·`architecture/overview.md`는 마커 자체가 없어 HARNESS §3.4의 낡음 판별(하류 날짜 < 상류 날짜)이 불가능하다. 실제 반영 날짜를 알 수 없어 **지어내지 않고 그대로 뒀다**(§3.4 "모르는 날짜는 지어내지 않는다"). 채우려면 **유저가 날짜를 알려주거나, 다음에 그 문서를 실제로 갱신할 때 그날 날짜로 stamp**한다. 더불어 `ability-system/overview.md`는 상류를 feature-id가 아닌 **그룹명**(`ability-system`)으로 적어, 어느 progress와 비교할지 모호하다(그룹 대표 규칙을 정하든 하위 3개 중 하나로 바꾸든 결정 필요). _(2026-07-19 등록 — 하네스 점검 중 발견)_
+- [ ] **(docs)** architecture 하류 문서 **반영 기준 마커 정비** — `camera.md`·`item-equipment.md`·`controller-character.md`·`architecture/overview.md`는 마커 자체가 없어 session-protocol '최종 갱신 타임스탬프'의 낡음 판별(하류 날짜 < 상류 날짜)이 불가능하다. 실제 반영 날짜를 알 수 없어 **지어내지 않고 그대로 뒀다**(그 절 "모르는 날짜는 지어내지 않는다"). 채우려면 **유저가 날짜를 알려주거나, 다음에 그 문서를 실제로 갱신할 때 그날 날짜로 stamp**한다. 더불어 `ability-system/overview.md`는 상류를 feature-id가 아닌 **그룹명**(`ability-system`)으로 적어, 어느 progress와 비교할지 모호하다(그룹 대표 규칙을 정하든 하위 3개 중 하나로 바꾸든 결정 필요). _(2026-07-19 등록 — 하네스 점검 중 발견)_
+- [ ] **(docs)** **attribute 런타임 타입 이름 정렬 + D5 재작성** — 코드는 `GameplayAttributeHandle`인데 2026-08-21 세션에 내가 적은 문서·주석 일부가 아직 `ResolvedGameplayAttribute`다(그 이름으로 확정했다가 유저가 되돌림). 정정 대상: attribute `decisions.md`(D5)·`progress.md`, architecture `overview`·`attribute`·`gameplay-effect`, 잔재 2건(`AttributeAggregator.cs` 주석 `Dictionary<ResolvedGameplayAttribute,…>`·`GameplayEffectSpec.cs` 경고 문자열). **D5는 근거 자체 재작성 필요** — "Handle이 부정확"이라 `Resolved-`를 택한 논리가 최종 `GameplayAttributeHandle`(Handle 유지)과 모순. 유저에게 "왜 Handle로 되돌렸나" 받아 그 근거로 다시 쓴다(HARNESS '왜는 지어내지 않는다'). _(2026-08-21 등록)_
+- [ ] **(docs)** **§번호 제거 잔여분** — 이번(2026-08-22) 스윕에서 **의도적으로 남긴 것**: ① ✅ Done 로그의 과거 § 기록(동결 이력 — 당시 섹션번호를 서술한 기록이라 §9로 보존) ② `ue-reference.md` 자체 섹션 번호(§2·§9·§11 — 자기완결 UE 참고 자료, decisions/worklog가 "참고문서 §N"으로 참조) ③ `wiki/HARNESS.md` 자체 번호(§2·§2.1). ①은 이력이라 그대로 두는 게 맞고, ②③은 해당 문서 자체를 이름 기반으로 개편할지 유저 판단 필요. _(2026-08-22 등록)_
 
 
 ## 🔧 진행 중
@@ -60,10 +72,16 @@
   - Gun·Melee 등 종류별 로직이 들어갈 자리가 있되, 아이템별 클래스 분리·상속을 강제하지 않을 것 (전략 패턴 방향은 유저 언급)
   - 아이템을 구현할 때 알아야 하는 것(컨텍스트, 외부 접근 방법, 시스템 전체 이해)이 복잡하지 않을 것 — 복잡도 대비 이득 없는 과설계 배제
   - 표현부(ItemBehaviour·GameplayCue 활용 포함)의 역할과 Combat 로직과의 연동 방식은 재검토 대상
-  - **진행(2026-07-12):** 규약 백지화 완료(이전 INV·D·로드맵 → `feature/item-system/archive/`). 새 판단 기준 4축 채택(HARNESS §2, Nystrom Type Object vs Subclass Sandbox).
+  - **진행(2026-07-12):** 규약 백지화 완료(이전 INV·D·로드맵 → `feature/item-system/archive/`). 새 판단 기준 4축 채택(HARNESS '디렉토리 구조', Nystrom Type Object vs Subclass Sandbox).
   - **진행(2026-07-13):** 설계도 백지에서 재작성 → [`feature/item-system/design-draft.md`](feature/item-system/design-draft.md)(확정 아님). `ItemModule`·`ItemInstance`·"모듈 조합"은 **권위 없음**으로 강등하고, 그렇게 서술하던 project 문서(architecture/item-equipment.md·overview.md, design.md)를 **전부 미정 처리**. 후보 3안(A: 무기=Runtime 서브클래스 / B: 현행 시스템이 알고리즘 보유 / C: 어빌리티) — GAS엔 GameplayAbility가 없음(코드 확인). **결론은 기획안(위 ⭐)이 서야 남** — 콤보/탄약/패링 채택 여부가 A vs B를 가름. _(2026-07-10 등록, 07-13 갱신)_
 
 ## ✅ Done
+
+- [x] **(docs/refactor)** **전역 코드 주석·컨벤션 스윕** — 코드 주석에서 `→D#`·`INV-N`·`(UE:)` 외부 포인터 전부 제거(주석은 자기충족만), 이름 재진술 주석 삭제, 메서드 `=>`→블록(프로퍼티 예외)·줄넘김된 문장 한 줄로. AbilitySystem·Item·Character·Editor 전반. `CODE_CONVENTION.md` 갱신 — 하우스 스타일 "근거 문서 앵커(INV/D#)"를 **"주석은 그 자체로 완결·외부 포인터 금지"**로 교체 + `=>` 사소한 프로퍼티 예외 + "긴 줄 줄넘김 지양" 일반화(유저 지시). 로직/컴파일 이슈 2건은 스코프 밖으로 두고 보고만(→ NOW.md). _(2026-08-25)_
+
+- [x] **(docs)** **하네스 다이어트 — 규칙 본문 ↔ 사례 아카이브 파일 분리** — 각 규칙에 인라인으로 붙어 있던 `실제 발생`/`*사례` 25건을 **규칙 문서마다 형제 `*.cases.md`** 로 분리: `HARNESS.cases.md`(C-01~09)·`session-protocol.cases.md`(C-01~15)·`feature/HARNESS.cases.md`(C-01). ID는 **파일별 로컬 번호**. 본문(`HARNESS.md`·`session-protocol.md`·`feature/HARNESS.md`)엔 규칙만 남기고 `→ 사례 [C-NN]` 포인터로 연결. 각 문서 상단에 "규칙 ↔ 사례 분리" 안내, `HARNESS.md` 디렉토리 트리·문서 인덱스에 세 파일 등록, `CLAUDE.md` 메모 완료 처리. _(2026-08-23)_
+
+- [x] **(docs)** **하네스 문서 대재편(2026-08-22)** — ① 세션 프로토콜→`session-protocol.md`, feature 문서 작성 규약(feature-list·progress·worklog·decisions + 생성/완료/폐기 + decisions 품질)→`feature/HARNESS.md`, 작업 보드 규약→`todo-board-convention.md`로 **분리**. ② `HARNESS.md`를 프로세스 허브로 축소 — **관련 하위 문서 인덱스** 신설(CLAUDE.md식), 디렉토리 트리를 **agent/ 하위만**으로. ③ **§번호 상호참조 제거** — 하네스 4개 + 활성 feature/arch 문서 + TODO-BOARD + project 3문서의 헤딩 번호·문서간 §참조를 **이름 기반**으로(타임스탬프 마커 `(KST — HARNESS §3.4)`→`(KST)`). ④ `feature-list.md`를 `feature/`로, `wiki/`를 `dev-docs/project/`로 이동(참조 갱신). 남은 §는 위 "§번호 제거 잔여분" TODO 참조. _(2026-08-22)_
 
 - [x] **(docs)** 하네스 §1.1-2에 **"엔진·외부 API 동작 질문 = 답 전에 원문 확인" 실행 트리거** 추가 — UE 동작을 기억으로 답부터 하는 실수가 3회 반복(2026-07-19·08-04·08-05)돼, §1.1/§8.5가 있어도 "질문 받는 순간"이 트리거로 안 걸리던 것을 명시적 멈춤 규칙으로. WebFetch/검색 요약도 2차 자료(오독 가능)라 결론 지점은 원문 라인 확인. 유저 승인. _(2026-08-05)_
 - [x] **(docs)** 하네스에 **습관·증분 기록 규약** 추가(§1-2) — 유저가 "문서 작성을 지시 안 하고 세션을 닫는 일이 많다"고 밝혀, 기록을 세션 종료 절차가 아니라 **진전마다 즉시 남기는 습관**으로 재정의. 시키지 않아도 남기고, NOW.md 우선. 텍스트 규약은 강제 종료 시 못 켜지므로 Stop 훅이 더 확실하다는 한계도 명시(요청 시 훅). _(2026-08-03)_

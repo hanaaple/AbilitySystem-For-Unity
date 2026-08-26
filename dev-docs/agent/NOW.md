@@ -1,40 +1,34 @@
-# NOW — 지금 이어서 할 일 (단일 재개 지점)
+# NOW — 단일 재개 지점
 
-> **"하던거 하자" = 이 파일 하나만 읽고 곧장 `## ▶ 지금 할 일`부터 실행한다.**
-> feature-list·progress·worklog·코드를 **미리 훑지 않는다** — 필요할 때만 링크로 연다.
-> 세션 종료 시 이 파일을 현재 상태로 갱신한다(§3.3). 그래야 다음 세션이 이것만 읽고 재개한다.
->
-> 최종 갱신: 2026-08-07 (KST)
+> 휘발성 재개 메모. 진실은 코드 + progress/decisions. 세션 종료 시 통째 재작성.
+> 최종 갱신: 2026-08-26 (KST)
 
----
+## ✅ 방금 완료 — Aggregator 검증 통과 (Edit 셀프체크 + PlayMode 실제 Asset)
 
-## ▶ 지금 할 일
+**feature: `ability-system/aggregator`** (branch `Feature/GE-Execution`). 두 층으로 검증:
+1. **Edit 셀프체크** — `Tools ▸ Ability System ▸ Run Aggregator Self-Check` → **`passed 44 / failed 0`**. 5층(A 단위 / B ASC 라우팅 / C capture 스냅샷 / D 에셋 다수 / E dirty 재평가 = D12).
+2. **PlayMode 실제 Asset** — `Tools ▸ Ability System ▸ Setup PlayMode Test`가 GE `.asset` 5개 + AttributeDefinitionAsset 생성·씬 배선 → Play → **`[PlayMode Self-Check] passed 14 / failed 0`**, 예외 0. 실제 ASC.Awake 초기화 → Apply 파이프라인으로 라이브 재평가(Health→Speed 추종)·snapshot 고정·Instant Base 영구 확인. **수용 기준 4개 중 3개 체크(자기참조 루프만 미검증).**
 
-### ▶▶ 다음 세션 시작점 — **aggregator (라이브 재평가) 구현 착수**
+산출물: `Assets/Scripts/Character/Testing/AggregatorPlayModeTest.cs`(+Editor/Setup) + `Assets/_PlayModeTest/` 에셋 5개 + Test Scene 배선. **전부 미커밋.** 상세 → [aggregator/progress.md `## 다음 작업`](feature/ability-system/aggregator/progress.md).
 
-**스캐폴딩 완료(2026-08-07):** feature 등록(`aggregator`, ability-system 그룹) · progress/decisions/worklog · architecture 스켈레톤 · 앵커 스텁 `Assets/Scripts/Core/AbilitySystem/Aggregator/AttributeAggregator.cs`(빈 셸). **구현 로직은 아직 없음.**
+## ▶ 다음 할 일 — Phase 3 캡슐화 조이기 (유저 승인 대기)
 
-**다음 액션 = progress `## 다음 작업` 1번:** `AbilitySystemComponent`에 **어트리뷰트 변경 이벤트** 신설 — `SetBaseAttributeValue`/`UpdateAttributeCurrentValue`가 값이 실제로 바뀔 때 `(handle, old, new)`로 발화. 이어서 ② non-snapshot 캡처 의존 등록/해지 → ③ 변경 핸들러 재평가(`CalculateModifierMagnitudes` 라이브) → ④ 재진입 가드.
+동작 검증 끝났으니 이제 API 가시성 조이기 가능(순서 섞으면 FAIL 원인 구분 불가라 뒤로 미뤄뒀던 것):
+- `AttributeAggregator` 변경 메서드(`AddAggregatorMod`/`Remove`/`SetBaseValue`/`AddDependent`/`RemoveDependent`/`UpdateAggregatorMod`/`OnDirty`) → `internal`, `ActiveGameplayEffectsContainer` → `internal class`.
+- 이러면 셀프체크 툴의 Layer B/C(aggregator 직접 찌르기)가 깨짐 → **파이프라인/리플렉션으로 재작성**(D/E는 무영향).
+- **유저 승인 후 착수.** 승인 나면 Unity MCP 다시 ON 필요(현재 OFF).
 
-- **방향(결정 D1/D2):** UE `FAggregator`의 **반응성 책임만** 분리(R1/R2는 ASC 유지). 경량 = 옵저버 + 재평가 + 재진입 억제. 범위 = cross-attribute·self-effect 라이브. **후속(제외):** cross-actor 라이브(cross-ASC 구독)·자기참조 fixed-point·태그 자격(R5, seam만).
-- 문서: [feature/ability-system/aggregator/progress.md](feature/ability-system/aggregator/progress.md) · [decisions](feature/ability-system/aggregator/decisions.md) · [architecture](../project/architecture/ability-system/aggregator.md).
-- 계기: GE_BoxSelfEffect의 non-snapshot 모디파이어가 초기값 고정으로만 적용 → 원인=magnitude가 apply 시점 고정(재평가 트리거 없음). UE 원문으로 dirty/dependents 메커니즘 확인.
+그 밖 잔여: D14(base 진실 = AttributeData, aggregator 지연 생성) — progress `## 다음 작업` 참조. 미러 검증 층(선택).
 
-### (병행 대기) GE 캡처/Execution 유저 에디터 검증 — 아직 미완
+## ⚙ 선행조건 / 환경
+- **Unity MCP:** 현재 OFF(테스트 종료 후 정상). dev-tools.md 방침. 재검증·Phase 3 재작성 시 `.claude/settings.local.json` `disabledMcpjsonServers: []`로 ON. uvx 0.11.2.
+- 검증 중 콘솔의 `get_tool_states Unknown command` 에러는 MCP 클라 폴링 노이즈(이 Unity 패키지 빌드 미지원) — 결과 무관.
 
-5b evaluate(2026-08-04)까지 캡처 배관 섰고, 관측용 디버그 도구(ASC Inspector 창 · BoxRoom, 2026-08-05)도 만들어 둠. **유저가 Play 모드에서 캡처/snapshot 실측**하는 단계가 남음. 검증 항목 = [tests.md](feature/ability-system/gameplay-effect/tests.md).
-⚠ BoxRoom 미검증(프리팹 GUID·GE 슬롯 3개·Room ASC 데이터) — 상세는 [gameplay-effect worklog](feature/ability-system/gameplay-effect/worklog.md) 2026-08-05.
+## 📌 검증 후 다음 (동작 확정된 뒤에만)
+- **Phase 3 — 캡슐화 조이기:** `AttributeAggregator` 변경 메서드(`AddAggregatorMod`/`Remove`/`SetBaseValue`/`AddDependent`/`RemoveDependent`/`UpdateAggregatorMod`/`OnDirty`) → `internal`, `ActiveGameplayEffectsContainer` → `internal class`. 그러면 툴 Layer B/C(aggregator 직접 찌르기)가 깨짐 → 파이프라인/리플렉션으로 재작성(D/E는 무영향). **동작 검증(위) 끝난 뒤에** — 순서 섞으면 FAIL 원인 구분 불가.
+- **미러 검증 층(선택):** 툴은 `Evaluate()` 직접 읽어 AttributeData 미러 갱신은 안 본다. 미러까지 보려면 층 추가(현재 `OnAttributeAggregatorDirty` 조건은 유저가 이미 바로잡음 — 미러도 맞을 것).
+- D14(base 진실 = AttributeData, aggregator 지연 생성) 잔여는 progress `## 다음 작업` 참조.
 
-> (그 밖의 대기 항목 — UE Execution 실행조건 문서 반영·에셋 폴더 관례·미커밋 커밋 정리 등 — 은 [TODO-BOARD](TODO-BOARD.md).)
-
----
-
-## 브랜치·커밋 상태
-
-**브랜치: `Feature/GE-Execution`** (업스트림은 아직 `origin/feature/item-system` — 원격 정리는 PR 단계, 유저 결정).
-**미커밋 산출물 다수** — 2026-08-04 5b + 2026-08-05 디버그 도구 + 2026-08-07 에디터 New Script 툴·GE Executions Add·aggregator 스캐폴딩 전부 미커밋. 커밋 정리는 TODO-BOARD.
-
----
-
-### 🅿 파킹: item-system 무기 재설계 (유저 결정 대기)
-item 문서 전면 아카이브·재시작 상태(2026-07-18). 새 시작점 = [item-system/README.md](feature/item-system/README.md). 무기 구조는 **유저 주도 결정 대기 — 에이전트 선설계 금지.**
+## 산출물 (이 세션)
+- `Core/AbilitySystem/Aggregator/Editor/AggregatorSelfCheck.cs` — 5층 셀프체크(A 단위 / B ASC 라우팅 / C capture 스냅샷 / D 에셋 다수 케이스 / E 런타임 dirty 재평가). 리플렉션으로 `GameplayEffectAsset`·`GameplayModifier`·`AttributeBasedMagnitude` 조립. IDE 진단 clean.
+- 캡슐화 리뷰 완료(위 Phase 3) — **API 가시성 변경은 미실행, 검증 후 유저 승인 대기.**

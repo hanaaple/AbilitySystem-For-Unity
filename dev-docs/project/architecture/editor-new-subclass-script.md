@@ -4,7 +4,7 @@
 
 - 코드: `Assets/Scripts/Core/Common/Editor/`
 - 첫 사용처: Attribute Set 셀렉터 (`AttributeDefinitionAsset`). 결정 근거는 feature `ability-system/attribute` [decisions.md](../../agent/feature/ability-system/attribute/decisions.md) **D4**.
-- **반영 기준:** feature `ability-system/attribute` @ 2026-08-07 (KST) — HARNESS §3.4.
+- **반영 기준:** feature `ability-system/attribute` @ 2026-08-07 (KST).
 
 > 바깥에서 안으로 읽는다. 1·2절만 봐도 "무엇을·어떻게 쓰나"는 끝난다. 3절부터는 내부, 5절이 가장 깊다.
 

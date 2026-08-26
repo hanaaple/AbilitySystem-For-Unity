@@ -2,7 +2,7 @@
 
 > 이 프로젝트는 자동 테스트가 없다 — **전부 Unity Play 모드 + Inspector 관측**으로, 각 항목은 유저가 에디터에서 수행한다.
 > 대상: **AttributeCapture 계층 + AttributeBased magnitude evaluate**(progress 세부 TODO 3·5b, →D14~D21).
-> 진행 문서: [progress.md](progress.md). 최종 갱신: 2026-08-04 (KST — HARNESS §3.4)
+> 진행 문서: [progress.md](progress.md). 최종 갱신: 2026-08-04 (KST)
 
 ---
 

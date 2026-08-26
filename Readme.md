@@ -18,7 +18,7 @@
 
 ## 프로젝트 위키
 
-기술 설계와 **선택 이유**를 한 페이지로 정리한 포트폴리오용 위키 → [wiki/index.html](wiki/index.html) (브라우저로 바로 열기)
+기술 설계와 **선택 이유**를 한 페이지로 정리한 포트폴리오용 위키 → [dev-docs/project/wiki/index.html](dev-docs/project/wiki/index.html) (브라우저로 바로 열기)
 
 - 마지막 갱신: 2026-06-13
 - ⚠️ 진행 중인 ItemSystem / EquipmentSystem은 아직 미반영 (수동 갱신)

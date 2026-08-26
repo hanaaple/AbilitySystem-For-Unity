@@ -3,6 +3,14 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
 
+### 2026-08-22 — AttributeSet owner back-ref 추가 (미완) (→D6)
+
+**요청.** UE `ATTRIBUTE_ACCESSORS`의 `SetHealth`류를 이 프로젝트에도 — "각 attribute에 일괄 적용되는 접근자". 논의 결론: UE의 `SetX`도 owning ASC로 위임하므로 "Set에 두기 vs ASC로만"은 양자택일이 아니라 *얼굴은 Set, 쓰기는 ASC 위임*. → `AttributeSet`에 owning ASC back-ref 필요(→D6).
+
+**구현(미완).** `AttributeSet`에 `owner` 필드 추가, `SetBaseValue(handle,value)`가 `owner.SetAttributeBaseValue`로 위임. 처음 `SetOwner`(등록 시 주입)로 넣었다가 유저가 **생성자 주입**으로 전환 지시. 생성자 주입 캐스케이드(서브클래스 4개 전달 생성자 + `Activator.CreateInstance(type, this)`)에 착수했으나 **유저가 스코프 초과로 중단**("멋대로 구현하지 말라"). **현재 `AttributeSet`에 생성자만 있고 서브클래스·Activator 미배선 → 컴파일 불가 상태.** 방식 확정·배선 완성은 다음 세션(progress `## 다음 작업` 1번).
+
+> 이후 세션 대부분은 코드가 아니라 **하네스 문서 재편**(세션 프로토콜·feature 규약·TODO 규약 파일 분리, 디렉토리 트리 축소, §번호 상호참조 제거)에 씀 — 그 이력은 이 feature와 무관하므로 TODO-BOARD Done에 둠.
+
 ### 2026-08-07 — 에디터 툴: Attribute Set 셀렉터 "New Script..." (템플릿 생성 + 자동 배정) (→D4)
 
 **요청.** Attribute Set "+" 드롭다운에서 (Add Component→New Script처럼) 이름을 적어 새 Set을 만들면, 항상 `AttributeSet`을 상속한 템플릿으로 생성되게. 생성 후 그 필드에 자동으로 들어가면 좋겠다(유저가 자동 배정 선택).
@@ -15,7 +23,7 @@
 - `TypeChoiceList`: 리스트 add 팝업을 `GenericMenu`→검색형 `SubclassAdvancedDropdown`으로 교체. `newScriptBaseType`(opt-in)이면 add "+"에 New Script(Add 모드, `newScriptTypeRelPath`·`newScriptClearArrayRelPath`로 새 요소 세팅). Item 모듈 리스트도 검색 가능해짐(New Script는 미노출).
 - `AttributeDefinitionAssetDrawer`: `newScriptBaseType: typeof(AttributeSet)` 등으로 리스트 "+"에 opt-in. `AttributeSetDefinitionDrawer`: 필드 "+"에 `allowCreateNew: true`.
 
-**과정 메모(수정 이력).** 처음엔 필드 셀렉터 "+"에만 넣었으나, 유저가 새 Set을 만드는 곳은 **리스트 헤더 "Attribute Sets +"**여서 안 보였다 → 리스트 add로 진입점 이동(필드에도 유지). 이어 add 팝업도 검색 가능하게(요청) `AdvancedDropdown`으로 통일. (중간에 존재 불확실한 `GUIUtility.GUIToScreenRect` 대신 `GUIToScreenPoint`로 교체 — §1.1 API 단정 회피.)
+**과정 메모(수정 이력).** 처음엔 필드 셀렉터 "+"에만 넣었으나, 유저가 새 Set을 만드는 곳은 **리스트 헤더 "Attribute Sets +"**여서 안 보였다 → 리스트 add로 진입점 이동(필드에도 유지). 이어 add 팝업도 검색 가능하게(요청) `AdvancedDropdown`으로 통일. (중간에 존재 불확실한 `GUIUtility.GUIToScreenRect` 대신 `GUIToScreenPoint`로 교체 — HARNESS '판단은 틀릴 수 있다'(API 단정 회피).)
 
 **구조 정리(SoC 리팩터, 유저 요청).** 남아 있던 호출부 배선 반복(`delayCall`+`Show`+`Stash…`)을 파사드로 흡수하고 책임별로 파일 분리. 의존은 한 방향: 드로어 → `NewSubclassScript`(파사드: 진입점, `delayCall` 넘김) → `NewSubclassScriptPopup`(UI 표현부, 입력만) → `SubclassScriptTemplate`(순수 저작: 네임스페이스 유도·소스 조립·검증·파일 생성) / `PendingSubclassAssignment`(리로드 생존·자동 배정). 드로어는 이제 `NewSubclassScript.OpenForField/OpenForListAdd` 한 줄만 부르고 내부(`SessionState`·`GlobalObjectId`·`delayCall`)를 모른다. UI 창은 배정 로직을 모르고, 저작 로직은 UI를 모른다.
 

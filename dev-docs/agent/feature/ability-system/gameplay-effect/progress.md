@@ -2,7 +2,7 @@
 
 - 상태: 🔧 IN-PROGRESS
 - 우선순위: P0
-- 최종 갱신: 2026-08-05 (KST — HARNESS §3.4)
+- 최종 갱신: 2026-08-05 (KST)
 
 > `ability-system` 그룹의 하위 feature. 형제: [attribute](../attribute/progress.md) · [gameplay-ability](../gameplay-ability/progress.md).
 > **핵심은 구현·동작(✅)**, 아래 블로커(⚠️ GE 타입 실전 상태·Execution 껍데기)만 미결이라 IN-PROGRESS.

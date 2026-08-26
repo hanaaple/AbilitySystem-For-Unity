@@ -4,7 +4,7 @@
 
 > 이 문서군은 **구현된 것 / 미구현(계획)**을 명확히 구분한다. 범례: ✅ 구현·동작 · ⚠️ 코드 존재하나 상태 확인 필요 · ❌ 미구현(계획).
 > **심화 문서:** [Attribute](attribute.md) · [GameplayEffect](gameplay-effect.md) · [GameplayAbility](gameplay-ability.md) · [Aggregator (라이브 재평가·설계 준비)](aggregator.md)
-> **반영 기준:** feature `ability-system` @ 2026-07-05 (KST) — 상류 progress의 `최종 갱신`보다 오래되면 갱신 대상(dev-docs HARNESS §3.4).
+> **반영 기준:** feature `ability-system` @ 2026-08-21 (KST) — 상류 progress의 `최종 갱신`보다 오래되면 갱신 대상(dev-docs HARNESS의 '최종 갱신 타임스탬프' 규약).
 
 ## 구현 현황 요약
 
@@ -32,7 +32,7 @@ AttributeSet (abstract, 빈 마커)                 ← 수치 컨테이너
 ├── CharacterAttributeSet  — health, maxHealth, stamina, maxStamina, speed
 └── CombatAttributeSet     — damage
 
-AttributeHandle (readonly struct)               ← 경량 식별자 (SetType + fieldName + FieldInfo 캐싱, IEquatable)
+ResolvedGameplayAttribute (readonly struct)     ← 경량 식별자 (SetType + fieldName + FieldInfo 캐싱, IEquatable)
 AttributeData  (struct)                         ← BaseValue / CurrentValue 쌍
 
 GameplayEffectAsset (ScriptableObject)          ← 불변 정의 (type·duration·period·modifiers·executions)
@@ -55,7 +55,7 @@ ActiveGameplayEffect                            ← 활성 상태 (Handle, Remai
 | UE GAS | 이 프로젝트 | 상태 | 판단 |
 |---|---|---|---|
 | `UAbilitySystemComponent` | `AbilitySystemComponent` | ✅ | 수치·이펙트 허브. 핵심이라 채택 |
-| `UAttributeSet` / `FGameplayAttribute` | `AttributeSet` / `AttributeHandle` | ✅ | 어트리뷰트 개념 채택. FGameplayAttribute(UProperty 기반)를 **FieldInfo 캐싱 struct**로 축소 → [attribute](attribute.md) |
+| `UAttributeSet` / `FGameplayAttribute` | `AttributeSet` / `GameplayAttribute`·`ResolvedGameplayAttribute` | ✅ | 어트리뷰트 개념 채택. UE 단일 `FGameplayAttribute`(UProperty 기반, 직렬화+런타임 겸용)를 C# 제약(FieldInfo 직렬화 불가)상 **직렬화용 `GameplayAttribute`(문자열 쌍) + 런타임 해석용 `ResolvedGameplayAttribute`(FieldInfo 캐싱 struct)** 둘로 분리 → [attribute](attribute.md) |
 | `FGameplayEffectSpec` / `FActiveGameplayEffect` | `GameplayEffectSpec` / `ActiveGameplayEffect` | ✅ | 정의(SO)/런타임 인스턴스 분리 그대로 채택 → [gameplay-effect](gameplay-effect.md) |
 | `FGameplayModifierInfo` + Aggregator mod channels | `GameplayModifier` 6종 + CurrentValue 공식 | ✅(단순화) | UE의 다채널 aggregator를 **6종 연산 단일 공식**으로 축소 |
 | `FGameplayEffectContext` | `GameplayEffectContext`(+Handle) | ✅ | 출처·타깃 스냅샷 채택 |
@@ -75,4 +75,4 @@ ActiveGameplayEffect                            ← 활성 상태 (Handle, Remai
 ---
 
 - 프로젝트 아키텍처 인덱스: [../overview.md](../overview.md)
-- feature 추적: [feature/ability-system](../../../agent/feature-list.md)
+- feature 추적: [feature/ability-system](../../../agent/feature/feature-list.md)
