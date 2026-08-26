@@ -63,7 +63,10 @@ namespace Core.Common.Editor
         // "New Script..." 전용 마커 항목. 타입 선택이 아니라 새 스크립트 생성 흐름으로 분기시킨다.
         private sealed class NewScriptItem : AdvancedDropdownItem
         {
-            public NewScriptItem(string name, int id) : base(name) => this.id = id;
+            public NewScriptItem(string name, int id) : base(name)
+            {
+                this.id = id;
+            }
         }
 
         protected override AdvancedDropdownItem BuildRoot()

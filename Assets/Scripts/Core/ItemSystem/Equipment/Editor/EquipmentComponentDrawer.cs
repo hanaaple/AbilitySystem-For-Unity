@@ -18,7 +18,10 @@ namespace Core.ItemSystem.Equipment.Editor
 
         private bool _showEquipped = true;
 
-        public override bool RequiresConstantRepaint() => Application.isPlaying;
+        public override bool RequiresConstantRepaint()
+        {
+            return Application.isPlaying;
+        }
 
         public override void OnInspectorGUI()
         {

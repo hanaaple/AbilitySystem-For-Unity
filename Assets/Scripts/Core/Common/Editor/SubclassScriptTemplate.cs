@@ -15,7 +15,10 @@ namespace Core.Common.Editor
     internal static class SubclassScriptTemplate
     {
         // 기본 클래스명 제안: "New" + baseType 이름.
-        public static string SuggestClassName(Type baseType) => "New" + baseType.Name;
+        public static string SuggestClassName(Type baseType)
+        {
+            return "New" + baseType.Name;
+        }
 
         // 생성 가능 여부. 문제가 있으면 사용자용 메시지, 없으면 null.
         public static string Validate(string folder, string className, Type baseType)
@@ -56,7 +59,10 @@ namespace Core.Common.Editor
             return path;
         }
 
-        private static string ScriptPath(string folder, string className) => $"{folder}/{className}.cs";
+        private static string ScriptPath(string folder, string className)
+        {
+            return $"{folder}/{className}.cs";
+        }
 
         // 폴더 경로에서 네임스페이스를 유도한다: "Assets/Scripts/Character" → "Character",
         // "Assets/Scripts/Core/AbilitySystem/Attribute" → "Core.AbilitySystem.Attribute" (기존 컨벤션과 일치).

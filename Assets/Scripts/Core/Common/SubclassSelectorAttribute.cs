@@ -14,6 +14,9 @@ namespace Core.Common
     {
         public Type BaseType { get; }
 
-        public SubclassSelectorAttribute(Type baseType) => BaseType = baseType;
+        public SubclassSelectorAttribute(Type baseType)
+        {
+            BaseType = baseType;
+        }
     }
 }
