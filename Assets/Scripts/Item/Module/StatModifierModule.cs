@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Item.Module
 {
-    // 회수 핸들 = 이 장착 개체의 per-item 상태(INV-5) → 모듈이 아니라 상태가 보유한다.
+    // 회수 핸들 = 이 장착 개체의 per-item 상태 → 모듈이 아니라 상태가 보유한다.
     public sealed class StatModifierState : IModuleState
     {
         public ActiveGameplayEffectHandle Handle;
@@ -19,7 +19,7 @@ namespace Item.Module
 
         protected override void OnEquip(ModuleContext context, StatModifierState state)
         {
-            // 모듈은 씬을 모르고 ASC(시스템)에만 요청한다(INV-3). 컨텍스트가 ASC를 주지 못하면 무시.
+            // 모듈은 씬을 모르고 ASC(시스템)에만 요청한다. 컨텍스트가 ASC를 주지 못하면 무시.
             if (effect == null || context is not AbilitySystemModuleContext asc)
             {
                 return;

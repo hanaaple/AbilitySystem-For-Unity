@@ -26,8 +26,7 @@ namespace Core.AbilitySystem.Effect
     [Serializable]
     public class AttributeBasedMagnitude
     {
-        // 캡처 대상(어디서·무엇을·snapshot 여부) — UE FAttributeBasedFloat::BackingAttribute.
-        // "무엇을 캡처하나"는 이 정의가 담고, "캡처값을 어떻게 소비하나"(Base/Current)는 아래 captureValueType가 담는다(D12).
+        // 캡처 대상(어디서·무엇을·snapshot 여부). "무엇을 캡처하나"는 여기가, "어떻게 소비하나"(Base/Current)는 captureValueType가 담는다.
         [SerializeField] private GameplayEffectAttributeCaptureDefinition backingAttribute;
 
         [SerializeField] private AttributeCaptureValueType captureValueType;
@@ -46,11 +45,9 @@ namespace Core.AbilitySystem.Effect
         public float PostMultiplyAdditive => postMultiplyAdditive;
 
         /// <summary>
-        /// 캡처값에서 최종 magnitude를 계산한다: (capturedValue + PreMultiplyAdditive) * Coefficient + PostMultiplyAdditive
-        /// (UE: FAttributeBasedFloat::CalculateMagnitude). 캡처값은 <paramref name="spec"/>의 캡처 컨테이너에서
-        /// <see cref="backingAttribute"/>·<see cref="captureValueType"/>로 조회한다 — 캡처가 끝난 뒤 호출해야 한다.
-        /// <para>조회 실패(미등록·미캡처·무효 캡처) 시 캡처값 0으로 계산하되 경고를 남긴다 — 0이 조용히 흘러
-        /// 결과가 틀리는 것을 막기 위함이다.</para>
+        /// 캡처값에서 최종 magnitude를 계산한다: (capturedValue + PreMultiplyAdditive) * Coefficient + PostMultiplyAdditive.
+        /// 캡처값은 spec의 캡처 컨테이너에서 조회하므로 캡처가 끝난 뒤 호출해야 한다.
+        /// 조회 실패 시 캡처값 0으로 계산하되 경고를 남긴다 — 0이 조용히 흘러 결과가 틀리는 것을 막기 위함이다.
         /// </summary>
         public float Evaluate(GameplayEffectSpec spec)
         {

@@ -3,17 +3,17 @@ using System.Collections.Generic;
 
 namespace Core.ItemSystem.Inventory
 {
-    // 아이템 보유 컨테이너. 소유자를 모르는 순수 POCO(무의존) — 캐릭터·ASC·장비·UI·씬을 참조하지 않는다(INV-6/7).
-    // MonoBehaviour가 아니므로 씬 수명에 묶이지 않는다: 참조를 쥔 소유자가 사는 한 살아있다(D8).
+    // 아이템 보유 컨테이너. 소유자를 모르는 순수 POCO — 캐릭터·ASC·장비·UI·씬을 참조하지 않는다.
+    // MonoBehaviour가 아니라 씬 수명에 묶이지 않는다: 참조를 쥔 소유자가 사는 한 살아있다.
     // 소유(누가 장기 보유하는가)는 이 클래스의 관심사가 아니다 — 지속 소유자 계층이 생기면 그가 생성·보유한다.
     public class Inventory
     {
         private readonly List<InventoryEntry> _entries = new();
 
-        // 읽기 전용 노출. 소비처(장비·UI)는 이걸 읽고 OnChanged로 갱신한다(INV-8) — 직접 변형 금지.
+        // 읽기 전용 노출. 소비처(장비·UI)는 이걸 읽고 OnChanged로 갱신한다 — 직접 변형 금지.
         public IReadOnlyList<InventoryEntry> Entries => _entries;
 
-        // 내용이 바뀔 때마다 1회 통지. 폴링 대신 구독으로 갱신(INV-8).
+        // 내용이 바뀔 때마다 1회 통지. 폴링 대신 구독으로 갱신.
         public event Action OnChanged;
 
         // count개를 담는다. 스택 아이템은 병합, 그 외(장비 등)는 개별 엔트리.
@@ -24,14 +24,14 @@ namespace Core.ItemSystem.Inventory
                 return;
             }
 
-            // INV-11: 카테고리가 아니라 IStackable 능력 유무로 분기한다 — 장비는 이 능력이 없어 아래 else로 간다.
+            // 카테고리가 아니라 IStackable 능력 유무로 분기한다 — 장비는 이 능력이 없어 아래 else로 간다.
             if (data is IStackable stackable)
             {
                 AddStackable(data, stackable.MaxStack, count);
             }
             else
             {
-                // 비스택: per-item 상태를 공유하면 안 되므로 개수만큼 개별 엔트리 + 각자 ItemInstance(D4).
+                // 비스택: per-item 상태를 공유하면 안 되므로 개수만큼 개별 엔트리 + 각자 ItemInstance.
                 for (int i = 0; i < count; i++)
                 {
                     _entries.Add(new InventoryEntry(data, 1, new ItemInstance(data)));
@@ -98,7 +98,7 @@ namespace Core.ItemSystem.Inventory
             return sum;
         }
 
-        // 카테고리 파생 질의(D5) — 저장은 단일 컬렉션, 필터는 질의로. 예: Query(d => d is IEquippable).
+        // 카테고리 파생 질의 — 저장은 단일 컬렉션, 필터는 질의로. 예: Query(d => d is IEquippable).
         public IEnumerable<InventoryEntry> Query(Func<ItemDataAsset, bool> predicate)
         {
             for (int i = 0; i < _entries.Count; i++)
@@ -110,7 +110,7 @@ namespace Core.ItemSystem.Inventory
             }
         }
 
-        // 전량 비움. "사망 시 소실"은 소유자가 이걸 호출하는 것이지 GameObject 파괴가 아니다(D8).
+        // 전량 비움. "사망 시 소실"은 소유자가 이걸 호출하는 것이지 GameObject 파괴가 아니다.
         public void Clear()
         {
             if (_entries.Count == 0)

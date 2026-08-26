@@ -7,8 +7,8 @@ namespace Core.AbilitySystem.Effect
 {
 
     /// <summary>
-    /// GE의 정적 정의(무엇을·얼마나·어떻게 적용할지)를 담는 데이터 에셋 (UE: <c>UGameplayEffect</c>).
-    /// 런타임 적용 시 이 에셋으로부터 <see cref="GameplayEffectSpec"/>(UE: <c>FGameplayEffectSpec</c>)이 만들어진다.
+    /// GE의 정적 정의(무엇을·얼마나·어떻게 적용할지)를 담는 데이터 에셋.
+    /// 런타임 적용 시 이 에셋으로부터 <see cref="GameplayEffectSpec"/>이 만들어진다.
     /// </summary>
     [CreateAssetMenu(menuName = "Ability System/Gameplay Effect", fileName = "GE_New")]
     public sealed class GameplayEffectAsset : ScriptableObject
@@ -22,8 +22,7 @@ namespace Core.AbilitySystem.Effect
 
         [SerializeField] private List<GameplayModifier> modifiers;
 
-        // Execution은 SO가 아니라 클래스라(→decisions D7) 타입 이름(AQN)만 저장한다.
-        // 실제 인스턴스화는 GameplayEffectSpec 생성 시 1회 수행(→D2 resolve 캐싱과 같은 방식).
+        // Execution은 SO가 아니라 클래스라 타입 이름(AQN)만 저장하고, 실제 인스턴스화는 GameplayEffectSpec 생성 시 1회 한다.
         [SerializeField] [SubclassSelector(typeof(GameplayEffectExecution))]
         private List<string> executionTypeNames;
 

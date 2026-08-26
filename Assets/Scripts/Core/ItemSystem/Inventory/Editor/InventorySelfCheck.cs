@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Core.ItemSystem.Inventory.Editor
 {
-    // I1 임시 검증(D8 인프라 결정 전까지). 게임 코드가 무-asmdef라 정식 EditMode 테스트를 못 붙여,
+    // 임시 검증. 게임 코드가 무-asmdef라 정식 EditMode 테스트를 못 붙여,
     // Editor 어셈블리에서 Inventory를 구동해 콘솔로 결과를 확인한다. 정식 EditMode 테스트가 생기면 이 파일은 제거한다.
     public static class InventorySelfCheck
     {
@@ -53,7 +53,7 @@ namespace Core.ItemSystem.Inventory.Editor
             Check("부족분 제거는 거부 · 무변경", !inv2.Remove(sword, 5) && inv2.Entries.Count == 2);
             Check("정상 제거", inv2.Remove(sword, 1) && inv2.Entries.Count == 1);
 
-            // --- Query(카테고리 파생, D5) ---
+            // --- Query(카테고리 파생) ---
             ItemSystem.Inventory.Inventory mixed = new ItemSystem.Inventory.Inventory();
             mixed.Add(potion, 1);
             mixed.Add(sword, 1);

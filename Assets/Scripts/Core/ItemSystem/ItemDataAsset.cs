@@ -16,7 +16,7 @@ namespace Core.ItemSystem
 
         public GameObject prefab;
 
-        // D6/INV-10: 아이템 전용 자유형 로직(ItemRuntime)의 타입만 지정한다(SO 무상태 — INV-1).
+        // 아이템 전용 자유형 로직(ItemRuntime)의 타입만 지정한다(SO는 무상태).
         // 실제 객체는 ItemInstance가 per-instance로 생성(CreateRuntime). 인스펙터 드롭다운으로 선택(None=미지정).
         [SerializeField, SubclassSelector(typeof(ItemRuntime))]
         private string runtimeClass;
@@ -24,7 +24,7 @@ namespace Core.ItemSystem
         [SerializeReference]
         public List<ItemModule> modules = new();
 
-        // 선택된 타입으로 새 ItemRuntime을 만든다(미지정/해결 실패 시 null). 매 호출 새 객체 — SO에 상태를 두지 않는다(INV-1).
+        // 선택된 타입으로 새 ItemRuntime을 만든다(미지정/해결 실패 시 null). 매 호출 새 객체 — SO에 상태를 두지 않는다.
         public ItemRuntime CreateRuntime()
         {
             if (string.IsNullOrEmpty(runtimeClass))
