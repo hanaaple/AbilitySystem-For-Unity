@@ -9,7 +9,10 @@ namespace Core.AbilitySystem.Editor
         private bool _showRuntimeAttributes = true;
         private bool _showActiveEffects = true;
 
-        public override bool RequiresConstantRepaint() => Application.isPlaying;
+        public override bool RequiresConstantRepaint()
+        {
+            return Application.isPlaying;
+        }
 
         public override void OnInspectorGUI()
         {
