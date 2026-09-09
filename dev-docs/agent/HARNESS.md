@@ -63,12 +63,13 @@
 ## 관련 하위 문서 및 폴더 (Indexing)
 
 - `HARNESS.md` — 그 폴더·하위 폴더에 적용되는 **공통 규약 문서**(폴더마다 있을 수 있고, 경로 위의 것을 모두 적용).
+- **하위 폴더는 그 폴더의 `HARNESS.md`에 위임한다** — 내부 파일을 여기서 나열·설명하지 않는다.
 
 **폴더**
 
 | 폴더 | 내용 |
 |---|---|
-| `feature/` | `HARNESS.md` · `feature-list.md` · `<feature>/`(progress·worklog·decisions·`HARNESS.md` 선택) |
+| `feature/` | feature 문서 규약 허브 → [feature/HARNESS.md](feature/HARNESS.md) |
 
 **규약 문서** (agent/)
 
