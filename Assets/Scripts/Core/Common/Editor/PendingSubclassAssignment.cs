@@ -7,15 +7,9 @@ using UnityEngine;
 namespace Core.Common.Editor
 {
     /// <summary>
-    /// New Script로 만든 타입을, 컴파일·도메인 리로드가 끝난 뒤 원래 위치에 배정하는 <b>내부 로직</b>.
-    /// 리로드로 팝업·SerializedProperty가 모두 무효화되므로, 배정에 필요한 정보는 SessionState에 저장해 둔다.
-    /// 대상 오브젝트는 리로드를 넘겨도 유효한 GlobalObjectId로 식별한다(직렬화 참조는 리로드 후 무효).
-    ///
-    /// 두 모드:
-    ///  - Field: 지정한 propertyPath 문자열 필드에 AQN을 넣는다(기존 요소의 타입 변경).
-    ///  - Add: 배열에 요소를 추가하고, 그 요소의 typeRelPath에 AQN·clearArrayRelPath 배열을 비운다(새 요소 추가).
-    ///
-    /// 진입점 파사드는 <see cref="NewSubclassScript"/>. 호출부는 이 클래스를 직접 다루지 않는다.
+    /// New Script로 만든 타입을 컴파일·도메인 리로드 후 원래 위치에 배정하는 내부 로직. 리로드로 팝업·SerializedProperty가 무효화되므로 배정 정보는 SessionState에 저장하고, 대상은 리로드를 넘겨도 유효한 GlobalObjectId로 식별한다.
+    /// 두 모드 — Field: 지정 propertyPath 문자열 필드에 AQN(기존 요소 타입 변경) / Add: 배열에 요소 추가 후 typeRelPath에 AQN·clearArrayRelPath 배열을 비움(새 요소).
+    /// 진입점 파사드는 <see cref="NewSubclassScript"/> — 호출부는 이 클래스를 직접 다루지 않는다.
     /// </summary>
     internal static class PendingSubclassAssignment
     {

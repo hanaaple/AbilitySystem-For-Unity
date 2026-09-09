@@ -7,13 +7,8 @@ using UnityEngine;
 namespace Character
 {
     /// <summary>
-    /// 트리거 방(Room) 디버그 도구. 방에 들어온 액터에게 <b>Room 자신의 ASC를 source(instigator)로</b> GE를 적용하고,
-    /// 방을 나가면 적용했던 GE를 해제한다. Source=Room / Target=들어온 액터 구도라 AttributeBased 캡처(Source/Target)·
-    /// snapshot·주기 실행을 씬에서 손쉽게 재현·관찰하기 위한 용도다(픽업 트리거로는 세팅이 번거로운 상황들).
-    ///
-    /// <para>두 용도의 GE를 꽂는다 — <see cref="otherEffect"/>는 들어온 액터(Other)에게, <see cref="selfEffect"/>는 Room 자신(Self)에게.
-    /// 둘 다 진입 시 적용하고 이탈 시 해제한다(동일하게 껐다 켠다). GE의 성격(Instant/Buff/Tick)은 에셋 타입이 결정하고,
-    /// Instant는 적용 즉시 실행 후 Invalid 핸들을 돌려주므로 해제 대상이 아니다.</para>
+    /// 트리거 방(Room) 디버그 도구 — 방에 들어온 액터에게 Room 자신의 ASC를 source(instigator)로 GE를 적용하고, 나가면 해제한다. Source=Room / Target=액터 구도라 AttributeBased 캡처·snapshot·주기 실행을 씬에서 손쉽게 재현·관찰하는 용도.
+    /// <see cref="otherEffect"/>는 들어온 액터(Other)에, <see cref="selfEffect"/>는 Room 자신(Self)에 진입 시 적용·이탈 시 해제한다. GE 성격(Instant/Buff/Tick)은 에셋 타입이 정하며, Instant는 즉시 실행 후 Invalid 핸들이라 해제 대상이 아니다.
     /// </summary>
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(AbilitySystemComponent))]

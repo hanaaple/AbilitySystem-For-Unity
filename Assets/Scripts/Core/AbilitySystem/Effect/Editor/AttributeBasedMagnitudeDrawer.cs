@@ -3,12 +3,7 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Effect.Editor
 {
-    /// <summary>
-    /// AttributeBasedMagnitude를 스스로 그리는 PropertyDrawer.
-    /// 부모(GameplayEffectAssetDrawer)는 Calc Type이 AttributeBased일 때 PropertyField 한 줄로 위임하고,
-    /// 높이는 GetPropertyHeight가 계산한다 — Calc Type별 레이아웃 지식을 각 payload가 소유한다.
-    /// 계산식: (capturedValue + Pre-Add) * Coefficient + Post-Add
-    /// </summary>
+    /// <summary>AttributeBasedMagnitude를 스스로 그리는 PropertyDrawer. 부모(GameplayEffectAssetDrawer)는 Calc Type이 AttributeBased일 때 PropertyField 한 줄로 위임하고 높이는 GetPropertyHeight가 계산한다 — Calc Type별 레이아웃 지식을 각 payload가 소유. 계산식: (capturedValue + Pre-Add) * Coefficient + Post-Add.</summary>
     [CustomPropertyDrawer(typeof(AttributeBasedMagnitude))]
     public sealed class AttributeBasedMagnitudeDrawer : PropertyDrawer
     {

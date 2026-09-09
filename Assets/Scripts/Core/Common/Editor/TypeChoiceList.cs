@@ -9,18 +9,10 @@ using UnityEngine;
 namespace Core.Common.Editor
 {
     /// <summary>
-    /// 다형(polymorphic) 리스트를 "타입 선택 팝업이 달린 +버튼"까지 한 번에 배선한
-    /// <see cref="ReorderableList"/>로 만들어 주는 빌더. 드로어는 OnEnable에서 Create 한 번만 부르면 된다.
-    ///
-    /// 호출부가 정하는 것:
-    /// (1) 후보 타입을 어디서 가져올지(typeProvider) — 예: TypeCache 파생 타입, 이미 쓴 타입 제외 등
-    /// (2) 고른 타입으로 새 요소를 어떻게 채울지(onAdd) — SerializeReference면 managedReferenceValue, typeName 방식이면 문자열 세팅
-    /// (3) (선택) New Script 지원 — newScriptBaseType을 주면 add 팝업에 "New Script..."가 뜨고,
-    ///     새 서브클래스를 만들어 컴파일·리로드 뒤 새 요소로 자동 추가한다(typeName 방식 리스트 전용).
-    ///
-    /// 타입 선택 팝업은 검색 가능한 <see cref="SubclassAdvancedDropdown"/>(Add Component 창과 동일)을 쓴다.
-    /// 요소 삽입·Update/Apply·빈 상태 안내·리스트 배선은 빌더가 처리한다.
-    /// 요소 그리기/높이는 기본값(PropertyField)을 쓰거나 콜백으로 덮어쓴다.
+    /// 다형(polymorphic) 리스트를 "타입 선택 팝업이 달린 +버튼"까지 배선한 <see cref="ReorderableList"/>로 만들어 주는 빌더. 드로어는 OnEnable에서 Create 한 번만 부르면 된다.
+    /// 호출부가 정하는 것: (1) 후보 타입 출처(typeProvider) (2) 고른 타입으로 새 요소를 채우는 법(onAdd — SerializeReference면 managedReferenceValue, typeName 방식이면 문자열)
+    /// (3) (선택) New Script — newScriptBaseType을 주면 add 팝업에 "New Script..."가 뜨고 새 서브클래스를 만들어 리로드 뒤 자동 추가(typeName 방식 전용).
+    /// 타입 팝업은 검색 가능한 <see cref="SubclassAdvancedDropdown"/>. 요소 삽입·Apply·빈 상태·배선은 빌더가, 요소 그리기/높이는 기본(PropertyField) 또는 콜백으로.
     /// </summary>
     public static class TypeChoiceList
     {

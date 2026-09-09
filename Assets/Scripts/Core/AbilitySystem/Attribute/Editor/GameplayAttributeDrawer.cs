@@ -8,9 +8,7 @@ namespace Core.AbilitySystem.Attribute.Editor
 {
     /// <summary>
     /// <see cref="GameplayAttribute"/>를 "Attribute Set" + "Attribute" 두 팝업으로 그리는 PropertyDrawer.
-    /// 이 타입의 모든 직렬화 필드에 자동 적용되므로, modifier·캡처 정의 등 소비처는 두 문자열을 직접 그리지 않고
-    /// 이 필드 하나를 <c>PropertyField</c>로 위임하면 된다.
-    /// popup index 0 = "None", 1+ = <see cref="AttributeReflectionUtility.GetAttributeSetTypes"/> 순서.
+    /// 이 타입의 모든 직렬화 필드에 자동 적용되므로 소비처(modifier·캡처 정의 등)는 두 문자열을 직접 안 그리고 <c>PropertyField</c>로 위임하면 된다. popup index 0="None", 1+=<see cref="AttributeReflectionUtility.GetAttributeSetTypes"/> 순서.
     /// </summary>
     [CustomPropertyDrawer(typeof(GameplayAttribute))]
     public sealed class GameplayAttributeDrawer : PropertyDrawer

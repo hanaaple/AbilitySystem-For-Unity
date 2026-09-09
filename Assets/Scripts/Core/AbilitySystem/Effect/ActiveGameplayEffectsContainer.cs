@@ -1,19 +1,13 @@
 using System.Collections.Generic;
-using Core.AbilitySystem.Aggregator;
 using Core.AbilitySystem.Attribute;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
 {
     /// <summary>
-    /// 활성 GameplayEffect의 소유·수명·실행·집계를 한 경계에 모은다. ASC는 이들 공개 API의 얇은 위임 래퍼만 남긴다.
-    ///
-    /// <para>어트리뷰트별 <see cref="AttributeAggregator"/>를 소유하고, CurrentValue는 오직 <see cref="AttributeAggregator.Evaluate"/>로만 계산된다.
-    /// persistent(period 0) GE는 대상 aggregator에 mod를 등록/해제하고, Instant/Periodic은 BaseValue를 영구 변경한다.</para>
-    ///
-    /// <para><c>AttributeData</c>의 Base/Current는 aggregator 결과를 담는 미러이며(Inspector·핸들 조회용), 저장은 Owner의 <see cref="AttributeSet"/> 책임이다.</para>
-    ///
-    /// <para>재계산은 각 aggregator의 <see cref="AttributeAggregator.OnDirty"/>를 구독해 몰린다 — base/mod가 바뀐 지점이 알리면 그 어트리뷰트만 재평가해 미러에 반영한다.</para>
+    /// 활성 GameplayEffect의 소유·수명·실행·집계를 한 경계에 모은다(ASC는 얇은 위임 래퍼만 남긴다).
+    /// 어트리뷰트별 <see cref="AttributeAggregator"/>를 소유하고 CurrentValue는 <see cref="AttributeAggregator.Evaluate"/>로만 계산된다 — persistent(period 0) GE는 aggregator에 mod를 등록/해제, Instant/Periodic은 BaseValue를 영구 변경.
+    /// AttributeData의 Base/Current는 aggregator 결과 미러(Inspector·핸들 조회용)이고 저장은 Owner의 <see cref="AttributeSet"/> 책임. 재계산은 <see cref="AttributeAggregator.OnDirty"/> 구독으로 바뀐 어트리뷰트만 몰아 처리한다.
     /// </summary>
     public class ActiveGameplayEffectsContainer
     {
@@ -45,10 +39,7 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>
         /// Spec을 Owner에게 적용한다. Instant는 즉시 실행 후 Invalid Handle 반환, Duration/Infinite는 핸들 반환.
-        /// (UE: FActiveGameplayEffectsContainer::ApplyGameplayEffectSpec)
-        ///
-        /// 적용 경계에서 spec을 한 번 복제하고 그 복사본에 Target(Owner)을 캡처한다 — 그래야 같은 spec을 여러 대상에
-        /// 적용해도 캡처값이 서로 덮어쓰이지 않고, 하나의 복사본이 캡처→실행→저장을 관통한다.
+        /// 적용 경계에서 spec을 한 번 복제해 Target(Owner)을 캡처한다 — 같은 spec을 여러 대상에 적용해도 캡처값이 섞이지 않고, 한 복사본이 캡처→실행→저장을 관통한다.
         /// </summary>
         public ActiveGameplayEffectHandle ApplyGameplayEffectSpec(GameplayEffectSpec spec)
         {
@@ -106,7 +97,7 @@ namespace Core.AbilitySystem.Effect
             {
                 RemoveSpecMods(handle, active.Spec);
 
-                // 등록했던 의존자 콜백을 해제한다 — 그러지 않으면 소스 aggregator가 죽은 핸들을 계속 통지하려 한다(→D12).
+                // 등록했던 의존자 콜백을 해제한다 — 안 하면 소스 aggregator가 죽은 핸들을 계속 통지하려 한다.
                 active.Spec.CapturedRelevantAttributes.UnregisterLinkedAggregatorCallbacks(handle);
             }
 
@@ -115,9 +106,7 @@ namespace Core.AbilitySystem.Effect
 
         // ── Tick (수명) ───────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// 활성 이펙트의 주기 실행과 Duration 만료를 처리한다. ASC.Update가 매 프레임 위임한다.
-        /// </summary>
+        /// <summary>활성 이펙트의 주기 실행과 Duration 만료를 처리한다. ASC.Update가 매 프레임 위임한다.</summary>
         public void Tick(float deltaTime)
         {
             if (_activeGameplayEffects.Count == 0)
@@ -160,9 +149,8 @@ namespace Core.AbilitySystem.Effect
         // ── GE 실행 (Instant / Periodic) ─────────────────────────────────────────
 
         /// <summary>
-        /// Instant / Periodic GE의 Execute 경로 — Modifier 적용과 Execution 실행을 수행한다.
-        /// Modifier는 배열 순서대로 BaseValue에 순차 적용되며, 각 Modifier가 이전 결과를 읽으므로 같은 어트리뷰트를
-        /// 대상으로 할 때 순서가 결과에 영향을 준다(persistent modifier와 달리 BaseValue를 영구 변경).
+        /// Instant/Periodic GE의 Execute 경로 — Modifier와 Execution을 적용한다. Modifier는 배열 순서대로 BaseValue에
+        /// 순차 적용돼 같은 어트리뷰트면 순서가 결과에 영향(persistent와 달리 BaseValue를 영구 변경).
         /// </summary>
         private void ExecuteGameplayEffect(GameplayEffectSpec spec)
         {
@@ -176,8 +164,8 @@ namespace Core.AbilitySystem.Effect
         }
 
         /// <summary>
-        /// Execution을 하나씩 실행하고 각 출력을 다음 Execution 전에 반영한다 — 따라서 Execution[1]은 Execution[0]이
-        /// 바꾼 어트리뷰트를 본다. params·output이 execution 루프 내부 지역 변수라 execution 간 출력 누적은 불가능하다.
+        /// Execution을 하나씩 실행하고 각 출력을 다음 Execution 전에 반영한다 — Execution[1]은 Execution[0]이 바꾼 어트리뷰트를 본다.
+        /// params·output이 루프 내부 지역 변수라 execution 간 출력 누적은 불가능하다.
         /// </summary>
         private void RunExecutions(GameplayEffectSpec spec)
         {
@@ -189,7 +177,7 @@ namespace Core.AbilitySystem.Effect
 
             foreach (GameplayEffectExecution execution in executions)
             {
-                // execution 스코프 지역 변수(UE 동일). 호출당 소량 할당은 스코프 명확성을 위해 감수한다.
+                // execution 스코프 지역 변수. 호출당 소량 할당은 스코프 명확성을 위해 감수한다.
                 GameplayEffectExecutionParameters execParams = new GameplayEffectExecutionParameters(_owner, spec);
                 GameplayEffectExecutionOutput execOutput = GameplayEffectExecutionOutput.Create();
 
@@ -203,8 +191,8 @@ namespace Core.AbilitySystem.Effect
         }
 
         /// <summary>
-        /// 평가가 끝난 모디파이어 1건을 대상 BaseValue에 적용한다. Execute 경로의 유일한 쓰기 지점 —
-        /// Modifier와 Execution 출력이 같은 경로를 타야 둘의 연산 지원 범위가 어긋나지 않는다.
+        /// 평가 끝난 modifier 1건을 대상 BaseValue에 적용한다. Execute 경로의 유일한 쓰기 지점 —
+        /// Modifier와 Execution 출력이 같은 경로를 타야 연산 지원 범위가 어긋나지 않는다.
         /// </summary>
         private void ApplyModToAttribute(GameplayAttributeHandle gameplayAttributeHandle, GameplayModifierOperation modifierOperation, float modifierMagnitude)
         {
@@ -267,7 +255,6 @@ namespace Core.AbilitySystem.Effect
             {
                 GameplayModifier modifierDefinition = spec.Definition.Modifiers[modIdx];
 
-                // dependentAggregatorChange로 인해 mod 재계산이 필요한 경우
                 if (modifierDefinition.AttemptRecalculateMagnitudeFromDependentAggregatorChange(spec, changedAggregator, out float recalculatedMagnitude))
                 {
                     spec.Modifiers[modIdx].EvaluatedMagnitude = recalculatedMagnitude;

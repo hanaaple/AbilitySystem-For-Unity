@@ -3,19 +3,9 @@ using System.Collections.Generic;
 namespace Core.AbilitySystem.Effect
 {
     /// <summary>
-    /// 한 GE(Spec)가 캡처할 어트리뷰트들을 source/target별로 모으고, 캡처 결과를 보관·조회하는 컨테이너.
-    ///
-    /// <para><b>정의를 spec과 따로 두지 않는다</b> — 각 <see cref="GameplayEffectAttributeCaptureSpec"/>이
-    /// 자기 정의(<see cref="GameplayEffectAttributeCaptureSpec.BackingDefinition"/>)를 품는다.
-    /// <see cref="AddCaptureDefinition"/>은 "선언만 된(미캡처)" spec을 배열에 넣고,
-    /// <see cref="CaptureAttributes"/>가 그 자리에서 캡처된 spec으로 채운다.</para>
-    ///
-    /// <para>캡처 소스별로 배열을 나눈다 — Source 캡처와 Target 캡처는 서로 다른 ASC에서·다른 시점
-    /// (이미 정해진 source vs 적용 시점의 target)에 채워지므로 섞지 않는다.</para>
-    ///
-    /// <para>흐름: ① <see cref="AddCaptureDefinition"/>로 대상 선언 → ② 적용 시점에 <see cref="CaptureAttributes"/>를
-    /// 소스별로 호출 → ③ 계산 중 <see cref="TryGetCapturedValue"/>로 조회. ASC를 직접 읽는 대신 이 한 곳을 거치게 해
-    /// 캡처 대상 중복 제거와 (추후) Scoped Modifier 보정의 개입 지점을 만든다.</para>
+    /// 한 GE(Spec)가 캡처할 어트리뷰트들을 source/target별로 모으고 캡처 결과를 보관·조회하는 컨테이너.
+    /// 정의를 spec과 따로 두지 않는다 — 각 <see cref="GameplayEffectAttributeCaptureSpec"/>이 자기 정의를 품는다. <see cref="AddCaptureDefinition"/>은 "미캡처" spec을 넣고 <see cref="CaptureAttributes"/>가 제자리에서 캡처된 spec으로 채운다.
+    /// source/target을 나누는 건 서로 다른 ASC·시점(정해진 source vs 적용 시점 target)에 채워지기 때문. ASC를 직접 읽지 않고 이 한 곳을 거쳐 캡처 중복 제거·(추후) Scoped Modifier 개입 지점을 만든다.
     /// </summary>
     public sealed class GameplayEffectAttributeCaptureSpecContainer
     {
@@ -23,10 +13,8 @@ namespace Core.AbilitySystem.Effect
         private readonly List<GameplayEffectAttributeCaptureSpec> _targetSpecs = new();
 
         /// <summary>
-        /// 이 컨테이너의 독립 복사본을 만든다 — 적용 시점에 spec을 대상별로 복제할 때 사용한다.
-        /// 원소 <see cref="GameplayEffectAttributeCaptureSpec"/>가 readonly struct라 새 List로 값 복사하면 서로 독립이다:
-        /// source 슬롯은 이미 캡처된 값을 그대로 보존하고, target 슬롯(미캡처)도 복사돼 복사본이 자기 target을 새로 캡처한다.
-        /// 공유하면 대상별 target 캡처가 서로의 컨테이너를 덮어쓰므로 반드시 복사해야 한다.
+        /// 적용 시점에 spec을 대상별로 복제할 때 쓰는 독립 복사본. 원소가 readonly struct라 새 List로 값 복사하면 독립 —
+        /// source 슬롯은 캡처값 보존, target 슬롯(미캡처)은 복사본이 자기 target을 새로 캡처. 공유하면 대상별 target 캡처가 서로를 덮어써서 반드시 복사한다.
         /// </summary>
         public GameplayEffectAttributeCaptureSpecContainer Clone()
         {
@@ -53,9 +41,8 @@ namespace Core.AbilitySystem.Effect
         }
 
         /// <summary>
-        /// <paramref name="captureSource"/>로 선언된 spec들을 <paramref name="ascToCapture"/>에서 캡처해 제자리 채운다.
-        /// 캡처 소스별로 호출한다 — Source용 ASC로 한 번, Target용 ASC로 한 번.
-        /// 배열이 소스별로 이미 라우팅돼 있어 소스 검사는 불필요하며, 재호출 시 그 소스의 spec들을 다시 캡처한다.
+        /// <paramref name="captureSource"/>로 선언된 spec들을 <paramref name="ascToCapture"/>에서 캡처해 제자리 채운다 — 소스별로 호출한다(Source ASC로 한 번, Target ASC로 한 번).
+        /// 배열이 소스별로 라우팅돼 있어 소스 검사는 불필요하다.
         /// </summary>
         public void CaptureAttributes(AbilitySystemComponent ascToCapture, AttributeCaptureSource captureSource)
         {
@@ -67,11 +54,7 @@ namespace Core.AbilitySystem.Effect
             }
         }
 
-        /// <summary>
-        /// 정의로 캡처 Spec을 찾아 캡처값을 조회한다. 정의의 <see cref="AttributeCaptureSource"/>로
-        /// 조회할 배열을 고른다. 선언되지 않았거나 아직 캡처 전·캡처가 무효면 false.
-        /// snapshot 여부에 따른 고정값/라이브값 분기는 Spec이 처리한다.
-        /// </summary>
+        /// <summary>정의로 캡처 Spec을 찾아 값을 조회한다 — 정의의 <see cref="AttributeCaptureSource"/>로 배열을 고른다. 미선언·미캡처·무효면 false. snapshot 분기는 Spec이 처리.</summary>
         public bool TryGetCapturedValue(GameplayEffectAttributeCaptureDefinition definition, AttributeCaptureValueType valueType, out float value)
         {
             foreach (GameplayEffectAttributeCaptureSpec spec in SpecsFor(definition.CaptureSource))

@@ -6,11 +6,7 @@ using UnityEngine;
 
 namespace Core.Common.Editor
 {
-    /// <summary>
-    /// 타입 목록을 검색 가능한 네이티브 팝업(Add Component 창과 동일한 AdvancedDropdown)으로 고른다.
-    /// 후보 타입·None 포함 여부·"New Script..." 노출은 호출부가 정한다(필드 셀렉터·다형 리스트 add 공용).
-    /// 선택 결과는 onSelected, "New Script..."는 onNewScript 콜백으로 넘긴다.
-    /// </summary>
+    /// <summary>타입 목록을 검색 가능한 네이티브 팝업(Add Component 창과 동일한 AdvancedDropdown)으로 고른다. 후보 타입·None 포함·"New Script..." 노출은 호출부가 정하고(필드 셀렉터·다형 리스트 add 공용), 선택은 onSelected·"New Script..."는 onNewScript 콜백으로 넘긴다.</summary>
     internal sealed class SubclassAdvancedDropdown : AdvancedDropdown
     {
         // 팝업 내용이 꽉 차는 기준 크기. 드로어가 정렬 폭 기준으로도 참조한다.

@@ -18,10 +18,8 @@ namespace Core.AbilitySystem.Effect
     }
 
     /// <summary>
-    /// 캡처한 어트리뷰트 값에서 magnitude를 유도하는 AttributeBased 계산 정의.
-    /// 계산식: (capturedValue + preMultiplyAdditive) * coefficient + postMultiplyAdditive
-    /// <para>class인 이유: Unity는 struct 필드 초기화값을 새 인스턴스에 반영하지 않지만
-    /// class는 반영하므로, <see cref="coefficient"/> 기본값 1을 필드 초기화로 둘 수 있다(struct면 0이 되어 식 전체가 0).</para>
+    /// 캡처한 어트리뷰트 값에서 magnitude를 유도하는 AttributeBased 계산 정의. 계산식: (capturedValue + preMultiplyAdditive) * coefficient + postMultiplyAdditive.
+    /// class인 이유: Unity는 struct 필드 초기화값을 새 인스턴스에 반영하지 않지만 class는 반영해 <see cref="coefficient"/> 기본값 1을 필드 초기화로 둘 수 있다(struct면 0이 되어 식 전체가 0).
     /// </summary>
     [Serializable]
     public class AttributeBasedMagnitude
@@ -45,9 +43,8 @@ namespace Core.AbilitySystem.Effect
         public float PostMultiplyAdditive => postMultiplyAdditive;
 
         /// <summary>
-        /// 캡처값에서 최종 magnitude를 계산한다: (capturedValue + PreMultiplyAdditive) * Coefficient + PostMultiplyAdditive.
-        /// 캡처값은 spec의 캡처 컨테이너에서 조회하므로 캡처가 끝난 뒤 호출해야 한다.
-        /// 조회 실패 시 캡처값 0으로 계산하되 경고를 남긴다 — 0이 조용히 흘러 결과가 틀리는 것을 막기 위함이다.
+        /// 캡처값에서 최종 magnitude를 계산한다: (capturedValue + PreMultiplyAdditive) * Coefficient + PostMultiplyAdditive. 캡처 이후에 호출해야 한다.
+        /// 조회 실패 시 캡처값 0으로 계산하되 경고를 남긴다 — 0이 조용히 흘러 결과가 틀리는 걸 막기 위함.
         /// </summary>
         public float Evaluate(GameplayEffectSpec spec)
         {
