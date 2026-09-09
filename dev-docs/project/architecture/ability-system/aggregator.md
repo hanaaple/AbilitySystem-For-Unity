@@ -1,33 +1,36 @@
 # AbilitySystem — Aggregator (어트리뷰트 반응성 / 라이브 재평가)
 
-> **⚠ 낡음 — 재작성 대기(2026-08-10).** 아래 본문은 폐기된 "경량 R3-only" 채택 방향(D1/D2) 기준이다. 실제 구현은 UE `FAggregator`에 준하는 **어트리뷰트별·채널별 `AttributeAggregator`**(BaseValue+mod 채널 소유, `Evaluate()`가 유일 계산 경로 — →D5·D7·D8)로 2026-08-10에 작성됐다(미검증·미커밋). 유저 Play 검증 후 이 문서를 실제 구조로 재작성한다. 현재 코드 요지는 [aggregator/progress.md](../../../agent/feature/ability-system/aggregator/progress.md)·[worklog 2026-08-10](../../../agent/feature/ability-system/aggregator/worklog.md). UE 소유관계 정리는 [ue-reference.md](../../../agent/feature/ability-system/aggregator/ue-reference.md).
-> feature: [ability-system/aggregator](../../../agent/feature/ability-system/aggregator/progress.md). 상위 개요는 [overview](overview.md).
-> **반영 기준:** feature `ability-system/aggregator` @ 2026-08-07 (KST). (구현 반영 재작성 대기)
+어트리뷰트별 CurrentValue 집계와, 캡처 대상이 바뀌면 의존 이펙트를 **즉시 재평가**하는 반응성 계층. UE `FAggregator`의 집계 + dirty/dependents 개념을 재구현한다. 상위 개요는 [overview](overview.md).
 
-캡처(non-snapshot) 값이 바뀌면 그에 의존하는 모디파이어 magnitude를 **즉시 재평가**하는 반응성 계층. UE `FAggregator`의 dirty/dependents 책임만 축소 재현한다.
+> UE 대비는 [overview §UE GAS 대비](overview.md#ue-gas-대비--채택생략). **개념·방향** 중심. feature: [ability-system/aggregator](../../../agent/feature/ability-system/aggregator/progress.md).
 
-## 왜 필요한가
-현재 모디파이어 magnitude는 apply 시점에 `GameplayEffectSpec.CalculateModifierMagnitudes`로 계산돼 `GameplayModifierSpec.EvaluatedMagnitude`에 **고정**된다(생성·apply 2회만 호출, 이후 재계산 없음). 그래서 non-snapshot 캡처의 라이브 재조회가 실행될 트리거가 없어, snapshot=false가 사실상 무력하다. → 재평가를 트리거하는 "반응성 소유자"가 필요.
+## 무엇을 푸는가
 
-## UE 원문 확인 (참고 모델)
-> 출처: ylyking UE 미러 — [GameplayEffect.cpp](https://raw.githubusercontent.com/ylyking/UnrealEngineNiv/master/Engine/Plugins/Runtime/GameplayAbilities/Source/GameplayAbilities/Private/GameplayEffect.cpp) · [GameplayEffectAggregator.cpp](https://raw.githubusercontent.com/ylyking/UnrealEngineNiv/master/Engine/Plugins/Runtime/GameplayAbilities/Source/GameplayAbilities/Private/GameplayEffectAggregator.cpp)
+두 가지를 한 객체가 맡는다.
 
-- **캡처 시 분기:** `bSnapshot`이면 `AttributeAggregator.TakeSnapshotOf(...)`(값 복사·고정), 아니면 라이브 aggregator 참조를 유지.
-- **non-snapshot만 의존 등록:** `FGameplayEffectAttributeCaptureSpec::RegisterLinkedAggregatorCallback` — `if (bSnapshot == false) Agg->AddDependent(Handle);` → 소스 aggregator의 `Dependents`에 이 GE 핸들 등록.
-- **소스 변경 → dirty 전파:** `FAggregator::BroadcastOnDirty`가 `OnDirty.Broadcast(this)` + `Dependents`를 돌며 `ASC->OnMagnitudeDependencyChange(Handle, this)` → dependent GE가 magnitude 재평가.
-- **자격/태그:** `FAggregatorEvaluateParameters` + `UpdateQualifies`(태그 기반 mod 적용 여부) — 본 feature에선 seam만.
+1. **CurrentValue 집계** — 지속형 GE의 mod를 어트리뷰트별로 모아 공식으로 누산해 CurrentValue를 낸다. 값은 `Evaluate()` 한 경로로만 얻는다.
+2. **라이브 재평가** — "방어력 = 힘의 10%"처럼 다른 어트리뷰트를 캡처한(non-snapshot) magnitude가, **소스 어트리뷰트가 바뀌면 그 즉시** 재계산돼 따라간다. 이게 없으면 magnitude가 apply 시점에 고정돼 non-snapshot이 무력해진다.
 
-## 채택 방향 (경량 — 우리 구현)
-UE의 per-attribute aggregator 객체 전면 대신 **반응성 책임만** 분리한다(→ feature decisions D1/D2):
-1. **어트리뷰트 변경 이벤트(옵저버):** ASC 쓰기 지점(`SetBaseAttributeValue`/`UpdateAttributeCurrentValue`)에서 `(handle, old, new)` 발화. *(현재 없음 — 신설)*
-2. **의존 등록/해지:** 스펙 apply 시 non-snapshot 캡처를 대상 어트리뷰트에 등록, remove 시 해지(UE `AddDependent`/`RemoveDependent` 대응).
-3. **재평가 핸들러:** 변경 통지 → 의존 모디파이어 magnitude 재평가(`CalculateModifierMagnitudes` 라이브 캡처) → 영향 어트리뷰트 재계산.
-4. **재진입 억제:** 재계산 패스 중 이벤트 잠금 → 연쇄 1패스, 자기참조 무한루프 차단(UE `OnDirtyRecursive` 가드 대응).
+## 소유 구도
+
+- **어트리뷰트별 `AttributeAggregator`** — base 사본 + mod 리스트를 들고 `Evaluate()`로 CurrentValue를 산출한다.
+- **`ActiveGameplayEffectsContainer`가 소유** — 어트리뷰트별로 하나씩 **지연 생성**(캡처나 지속 mod가 실제로 필요할 때만). 지속형 GE의 mod를 등록/해제한다.
+- **base 진실은 `AttributeData`** — aggregator의 base는 동기화 사본이다. base 쓰기는 항상 `AttributeData`가 진실이고, aggregator가 있을 때만 함께 갱신한다. 모든 어트리뷰트에 aggregator를 강제로 만들지 않는 UE의 lazy 모델을 따른 것.
+
+## 반응성 흐름
+
+```
+어트리뷰트 변경 (base/mod)
+  → AttributeAggregator dirty 발화
+    → 그 어트리뷰트 CurrentValue 재계산 (Evaluate)
+    → non-snapshot으로 이 값에 의존하는 이펙트들에 전파
+        → 의존 modifier magnitude 재평가 → 대상 aggregator 갱신 → (연쇄)
+```
+
+- **의존 등록:** non-snapshot 캡처만 소스 aggregator에 "이 이펙트가 당신에게 의존한다"고 등록한다(snapshot은 값만 복사하고 등록하지 않아 고정된다).
+- **연쇄와 순환:** 재평가가 다른 어트리뷰트를 dirty시키면 연쇄된다. 자기참조(A→B→A) 순환은 전파 깊이 상한으로 끊는다(수렴 보장이 아니라 폭주 차단).
 
 ## 범위 (UE 대비 생략)
-- 대상: **AttributeBased 모디파이어**(persistent/CurrentValue). cross-attribute·self-effect 라이브.
-- **생략(후속):** cross-actor 라이브(cross-ASC 구독), 자기참조 fixed-point 수렴, Execution 라이브 재평가, per-attribute aggregator의 mod 채널 소유(R1)·CurrentValue 계산 이관(R2), 태그 자격(R5, seam만).
 
-## 코드 위치 (예정)
-- `Assets/Scripts/Core/AbilitySystem/Aggregator/` — 반응성 컴포넌트(앵커 `AttributeAggregator.cs`).
-- 훅: `AbilitySystemComponent`(이벤트·구독), `GameplayEffectSpec`(대상 슬롯 재평가), `GameplayEffectAttributeCaptureSpec`(라이브 재조회 — 이미 있음).
+- **대상:** 지속형(persistent) AttributeBased 모디파이어의 cross-attribute·self-effect 라이브 재평가. → 검증 완료.
+- **생략(후속):** cross-actor 라이브(다른 액터 값 변화를 실시간 추종하는 cross-ASC 구독), 자기참조 fixed-point 수렴, Execution 라이브 재평가(Execution은 이벤트성이라 대상 아님), 태그 자격 판정(seam만).
