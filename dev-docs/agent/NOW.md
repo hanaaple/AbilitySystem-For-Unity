@@ -1,34 +1,24 @@
 # NOW — 단일 재개 지점
 
 > 휘발성 재개 메모. 진실은 코드 + progress/decisions. 세션 종료 시 통째 재작성.
-> 최종 갱신: 2026-08-26 (KST)
+> 최종 갱신: 2026-09-08 (KST)
 
-## ✅ 방금 완료 — Aggregator 검증 통과 (Edit 셀프체크 + PlayMode 실제 Asset)
+## ▶ 지금 할 일 — 하네스/문서 간결화 (계속)
 
-**feature: `ability-system/aggregator`** (branch `Feature/GE-Execution`). 두 층으로 검증:
-1. **Edit 셀프체크** — `Tools ▸ Ability System ▸ Run Aggregator Self-Check` → **`passed 44 / failed 0`**. 5층(A 단위 / B ASC 라우팅 / C capture 스냅샷 / D 에셋 다수 / E dirty 재평가 = D12).
-2. **PlayMode 실제 Asset** — `Tools ▸ Ability System ▸ Setup PlayMode Test`가 GE `.asset` 5개 + AttributeDefinitionAsset 생성·씬 배선 → Play → **`[PlayMode Self-Check] passed 14 / failed 0`**, 예외 0. 실제 ASC.Awake 초기화 → Apply 파이프라인으로 라이브 재평가(Health→Speed 추종)·snapshot 고정·Instant Base 영구 확인. **수용 기준 4개 중 3개 체크(자기참조 루프만 미검증).**
+dev-docs 하네스를 **인덱싱·중복 제거** 방향으로 정리 중. 이번 세션 완료분:
+- `HARNESS.md 금지 사항` 순수 인덱스화 + feature 스코프 금지 → `feature/HARNESS.md`로 이관
+- `session-protocol '작업 중'` 압축
+- `HARNESS.md 관련 하위 문서 및 폴더 (Indexing)` 재구성(자기설명 인덱스 + 가드 한 줄)
+- feature **폴더 구조·네이밍 규약** → `feature/HARNESS.md`로 이관(참조 4곳 갱신)
+- **cases 시스템 전면 제거** — 3개 `*.cases.md` 삭제 + `→ 사례 [C-NN]` 포인터·"규칙↔사례 분리" 블록쿼트 전부 제거
+- `NOW.md — 무엇인가` 절 제거(인덱스 자기설명화 + 규칙은 `session-protocol '세션 종료'`로 이관)
+- **핵심 원칙 1~8 평면 번호화**(판단·해석·읽기트리거·왜는지어내지를 번호 원칙 5~8로 승격)
 
-산출물: `Assets/Scripts/Character/Testing/AggregatorPlayModeTest.cs`(+Editor/Setup) + `Assets/_PlayModeTest/` 에셋 5개 + Test Scene 배선. **전부 미커밋.** 상세 → [aggregator/progress.md `## 다음 작업`](feature/ability-system/aggregator/progress.md).
+**다음 액션:** ① `HARNESS.md 포트폴리오·면접 대비` 섹션 트림 ② (선택) 핵심원칙 5·6 더 압축 ③ `session-protocol 대화 규율`(Grice 표·Gordon 로드블록) 압축 검토.
 
-## ▶ 다음 할 일 — Phase 3 캡슐화 조이기 (유저 승인 대기)
+## ⚠ 미커밋 · 환경 (반드시 확인)
 
-동작 검증 끝났으니 이제 API 가시성 조이기 가능(순서 섞으면 FAIL 원인 구분 불가라 뒤로 미뤄뒀던 것):
-- `AttributeAggregator` 변경 메서드(`AddAggregatorMod`/`Remove`/`SetBaseValue`/`AddDependent`/`RemoveDependent`/`UpdateAggregatorMod`/`OnDirty`) → `internal`, `ActiveGameplayEffectsContainer` → `internal class`.
-- 이러면 셀프체크 툴의 Layer B/C(aggregator 직접 찌르기)가 깨짐 → **파이프라인/리플렉션으로 재작성**(D/E는 무영향).
-- **유저 승인 후 착수.** 승인 나면 Unity MCP 다시 ON 필요(현재 OFF).
-
-그 밖 잔여: D14(base 진실 = AttributeData, aggregator 지연 생성) — progress `## 다음 작업` 참조. 미러 검증 층(선택).
-
-## ⚙ 선행조건 / 환경
-- **Unity MCP:** 현재 OFF(테스트 종료 후 정상). dev-tools.md 방침. 재검증·Phase 3 재작성 시 `.claude/settings.local.json` `disabledMcpjsonServers: []`로 ON. uvx 0.11.2.
-- 검증 중 콘솔의 `get_tool_states Unknown command` 에러는 MCP 클라 폴링 노이즈(이 Unity 패키지 빌드 미지원) — 결과 무관.
-
-## 📌 검증 후 다음 (동작 확정된 뒤에만)
-- **Phase 3 — 캡슐화 조이기:** `AttributeAggregator` 변경 메서드(`AddAggregatorMod`/`Remove`/`SetBaseValue`/`AddDependent`/`RemoveDependent`/`UpdateAggregatorMod`/`OnDirty`) → `internal`, `ActiveGameplayEffectsContainer` → `internal class`. 그러면 툴 Layer B/C(aggregator 직접 찌르기)가 깨짐 → 파이프라인/리플렉션으로 재작성(D/E는 무영향). **동작 검증(위) 끝난 뒤에** — 순서 섞으면 FAIL 원인 구분 불가.
-- **미러 검증 층(선택):** 툴은 `Evaluate()` 직접 읽어 AttributeData 미러 갱신은 안 본다. 미러까지 보려면 층 추가(현재 `OnAttributeAggregatorDirty` 조건은 유저가 이미 바로잡음 — 미러도 맞을 것).
-- D14(base 진실 = AttributeData, aggregator 지연 생성) 잔여는 progress `## 다음 작업` 참조.
-
-## 산출물 (이 세션)
-- `Core/AbilitySystem/Aggregator/Editor/AggregatorSelfCheck.cs` — 5층 셀프체크(A 단위 / B ASC 라우팅 / C capture 스냅샷 / D 에셋 다수 케이스 / E 런타임 dirty 재평가). 리플렉션으로 `GameplayEffectAsset`·`GameplayModifier`·`AttributeBasedMagnitude` 조립. IDE 진단 clean.
-- 캡슐화 리뷰 완료(위 Phase 3) — **API 가시성 변경은 미실행, 검증 후 유저 승인 대기.**
+- **이 세션 산출물 전부 미커밋** — 하네스 doc 편집(CLAUDE·HARNESS·session-protocol·feature/HARNESS·TODO-BOARD·design) + `*.cases.md` 3파일 삭제 + feature-list. 커밋 여부·타입 유저 판단.
+- **GA 작업은 `stash@{0}`**(GitHub Desktop `!!GitHub_Desktop<main>`)에 있음 — GA 스크립트 4개(`GameplayAbilityAsset`/`Spec`/`SpecContainer`/`Handle`) + `ASC.GiveAbility` 스켈레톤 + `GA_New.asset` + **이전 NOW.md 수정본**. 유저가 만든 stash라 건드리지 않음.
+  - ⚠ **이 NOW.md를 방금 재작성**했으므로 그 stash를 `pop`하면 NOW.md에서 충돌 가능(stash 쪽 NOW.md 수정과 겹침) — pop 시 이 최신본 유지 쪽으로 해결.
+- **feature-list vs progress 상태 불일치:** attribute·aggregator·gameplay-effect를 `feature-list.md`에선 `✅ 임시완료`로 표기했으나 각 `progress.md` 상단은 아직 `🔧 IN-PROGRESS`. 동기화 유저 판단 대기. (`✅ 임시완료`는 정식 상태 아님 — 유지 시 `feature/HARNESS` 상태 정의에 추가 필요.)

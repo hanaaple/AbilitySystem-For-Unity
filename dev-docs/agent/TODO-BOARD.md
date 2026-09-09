@@ -3,7 +3,7 @@
 > feature 단위 추적은 `feature-list.md`가 담당한다. **이 보드는 그보다 잘게 쪼개진 잡다한 작업·개인 TODO·이슈**를 모은다 — 문서 정비, 인프라(GitHub 설정 등), 실험, 리팩터, 아이디어 등 feature로 묶기 애매한 것들.
 > 관리 규약은 `todo-board-convention.md`. 항목은 상태가 바뀌면 아래 칸 사이를 이동한다.
 
-- 최종 갱신: 2026-08-25 (KST)
+- 최종 갱신: 2026-09-08 (KST)
 
 ---
 
@@ -11,7 +11,7 @@
 
 ## 📋 TODO (당장 목표)
 
-- [ ] **(design)** ⭐ **데모 씬 한 장면 확정** — 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../project/design.md))의 **다음 액션.** 씬을 정하면 필요한 GAS 최소 집합이 역산된다. 초안: 플레이어 도트뎀+스턴 / 자버프 / 적 피격→반격, 스탯·상태·쿨다운 UI Toolkit HUD. **확정 전 GA/Tag/… feature 폴더 신설 금지**(등록 먼저 — HARNESS '디렉토리 구조'). _(2026-08-09 등록)_
+- [ ] **(design)** ⭐ **데모 씬 한 장면 확정** — 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../project/design.md))의 **다음 액션.** 씬을 정하면 필요한 GAS 최소 집합이 역산된다. 초안: 플레이어 도트뎀+스턴 / 자버프 / 적 피격→반격, 스탯·상태·쿨다운 UI Toolkit HUD. **확정 전 GA/Tag/… feature 폴더 신설 금지**(등록 먼저 — feature/HARNESS '폴더 구조·네이밍'). _(2026-08-09 등록)_
 - [ ] **(verify/setup)** **BoxRoom 검증 세팅 완성** — 디버그 도구는 만들어짐(2026-08-05, `BoxRoom.cs`+`.prefab`, ASC Inspector 창). 남은 세팅: ① 프리팹의 BoxRoom이 **Missing Script면** `m_Script` guid를 실제 값으로 교체(에이전트가 `.cs.meta` GUID `3a9f2b7c…` 발급). ② 3모드 GE 슬롯 꽂기 — 특히 **Buff에 `GE_EquipSpeedDown`**(Source damage 기반 speed 감소) → 5b evaluate end-to-end 검증과 직결. ③ **Room ASC `attributeInitData`**(Source 캡처 테스트 시) + **Player ASC에 `CombatAttributeSet`**(없으면 캡처 무효→경고+0). ④ 씬 배치·시각화(선택). 검증 항목 = [gameplay-effect/tests.md](feature/ability-system/gameplay-effect/tests.md). _(2026-08-05 등록)_
 - [ ] Item Instance - Item Behaviour, Socket에 Item prefab 장착까지
 
@@ -72,10 +72,12 @@
   - Gun·Melee 등 종류별 로직이 들어갈 자리가 있되, 아이템별 클래스 분리·상속을 강제하지 않을 것 (전략 패턴 방향은 유저 언급)
   - 아이템을 구현할 때 알아야 하는 것(컨텍스트, 외부 접근 방법, 시스템 전체 이해)이 복잡하지 않을 것 — 복잡도 대비 이득 없는 과설계 배제
   - 표현부(ItemBehaviour·GameplayCue 활용 포함)의 역할과 Combat 로직과의 연동 방식은 재검토 대상
-  - **진행(2026-07-12):** 규약 백지화 완료(이전 INV·D·로드맵 → `feature/item-system/archive/`). 새 판단 기준 4축 채택(HARNESS '디렉토리 구조', Nystrom Type Object vs Subclass Sandbox).
+  - **진행(2026-07-12):** 규약 백지화 완료(이전 INV·D·로드맵 → `feature/item-system/archive/`). 새 판단 기준 4축 채택(feature/HARNESS '폴더 구조·네이밍', Nystrom Type Object vs Subclass Sandbox).
   - **진행(2026-07-13):** 설계도 백지에서 재작성 → [`feature/item-system/design-draft.md`](feature/item-system/design-draft.md)(확정 아님). `ItemModule`·`ItemInstance`·"모듈 조합"은 **권위 없음**으로 강등하고, 그렇게 서술하던 project 문서(architecture/item-equipment.md·overview.md, design.md)를 **전부 미정 처리**. 후보 3안(A: 무기=Runtime 서브클래스 / B: 현행 시스템이 알고리즘 보유 / C: 어빌리티) — GAS엔 GameplayAbility가 없음(코드 확인). **결론은 기획안(위 ⭐)이 서야 남** — 콤보/탄약/패링 채택 여부가 A vs B를 가름. _(2026-07-10 등록, 07-13 갱신)_
 
 ## ✅ Done
+
+- [x] **(docs)** **하네스 간결화 세션** — 인덱싱·중복 제거 방향으로 대거 정리: `금지 사항` 순수 인덱스화(+feature 스코프 금지·폴더 구조·네이밍 규약을 `feature/HARNESS.md`로 이관), `session-protocol '작업 중'` 압축, `HARNESS 관련 하위 문서 및 폴더 (Indexing)` 자기설명 재구성, `NOW.md — 무엇인가` 절 제거(인덱스 자기설명화), **핵심 원칙 1~8 평면 번호화**(판단·해석·읽기트리거·왜는지어내지 승격). **cases 시스템 전면 제거** — 3개 `*.cases.md` 삭제 + `→ 사례 [C-NN]` 포인터 전부 제거(2026-08-23 분리 결정 반전). feature-list attribute·aggregator·gameplay-effect `✅ 임시완료` 표기(progress 미동기화·유저 판단 대기). **전부 미커밋.** _(2026-09-08)_
 
 - [x] **(docs/refactor)** **전역 코드 주석·컨벤션 스윕** — 코드 주석에서 `→D#`·`INV-N`·`(UE:)` 외부 포인터 전부 제거(주석은 자기충족만), 이름 재진술 주석 삭제, 메서드 `=>`→블록(프로퍼티 예외)·줄넘김된 문장 한 줄로. AbilitySystem·Item·Character·Editor 전반. `CODE_CONVENTION.md` 갱신 — 하우스 스타일 "근거 문서 앵커(INV/D#)"를 **"주석은 그 자체로 완결·외부 포인터 금지"**로 교체 + `=>` 사소한 프로퍼티 예외 + "긴 줄 줄넘김 지양" 일반화(유저 지시). 로직/컴파일 이슈 2건은 스코프 밖으로 두고 보고만(→ NOW.md). _(2026-08-25)_
 
