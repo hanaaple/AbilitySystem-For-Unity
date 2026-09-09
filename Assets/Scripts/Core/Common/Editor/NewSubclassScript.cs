@@ -4,12 +4,7 @@ using UnityEngine;
 
 namespace Core.Common.Editor
 {
-    /// <summary>
-    /// New Script 흐름의 <b>진입점(파사드)</b>. 호출부(드로어)는 "어디에 배정할지"만 말하고,
-    /// 팝업 열기·리로드 넘김·SessionState stash 같은 내부는 몰라도 된다.
-    ///
-    /// 내부 협력자: 입력 UI = <see cref="NewSubclassScriptPopup"/>, 리로드 후 배정 = <see cref="PendingSubclassAssignment"/>.
-    /// </summary>
+    /// <summary>New Script 흐름의 진입점(파사드). 호출부(드로어)는 "어디에 배정할지"만 말하고 팝업 열기·리로드 넘김·SessionState stash 같은 내부는 몰라도 된다. 내부 협력자: 입력 UI=<see cref="NewSubclassScriptPopup"/>, 리로드 후 배정=<see cref="PendingSubclassAssignment"/>.</summary>
     internal static class NewSubclassScript
     {
         /// <summary>기존 요소(문자열 필드)의 타입을 새로 만든 스크립트로 바꾼다.</summary>

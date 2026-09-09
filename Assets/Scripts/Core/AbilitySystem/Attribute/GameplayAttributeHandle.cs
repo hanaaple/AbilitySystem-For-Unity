@@ -3,9 +3,7 @@ using System.Reflection;
 
 namespace Core.AbilitySystem.Attribute
 {
-    /// <summary>
-    /// AttributeSet의 특정 필드를 FieldInfo로 해석해 든 런타임 핸들. 직렬화·저작은 <see cref="GameplayAttribute"/>가 맡는다.
-    /// </summary>
+    /// <summary>AttributeSet의 특정 필드를 FieldInfo로 해석해 든 런타임 핸들. 직렬화·저작은 <see cref="GameplayAttribute"/>가 맡는다.</summary>
     public readonly struct GameplayAttributeHandle : IEquatable<GameplayAttributeHandle>
     {
         public readonly Type SetType;

@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
 {
-    /// <summary>
-    /// GameplayEffectContext의 경량 래퍼. GE 적용 시 맥락 전달에 사용한다.
-    /// 장비·패시브처럼 맥락이 불필요한 경우 default(Empty)로 전달한다.
-    /// </summary>
+    /// <summary>GameplayEffectContext의 경량 래퍼 — GE 적용 시 맥락 전달용. 장비·패시브처럼 맥락이 불필요하면 default(Empty)로 전달한다.</summary>
     public readonly struct GameplayEffectContextHandle
     {
         private readonly GameplayEffectContext _context;

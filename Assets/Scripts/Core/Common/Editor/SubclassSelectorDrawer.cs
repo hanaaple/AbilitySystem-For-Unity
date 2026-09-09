@@ -9,12 +9,8 @@ using UnityEngine;
 namespace Core.Common.Editor
 {
     /// <summary>
-    /// [SubclassSelector(typeof(Base))]가 붙은 AQN 문자열 필드를 Base의 구체 서브클래스 드롭다운으로 그린다.
-    /// None = 빈 문자열, 해결 실패 = "Missing". useForChildren로 이 속성을 상속한 이름 있는 별칭 속성도 이 드로어가 처리한다.
-    /// 베이스 타입은 속성 인스턴스가 들고 있으므로 타입별 드로어 서브클래스가 필요 없다.
-    ///
-    /// 오브젝트 참조 필드처럼 보이도록, 선택된 타입의 소스 스크립트를 왼쪽 필드로 그린다:
-    /// 단일 클릭 → Project에서 하이라이트(ping), 더블 클릭 → 스크립트 열기. 타입 선택은 오른쪽 드롭다운 버튼으로 한다.
+    /// [SubclassSelector(typeof(Base))]가 붙은 AQN 문자열 필드를 Base의 구체 서브클래스 드롭다운으로 그린다. None=빈 문자열, 해결 실패="Missing". useForChildren로 상속한 별칭 속성도 처리하며, 베이스 타입은 속성 인스턴스가 들어 타입별 드로어 서브클래스가 필요 없다.
+    /// 오브젝트 참조 필드처럼 보이게 선택된 타입의 소스 스크립트를 왼쪽 필드로 그린다 — 단일 클릭→Project ping, 더블 클릭→스크립트 열기. 타입 선택은 오른쪽 드롭다운 버튼.
     /// </summary>
     [CustomPropertyDrawer(typeof(SubclassSelectorAttribute), useForChildren: true)]
     public sealed class SubclassSelectorDrawer : PropertyDrawer
@@ -31,9 +27,8 @@ namespace Core.Common.Editor
         }
 
         /// <summary>
-        /// SubclassSelector UI(스크립트 ping/open 필드 + 검색 팝업)를 그리는 재사용 진입점.
-        /// <paramref name="excluded"/>에 AQN을 넘기면 그 타입들을 팝업 목록에서 뺀다(예: 리스트 내 중복 제외). null이면 제외 없음.
-        /// 어느 범위에서 제외할지(수집)는 이 드로어가 하지 않는다 — 호출측이 스스로 모아 넘긴다(<see cref="CollectSiblingValues"/> 등).
+        /// SubclassSelector UI(스크립트 ping/open 필드 + 검색 팝업)를 그리는 재사용 진입점. <paramref name="excluded"/> AQN들은 팝업에서 뺀다(예: 리스트 중복 제외), null이면 제외 없음.
+        /// 어느 범위에서 제외할지 수집은 이 드로어가 하지 않고 호출측이 모아 넘긴다(<see cref="CollectSiblingValues"/> 등).
         /// </summary>
         public static void DrawSelector(Rect position, SerializedProperty property, Type baseType, IReadOnlyCollection<string> excluded, GUIContent label, bool allowCreateNew = false)
         {
@@ -126,12 +121,8 @@ namespace Core.Common.Editor
         }
 
         /// <summary>
-        /// 배열 요소 안의 필드 하나만 받아, "같은 배열의 다른 요소들이 이 필드에 담은 값"을 모은다(자신 제외).
-        ///
-        /// PropertyDrawer는 자기 필드 property 하나만 받는다 — 이 필드가 어느 배열의 몇 번째인지 모른다(요소는 부모 배열 참조가 없다).
-        /// 그래서 여기서 하는 일은 결국 <see cref="CollectArrayValues"/>를 부를 재료(배열·인덱스)를 propertyPath에서 역산하는 것뿐이다.
-        /// 실제 순회·수집은 코어에 위임하고, 내 인덱스를 제외로 넘겨 "나 빼고 형제(sibling)들"만 모은다(내가 지금 고르는 값은 중복 판정에서 빼야 하므로).
-        ///
+        /// 배열 요소 필드 하나만 받아 "같은 배열의 다른 요소들이 이 필드에 담은 값"을 모은다(자신 제외).
+        /// PropertyDrawer는 자기 필드 하나만 받아 이 필드가 어느 배열의 몇 번째인지 모르므로(요소는 부모 배열 참조가 없다), propertyPath에서 배열·인덱스를 역산해 <see cref="CollectArrayValues"/>에 위임한다 — 내 인덱스를 제외로 넘겨 형제들만 모은다.
         /// "리스트 내 중복 제외"가 필요한 드로어가 이걸로 excluded를 만들어 <see cref="DrawSelector"/>에 넘긴다. 배열 요소가 아니면 빈 집합.
         /// </summary>
         public static HashSet<string> CollectSiblingValues(SerializedProperty property)
@@ -169,10 +160,7 @@ namespace Core.Common.Editor
             return CollectArrayValues(arrayProp, relativePath, currentIndex);
         }
 
-        /// <summary>
-        /// 배열 property의 각 요소에서 relativePath 필드의 문자열 값을 모은다(비어있지 않은 것만). excludeIndex는 건너뛴다(-1이면 전체).
-        /// "이미 쓰인 값 수집"을 요소 기반(<see cref="CollectSiblingValues"/>, 자기 제외)과 배열 기반(컨테이너 드로어, 전체) 양쪽에서 공유하는 코어.
-        /// </summary>
+        /// <summary>배열 각 요소에서 relativePath 필드의 문자열 값을 모은다(비어있지 않은 것만). excludeIndex는 건너뛴다(-1=전체). 요소 기반(<see cref="CollectSiblingValues"/>, 자기 제외)과 배열 기반(컨테이너 드로어, 전체) 수집이 공유하는 코어.</summary>
         public static HashSet<string> CollectArrayValues(SerializedProperty arrayProperty, string relativePath, int excludeIndex = -1)
         {
             var result = new HashSet<string>();

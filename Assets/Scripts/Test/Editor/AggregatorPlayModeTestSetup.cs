@@ -11,11 +11,7 @@ using UnityEngine;
 
 namespace Test.Editor
 {
-    /// <summary>
-    /// <see cref="AggregatorPlayModeTest"/>가 쓸 실제 GameplayEffect·Attribute 에셋을 만들고, 현재 씬에
-    /// ASC + 테스트 컴포넌트를 배선한다. 리플렉션으로 private [SerializeField]를 채워 조립하지만, 저장 후에는
-    /// 인스펙터로 만든 것과 동일한 직렬화 .asset이 된다(라운드트립 검증 포함). 클릭 → Play 로 검증 완료.
-    /// </summary>
+    /// <summary><see cref="AggregatorPlayModeTest"/>가 쓸 실제 GameplayEffect·Attribute 에셋을 만들고 현재 씬에 ASC + 테스트 컴포넌트를 배선한다. 리플렉션으로 private [SerializeField]를 채우지만 저장 후엔 인스펙터로 만든 것과 동일한 직렬화 .asset이 된다(라운드트립 검증 포함). 클릭 → Play로 검증 완료.</summary>
     public static class AggregatorPlayModeTestSetup
     {
         private const string Folder = "Assets/_PlayModeTest";

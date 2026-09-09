@@ -3,10 +3,7 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Attribute
 {
-    /// <summary>
-    /// "어느 AttributeSet의 어느 필드냐"를 문자열 쌍(AQN + 필드명)으로 담는 직렬화용 참조 데이터.
-    /// 런타임 해석·값 접근은 <see cref="GameplayAttributeHandle"/>이 맡는다(<see cref="ToAttributeHandle"/>로 변환).
-    /// </summary>
+    /// <summary>"어느 AttributeSet의 어느 필드냐"를 문자열 쌍(AQN + 필드명)으로 담는 직렬화용 참조 데이터. 런타임 해석·값 접근은 <see cref="GameplayAttributeHandle"/>이 맡는다(<see cref="ToAttributeHandle"/>로 변환).</summary>
     [Serializable]
     public struct GameplayAttribute : IEquatable<GameplayAttribute>
     {

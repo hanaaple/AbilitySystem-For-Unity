@@ -1,9 +1,8 @@
 namespace Core.AbilitySystem.Effect
 {
     /// <summary>
-    /// Execution에 넘기는 입력 묶음. 출력은 별도의 <see cref="GameplayEffectExecutionOutput"/>이 담는다 — 입력/출력을 한 객체에 섞지 않는다.
-    ///
-    /// 참조 몇 개만 들고 있는 불변 묶음이라 struct다 — Execution마다 만들어도 힙 할당이 없다.
+    /// Execution에 넘기는 입력 묶음. 출력은 별도 <see cref="GameplayEffectExecutionOutput"/>이 담는다(입력/출력을 한 객체에 안 섞는다).
+    /// 참조 몇 개만 든 불변 묶음이라 struct — Execution마다 만들어도 힙 할당이 없다.
     /// </summary>
     public readonly struct GameplayEffectExecutionParameters
     {
@@ -24,10 +23,7 @@ namespace Core.AbilitySystem.Effect
             Spec = spec;
         }
 
-        /// <summary>
-        /// 캡처된 어트리뷰트의 CurrentValue를 조회한다. <paramref name="captureDefinition"/>은 이 Execution이
-        /// <see cref="GameplayEffectExecution.Defs"/>로 선언한 것과 값이 같아야 매치된다. 캡처 안 됐거나 무효면 false.
-        /// </summary>
+        /// <summary>캡처된 어트리뷰트의 CurrentValue를 조회한다. <paramref name="captureDefinition"/>은 이 Execution이 <see cref="GameplayEffectExecution.Defs"/>로 선언한 것과 값이 같아야 매치. 미캡처·무효면 false.</summary>
         public bool AttemptCalculateCapturedAttributeMagnitude(GameplayEffectAttributeCaptureDefinition captureDefinition, out float magnitude)
         {
             return Spec.CapturedRelevantAttributes.TryGetCapturedValue(captureDefinition, AttributeCaptureValueType.CurrentValue, out magnitude);
