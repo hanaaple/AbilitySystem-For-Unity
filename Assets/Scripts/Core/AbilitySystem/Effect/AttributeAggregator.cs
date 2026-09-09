@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Core.AbilitySystem.Attribute;
-using Core.AbilitySystem.Effect;
 using UnityEngine;
 
-namespace Core.AbilitySystem.Aggregator
+namespace Core.AbilitySystem.Effect
 {
     /// <summary>
     /// 한 어트리뷰트의 CurrentValue를 mod로 집계한다. 값은 <see cref="Evaluate"/>로만 얻는다.
@@ -53,10 +52,7 @@ namespace Core.AbilitySystem.Aggregator
         {
         }
 
-        /// <summary>
-        /// <paramref name="snapshotFrom"/>의 base·mod를 통째 복사한다.
-        /// OnDirty·dependents는 잇지 않아, 이후 원본 변화와 무관한 고정본이 된다.
-        /// </summary>
+        /// <summary><paramref name="snapshotFrom"/>의 base·mod를 통째 복사한다. OnDirty·dependents는 잇지 않아 이후 원본 변화와 무관한 고정본이 된다.</summary>
         public void TakeSnapshotOf(AttributeAggregator snapshotFrom)
         {
             _baseValue = snapshotFrom._baseValue;
@@ -101,10 +97,7 @@ namespace Core.AbilitySystem.Aggregator
             _dependents.Remove(handle);
         }
 
-        /// <summary>
-        /// base/mod 변경을 구독자·dependents에 전파한다.
-        /// 순환 의존은 <see cref="MaxBroadcastDirty"/> 깊이 상한으로 끊는다 — 폭주 방지지 해결이 아니다.
-        /// </summary>
+        /// <summary>base/mod 변경을 구독자·dependents에 전파한다. 순환 의존은 <see cref="MaxBroadcastDirty"/> 깊이 상한으로 끊는다(폭주 방지지 해결이 아니다).</summary>
         private void BroadcastOnDirty()
         {
             if (_broadcastingDirtyCount > MaxBroadcastDirty)
@@ -192,10 +185,7 @@ namespace Core.AbilitySystem.Aggregator
             return ((_baseValue + addBase) * multiplyAdditive / divideAdditive * multiplyCompound) + addFinal;
         }
 
-        /// <summary>
-        /// 연산을 base에 직접 적용한 값을 반환한다 — Instant/Periodic의 영구 base 변경용.
-        /// <see cref="Evaluate"/>와 달리 즉시·영구다.
-        /// </summary>
+        /// <summary>연산을 base에 직접 적용한 값을 반환한다 — Instant/Periodic의 영구 base 변경용. <see cref="Evaluate"/>와 달리 즉시·영구다.</summary>
         public static float ExecModOnBaseValue(float baseValue, GameplayModifierOperation modifierOp, float evaluatedMagnitude)
         {
             switch (modifierOp)

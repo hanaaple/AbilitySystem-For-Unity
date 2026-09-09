@@ -13,9 +13,7 @@ namespace Core.Common.Editor
         LessEqual,
     }
 
-    /// <summary>
-    /// 같은 클래스 내 다른 필드 값에 따라 인스펙터에서 필드를 표시하거나 숨긴다.
-    /// </summary>
+    /// <summary>같은 클래스 내 다른 필드 값에 따라 인스펙터에서 필드를 표시하거나 숨긴다.</summary>
     /// <remarks>
     /// bool  : [ConditionalShow("_flag")]
     ///         [ConditionalShow("_flag", false)]

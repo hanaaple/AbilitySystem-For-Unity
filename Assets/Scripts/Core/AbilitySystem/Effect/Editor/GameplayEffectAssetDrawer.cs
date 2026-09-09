@@ -208,10 +208,7 @@ namespace Core.AbilitySystem.Effect.Editor
             EditorGUI.PropertyField(line, _executions.GetArrayElementAtIndex(index), GUIContent.none);
         }
 
-        /// <summary>
-        /// 접힘 상태면 ReorderableList 대신 헤더만 그린다(ReorderableList에는 내장 foldout이 없다).
-        /// 접힘 상태는 `SerializedProperty.isExpanded`에 저장돼 선택을 옮겨도 유지된다.
-        /// </summary>
+        /// <summary>접힘 상태면 ReorderableList 대신 헤더만 그린다(ReorderableList엔 내장 foldout이 없다). 접힘 상태는 SerializedProperty.isExpanded에 저장돼 선택을 옮겨도 유지된다.</summary>
         private void DrawModifiersList()
         {
             if (_modifiers.isExpanded)

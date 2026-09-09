@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace Character
 {
-    // Test Execution Class
     public sealed class SpeedBoostExecution : GameplayEffectExecution
     {
         private const float SpeedBonus = 10f;

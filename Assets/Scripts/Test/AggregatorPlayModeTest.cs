@@ -7,14 +7,9 @@ using UnityEngine;
 namespace Test
 {
     /// <summary>
-    /// PlayMode에서 <b>실제 GameplayEffect 에셋</b>을 실제 ASC 라이프사이클(Awake 초기화 + Apply/Remove 파이프라인)로
-    /// 돌려 Aggregator 반응성을 검증하는 씬 컴포넌트. 에디터 전용 셀프체크(AggregatorSelfCheck)가 리플렉션으로 조립한
-    /// in-memory 객체를 Edit 모드에서 확인하는 것과 달리, 이 컴포넌트는 직렬화된 .asset을 인스펙터 참조로 받아
-    /// <see cref="AbilitySystemComponent.ApplyGameplayEffectToSelf(GameplayEffectAsset, GameplayEffectContextHandle, float)"/>로
-    /// 적용한다 → "실제 플레이 중 실제 에셋이 올바른 결과를 내는가"를 본다.
-    ///
-    /// <para>배선·에셋 생성은 <c>Tools ▸ Ability System ▸ Setup PlayMode Test</c> 메뉴가 자동으로 한다.
-    /// Play를 누르면 <see cref="Start"/>가 전 케이스를 돌리고 <c>[PlayMode Self-Check] passed N / failed N</c>을 로그한다.</para>
+    /// PlayMode에서 실제 GameplayEffect 에셋을 실제 ASC 라이프사이클(Awake 초기화 + Apply/Remove)로 돌려 Aggregator 반응성을 검증하는 씬 컴포넌트.
+    /// 에디터 셀프체크(AggregatorSelfCheck)가 리플렉션으로 조립한 in-memory 객체를 Edit 모드에서 보는 것과 달리, 여기선 직렬화된 .asset을 인스펙터 참조로 받아 <see cref="AbilitySystemComponent.ApplyGameplayEffectToSelf(GameplayEffectAsset, GameplayEffectContextHandle, float)"/>로 적용해 "실제 플레이 중 실제 에셋이 올바른 결과를 내는가"를 본다.
+    /// 배선·에셋 생성은 <c>Tools ▸ Ability System ▸ Setup PlayMode Test</c> 메뉴가 하고, Play 시 <see cref="Start"/>가 전 케이스를 돌려 <c>[PlayMode Self-Check] passed N / failed N</c>을 로그한다.
     /// </summary>
     [RequireComponent(typeof(AbilitySystemComponent))]
     public sealed class AggregatorPlayModeTest : MonoBehaviour

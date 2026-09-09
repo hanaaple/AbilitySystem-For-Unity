@@ -3,11 +3,7 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Editor
 {
-    /// <summary>
-    /// 현재 선택(하이라이트)된 GameObject의 <see cref="AbilitySystemComponent"/>를 독립 창에서 보여주는 디버그 뷰.
-    /// 컴포넌트 인스펙터와 같은 표시(<see cref="AbilitySystemInspectorGUI"/>)를 쓰되, 인스펙터가 다른 대상으로
-    /// 바뀌어도 ASC 상태를 계속 띄워 둘 수 있게 별도 창으로 뺀 것이다. 선택 대상에 ASC가 없으면 null로 두고 안내만 낸다.
-    /// </summary>
+    /// <summary>선택된 GameObject의 <see cref="AbilitySystemComponent"/>를 독립 창에서 보여주는 디버그 뷰. 컴포넌트 인스펙터와 같은 표시(<see cref="AbilitySystemInspectorGUI"/>)를 쓰되, 인스펙터가 다른 대상으로 바뀌어도 ASC 상태를 계속 띄우려 별도 창으로 뺐다. 대상에 ASC가 없으면 안내만 낸다.</summary>
     public sealed class AbilitySystemComponentWindow : EditorWindow
     {
         private bool _showRuntimeAttributes = true;

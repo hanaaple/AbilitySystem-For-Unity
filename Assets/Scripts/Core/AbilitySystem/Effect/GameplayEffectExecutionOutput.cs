@@ -6,9 +6,8 @@ using UnityEngine;
 namespace Core.AbilitySystem.Effect
 {
     /// <summary>
-    /// Execution의 계산 결과를 담는 출력 컨테이너. Execution은 여기에만 쓰고 어트리뷰트를 직접 건드리지 않는다.
-    /// 값으로 넘겨도 같은 List를 가리키므로 Execution이 추가한 내용은 호출측에 반영된다.
-    /// <b>반드시 <see cref="Create"/>로 만든다</b> — struct라 default/new()로 만들면 내부 버퍼가 null이다.
+    /// Execution의 계산 결과를 담는 출력 컨테이너 — Execution은 여기에만 쓰고 어트리뷰트를 직접 건드리지 않는다. 값으로 넘겨도 같은 List라 추가분이 호출측에 반영된다.
+    /// 반드시 <see cref="Create"/>로 만든다 — struct라 default/new()면 내부 버퍼가 null이다.
     /// </summary>
     public readonly struct GameplayEffectExecutionOutput
     {
