@@ -1,9 +1,33 @@
 # feature/HARNESS — feature 문서 작성 규약
 
-> **feature 문서 작성 규약**이다. `feature-list.md`·`progress.md`·`worklog.md`·`decisions.md` 작성 규약, feature 생성·완료·폐기 절차, decisions.md 품질 기준을 담는다.
-> 이 폴더(`feature/`) 아래 모든 feature 문서에 적용된다. 문서끼리는 번호가 아니라 **절 이름**으로 참조한다.
->
-> **규칙 ↔ 사례 분리:** 규칙이 생긴 근거인 "실제 발생" 사례는 형제 파일 **`HARNESS.cases.md`**(이 문서 전용 사례 아카이브)에 `C-NN` ID로 보관하며, 본문의 **`→ 사례 [C-NN]`** 포인터가 그것을 가리킨다. (ID는 이 파일 안에서의 로컬 번호다.)
+문서끼리는 번호가 아니라 **절 이름**으로 참조한다.
+
+---
+
+## 폴더 구조·네이밍
+
+```
+feature/
+├── HARNESS.md              # 본 문서 (feature 문서 작성 규약) — feature/ 전체 지배
+├── feature-list.md         # 전체 feature 목록·상태 대시보드
+├── <feature-id>/           # 단일 feature (그룹 불필요 시)
+│   ├── progress.md          # 진행 문서 (필수)
+│   ├── worklog.md           # 작업 로그 (아카이브)
+│   ├── decisions.md         # 결정 기록 상세
+│   └── HARNESS.md           # feature 전용 하네스/설계 (선택)
+└── <group-id>/             # feature 그룹 (대분류)
+    ├── HARNESS.md           # 그룹 공유 하네스/설계 (선택, 하위 전체 지배)
+    └── <feature-id>/        # 하위 feature
+        ├── progress.md
+        ├── worklog.md
+        └── decisions.md
+```
+
+- **네이밍:** feature-id·group-id는 **kebab-case 영문 소문자** (예: `combat-core`, `enemy-ai`, `item-system`).
+- **위치:** 각 feature는 폴더를 가지며 진행 문서는 그 안에 `progress.md`로 둔다. 단일 feature는 `feature/<feature-id>/`, 그룹 하위는 `feature/<group-id>/<feature-id>/`.
+- **그룹(대분류):** 한 도메인의 하위 feature가 여럿으로 늘면 `feature/<group-id>/`로 묶는다(예: `item-system` → `item`·`inventory`·`equipment`). 그룹 자체는 progress를 갖지 않으며, 하위 전체를 지배하는 공유 불변조건·설계가 있으면 그룹 폴더에 `HARNESS.md`를 둔다(하위는 참조, 중복 정의 금지).
+- **feature 전용 `HARNESS.md` (선택):** 구현 방향·불변 조건·로드맵/설계가 방대하면 같은 폴더에 둔다. 일반 `HARNESS.md`(agent/)는 **프로세스 규약**, feature/그룹 `HARNESS.md`는 **그 feature의 구현 규약·설계** — 충돌 시 프로세스 규약이 우선하고 충돌을 보고한다.
+- `feature-list.md`에 없는 feature의 폴더를 만들지 않는다(등록이 먼저 — 'Feature 생성 / 완료 / 폐기 절차').
 
 ---
 
@@ -108,10 +132,10 @@ PLANNED → IN-PROGRESS ⇄ DONE
   - feature에 **전용 `HARNESS.md` 로드맵**(예: item의 S1~S10)이 있으면 그것이 세부 TODO 역할을 하므로, progress의 `## 세부 TODO`는 그 로드맵을 **가리키기만** 하고 중복 나열하지 않는다.
   - 이 세부 TODO는 feature 내부 작업용이다. feature와 무관한 잡다한 할 일은 여기가 아니라 `TODO-BOARD.md`(작업 보드 규약)에 둔다.
 - **작업 로그는 feature 폴더의 `worklog.md`에 별도 보관**한다 (progress엔 `## 작업 로그` 헤더 + 포인터 링크만). 로그는 계속 자라는 아카이브라 매 세션 재로드 비용을 분리하려는 것 — 재개 앵커는 progress `## 다음 작업`이다. worklog는 **최신이 위로** 쌓는다.
+- **worklog의 과거 기록은 삭제·수정하지 않는다** — 시간순 이력 아카이브라 되돌리지 않는다. 오기 정정 시 원문을 지우지 말고 **취소선 + 정정 표기**로 남긴다.
 - 로그는 "무엇을 왜 했는가" 중심으로 3~7줄 이내로 요약한다. 코드 전문을 붙여넣지 않는다.
 - `결정 기록` **상세는 feature 폴더 `decisions.md`**에 둔다(아래 '결정 기록 품질 기준': 맥락·대안·근거·결과·재평가 트리거). progress `## 결정 기록`엔 **요지 인덱스 + 링크만** (worklog와 같은 이유로 분리 — 해당 영역 건들 때 decisions.md 확인). 트레이드오프가 있었던 결정만, 사소한 네이밍 등은 제외.
 - **`D#`은 유저가 확정한 결정에만 부여한다.** 에이전트가 스스로 내린 판단·제안 단계 결론을 D로 박지 않는다 — 결정 기록은 *유저의 판단*을 남기는 자리다. 제안 단계에서는 `worklog.md`·progress에 **"제안"으로 적고**, 유저가 확정한 뒤에 D를 부여한다. (판단 근거·대안 정리는 제안 단계에서 해도 되지만, 그게 곧 결정은 아니다.)
-  - → 사례 [C-01] (HARNESS.cases.md)
 - **식별 코드:** 각 결정엔 feature 내 고유한 `D1`·`D2`…(순번, 재번호·재사용 금지)를 부여한다. decisions.md와 progress 인덱스가 같은 ID를 공유하고, worklog·`다음 작업`에서 결정을 가리킬 땐 `(→D3)`처럼 코드로 링크한다. 로드맵 슬라이스(`S#`/`I#`/`E#` 등)도 worklog에서 같은 방식으로 참조해 **"언제(worklog) → 무슨 작업(S/I/E) → 왜(D)"**가 코드로 이어지게 한다.
 - **`최종 갱신`은 날짜만**(`YYYY-MM-DD`, KST — 시:분 없음) 적고, 문서를 바꿀 때마다 그날 날짜로 갱신한다 — 하류 문서(architecture·wiki) 동기화 판별의 기준(session-protocol '최종 갱신 타임스탬프').
 - `다음 작업`은 항상 **실행 가능한 수준**으로 구체화한다.
