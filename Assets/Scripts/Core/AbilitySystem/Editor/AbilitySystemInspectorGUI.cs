@@ -9,11 +9,7 @@ using UnityEngine;
 
 namespace Core.AbilitySystem.Editor
 {
-    /// <summary>
-    /// ASC의 런타임 상태(AttributeSet 값·Active Effect)를 IMGUI로 그리는 공용 로직.
-    /// 컴포넌트 인스펙터(<see cref="AbilitySystemComponentDrawer"/>)와 독립 창(<see cref="AbilitySystemComponentWindow"/>)이
-    /// 같은 표시를 공유하도록 한곳에 모은다 — 두 진입점이 화면을 중복 구현하지 않게 하는 것이 목적이다.
-    /// </summary>
+    /// <summary>ASC의 런타임 상태(AttributeSet 값·Active Effect)를 IMGUI로 그리는 공용 로직. 컴포넌트 인스펙터(<see cref="AbilitySystemComponentDrawer"/>)와 독립 창(<see cref="AbilitySystemComponentWindow"/>)이 화면을 중복 구현하지 않게 한곳에 모았다.</summary>
     public static class AbilitySystemInspectorGUI
     {
         private const string SpawnedAttributeSetsFieldName = "_spawnedAttributeSets";
@@ -251,10 +247,7 @@ namespace Core.AbilitySystem.Editor
             }
         }
 
-        /// <summary>
-        /// 타입 이름과 일치하는 <see cref="MonoScript"/> 에셋을 찾아 연다. <see cref="MonoScript.GetClass"/>가
-        /// 파일명=클래스명일 때만 타입을 돌려주므로, 그 규칙을 따르는 스크립트만 열린다(못 찾으면 경고).
-        /// </summary>
+        /// <summary>타입 이름과 일치하는 <see cref="MonoScript"/> 에셋을 찾아 연다. <see cref="MonoScript.GetClass"/>가 파일명=클래스명일 때만 타입을 돌려주므로 그 규칙을 따르는 스크립트만 열린다(못 찾으면 경고).</summary>
         private static void OpenScriptForType(Type type)
         {
             foreach (string guid in AssetDatabase.FindAssets($"t:MonoScript {type.Name}"))
@@ -333,11 +326,7 @@ namespace Core.AbilitySystem.Editor
             }
         }
 
-        /// <summary>
-        /// 이 캡처 정의를 컨테이너에 등록시킨 공급원을 역추적한다
-        /// (<see cref="GameplayEffectSpec.SetupAttributeCaptureDefinitions"/>의 두 경로 — AttributeBased modifier / Execution의 Defs).
-        /// 컨테이너는 정의를 중복 제거해 보관하므로 여러 공급원이 같은 정의를 등록했으면 모두 모아 표시한다.
-        /// </summary>
+        /// <summary>이 캡처 정의를 컨테이너에 등록시킨 공급원을 역추적한다(<see cref="GameplayEffectSpec.SetupAttributeCaptureDefinitions"/>의 두 경로 — AttributeBased modifier / Execution의 Defs). 컨테이너가 정의를 중복 제거하므로 여러 공급원이 같은 정의를 등록했으면 모두 모아 표시한다.</summary>
         private static string ResolveCaptureOrigin(GameplayEffectSpec spec, GameplayEffectAttributeCaptureDefinition def)
         {
             var origins = new List<string>();

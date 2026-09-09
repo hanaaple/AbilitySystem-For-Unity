@@ -7,11 +7,7 @@ using UnityEditor;
 
 namespace Core.Common.Editor
 {
-    /// <summary>
-    /// baseType을 상속하는 새 서브클래스 .cs를 만드는 <b>순수 저작 로직</b>.
-    /// UI(EditorWindow)·배정(SessionState/리로드)과 분리 — 여기는 "무슨 소스를, 어디에, 유효하게" 쓰나만 안다.
-    /// (Unity의 ScriptTemplates .txt 대신, 타입 정보로 소스를 조립해 상속 대상을 코드로 보장한다.)
-    /// </summary>
+    /// <summary>baseType을 상속하는 새 서브클래스 .cs를 만드는 순수 저작 로직. UI(EditorWindow)·배정(SessionState/리로드)과 분리 — 여기는 "무슨 소스를, 어디에, 유효하게" 쓰나만 안다. (Unity ScriptTemplates .txt 대신 타입 정보로 소스를 조립해 상속 대상을 코드로 보장.)</summary>
     internal static class SubclassScriptTemplate
     {
         // 기본 클래스명 제안: "New" + baseType 이름.

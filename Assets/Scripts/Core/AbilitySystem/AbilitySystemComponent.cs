@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Core.AbilitySystem.Aggregator;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
@@ -78,10 +77,7 @@ namespace Core.AbilitySystem
 
         // ── Context / Spec 팩토리 ─────────────────────────────────────────────────
 
-        /// <summary>
-        /// 자신(this)을 Instigator(주체 ASC)로 하는 GE 컨텍스트를 만든다.
-        /// SourceObject(무기·아이템 등 출처)가 필요하면 호출처에서 AddSourceObject로 따로 넣는다.
-        /// </summary>
+        /// <summary>자신(this)을 Instigator로 하는 GE 컨텍스트를 만든다. SourceObject(무기·아이템 등)가 필요하면 호출처에서 AddSourceObject로 넣는다.</summary>
         public GameplayEffectContextHandle MakeEffectContext()
         {
             var context = new GameplayEffectContextHandle(new GameplayEffectContext());
@@ -108,10 +104,7 @@ namespace Core.AbilitySystem
 
         // ── Apply / Remove (컨테이너에 위임) ──────────────────────────────────────
 
-        /// <summary>
-        /// GameplayEffectAsset SO로부터 Spec을 생성해 자신에게 적용한다.
-        /// Instant는 즉시 실행 후 Invalid Handle 반환. Duration/Infinite는 핸들 반환.
-        /// </summary>
+        /// <summary>GameplayEffectAsset SO로 Spec을 생성해 자신에게 적용한다. Instant는 즉시 실행 후 Invalid Handle, Duration/Infinite는 핸들 반환.</summary>
         public ActiveGameplayEffectHandle ApplyGameplayEffectToSelf(GameplayEffectAsset effect, GameplayEffectContextHandle context = default, float level = 1f)
         {
             return ApplyGameplayEffectSpecToSelf(MakeOutgoingSpec(effect, context, level));
@@ -123,10 +116,7 @@ namespace Core.AbilitySystem
             return _activeGameplayEffectsContainer.ApplyGameplayEffectSpec(spec);
         }
 
-        /// <summary>
-        /// GameplayEffectAsset SO로부터 Spec을 생성해 대상 ASC에 적용한다. 자신(this)이 Instigator가 된다.
-        /// context가 비어 있으면 자신을 Instigator로 하는 context를 생성한다(AttributeBased의 Source 캡처용).
-        /// </summary>
+        /// <summary>GameplayEffectAsset SO로 Spec을 생성해 대상 ASC에 적용한다(자신이 Instigator). context가 비면 자신을 Instigator로 생성 — AttributeBased Source 캡처용.</summary>
         public ActiveGameplayEffectHandle ApplyGameplayEffectToTarget(GameplayEffectAsset effect, AbilitySystemComponent target, GameplayEffectContextHandle context = default, float level = 1f)
         {
             if (!context.IsValid)
@@ -137,9 +127,7 @@ namespace Core.AbilitySystem
             return ApplyGameplayEffectSpecToTarget(MakeOutgoingSpec(effect, context, level), target);
         }
 
-        /// <summary>
-        /// 이미 만들어진 Spec을 대상 ASC에 적용한다. 실제 적용은 대상 ASC가 자신에게 수행한다.
-        /// </summary>
+        /// <summary>이미 만들어진 Spec을 대상 ASC에 적용한다. 실제 적용은 대상 ASC가 자신에게 수행한다.</summary>
         public ActiveGameplayEffectHandle ApplyGameplayEffectSpecToTarget(GameplayEffectSpec spec, AbilitySystemComponent target)
         {
             if (target == null)
@@ -162,9 +150,8 @@ namespace Core.AbilitySystem
         }
 
         /// <summary>
-        /// 소스 aggregator가 dirty해졌을 때 그 dirty 전파가 호출하는 진입점 — 그 aggregator에 non-snapshot으로 의존하는
-        /// 활성 GE(<paramref name="handle"/>)의 magnitude를 재평가한다. aggregator는 dependent 핸들만 알아 그 핸들로 소유 ASC를
-        /// 찾아 호출하므로 진입점이 ASC에 있고, 실제 재평가는 컨테이너에 위임한다.
+        /// 소스 aggregator가 dirty해졌을 때 dirty 전파가 부르는 진입점 — 그에 non-snapshot 의존하는 활성 GE(<paramref name="handle"/>)의 magnitude를 재평가한다.
+        /// aggregator는 dependent 핸들만 알아 그 핸들로 소유 ASC를 찾으므로 진입점이 ASC에 있고, 실제 재평가는 컨테이너에 위임한다.
         /// </summary>
         internal void OnMagnitudeDependencyChange(ActiveGameplayEffectHandle handle, AttributeAggregator changedAggregator)
         {
@@ -186,10 +173,7 @@ namespace Core.AbilitySystem
 
         // ── 초기화 ────────────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// 주어진 정의(SO)로 AttributeSet들을 생성해 등록한다. 이미 같은 타입이 등록돼 있으면 건너뛴다(AddSpawnedAttribute=TryAdd).
-        /// Awake의 자체 초기화(attributeInitData) 외에, 외부(예: BoxRoom)가 Source 캡처용 어트리뷰트를 주입할 때도 쓴다.
-        /// </summary>
+        /// <summary>정의(SO)로 AttributeSet들을 생성해 등록한다. 같은 타입이 이미 있으면 건너뛴다(TryAdd). Awake 자체 초기화 외에 외부(예: BoxRoom)의 Source 캡처용 어트리뷰트 주입에도 쓴다.</summary>
         public void AddSet(AttributeDefinitionAsset data)
         {
             if (data == null)

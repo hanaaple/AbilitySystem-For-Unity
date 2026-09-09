@@ -8,9 +8,8 @@ using UnityEngine;
 
 namespace Core.ItemSystem.Equipment
 {
-    // 장착 상태 관리 + 장착 무기 공격 구동 + 장착 아이템 프리팹의 소켓 부착(표현)을 겸하는 시스템 컴포넌트.
-    // 특정 캐릭터 클래스에 의존하지 않는다 — 장비 상태가 캐릭터 수명과 얽히지 않게. slot은 딕셔너리 필드로 관리한다(Module 아님).
-    // 표현(소켓 소환)도 여기서 겸한다(장비=한 개념). 소켓 미지정 슬롯은 비주얼 없이 장착만.
+    // 장착 상태 관리 + 장착 무기 공격 구동 + 장착 프리팹의 소켓 부착(표현)을 겸하는 시스템 컴포넌트. 특정 캐릭터 클래스에 의존하지 않는다(장비 상태가 캐릭터 수명과 얽히지 않게).
+    // slot은 딕셔너리 필드로 관리(Module 아님). 표현(소켓 소환)도 겸한다(장비=한 개념) — 소켓 미지정 슬롯은 비주얼 없이 장착만.
     [RequireComponent(typeof(AbilitySystemComponent))]
     public class EquipmentComponent : MonoBehaviour
     {

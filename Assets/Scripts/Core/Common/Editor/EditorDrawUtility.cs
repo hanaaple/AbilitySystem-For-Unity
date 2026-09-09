@@ -3,9 +3,7 @@ using UnityEngine;
 
 namespace Core.Common.Editor
 {
-    /// <summary>
-    /// CustomEditor·PropertyDrawer 사이에서 반복되는 GUI 그리기 헬퍼 모음.
-    /// </summary>
+    /// <summary>CustomEditor·PropertyDrawer 사이에서 반복되는 GUI 그리기 헬퍼 모음.</summary>
     public static class EditorDrawUtility
     {
         private const float DragHandleWidth = 15f;

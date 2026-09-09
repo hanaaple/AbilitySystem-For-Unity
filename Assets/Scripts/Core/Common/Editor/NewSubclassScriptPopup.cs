@@ -4,14 +4,7 @@ using UnityEngine;
 
 namespace Core.Common.Editor
 {
-    /// <summary>
-    /// New Script의 <b>입력 UI</b>(표현부)만 담당하는 팝업. Unity Add Component → New Script 흐름을 흉내낸다:
-    /// 이름·폴더를 받아 baseType의 빈 서브클래스 .cs를 만든다.
-    ///
-    /// 이 창은 "어떻게 생겼나 · 무엇을 입력받나"만 안다 — 소스 조립/검증은 <see cref="SubclassScriptTemplate"/>,
-    /// 생성 후 "어디에 배정하나"는 Show에 넘어온 onCreated 콜백(→ <see cref="NewSubclassScript"/>)이 정한다.
-    /// 진입점은 <see cref="NewSubclassScript"/>이며, 드로어가 이 창을 직접 여는 대신 그 파사드를 쓴다.
-    /// </summary>
+    /// <summary>New Script의 입력 UI(표현부)만 담당하는 팝업 — 이름·폴더를 받아 baseType의 빈 서브클래스 .cs를 만든다(Add Component→New Script 흐름 모방). 소스 조립/검증은 <see cref="SubclassScriptTemplate"/>, 생성 후 배정은 onCreated 콜백(→<see cref="NewSubclassScript"/>). 진입점은 <see cref="NewSubclassScript"/> 파사드.</summary>
     internal sealed class NewSubclassScriptPopup : EditorWindow
     {
         private const string NameControl = "NewSubclassScriptPopup.Name";

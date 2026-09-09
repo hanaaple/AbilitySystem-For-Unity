@@ -5,14 +5,8 @@ using UnityEngine;
 namespace Core.AbilitySystem.Effect
 {
     /// <summary>
-    /// "무엇을·어디서 캡처할지"를 정의하는 불변 식별자.
-    /// AttributeBased magnitude와 Execution이 공유하는 캡처 대상 명세이며, 값 자체는 담지 않는다
-    /// — 실제 캡처 값은 이 정의를 키로 캡처 컨테이너가 보관한다.
-    ///
-    /// <para>캡처 소스(Source/Target)는 <see cref="AttributeCaptureSource"/>를 재사용한다.
-    /// 캡처 대상 어트리뷰트는 직렬화 가능한 <see cref="GameplayAttribute"/>(AQN 문자열 + 필드명)로 담고
-    /// <see cref="ToResolvedAttribute"/>로 런타임 변환한다 — modifier 대상과 같은 타입을 공유하므로
-    /// 전용 드로어(Set/Attribute 팝업)도 자동으로 공유된다.</para>
+    /// "무엇을·어디서 캡처할지"를 정의하는 불변 식별자 — AttributeBased magnitude와 Execution이 공유하는 캡처 대상 명세이며, 값은 담지 않는다(실제 값은 이 정의를 키로 캡처 컨테이너가 보관).
+    /// 소스는 <see cref="AttributeCaptureSource"/>를 재사용하고, 대상 어트리뷰트는 직렬화 가능한 <see cref="GameplayAttribute"/>로 담아 <see cref="ToResolvedAttribute"/>로 변환한다 — modifier 대상과 같은 타입이라 전용 드로어도 공유된다.
     /// </summary>
     [Serializable]
     public struct GameplayEffectAttributeCaptureDefinition : IEquatable<GameplayEffectAttributeCaptureDefinition>

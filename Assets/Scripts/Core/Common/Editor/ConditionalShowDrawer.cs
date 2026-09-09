@@ -97,10 +97,7 @@ namespace Core.Common.Editor
             return null;
         }
 
-        /// <summary>
-        /// SerializedProperty의 경로를 역추적해 직접 부모 오브젝트를 반환한다.
-        /// 배열/리스트 요소, 중첩 구조체 모두 지원.
-        /// </summary>
+        /// <summary>SerializedProperty 경로를 역추적해 직접 부모 오브젝트를 반환한다. 배열/리스트 요소·중첩 구조체 모두 지원.</summary>
         private static object GetParentObject(SerializedProperty property)
         {
             string path = property.propertyPath;
