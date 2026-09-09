@@ -101,6 +101,9 @@ InitTestScene*.unity*
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
+# Personal resume memo (local, per-environment — 각 작업 환경이 자기 것을 생성·유지, 미공유)
+dev-docs/agent/NOW.md
+
 # Claude Code local settings (personal, machine-specific)
 .claude/settings.local.json
 
