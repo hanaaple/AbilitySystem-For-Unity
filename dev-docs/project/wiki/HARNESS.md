@@ -41,25 +41,24 @@ wiki/
 | 시각 스타일 | `src/style.css` |
 
 - **섹션 id 대응:** `index.html`의 `<section id="X">`와 `main.js`의 `SECTION_META['X']`는 같은 id로 짝지어진다. 한쪽만 추가/삭제하면 메타 카드가 어긋난다 — 항상 동기화한다.
-- 현재 섹션 id: `overview` · `mvp` · `packages` · `arch` · `ability-system` · `scenes` · `camera` · `input` · `convention`. (섹션별 상세는 아래 §2.1)
+- 현재 **활성(GAS 중심)** 섹션 id: `overview` · `mvp` · `packages` · `ability-system` · `convention`. (섹션별 상세는 아래 §2.1)
+- **비-GAS 섹션(`arch`·`scenes`·`camera`·`input`)은 보관 분리됨** → `dev-docs/_parked/project/wiki/HARNESS.md`. 단 wiki `index.html`/`src`는 아직 이 섹션들을 포함한 **혼합 빌드 산출물**이다(html 재작업 추후). html을 GAS 중심으로 정리할 때 실제 제거하며, 그때까지 활성 맵과 html이 어긋나 있는 것은 정상이다.
 
 ## 2.1 섹션별 콘텐츠 맵 — index.html/main.js 재파악 없이 편집하기
 
 > 편집 대상 `<section id>`·탭·아코디언·앵커와 대응 메타 위치를 이 맵에서 바로 찾는다. **index.html 전체(≈800줄)를 다시 읽지 말 것.** 구조가 바뀌면(섹션·탭·앵커 추가/삭제) **같은 커밋에서 이 맵도 갱신**한다.
 
-**사이드바 NAV 그룹(main.js `NAV`):** ① 개요 = `overview`·`mvp`·`packages` · ② 아키텍처 = `arch`·`ability-system`(하위 `attr-system`·`ge-system`)·`scenes`·`camera`·`input` · ③ 개발 가이드 = `convention`(하위 `convention-naming`·`convention-style`).
+**사이드바 NAV 그룹(main.js `NAV`):** ① 개요 = `overview`·`mvp`·`packages` · ② 아키텍처 = `ability-system`(하위 `attr-system`·`ge-system`) · ③ 개발 가이드 = `convention`(하위 `convention-naming`·`convention-style`). (비-GAS 항목 `arch`·`scenes`·`camera`·`input`은 보관 분리 — §2 참조.)
 
 | # | section id | 제목 | 내용·구성 | 하위 앵커/탭 | `SECTION_META` |
 |---|---|---|---|---|---|
 | 01 | `overview` | 게임 개요 | info-card 4(핵심차별점·세션길이·루프·성장) + 포트폴리오 방향 callout | - | `null` |
 | 02 | `mvp` | MVP 현황 | 시스템별 MVP/추가목표 상태 표(badge) + 현재목표 callout | - | `null` |
 | 03 | `packages` | 패키지 | pkg-card 6(Input System·Cinemachine·URP·UniTask·R3·AI Navigation) | - | decisions · sources=`Packages/manifest.json` |
-| 04 | `arch` | 컨트롤러·캐릭터 분리 (Possession) | 클래스 트리 2(ControllerBase→PlayerController / CharacterBase→PlayerCharacter·MonsterCharacter) + 이동로직 소유 callout | - | decisions · sources=Controller/PlayerController/PlayerCharacter |
-| 05 | `ability-system` | AbilitySystem — GAS-like | 선택적 이식 인트로 + 설계의도 callout + **UE GAS 대비 채택/생략 표** + **탭 3개**(탭바 `ability-tabs`). 상세는 아래 | 탭 `attr`(앵커 `attr-system`)·`ge`(앵커 `ge-system`)·`api` | decisions(4) · sources=`Scripts/Core/AbilitySystem/` · synced |
-| 06 | `scenes` | 씬 구성 | MainMenu→Lobby→Game→Result 플로우 | - | decisions · sources=`Scenes/` |
-| 07 | `camera` | 카메라 | info-card(Projection/FOV·Follow·Body·Aim) + BindingMode 설명 | - | decisions · sources=`Prefabs/Player.prefab` |
-| 08 | `input` | 입력 액션맵 | Action/Map/바인딩/타입 표 | - | decisions · sources=`Input/PlayerInputActions.inputactions` |
-| 09 | `convention` | 코드 컨벤션 | 네이밍표·스타일 diff·멤버순서 코드블록(아코디언 3) | 앵커 `convention-naming`·`convention-style` | decisions · sources=`.editorconfig` |
+| 04 | `ability-system` | AbilitySystem — GAS-like | 선택적 이식 인트로 + 설계의도 callout + **UE GAS 대비 채택/생략 표** + **탭 3개**(탭바 `ability-tabs`). 상세는 아래 | 탭 `attr`(앵커 `attr-system`)·`ge`(앵커 `ge-system`)·`api` | decisions(4) · sources=`Scripts/Core/AbilitySystem/` · synced |
+| 05 | `convention` | 코드 컨벤션 | 네이밍표·스타일 diff·멤버순서 코드블록(아코디언 3) | 앵커 `convention-naming`·`convention-style` | decisions · sources=`.editorconfig` |
+
+> 비-GAS 섹션(`arch`·`scenes`·`camera`·`input`) 맵은 `dev-docs/_parked/project/wiki/HARNESS.md`로 분리. html 재작업 시 실제 제거.
 
 **`ability-system` 섹션 내부(가장 복잡 — 탭바 `ability-tabs`):**
 - 탭 `attr` (Attribute, 앵커 `attr-system`): 레이어 구조 · BaseValue/CurrentValue 이중 구조 · AttributeHandle Reflection 격리 · SO 초기화 흐름

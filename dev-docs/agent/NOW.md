@@ -25,8 +25,8 @@
 
 ## ⚠ 유의 · 환경
 
-- **이번 문서 변경 전부 미커밋** — feature progress 4개 + attribute/decisions.md + architecture 5문서 + `architecture/HARNESS.md` 신설 + `_parked/` 이동·분리 + `CLAUDE.md`·`NOW.md`.
-- **wiki 미처리** — `wiki/`는 GAS+비-GAS 혼합 빌드 산출물이라 보관 분리 보류. 원하면 별도 작업.
+- **이번 문서 변경 커밋됨** — 브랜치 `docs/gas-refocus`에 4커밋(chore 프로젝트명 · docs(architecture) 재정비 · docs _parked 보관·동기화 · docs(wiki) 비-GAS 섹션 분리). **아직 push 안 함.**
+- **wiki HARNESS.md 비-GAS 섹션 분리 완료** — `arch`·`scenes`·`camera`·`input` 섹션 맵을 `_parked/project/wiki/HARNESS.md`로 이관, 활성 HARNESS.md는 GAS 중심 축소. **단 wiki `index.html`/`src`는 아직 혼합 산출물(html 재작업 보류)** — 활성 맵과 html이 어긋난 상태가 현재는 정상.
 - **GA 작업은 `stash@{0}`**에 그대로(유저 stash, 미착수). GA 스크립트 4개 + `ASC.GiveAbility` 스켈레톤 + `GA_New.asset`.
 - **선택 백로그:** 코드 주석을 더 공격적으로 솎는 추가 패스(중도 → 공격적) 가능 — 유저가 원하면.
 - **정리 대상(무관):** 오래된 로컬 브랜치 `Feature/Character-Movement-Prototype`·`Feature/GE-Execution`(원격 gone).
