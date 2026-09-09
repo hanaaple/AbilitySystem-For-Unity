@@ -4,7 +4,7 @@
 > 상태 정의 및 전이 규칙은 [feature-list-convention.md](feature-list-convention.md) 참조.
 > **이 표와 각 progress 문서의 상태는 항상 동기화되어야 한다.**
 
-최종 갱신: 2026-09-08 (KST)
+최종 갱신: 2026-09-09 (KST)
 
 > **`✅ 임시완료`**: 유저가 임시 완료로 지정한 feature. 수용 기준 최종 확인 전이라 정식 `✅ DONE`과 구분한다. (2026-09-08 유저 지시)
 
@@ -22,19 +22,12 @@
 | gameplay-ability | 게임플레이 어빌리티 (GA·스킬 실행) | 📋 PLANNED | P1 | attribute, gameplay-effect | [progress](ability-system/gameplay-ability/progress.md) |
 | aggregator | 어트리뷰트 반응성 / Aggregator (라이브 재평가) | ✅ 임시완료 | P1 | attribute, gameplay-effect | [progress](ability-system/aggregator/progress.md) |
 
-### 🧩 item-system — 아이템 시스템 그룹
-공유 하네스: [HARNESS](item-system/HARNESS.md)
-
-| ID | Feature | 상태 | 우선순위 | 의존 | Progress |
-|---|---|---|---|---|---|
-| item | 아이템 코어 (데이터·인스턴스·모듈·런타임) | 🔧 IN-PROGRESS | P0 | - | [progress](item-system/item/progress.md) |
-| inventory | 인벤토리 (개수·스택) | 🔧 IN-PROGRESS | P1 | item | [progress](item-system/inventory/progress.md) |
-| equipment | 장비 장착 | 🔧 IN-PROGRESS | P1 | item, inventory | [progress](item-system/equipment/progress.md) |
+> **비-GAS 인게임 feature는 보관(비활성) 처리** — item-system 그룹은 GAS 데모 집중을 위해 잠시 치워뒀다. → [_parked/agent/feature/feature-list.md](../../_parked/agent/feature/feature-list.md).
 
 ## 상태 요약
 
 - 📋 PLANNED: 1
-- 🔧 IN-PROGRESS: 3
+- 🔧 IN-PROGRESS: 0
 - ✅ 임시완료: 3
 - ⏸️ BLOCKED: 0
 - ✅ DONE: 0
