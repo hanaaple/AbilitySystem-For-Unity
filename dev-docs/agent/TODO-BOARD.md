@@ -3,7 +3,7 @@
 > feature 단위 추적은 `feature-list.md`가 담당한다. **이 보드는 그보다 잘게 쪼개진 잡다한 작업·개인 TODO·이슈**를 모은다 — 문서 정비, 인프라(GitHub 설정 등), 실험, 리팩터, 아이디어 등 feature로 묶기 애매한 것들.
 > 관리 규약은 `TODO-BOARD.harness.md`. 항목은 상태가 바뀌면 아래 칸 사이를 이동한다.
 
-- 최종 갱신: 2026-09-08 (KST)
+- 최종 갱신: 2026-09-10 (KST)
 
 ---
 
@@ -56,6 +56,7 @@
 - [ ] **(editor)** **GE Executions 리스트에 New Script 지원** — Attribute Sets 리스트엔 New Script가 있으나 Executions엔 없음(2026-08-07 Add만 붙임). 이유: `GameplayEffectExecution.Execute`가 abstract라 빈 서브클래스 템플릿(`: GameplayEffectExecution {}`)이 컴파일 안 됨. 붙이려면 New Script 템플릿(`SubclassScriptTemplate.BuildSource`)이 **abstract 멤버의 override 스텁 생성**을 해야 함(예: `Execute(...) => throw new NotImplementedException();`). 그 스텁 생성만 추가하면 GE Executions·다른 abstract-base 셀렉터에도 켤 수 있음. _(2026-08-07 등록)_
 - [ ] **(code)** **타입 참조를 rename-safe 하게 (AttributeSet·GE Execution)** — 지금 둘 다 타입을 **AQN 문자열**로 저장(`attributeSetTypeName`·`executionTypeNames`)해, 클래스명·네임스페이스·asmdef 이동 중 뭐든 하면 `Type.GetType` 실패→"Missing"으로 링크가 끊긴다. **지금은 미룸** — 규모 작고(서브클래스 몇 개), 깨져도 인스펙터에 보이고 검색 드롭다운에서 다시 고르면 됨. 고치는 값이 큼(포맷·리졸버·드로어·런타임·New Script 자동배정·기존 에셋 마이그레이션 전부)이라 과설계에 가깝다. **재평가 트리거:** rename이 잦아져 여러 에셋을 반복해 다시 잇게 되면. **하게 되면:** 안정 GUID id(`[StableTypeId(guid)]` + id→Type 리졸버, AQN 폴백 가능) — 둘 다 문자열 저장이라 통일 적용됨. (`[MovedFrom]`은 커스텀 `Type.GetType` 방식엔 안 먹혀 탈락, SerializeReference는 GE만 가능.) _(2026-08-07 등록 — New Script 툴 논의 중 도출)_
 - [ ] **(docs)** architecture 하류 문서 **반영 기준 마커 정비** — `camera.md`·`item-equipment.md`·`controller-character.md`·`architecture/overview.md`는 마커 자체가 없어 session-protocol '최종 갱신 타임스탬프'의 낡음 판별(하류 날짜 < 상류 날짜)이 불가능하다. 실제 반영 날짜를 알 수 없어 **지어내지 않고 그대로 뒀다**(그 절 "모르는 날짜는 지어내지 않는다"). 채우려면 **유저가 날짜를 알려주거나, 다음에 그 문서를 실제로 갱신할 때 그날 날짜로 stamp**한다. 더불어 `ability-system/overview.md`는 상류를 feature-id가 아닌 **그룹명**(`ability-system`)으로 적어, 어느 progress와 비교할지 모호하다(그룹 대표 규칙을 정하든 하위 3개 중 하나로 바꾸든 결정 필요). _(2026-07-19 등록 — 하네스 점검 중 발견)_
+- [ ] **(docs)** architecture 문서 **UE 구조 미러링 분류 검토** — UE 모듈/타입 계층(`GameplayAbilities` → `U*` → `F*`)을 참고한 폴더·네이밍 분류. 억지로 서두르지 않음. _(상위/하위 계층 정리·Capture 전용 문서(`capture.md`) 분리는 2026-09-10 완료.)_ 상세 `architecture/HARNESS.md` '문서 구조'. _(2026-09-10 등록 — 유저 발의)_
 - [ ] **(docs)** **attribute 런타임 타입 이름 정렬 + D5 재작성** — 코드는 `GameplayAttributeHandle`인데 2026-08-21 세션에 내가 적은 문서·주석 일부가 아직 `ResolvedGameplayAttribute`다(그 이름으로 확정했다가 유저가 되돌림). 정정 대상: attribute `decisions.md`(D5)·`progress.md`, architecture `overview`·`attribute`·`gameplay-effect`, 잔재 2건(`AttributeAggregator.cs` 주석 `Dictionary<ResolvedGameplayAttribute,…>`·`GameplayEffectSpec.cs` 경고 문자열). **D5는 근거 자체 재작성 필요** — "Handle이 부정확"이라 `Resolved-`를 택한 논리가 최종 `GameplayAttributeHandle`(Handle 유지)과 모순. 유저에게 "왜 Handle로 되돌렸나" 받아 그 근거로 다시 쓴다(HARNESS '왜는 지어내지 않는다'). _(2026-08-21 등록)_
 - [ ] **(docs)** **§번호 제거 잔여분** — 이번(2026-08-22) 스윕에서 **의도적으로 남긴 것**: ① ✅ Done 로그의 과거 § 기록(동결 이력 — 당시 섹션번호를 서술한 기록이라 §9로 보존) ② `ue-reference.md` 자체 섹션 번호(§2·§9·§11 — 자기완결 UE 참고 자료, decisions/worklog가 "참고문서 §N"으로 참조) ③ `wiki/HARNESS.md` 자체 번호(§2·§2.1). ①은 이력이라 그대로 두는 게 맞고, ②③은 해당 문서 자체를 이름 기반으로 개편할지 유저 판단 필요. _(2026-08-22 등록)_
 
