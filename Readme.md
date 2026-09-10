@@ -1,42 +1,61 @@
 # AbilitySystem-For-Unity
 
-UE5의 **Gameplay Ability System(GAS)**을 참고해, 이 프로젝트에 필요한 축만 골라 **Unity에 직접 재구현**한 Ability System. 라이브러리 이식이 아니라 개념의 선택적 재구현이며, "어느 부분을 왜 취하고 왜 뺐는지"의 판단을 문서로 남기는 **포트폴리오 프로젝트**다.
+Unreal Engine 5의 Gameplay Ability System(GAS)을 참고해 필요한 부분만 Unity에 다시 구현한 어빌리티 시스템이다. 라이브러리를 그대로 옮긴 게 아니라, GAS에서 필요한 개념만 골라 직접 구현했다.
 
-## 구현 현황
+> 🚧 **개발 중 (WIP)** — 완성본이 아니다. 수치 계층은 동작하고, 실행 계층(GameplayAbility)과 데모 씬은 **미완**이다. 시스템별 상태는 아래 [시스템](#시스템) 표.
 
-- **Attribute** — 타입드 `AttributeSet` + 런타임 핸들(FieldInfo 캐싱, string 탐색 없음), SO 기반 초기화
-- **GameplayEffect** — SO 정의 / 런타임 Spec 분리, Modifier 6종 공식, Instant/Duration/Infinite·주기 실행, Execution·AttributeBased 캡처
-- **Aggregator** — 어트리뷰트별 집계로 CurrentValue 산출 + 캡처 대상 변경 시 라이브 재평가(dirty/dependents)
-- **GameplayAbility** — 계획 (수치 계층 위에 실행 계층을 올린다)
+## 구조
 
-설계 문서(개념·방향 중심, **에이전트·개발자·외부 리뷰어 공용**) → [dev-docs/project/architecture/overview.md](dev-docs/project/architecture/overview.md)
+모든 수치 변경은 **GameplayEffect(GE)** 하나를 거친다.
+GE는 ScriptableObject로 정의하고, 적용할 때 대상별 런타임 인스턴스(Spec)로 복제된다.
 
-## 데모 게임 (컨텍스트)
+```mermaid
+flowchart LR
+    ASC["AbilitySystemComponent<br/>진입점"] --> SET["AttributeSet<br/>수치 저장"]
+    ASC --> CONT["ActiveGameplayEffectsContainer<br/>활성 GE · 수명 · 집계"]
+    CONT --> AGG["AttributeAggregator<br/>어트리뷰트별 집계"]
+    ASSET["GameplayEffectAsset (SO)"] -->|Spec 복제 후 적용| CONT
+```
 
-GAS는 **Spectral-Raid**(제한된 시야·사운드 기반의 탈출 세션 탑다운 액션) 데모에서 주요 기능이 한 씬에 엮여 작동하는 것으로 보인다. "완성된 게임"이 아니라 **GAS가 온전히 작동하는 데모(수직 슬라이스)**로 범위를 좁혔다. 전체 게임 비전(빙의·아이템·전투·씬 등)은 보관됨 → [dev-docs/_parked/project/design.md](dev-docs/_parked/project/design.md)
+값은 두 가지로 나뉜다.
 
-## 패키지
+- **BaseValue** — 데미지·힐처럼 영구적으로 바뀌는 값.
+- **CurrentValue** — 버프·장비처럼 활성 mod를 모아 계산하는 값. 효과가 빠지면 원래대로 돌아간다.
 
-- **Input System** v1.19.0 — New Input System (레거시 미사용)
-- **Cinemachine** v2.10.7
-- **URP** v17.3.0
-- **UniTask** (Cysharp) — async/await
-- **R3** (Cysharp) — 반응형 확장
-- **AI Navigation** v2.0.11
+다른 어트리뷰트를 참조하는 값(예: 방어력 = 힘의 10%)은, 참조 대상이 바뀌면 자동으로 다시 계산된다.
 
-## 문서
+## 시스템
 
-작업용 문서는 [dev-docs/](dev-docs/)에 모여 있다. (`agent/` 에이전트 작업용, `project/` 프로젝트 자료, `_parked/` 비활성 보관)
+각 시스템의 개념·구조·UE 대비는 문서에서 다룬다. 전체 인덱스는 [아키텍처 개요](dev-docs/project/architecture/ability-system/overview.md).
 
-- **아키텍처** — [dev-docs/project/architecture/overview.md](dev-docs/project/architecture/overview.md)
-  - 시스템 구조·설계를 **개념·방향 중심**으로 정리한 문서. **에이전트·개발자·외부 리뷰어 공용** — 그 도메인을 알지만 이 프로젝트를 처음 보는 사람이 훑어 이해하는 수준을 지향한다. 작성 규약은 [architecture/HARNESS.md](dev-docs/project/architecture/HARNESS.md).
-- GAS 데모 방향 — [dev-docs/project/design.md](dev-docs/project/design.md)
-- 개발 도구(Unity MCP) 설정 — [dev-docs/project/dev-tools.md](dev-docs/project/dev-tools.md)
-- 코드 컨벤션 — [dev-docs/project/CODE_CONVENTION.md](dev-docs/project/CODE_CONVENTION.md)
-- 작업 규약 (Claude Code 가이드) — [CLAUDE.md](CLAUDE.md)
+| 시스템 | 상태 | 요약 | 문서 |
+|---|---|---|---|
+| Attribute | ✅ 구현 | 타입드 `AttributeSet` + 런타임 핸들(FieldInfo 캐싱), SO 초기화 | [attribute](dev-docs/project/architecture/ability-system/attribute.md) |
+| GameplayEffect | ✅ 구현 | SO 정의 / 런타임 Spec 분리, Modifier·Instant/Duration/Infinite·주기 실행·Execution | [gameplay-effect](dev-docs/project/architecture/ability-system/gameplay-effect.md) |
+| Aggregator | ✅ 구현 | 어트리뷰트별 CurrentValue 집계 + 캡처 대상 변경 시 라이브 재평가 | [aggregator](dev-docs/project/architecture/ability-system/aggregator.md) |
+| Capture | ✅ 구현 | Source/Target·snapshot 어트리뷰트 캡처 (AttributeBased·Execution이 소비) | [capture](dev-docs/project/architecture/ability-system/capture.md) |
+| GameplayAbility | 📋 계획 | 수치 계층 위에 올리는 실행 계층 | [gameplay-ability](dev-docs/project/architecture/ability-system/gameplay-ability.md) |
 
-## 프로젝트 위키
+**📋 계획:** GameplayTag · GameplayCue · GameplayEvent · GE Stack · AttributeSet 훅 등.
 
-기술 설계와 **선택 이유**를 한 페이지로 정리한 포트폴리오용 위키 → [dev-docs/project/wiki/index.html](dev-docs/project/wiki/index.html) (브라우저로 바로 열기)
+**범위 밖:** 네트워크 복제·예측.
 
-- ⚠️ GAS 중심 재편 이전 스냅샷이라 최신 코드/문서와 어긋날 수 있음(수동 갱신).
+## 요구 사항
+
+- **Unity 6000.3.12f1** (Unity 6.3). 주요 패키지(URP 17.3, New Input System 1.19, Cinemachine 2.10, UniTask · R3, AI Navigation 2.0)는 프로젝트 매니페스트에서 자동 복원된다.
+
+## 실행
+
+```bash
+git clone https://github.com/hanaaple/AbilitySystem-For-Unity.git
+```
+
+Unity Hub에서 위 버전으로 프로젝트를 연다(패키지 자동 복원). 어빌리티 시스템 코드는 `Assets/Scripts/Core/AbilitySystem/` 에 있다.
+
+## 참고
+
+- Unreal Engine 5 Gameplay Ability System — 설계 참고 대상(이식이 아닌 개념 재구현).
+
+## 라이선스
+
+현재 별도 오픈소스 라이선스를 두지 않았다.
