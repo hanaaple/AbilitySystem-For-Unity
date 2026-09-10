@@ -1,5 +1,7 @@
 # 아키텍처 개요
 
+> **최종 갱신:** 2026-09-10 (KST)
+
 Spectral-Raid의 런타임 구조와 시스템 간 관계를 정리한다. 상세 설계는 아래 개별 문서를 참고.
 
 > **현재 활성 = AbilitySystem(GAS) 중심.** 비-GAS 인게임 시스템(컨트롤러-캐릭터/Possession·ItemSystem·EquipmentSystem·카메라)은 GAS 데모 집중을 위해 **보관(비활성)** 처리됐다 → [_parked/project/architecture/overview.md](../../_parked/project/architecture/overview.md).
