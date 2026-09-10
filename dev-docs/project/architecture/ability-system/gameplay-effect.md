@@ -1,5 +1,7 @@
 # AbilitySystem — GameplayEffect
 
+> **최종 갱신:** 2026-09-10 (KST)
+
 수치 변경을 통과시키는 단일 채널. 상위 개요는 [overview](overview.md), 대상 수치는 [attribute](attribute.md), 라이브 재평가는 [aggregator](aggregator.md).
 
 > UE GAS의 GameplayEffect를 참고해 **필요한 축만 직접 구현** — UE 대비 채택/생략은 [overview §UE GAS 대비](overview.md#ue-gas-대비--채택생략).

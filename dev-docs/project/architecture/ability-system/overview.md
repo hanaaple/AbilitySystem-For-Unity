@@ -1,5 +1,7 @@
 # AbilitySystem (GAS-like) — Overview
 
+> **최종 갱신:** 2026-09-10 (KST)
+
 `Assets/Scripts/Core/AbilitySystem/` — 캐릭터 수치 관리를 위한 경량 Ability System. **UE5 GAS를 참고해 이 게임에 필요한 축만 골라 Unity에 직접 재구현**한 것이다 — 라이브러리 이식이 아니라 개념의 선택적 재구현.
 
 > **심화 문서:** [Attribute](attribute.md) · [GameplayEffect](gameplay-effect.md) · [Aggregator (라이브 재평가)](aggregator.md) · [GameplayAbility (계획)](gameplay-ability.md)
