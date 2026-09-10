@@ -1,4 +1,4 @@
-# progress.md 규약
+# progress.harness — progress.md 규약
 
 각 progress 파일은 아래 템플릿 구조를 유지한다. **섹션을 임의로 삭제하지 않는다.**
 **이 블록이 유일한 템플릿이다** — 별도 템플릿 파일을 두지 않는다(두 벌이 되면 갈라진다). 새 progress는 여기서 복사해 만든다.
@@ -57,7 +57,7 @@
 - `결정 기록` **상세는 feature 폴더 `decisions.md`**에 둔다(HARNESS.md '결정 기록 품질 기준': 맥락·대안·근거·결과·재평가 트리거). progress `## 결정 기록`엔 **요지 인덱스 + 링크만** (worklog와 같은 이유로 분리 — 해당 영역 건들 때 decisions.md 확인). 트레이드오프가 있었던 결정만, 사소한 네이밍 등은 제외.
 - **`D#`은 유저가 확정한 결정에만 부여한다.** 에이전트가 스스로 내린 판단·제안 단계 결론을 D로 박지 않는다 — 결정 기록은 *유저의 판단*을 남기는 자리다. 제안 단계에서는 `worklog.md`·progress에 **"제안"으로 적고**, 유저가 확정한 뒤에 D를 부여한다. (판단 근거·대안 정리는 제안 단계에서 해도 되지만, 그게 곧 결정은 아니다.)
 - **식별 코드:** 각 결정엔 feature 내 고유한 `D1`·`D2`…(순번, 재번호·재사용 금지)를 부여한다. decisions.md와 progress 인덱스가 같은 ID를 공유하고, worklog·`다음 작업`에서 결정을 가리킬 땐 `(→D3)`처럼 코드로 링크한다. 로드맵 슬라이스(`S#`/`I#`/`E#` 등)도 worklog에서 같은 방식으로 참조해 **"언제(worklog) → 무슨 작업(S/I/E) → 왜(D)"**가 코드로 이어지게 한다.
-- **`최종 갱신` 규칙은 session-protocol '최종 갱신 타임스탬프'가 정본** — 날짜만(`YYYY-MM-DD`, KST), 문서 바꿀 때마다 갱신. (하류 architecture·wiki 동기화 판별 기준)
+- **`최종 갱신`:** 날짜만(`YYYY-MM-DD`, KST). progress를 실제로 바꿀 때마다 그날 날짜로 갱신한다. 날짜는 **셸로 확인**해 쓰고 지어내지 않는다(모르면 비워 둔다). 오늘: Bash `TZ=Asia/Seoul date +%Y-%m-%d` / PowerShell `(Get-Date).ToUniversalTime().AddHours(9).ToString("yyyy-MM-dd")`.
 - `다음 작업`은 항상 **실행 가능한 수준**으로 구체화한다.
   - 나쁜 예: "전투 시스템 개선"
   - 좋은 예: "`AttackState.cs`에 콤보 입력 버퍼(0.3s) 추가 후 `PlayerStateMachine` 전이 연결"

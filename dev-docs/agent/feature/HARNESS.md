@@ -2,8 +2,8 @@
 
 feature/ 폴더 개요와 생명주기 절차. 문서 작성 규약은 별도 파일에 있다.
 
-- [feature-list-convention.md](feature-list-convention.md) — 상태 정의·전이·목록 형식
-- [progress-convention.md](progress-convention.md) — progress 템플릿·작성 규칙
+- [feature-list.harness.md](feature-list.harness.md) — 상태 정의·전이·목록 형식
+- [progress.harness.md](progress.harness.md) — progress 템플릿·작성 규칙
 
 ---
 
@@ -12,8 +12,8 @@ feature/ 폴더 개요와 생명주기 절차. 문서 작성 규약은 별도 �
 ```
 feature/
 ├── HARNESS.md                    # 규약 허브 (폴더 구조·생명주기) — feature/ 전체 지배
-├── feature-list-convention.md    # feature-list.md 작성 규약
-├── progress-convention.md        # progress/decisions 작성 규약
+├── feature-list.harness.md       # feature-list.md 작성 규약
+├── progress.harness.md           # progress/decisions 작성 규약 (progress.md 종류 전체)
 ├── feature-list.md               # 전체 feature 목록·상태 대시보드
 ├── <feature-id>/                 # 단일 feature (그룹 불필요 시)
 │   ├── progress.md                # 진행 문서 (필수)
@@ -40,7 +40,7 @@ feature/
 
 ### 신규 feature 등록
 1. `feature-list.md`에 행 추가 (`📋 PLANNED`)
-2. `feature/<feature-id>/` 폴더를 만들고, `progress-convention.md`의 템플릿을 복사해 `progress.md` 생성 (구현 방향·불변 조건·로드맵이 방대하면 같은 폴더에 `HARNESS.md`도 작성)
+2. `feature/<feature-id>/` 폴더를 만들고, `progress.harness.md`의 템플릿을 복사해 `progress.md` 생성 (구현 방향·불변 조건·로드맵이 방대하면 같은 폴더에 `HARNESS.md`도 작성)
 3. `목표`, `수용 기준`, `범위`를 반드시 채운 후 작업 착수
 
 ### 완료 처리

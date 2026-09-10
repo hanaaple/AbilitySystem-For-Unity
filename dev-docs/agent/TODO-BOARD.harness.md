@@ -1,4 +1,4 @@
-# todo-board-convention — 작업 보드(TODO-BOARD.md) 규약
+# TODO-BOARD.harness — 작업 보드(TODO-BOARD.md) 규약
 
 > [HARNESS.md](HARNESS.md)에서 분리된 **작업 보드 규약**이다. `TODO-BOARD.md`의 구조·유지 규약을 담는다.
 
@@ -19,4 +19,4 @@
 - **포착:** 채팅·작업 중 할 일/이슈/아이디어가 나왔는데 보드에 없으면 → 그 자리에서 `📋 TODO`에 추가한다. (사용자가 명시적으로 지시하지 않아도, 놓치지 않게 잡아 둔다)
 - **상태 전이:** 어떤 항목에 착수하면 `🔧 진행 중`으로, 끝나면 `✅ Done`(완료일 기입)으로 옮긴다.
 - feature 단위로 커진 항목은 보드에서 빼고 `feature-list.md`에 등록한다(중복 추적 금지).
-- 상단 `최종 갱신` 날짜를 바꿀 때마다 갱신한다.
+- 상단 `최종 갱신`을 바꿀 때마다 갱신한다 — 날짜만(`YYYY-MM-DD`, KST). 날짜는 **셸로 확인**해 쓰고 지어내지 않는다. (오늘: Bash `TZ=Asia/Seoul date +%Y-%m-%d` / PowerShell `(Get-Date).ToUniversalTime().AddHours(9).ToString("yyyy-MM-dd")`.)

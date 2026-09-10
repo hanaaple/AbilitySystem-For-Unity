@@ -1,7 +1,7 @@
 # TODO-BOARD — 작업 현황 보드
 
 > feature 단위 추적은 `feature-list.md`가 담당한다. **이 보드는 그보다 잘게 쪼개진 잡다한 작업·개인 TODO·이슈**를 모은다 — 문서 정비, 인프라(GitHub 설정 등), 실험, 리팩터, 아이디어 등 feature로 묶기 애매한 것들.
-> 관리 규약은 `todo-board-convention.md`. 항목은 상태가 바뀌면 아래 칸 사이를 이동한다.
+> 관리 규약은 `TODO-BOARD.harness.md`. 항목은 상태가 바뀌면 아래 칸 사이를 이동한다.
 
 - 최종 갱신: 2026-09-08 (KST)
 

@@ -1,7 +1,7 @@
 # Feature List
 
 > 프로젝트 전체 feature 현황 대시보드.
-> 상태 정의 및 전이 규칙은 [feature-list-convention.md](feature-list-convention.md) 참조.
+> 상태 정의 및 전이 규칙은 [feature-list.harness.md](feature-list.harness.md) 참조.
 > **이 표와 각 progress 문서의 상태는 항상 동기화되어야 한다.**
 
 최종 갱신: 2026-09-09 (KST)
