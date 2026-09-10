@@ -70,6 +70,7 @@
 | 폴더 | 내용 |
 |---|---|
 | `feature/` | feature 문서 규약 허브 → [feature/HARNESS.md](feature/HARNESS.md) |
+| `code-guide/` | 코드 작성 규약(설계·연쇄 호출·주석) + 하위 실전 가이드 → [code-guide/HARNESS.md](code-guide/HARNESS.md) |
 
 **규약 문서** (agent/)
 

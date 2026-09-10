@@ -27,6 +27,7 @@
 └── dev-docs/ (작업 규약·프로젝트 내용·설계 문서)
     ├── agent/ (에이전트 작업 자료)
     │   └── feature/ (프로젝트 작업 피처)
+    │   └── code-guide/ (코드 작성 규약 + 하위 실전 가이드)
     ├── project/ (프로젝트 정리 자료)
     │   └── architecture/
     │   └── wiki/
@@ -40,7 +41,8 @@
 ### 관련 문서
 - 프로젝트 소개 — `Readme.md`
 - 최상위 하네스 — `CLAUDE.md`
-- 코드 컨벤션 — `.editorconfig` 자동 적용. `dev-docs/project/CODE_CONVENTION.md`
+- 코드 스타일 컨벤션(네이밍·포맷·멤버 순서) — `.editorconfig` 자동 적용. `dev-docs/project/CODE_CONVENTION.md`
+- 코드 작성 규약(설계 원칙·연쇄 호출·주석·에디터 확장) — `dev-docs/agent/code-guide/HARNESS.md`. 하위 실전 가이드(에디터 드로어 등)는 이 문서를 통해서만 진입한다(직접 링크 금지).
 - feature 현황·진행 추적 — `dev-docs/agent/feature/feature-list.md` (대시보드) · `dev-docs/agent/feature/<feature-id>`
 - 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/TODO-BOARD.md`
 - 게임 기획 — `dev-docs/project/design.md`
@@ -57,3 +59,8 @@
  - 프로젝트 개발에 해당하는 내용을 다루기 시작하면 — 구현이 아니어도 읽는다.** 코드 작성뿐 아니라 **질문 답변·개념 설명·설계 논의**도 포함한다.
  - `dev-docs/` 문서를 작성·수정하기 직전
  - 프로젝트 개발, 설계 등 프로젝트와 관련된 대화 시작 시. (검색, 해석, 판단 등)
+
+#### 코드를 작성·수정하기 직전 (주석 한 줄 포함)
+ - 경로 기반 HARNESS는 `Assets/` 코드에 걸리지 않으므로, 코드 편집은 아래를 직접 확인한다.
+ - 스타일(네이밍·포맷·멤버 순서) — `dev-docs/project/CODE_CONVENTION.md`
+ - 설계 원칙·연쇄 호출·주석 규약 — `dev-docs/agent/code-guide/HARNESS.md`
