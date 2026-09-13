@@ -4,7 +4,7 @@
 > 상태 정의 및 전이 규칙은 [feature-list.harness.md](feature-list.harness.md) 참조.
 > **이 표와 각 progress 문서의 상태는 항상 동기화되어야 한다.**
 
-최종 갱신: 2026-09-09 (KST)
+최종 갱신: 2026-09-13 (KST)
 
 > **`✅ 임시완료`**: 유저가 임시 완료로 지정한 feature. 수용 기준 최종 확인 전이라 정식 `✅ DONE`과 구분한다. (2026-09-08 유저 지시)
 
@@ -19,15 +19,15 @@
 |---|---|---|---|---|---|
 | attribute | 어트리뷰트 (수치·Set·Handle·SO 초기화) | ✅ 임시완료 | P0 | - | [progress](ability-system/attribute/progress.md) |
 | gameplay-effect | 게임플레이 이펙트 (GE·Spec·Active·Modifier) | ✅ 임시완료 | P0 | attribute | [progress](ability-system/gameplay-effect/progress.md) |
-| gameplay-ability | 게임플레이 어빌리티 (GA·스킬 실행) | 📋 PLANNED | P1 | attribute, gameplay-effect | [progress](ability-system/gameplay-ability/progress.md) |
+| gameplay-ability | 게임플레이 어빌리티 (GA·스킬 실행) | 🔧 IN-PROGRESS | P1 | attribute, gameplay-effect | [progress](ability-system/gameplay-ability/progress.md) |
 | aggregator | 어트리뷰트 반응성 / Aggregator (라이브 재평가) | ✅ 임시완료 | P1 | attribute, gameplay-effect | [progress](ability-system/aggregator/progress.md) |
 
 > **비-GAS 인게임 feature는 보관(비활성) 처리** — item-system 그룹은 GAS 데모 집중을 위해 잠시 치워뒀다. → [_parked/agent/feature/feature-list.md](../../_parked/agent/feature/feature-list.md).
 
 ## 상태 요약
 
-- 📋 PLANNED: 1
-- 🔧 IN-PROGRESS: 0
+- 📋 PLANNED: 0
+- 🔧 IN-PROGRESS: 1
 - ✅ 임시완료: 3
 - ⏸️ BLOCKED: 0
 - ✅ DONE: 0
