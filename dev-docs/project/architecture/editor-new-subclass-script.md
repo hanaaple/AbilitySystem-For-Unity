@@ -3,7 +3,7 @@
 타입 선택 드롭다운에서 **"New Script..."**로 베이스 타입을 상속한 새 클래스를 바로 만들고, 컴파일 후 그 자리에 자동으로 꽂아 주는 에디터 공용 툴. Unity의 *Add Component → New Script* 흐름을 흉내낸다.
 
 - 코드: `Assets/Scripts/Core/Common/Editor/`
-- 첫 사용처: Attribute Set 셀렉터 (`AttributeDefinitionAsset`). 결정 근거는 feature `ability-system/attribute` [decisions.md](../../agent/feature/ability-system/attribute/decisions.md) **D4**.
+- 첫 사용처: Attribute Set 셀렉터 (`AttributeDefinitionAsset`). 결정 근거는 feature `ability-system/attribute` [decisions.md](../../agent/feature/ability-system/attribute/decisions.md) **D4(New Script 생성)**.
 - **반영 기준:** feature `ability-system/attribute` @ 2026-08-07 (KST).
 - **최종 갱신:** 2026-08-26 (KST)
 
