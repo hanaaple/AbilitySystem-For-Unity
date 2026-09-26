@@ -3,19 +3,19 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
 
-### 2026-08-22 — AttributeSet owner back-ref 추가 (미완) (→D6)
+### 2026-08-22 — AttributeSet owner back-ref 추가 (미완) (→D6(Set owner back-ref))
 
-**요청.** UE `ATTRIBUTE_ACCESSORS`의 `SetHealth`류를 이 프로젝트에도 — "각 attribute에 일괄 적용되는 접근자". 논의 결론: UE의 `SetX`도 owning ASC로 위임하므로 "Set에 두기 vs ASC로만"은 양자택일이 아니라 *얼굴은 Set, 쓰기는 ASC 위임*. → `AttributeSet`에 owning ASC back-ref 필요(→D6).
+**요청.** UE `ATTRIBUTE_ACCESSORS`의 `SetHealth`류를 이 프로젝트에도 — "각 attribute에 일괄 적용되는 접근자". 논의 결론: UE의 `SetX`도 owning ASC로 위임하므로 "Set에 두기 vs ASC로만"은 양자택일이 아니라 *얼굴은 Set, 쓰기는 ASC 위임*. → `AttributeSet`에 owning ASC back-ref 필요(→D6(Set owner back-ref)).
 
 **구현(미완).** `AttributeSet`에 `owner` 필드 추가, `SetBaseValue(handle,value)`가 `owner.SetAttributeBaseValue`로 위임. 처음 `SetOwner`(등록 시 주입)로 넣었다가 유저가 **생성자 주입**으로 전환 지시. 생성자 주입 캐스케이드(서브클래스 4개 전달 생성자 + `Activator.CreateInstance(type, this)`)에 착수했으나 **유저가 스코프 초과로 중단**("멋대로 구현하지 말라"). **현재 `AttributeSet`에 생성자만 있고 서브클래스·Activator 미배선 → 컴파일 불가 상태.** 방식 확정·배선 완성은 다음 세션(progress `## 다음 작업` 1번).
 
 > 이후 세션 대부분은 코드가 아니라 **하네스 문서 재편**(세션 프로토콜·feature 규약·TODO 규약 파일 분리, 디렉토리 트리 축소, §번호 상호참조 제거)에 씀 — 그 이력은 이 feature와 무관하므로 TODO-BOARD Done에 둠.
 
-### 2026-08-07 — 에디터 툴: Attribute Set 셀렉터 "New Script..." (템플릿 생성 + 자동 배정) (→D4)
+### 2026-08-07 — 에디터 툴: Attribute Set 셀렉터 "New Script..." (템플릿 생성 + 자동 배정) (→D4(New Script 생성))
 
 **요청.** Attribute Set "+" 드롭다운에서 (Add Component→New Script처럼) 이름을 적어 새 Set을 만들면, 항상 `AttributeSet`을 상속한 템플릿으로 생성되게. 생성 후 그 필드에 자동으로 들어가면 좋겠다(유저가 자동 배정 선택).
 
-**구현.** (→D4)
+**구현.** (→D4(New Script 생성))
 - `NewSubclassScriptPopup`(신규, `Core/Common/Editor`): Add Component 느낌의 인라인 이름 입력 팝업(`ShowAsDropDown`). baseType의 빈 서브클래스 .cs를 템플릿 생성, 네임스페이스는 폴더 경로에서 유도(`Assets/Scripts/X` → `X`). 이름 유효성·중복·파일 존재 검증. "무엇을 어디에 배정할지"는 몰라도 되게 `Action<className, scriptPath> onCreated` 콜백만 받음.
 - `PendingSubclassAssignment`(같은 파일): 리로드로 팝업·SerializedProperty가 무효화 → 재배정 정보 `SessionState`, 대상 `GlobalObjectId` stash. `[DidReloadScripts]`+`delayCall`에서 타입 해석 후 배정. **두 모드**: Field(필드에 AQN) / Add(배열에 요소 삽입 후 AQN·attributes clear). 새 스크립트 ping.
 - `SubclassAdvancedDropdown`: 범용화 — `(title, types, includeNone, onSelected, onNewScript, emptyMessage)`. onNewScript non-null이면 맨 아래 `New Script...`. 검색형 팝업을 필드/리스트가 공유.
@@ -40,7 +40,7 @@
 **검증.** V1 정합성 OK(잔여 참조 0, 미사용 심볼 제거). V2 = 유저: 같은 타입 Add→Remove→같은 인덱스 Add 반복 시 매번 필드 즉시 렌더 확인. (선재 버그 — 같은 세션 다른 작업인 다형 리스트 빌더 리팩터와 무관, item worklog 2026-07-08 참조.)
 
 ### 2026-05-26 — PR #2 (Ability System - Attribute)
-- Attribute 계층 구현: `AttributeSet`(빈 마커)·`AttributeData`(Base/Current)·`AttributeHandle`(FieldInfo 캐싱 struct), `CharacterAttributeSet`·`CombatAttributeSet` (→D1·D2)
-- SO 초기화 파이프라인(`AttributeInitData`→`AttributeSetInitData`→`AttributeFieldInitData`) + `ASC.Awake` Reflection 세팅 (→D3)
+- Attribute 계층 구현: `AttributeSet`(빈 마커)·`AttributeData`(Base/Current)·`AttributeHandle`(FieldInfo 캐싱 struct), `CharacterAttributeSet`·`CombatAttributeSet` (→D1(Handle struct·FieldInfo 캐싱)·D2(Set=마커+구체 Set))
+- SO 초기화 파이프라인(`AttributeInitData`→`AttributeSetInitData`→`AttributeFieldInitData`) + `ASC.Awake` Reflection 세팅 (→D3(초기값 SO+Reflection))
 - Editor 드로어: `AttributeInitDataDrawer`·`AttributeSetInitDataDrawer`·`AttributeReflectionUtility`
 - ASC 최소 API: `AddAttributeSet`/`RemoveAttributeSet`, `GetAttributeBaseValue`, `SetBaseAttributeValue` (초기 109줄)

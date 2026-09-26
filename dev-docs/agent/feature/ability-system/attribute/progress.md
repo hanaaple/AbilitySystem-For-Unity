@@ -27,29 +27,29 @@
 - 런타임 값 저장/직렬화·네트워크 복제
 
 ## 설계 개요
-- **값 저장**: 구체 `AttributeSet`이 `public AttributeData` 필드 보유, ASC가 `Dictionary<Type, AttributeSet>`로 타입당 하나 등록(→D2).
-- **참조 2분할(→D5)**: 직렬화는 `GameplayAttribute`(문자열 쌍), 런타임 해석·값 접근은 `GameplayAttributeHandle`(FieldInfo 캐싱 불변 struct, `SetType`+`Name` IEquatable → Dictionary 키).
-- **owner 위임(→D6)**: `AttributeSet`이 ASC back-ref를 `SetOwner`(등록 시)로 받고 `SetBaseValue`를 ASC로 위임. Pre/PostAttributeBaseChange 훅 제공.
-- **초기화(→D3)**: SO → Reflection(`Activator.CreateInstance`+`FieldInfo.SetValue`)으로 초기값 세팅.
+- **값 저장**: 구체 `AttributeSet`이 `public AttributeData` 필드 보유, ASC가 `Dictionary<Type, AttributeSet>`로 타입당 하나 등록(→D2(Set=마커+구체 Set)).
+- **참조 2분할(→D5(직렬화/런타임 참조 분리))**: 직렬화는 `GameplayAttribute`(문자열 쌍), 런타임 해석·값 접근은 `GameplayAttributeHandle`(FieldInfo 캐싱 불변 struct, `SetType`+`Name` IEquatable → Dictionary 키).
+- **owner 위임(→D6(Set owner back-ref))**: `AttributeSet`이 ASC back-ref를 `SetOwner`(등록 시)로 받고 `SetBaseValue`를 ASC로 위임. Pre/PostAttributeBaseChange 훅 제공.
+- **초기화(→D3(초기값 SO+Reflection))**: SO → Reflection(`Activator.CreateInstance`+`FieldInfo.SetValue`)으로 초기값 세팅.
 - 코드: `Assets/Scripts/Core/AbilitySystem/Attribute/`, 구체 Set은 `Assets/Scripts/Character/`·`BoxAttributeSet.cs`
 
 ## 세부 TODO (구현 체크리스트)
 - [x] 1. `AttributeData`/`AttributeSet` + 참조 2분할 자료구조
 - [x] 2. SO 초기화 파이프라인 + ASC `AddSet`
-- [x] 3. 에디터 드로어 배선 (+ New Script 생성 →D4)
-- [x] 4. owner 주입(`SetOwner`) + 세터 위임 (→D6)
+- [x] 3. 에디터 드로어 배선 (+ New Script 생성 →D4(New Script 생성))
+- [x] 4. owner 주입(`SetOwner`) + 세터 위임 (→D6(Set owner back-ref))
 
 ## 결정 기록
 → [decisions.md](decisions.md). progress엔 인덱스만.
 
-| ID | 날짜 | 결정 (요지) |
-|---|---|---|
-| D1 | 2026-05-26 | 런타임 핸들 = FieldInfo 캐싱 불변 struct (string 탐색 제거) |
-| D2 | 2026-05-26 | `AttributeSet` 빈 추상 마커, 구체 Set이 `AttributeData` 필드 보유 |
-| D3 | 2026-05-26 | 초기값은 SO + Reflection 세팅 |
-| D4 | 2026-08-07 | Set 셀렉터 "New Script..." — 템플릿 생성 후 자동 배정 |
-| D5 | 2026-08-21 | 참조를 직렬화 `GameplayAttribute` + 런타임 `GameplayAttributeHandle`로 분리 |
-| D6 | 2026-08-22 | `AttributeSet` owner back-ref + 세터 ASC 위임, 주입은 `SetOwner` |
+| ID | 제목 | 날짜 | 결정 (요지) |
+|---|---|---|---|
+| D1 | Handle struct·FieldInfo 캐싱 | 2026-05-26 | 런타임 핸들 = FieldInfo 캐싱 불변 struct (string 탐색 제거) |
+| D2 | Set=마커+구체 Set | 2026-05-26 | `AttributeSet` 빈 추상 마커, 구체 Set이 `AttributeData` 필드 보유 |
+| D3 | 초기값 SO+Reflection | 2026-05-26 | 초기값은 SO + Reflection 세팅 |
+| D4 | New Script 생성 | 2026-08-07 | Set 셀렉터 "New Script..." — 템플릿 생성 후 자동 배정 |
+| D5 | 직렬화/런타임 참조 분리 | 2026-08-21 | 참조를 직렬화 `GameplayAttribute` + 런타임 `GameplayAttributeHandle`로 분리 |
+| D6 | Set owner back-ref | 2026-08-22 | `AttributeSet` owner back-ref + 세터 ASC 위임, 주입은 `SetOwner` |
 
 ## 작업 로그
 → [worklog.md](worklog.md). 재개 앵커는 아래 `## 다음 작업`.

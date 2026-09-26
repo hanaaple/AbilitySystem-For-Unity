@@ -1,6 +1,6 @@
 # UE `FAggregator` 참고 — 개념·구조·평가 흐름
 
-> **성격:** UE GAS의 `FAggregator`(어트리뷰트 집계 객체) 동작을 정리한 **참고 자료**다. 우리 프로젝트의 설계 결정이 아니며, 채택/생략 판단은 여기에 적지 않는다(그건 [decisions.md](decisions.md)·[architecture/…/aggregator.md](../../../../project/architecture/ability-system/aggregator.md)). aggregator 재설계(→ progress D5 — 어트리뷰트별·채널별 Aggregator 이식)의 참조 모델로 둔다.
+> **성격:** UE GAS의 `FAggregator`(어트리뷰트 집계 객체) 동작을 정리한 **참고 자료**다. 우리 프로젝트의 설계 결정이 아니며, 채택/생략 판단은 여기에 적지 않는다(그건 [decisions.md](decisions.md)·[architecture/…/aggregator.md](../../../../project/architecture/ability-system/aggregator.md)). aggregator 재설계(→ progress D5(per-attr/channel Aggregator) — 어트리뷰트별·채널별 Aggregator 이식)의 참조 모델로 둔다.
 >
 > **출처·신뢰도:** 유저가 제공한 UE 분석을 정리한 것이다. 원문에는 항목별 인용(공식 API·GAS 문서·이슈 트래커)이 달려 있었으나 링크 자체는 포함되지 않았다. 따라서 이 문서의 서술은 **2차 자료 수준**으로 다루고, 결론이 걸리는 지점은 UE 원문(ylyking 미러·Epic 문서)으로 재확인한다(HARNESS '판단은 틀릴 수 있다'·'왜의 근거는 유저 의도 → UE 원본'). 엔진 버전에 따라 세부 멤버·구현은 달라질 수 있다.
 >

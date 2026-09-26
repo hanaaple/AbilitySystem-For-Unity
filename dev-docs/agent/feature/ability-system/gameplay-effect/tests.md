@@ -1,7 +1,7 @@
 # gameplay-effect — 검증(테스트) 목록
 
 > 이 프로젝트는 자동 테스트가 없다 — **전부 Unity Play 모드 + Inspector 관측**으로, 각 항목은 유저가 에디터에서 수행한다.
-> 대상: **AttributeCapture 계층 + AttributeBased magnitude evaluate**(progress 세부 TODO 3·5b, →D14~D21).
+> 대상: **AttributeCapture 계층 + AttributeBased magnitude evaluate**(progress 세부 TODO 3·5b, →D14(Spec이 캡처 소유)~D21(ModifierSpec UE 정렬)).
 > 진행 문서: [progress.md](progress.md). 최종 갱신: 2026-08-04 (KST)
 
 ---
@@ -28,7 +28,7 @@
 
 ---
 
-## A. AttributeBased evaluate (5b / D21)
+## A. AttributeBased evaluate (5b / D21(ModifierSpec UE 정렬))
 
 - [ ] **A1. 계산 공식 `(v + Pre) * Coef + Post`**
   - 세팅: AttributeBased modifier의 backing = Source의 알려진 어트리뷰트(예: `damage = 10`), `coefficient = -0.5`, `preMultiplyAdditive = 0`, `postMultiplyAdditive = 0`.
@@ -50,7 +50,7 @@
 
 - [ ] **A5. ScalableFloat 회귀 (리팩터가 안 깼는지)**
   - 세팅: 기존 고정 magnitude GE(예: `GE_Speed`)를 그대로 적용.
-  - 기대: D21 리팩터 이전과 **동일 동작**. 드로어 magnitude = 설정한 고정값.
+  - 기대: D21(ModifierSpec UE 정렬) 리팩터 이전과 **동일 동작**. 드로어 magnitude = 설정한 고정값.
 
 - [ ] **A6. 캡처 실패 fallback**
   - 세팅: backing을 **Source에 없는** 어트리뷰트로 지정.
