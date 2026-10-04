@@ -57,7 +57,7 @@
 - **결정 상세는 feature 폴더 `decisions.md`**(품질 기준: 맥락·대안·근거·결과·재평가 트리거). progress `## 결정 기록`엔 **요지 인덱스 + 링크만**. 트레이드오프 있던 결정만, 사소한 네이밍은 제외.
 - **`D#`은 유저가 확정한 결정에만 부여한다.** 에이전트 판단·제안은 D로 박지 말고 worklog·progress에 **"제안"**으로 적고, 확정된 뒤 D 부여.
 - **식별 코드:** 각 결정엔 feature 내 고유·불변 코드(`D1`·`D2`…, 재번호·재사용 금지). decisions.md·progress 인덱스가 공유, worklog·`다음 작업`은 `(→D3)`로 링크. 로드맵 슬라이스(`S#`/`I#`/`E#`)도 동일하게 worklog에서 **"언제 → 무슨 작업(S/I/E) → 왜(D)"**로 잇는다.
-- **코드는 항상 짧은 제목과 함께:** 산문 속 참조는 `D3(CurrentValue 캐시)`·`(→D3 CurrentValue 캐시)`·`S2(태그 컨테이너)`처럼 코드 옆에 내용을 괄호로 — opaque 단독 표기 금지. **decisions 표·progress 인덱스는 `ID` 다음에 `제목` 열을 둔다**(`| ID | 제목 | … |` — ID 셀엔 코드만, 옆 칸에 짧은 제목). (문서 한정; 코드 주석은 [code-guide/HARNESS.md](../code-guide/HARNESS.md) 규약 그대로.)
+- **코드+요약 표기:** 맨코드 단독 금지·요약 병기의 일반 규칙은 → [docs.harness.md](../docs.harness.md) '내부 식별 코드는 요약과 함께'. **feature 문서 고유:** decisions 표·progress 인덱스는 `ID` 다음에 `제목` 열을 둔다(`| ID | 제목 | … |` — ID 셀엔 코드만, 옆 칸에 짧은 제목), 산문 링크는 `(→D3 CurrentValue 캐시)` 형태. (코드 주석은 [code-guide/HARNESS.md](../code-guide/HARNESS.md) 규약 그대로.)
 - **`최종 갱신`:** progress 상단에 둔다. 형식·갱신 시점·값 → docs.harness.md '날짜 작성 방법'.
 - `다음 작업`은 항상 **실행 가능한 수준**으로 구체화한다.
   - 나쁜 예: "전투 시스템 개선"

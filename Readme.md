@@ -38,7 +38,7 @@ flowchart LR
 
 **📋 계획:** GameplayTag · GameplayCue · GameplayEvent · GE Stack · AttributeSet 훅 등.
 
-**범위 밖:** 네트워크 복제·예측.
+**범위 밖:** GAS의 Replication(네트워크 복제)·예측(Prediction)은 구현에서 제외한다.
 
 ## 요구 사항
 
