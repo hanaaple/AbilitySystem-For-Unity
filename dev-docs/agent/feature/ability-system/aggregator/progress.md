@@ -2,7 +2,7 @@
 
 - 상태: ✅ 임시완료
 - 우선순위: P1
-- 최종 갱신: 2026-09-09 (KST)
+- 최종 갱신: 2026-10-16 (KST)
 
 > `ability-system` 그룹의 하위 feature. 형제: [attribute](../attribute/progress.md) · [gameplay-effect](../gameplay-effect/progress.md) · [gameplay-ability](../gameplay-ability/progress.md).
 > UE `FAggregator`에 준하는 **어트리뷰트별 Aggregator**로 구현됨(→D5(per-attr/channel Aggregator)). base 진실 = `AttributeData`, aggregator는 지연 생성 동기화 사본(→D14(base 진실=AttributeData)). cross-attribute 라이브 재평가는 dependents+OnDirty 전파로 구현(→D12(cross-attr 라이브 재평가)) — 2026-08-26 PlayMode 검증 통과.
@@ -80,5 +80,10 @@ non-snapshot 캡처를 쓰는 AttributeBased 모디파이어가, **캡처 대상
 1. **자기참조 전용 케이스 검증** — A→B→A 류 config를 만들어 `MaxBroadcastDirty` 상한이 폭주를 끊는지 PlayMode 확인(수용 기준 4번). 필요 시 자기참조 GE 케이스 추가.
 2. **architecture 갱신** — `architecture/ability-system/aggregator.md`가 옛 경량안 서술이라 현재 per-attribute aggregator 구조로 재작성(유저 요청 시).
 3. (확장 시) 태그 seam(R5) 실제 구현·cross-actor 라이브는 데모 요구가 생기면.
+   - 2026-10-16 [gameplay-tag](../gameplay-tag/progress.md) 작업으로 이 feature 코드를 고쳤다. 사유: Modifier Source/Target 태그 조건을 aggregator 평가에서 판정해야 해서다(gameplay-tag D14 지속형 판정=UE 그대로, D21 지속형 태그 조건을 CurrentValue에도 적용).
+     - `AttributeAggregator`: `Mod`에 조건(`SourceTagReqs`·`TargetTagReqs`)과 그 mod를 건 GE의 Source 액터 태그. `AddAggregatorMod`에 선택 인자 3개(기본 null = 조건 없음).
+     - `Evaluate()` → `Evaluate(AggregatorEvaluateParameters)`(UE `FAggregator::Evaluate`, 캡처 평가용). CurrentValue용 `EvaluateCurrentValue(소유 태그)` 추가(UE와 다름).
+     - `Test/Editor/AggregatorSelfCheck`: 호출을 `Evaluate(default)`·`TryGetCapturedValue(…, default, out …)`로 바꿨다(조건 없는 mod라 결과는 같다).
+     - 발견(미수정): `UpdateAggregatorMod`가 Spec의 modifier 인덱스를 aggregator `_mods` 인덱스로 쓴다. 이 aggregator에 다른 GE의 mod가 함께 있으면 엉뚱한 칸을 덮어쓸 수 있다. 2026-10-16 유저 요청으로 [TODO-BOARD](../../../TODO-BOARD.md) (bug) 항목에 원인·증상·UE 방식·수정안·검증안을 적었다.
 
 > 프로젝트 방향(2026-08-09): 메인 포트폴리오 = GAS 온전 작동 데모(→ [design.md](../../../../project/design.md)). aggregator 확장은 데모가 요구할 때 이어간다 — 다음 액션 우선순위는 [NOW.md](../../../NOW.md) 참조.

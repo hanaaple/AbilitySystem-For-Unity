@@ -2,7 +2,7 @@
 
 - 상태: ✅ 임시완료
 - 우선순위: P0
-- 최종 갱신: 2026-09-09 (KST)
+- 최종 갱신: 2026-10-16 (KST)
 
 > `ability-system` 그룹의 하위 feature. 형제: [attribute](../attribute/progress.md) · [gameplay-ability](../gameplay-ability/progress.md) · [aggregator](../aggregator/progress.md).
 > 핵심 배관(정의·Spec·Modifier·Execution·Capture·AttributeBased)은 구현·검증됨. 라이브 재평가(non-snapshot 추종)는 [aggregator](../aggregator/progress.md)가 얹었다.
@@ -91,3 +91,11 @@
 2. **호출처 배선** — 공격 컴포넌트가 `MakeEffectContext()`(Instigator=공격자) 기반으로 target에 GE 적용. (실행 계층은 [gameplay-ability](../gameplay-ability/progress.md)와 함께.)
 3. **`SetByCaller`**(→D20(spec API+clone 유지)) — 런타임 계산값을 spec에 꽂아 적용. spec 직접생성 API+clone의 실사용 소비처. 별도 작업([TODO-BOARD](../../../TODO-BOARD.md)).
 4. (확장 시) GE 스택 / Cue / Tag / ScalableFloat 커브는 데모 요구가 생기면.
+   - Tag: 2026-10-16 [gameplay-tag](../gameplay-tag/progress.md) 작업으로 이 feature 코드를 고쳤다 — `GameplayModifier`에 `sourceTags`·`targetTags`(`GameplayTagRequirements`) 필드, `GameplayEffectAssetDrawer`에 표시, `Effect/GameplayTagRequirements.cs` 신설. 사유: Modifier 태그 조건이 gameplay-tag의 GE 연동 범위라서다. 판정은 아직 연결하지 않았다(gameplay-tag D13 Modifier Source/Target Tags=UE Requirements 전체·판정 미연결, D14 지속형 판정=UE 그대로).
+   - Tag(판정 연결): 2026-10-16 같은 작업으로 이 feature 코드를 또 고쳤다. 사유: Modifier Source/Target 태그 조건을 UE 호출 위치대로 판정하려면 Spec·컨테이너·캡처 조회가 태그를 들고 다녀야 해서다(gameplay-tag D18 판정 태그 출처=ASC 조회 함수만·빈 값, D19 Execution 캡처 조회=UE처럼 평가 파라미터 인자, D20 Spec 캡처 태그=UE `FTagContainerAggregator` 구조, D21 지속형 태그 조건을 CurrentValue에도 적용).
+     - `GameplayEffectSpec`: `CapturedSourceTags`·`CapturedTargetTags`(새 `TagContainerAggregator`), 생성 시 `RecaptureSourceActorTags`, 복제 시 깊은 복사.
+     - `GameplayEffectContext(Handle)`: `GetOwnedGameplayTags`.
+     - `ActiveGameplayEffectsContainer`: 적용·실행 때 Target 태그 캡처, Instant/Periodic에서 조건 못 맞춘 modifier 건너뛰기, aggregator에 조건 전달, CurrentValue는 `EvaluateCurrentValue`.
+     - 캡처 조회(`GameplayEffectAttributeCaptureSpec(Container).TryGetCapturedValue`)에 새 `AggregatorEvaluateParameters` 인자. `AttributeBasedMagnitude`가 Spec 태그로 넘긴다.
+     - `GameplayEffectExecutionParameters.AttemptCalculateCapturedAttributeMagnitude`에 평가 파라미터 인자. 호출부 `Character/SpeedBoostExecution`, 에디터 `AbilitySystemInspectorGUI` 수정.
+     - 남긴 차이: UE는 주기 실행마다 magnitude를 다시 계산(`CalculateModifierMagnitudes`)하지만 우리는 하지 않는다(기존 동작, `ExecuteGameplayEffect` TODO). 2026-10-16 유저 요청으로 [TODO-BOARD](../../../TODO-BOARD.md) (code) 항목에 UE 흐름·차이 예·수정안·검증안을 적었다.
