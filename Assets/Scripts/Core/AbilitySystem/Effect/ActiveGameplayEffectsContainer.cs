@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Core.AbilitySystem.Attribute;
+using Core.AbilitySystem.Tag;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
@@ -55,6 +56,9 @@ namespace Core.AbilitySystem.Effect
             }
 
             GameplayEffectSpec appliedSpec = spec.Clone();
+
+            // 대상 태그를 먼저 모아야 아래 magnitude 계산(캡처 평가)이 Target 태그 조건을 판정할 수 있다
+            CaptureTargetActorTags(appliedSpec);
             appliedSpec.CaptureAttributeDataFromTarget(_owner);
 
             GameplayEffectAsset def = appliedSpec.Definition;
@@ -151,16 +155,47 @@ namespace Core.AbilitySystem.Effect
         /// <summary>
         /// Instant/Periodic GE의 Execute 경로 — Modifier와 Execution을 적용한다. Modifier는 배열 순서대로 BaseValue에
         /// 순차 적용돼 같은 어트리뷰트면 순서가 결과에 영향(persistent와 달리 BaseValue를 영구 변경).
+        /// Source·Target 태그 조건을 못 맞춘 modifier는 건너뛴다. Target 태그는 실행할 때마다 다시 읽는다.
         /// </summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::ExecuteActiveEffectsFrom</remarks>
+        // TODO: UE는 태그를 다시 읽은 뒤 magnitude도 다시 계산한다(CalculateModifierMagnitudes). 지금은 적용 때 값을 주기 실행에도 그대로 쓴다.
         private void ExecuteGameplayEffect(GameplayEffectSpec spec)
         {
+            CaptureTargetActorTags(spec);
+
+            TagContainerAggregator capturedSourceTags = spec.CapturedSourceTags;
+            TagContainerAggregator capturedTargetTags = spec.CapturedTargetTags;
+            GameplayTagContainer sourceActorTags = capturedSourceTags.GetActorTags();
+            GameplayTagContainer targetActorTags = capturedTargetTags.GetActorTags();
+
             // 슬롯은 magnitude만 들고 identity(대상·연산)는 정의가 든다 — 같은 인덱스로 짝지어 읽는다.
             for (int i = 0; i < spec.Modifiers.Length; i++)
             {
-                ApplyModToAttribute(spec.Definition.Modifiers[i].ToResolvedAttribute(), spec.Definition.Modifiers[i].Operation, spec.Modifiers[i].EvaluatedMagnitude);
+                GameplayModifier modDef = spec.Definition.Modifiers[i];
+
+                if (!RequirementsMetOrEmpty(modDef.SourceTags, sourceActorTags) || !RequirementsMetOrEmpty(modDef.TargetTags, targetActorTags))
+                {
+                    continue;
+                }
+
+                ApplyModToAttribute(modDef.ToResolvedAttribute(), modDef.Operation, spec.Modifiers[i].EvaluatedMagnitude);
             }
 
             RunExecutions(spec);
+        }
+
+        private static bool RequirementsMetOrEmpty(GameplayTagRequirements requirements, GameplayTagContainer tags)
+        {
+            return requirements == null || requirements.IsEmpty() || requirements.RequirementsMet(tags);
+        }
+
+        /// <summary>Spec의 Target 액터 태그를 Owner의 지금 소유 태그로 다시 채운다.</summary>
+        // UE는 적용(ApplyGameplayEffectSpec)과 실행(ExecuteActiveEffectsFrom) 양쪽에서 같은 두 줄로 한다
+        private void CaptureTargetActorTags(GameplayEffectSpec spec)
+        {
+            TagContainerAggregator capturedTargetTags = spec.CapturedTargetTags;
+            GameplayTagContainer targetActorTags = capturedTargetTags.GetActorTags();
+            _owner.GetOwnedGameplayTags(targetActorTags);
         }
 
         /// <summary>
@@ -211,9 +246,10 @@ namespace Core.AbilitySystem.Effect
         // ── 재계산 (aggregator OnDirty 구독) ──────────────────────────────────────
 
         /// <summary>어트리뷰트의 CurrentValue를 재계산한다. <paramref name="gameplayAttributeHandle"/>는 구독 시 캡처해 넘긴다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::OnAttributeAggregatorDirty</remarks>
         internal void OnAttributeAggregatorDirty(AttributeAggregator aggregator, GameplayAttributeHandle gameplayAttributeHandle)
         {
-            float newValue = aggregator.Evaluate();
+            float newValue = aggregator.EvaluateCurrentValue(_owner.GetOwnedGameplayTags());
 
             AttributeSet attributeSet = _owner.GetAttributeSet(gameplayAttributeHandle);
             if (attributeSet == null)
@@ -306,11 +342,18 @@ namespace Core.AbilitySystem.Effect
             return aggregator;
         }
 
-        /// <summary>persistent spec의 각 modifier를 대상 어트리뷰트 aggregator 채널에 등록한다(identity는 정의에서 인덱스로 읽는다).</summary>
+        /// <summary>
+        /// persistent spec의 각 modifier를 대상 어트리뷰트 aggregator 채널에 등록한다(identity는 정의에서 인덱스로 읽는다).
+        /// 태그 조건은 여기서 거르지 않고 mod와 함께 넘겨, 평가할 때마다 판정한다.
+        /// </summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::AddActiveGameplayEffectGrantedTagsAndModifiers</remarks>
         private void AddSpecMods(ActiveGameplayEffectHandle source, GameplayEffectSpec spec)
         {
             IReadOnlyList<GameplayModifier> defs = spec.Definition.Modifiers;
             IReadOnlyList<GameplayModifierSpec> mods = spec.Modifiers;
+            TagContainerAggregator capturedSourceTags = spec.CapturedSourceTags;
+            GameplayTagContainer effectSourceTags = capturedSourceTags.GetActorTags();
+
             for (int i = 0; i < mods.Count; i++)
             {
                 GameplayAttributeHandle handle = defs[i].ToResolvedAttribute();
@@ -320,7 +363,7 @@ namespace Core.AbilitySystem.Effect
                 }
 
                 AttributeAggregator aggregator = FindOrCreateAttributeAggregator(handle);
-                aggregator.AddAggregatorMod(source, defs[i].Operation, mods[i].EvaluatedMagnitude);
+                aggregator.AddAggregatorMod(source, defs[i].Operation, mods[i].EvaluatedMagnitude, defs[i].SourceTags, defs[i].TargetTags, effectSourceTags);
             }
         }
 
@@ -358,7 +401,7 @@ namespace Core.AbilitySystem.Effect
         {
             if (_attributeAggregatorMap.TryGetValue(handle, out AttributeAggregator aggregator))
             {
-                return aggregator.Evaluate();
+                return aggregator.EvaluateCurrentValue(_owner.GetOwnedGameplayTags());
             }
 
             return handle.GetCurrentValue(_owner.GetAttributeSet(handle));

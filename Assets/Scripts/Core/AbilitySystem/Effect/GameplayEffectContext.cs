@@ -1,3 +1,4 @@
+using Core.AbilitySystem.Tag;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
@@ -26,6 +27,17 @@ namespace Core.AbilitySystem.Effect
         public void AddSourceObject(Object sourceObject)
         {
             SourceObject = sourceObject;
+        }
+
+        /// <summary>Instigator의 소유 태그를 <paramref name="actorTagContainer"/>에 채운다. Instigator가 없으면 건드리지 않는다.</summary>
+        /// <param name="specTagContainer">Spec 쪽 태그 출처(능력 태그 등)가 생기면 채울 자리. 지금은 쓰지 않는다.</param>
+        /// <remarks>UE: FGameplayEffectContext::GetOwnedGameplayTags</remarks>
+        public void GetOwnedGameplayTags(GameplayTagContainer actorTagContainer, GameplayTagContainer specTagContainer)
+        {
+            if (Instigator)
+            {
+                Instigator.GetOwnedGameplayTags(actorTagContainer);
+            }
         }
     }
 }

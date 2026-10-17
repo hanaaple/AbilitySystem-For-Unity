@@ -55,13 +55,13 @@ namespace Core.AbilitySystem.Effect
         }
 
         /// <summary>정의로 캡처 Spec을 찾아 값을 조회한다 — 정의의 <see cref="AttributeCaptureSource"/>로 배열을 고른다. 미선언·미캡처·무효면 false. snapshot 분기는 Spec이 처리.</summary>
-        public bool TryGetCapturedValue(GameplayEffectAttributeCaptureDefinition definition, AttributeCaptureValueType valueType, out float value)
+        public bool TryGetCapturedValue(GameplayEffectAttributeCaptureDefinition definition, AttributeCaptureValueType valueType, AggregatorEvaluateParameters parameters, out float value)
         {
             foreach (GameplayEffectAttributeCaptureSpec spec in SpecsFor(definition.CaptureSource))
             {
                 if (spec.BackingDefinition.Equals(definition))
                 {
-                    return spec.TryGetCapturedValue(valueType, out value);
+                    return spec.TryGetCapturedValue(valueType, parameters, out value);
                 }
             }
 

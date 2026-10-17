@@ -71,29 +71,29 @@ namespace Test.Editor
             ActiveGameplayEffectHandle h2 = new ActiveGameplayEffectHandle(2, null);
 
             AttributeAggregator agg = new AttributeAggregator(100f);
-            check("base만 → Evaluate == 100", Approx(agg.Evaluate(), 100f));
+            check("base만 → Evaluate == 100", Approx(agg.Evaluate(default), 100f));
 
             agg.AddAggregatorMod(h1, GameplayModifierOperation.AddBase, 20f);
-            check("AddBase 20 → 120", Approx(agg.Evaluate(), 120f));
+            check("AddBase 20 → 120", Approx(agg.Evaluate(default), 120f));
 
             agg.AddAggregatorMod(h2, GameplayModifierOperation.MultiplyAdditive, 1.5f);
-            check("MultiplyAdditive 1.5 → (100+20)*1.5 = 180", Approx(agg.Evaluate(), 180f));
+            check("MultiplyAdditive 1.5 → (100+20)*1.5 = 180", Approx(agg.Evaluate(default), 180f));
 
             agg.RemoveAggregatorMod(h2);
-            check("MultiplyAdditive 제거 → 120 복귀", Approx(agg.Evaluate(), 120f));
+            check("MultiplyAdditive 제거 → 120 복귀", Approx(agg.Evaluate(default), 120f));
 
             agg.RemoveAggregatorMod(h1);
-            check("AddBase 제거 → 100 복귀", Approx(agg.Evaluate(), 100f));
+            check("AddBase 제거 → 100 복귀", Approx(agg.Evaluate(default), 100f));
 
             AttributeAggregator mix = new AttributeAggregator(10f);
             mix.AddAggregatorMod(h1, GameplayModifierOperation.MultiplyCompound, 2f);
             mix.AddAggregatorMod(h2, GameplayModifierOperation.AddFinal, 5f);
-            check("MultiplyCompound 2 + AddFinal 5 → 10*2 + 5 = 25", Approx(mix.Evaluate(), 25f));
+            check("MultiplyCompound 2 + AddFinal 5 → 10*2 + 5 = 25", Approx(mix.Evaluate(default), 25f));
 
             AttributeAggregator over = new AttributeAggregator(100f);
             over.AddAggregatorMod(h1, GameplayModifierOperation.AddBase, 50f);
             over.AddAggregatorMod(h2, GameplayModifierOperation.Override, 7f);
-            check("Override → 다른 mod 무시하고 7", Approx(over.Evaluate(), 7f));
+            check("Override → 다른 mod 무시하고 7", Approx(over.Evaluate(default), 7f));
 
             RunSnapshotUnitChecks(check);
         }
@@ -111,13 +111,13 @@ namespace Test.Editor
 
             AttributeAggregator snap = new AttributeAggregator();
             snap.TakeSnapshotOf(src);
-            check("snapshot이 mod까지 복사 → 120", Approx(snap.Evaluate(), 120f));
+            check("snapshot이 mod까지 복사 → 120", Approx(snap.Evaluate(default), 120f));
             check("snapshot base 복사 → GetBaseValue 50", Approx(snap.GetBaseValue(), 50f));
 
             // 원본을 크게 흔든다.
             src.SetBaseValue(999f);
             src.AddAggregatorMod(h3, GameplayModifierOperation.AddBase, 999f);
-            check("원본 변경 후에도 snapshot 120 고정", Approx(snap.Evaluate(), 120f));
+            check("원본 변경 후에도 snapshot 120 고정", Approx(snap.Evaluate(default), 120f));
             check("snapshot에 mod 더해도 원본 불변", SrcUnaffectedAfterSnapshotEdit(snap, src));
 
             // 서로 독립: 두 스냅샷이 같은 원본에서 떠도 격리.
@@ -127,14 +127,14 @@ namespace Test.Editor
             snapA.TakeSnapshotOf(baseAgg);
             baseAgg.AddAggregatorMod(h1, GameplayModifierOperation.AddBase, 40f);
             snapB.TakeSnapshotOf(baseAgg);
-            check("snapshotA(변경 전) 100 / snapshotB(변경 후) 140 독립", Approx(snapA.Evaluate(), 100f) && Approx(snapB.Evaluate(), 140f));
+            check("snapshotA(변경 전) 100 / snapshotB(변경 후) 140 독립", Approx(snapA.Evaluate(default), 100f) && Approx(snapB.Evaluate(default), 140f));
         }
 
         private static bool SrcUnaffectedAfterSnapshotEdit(AttributeAggregator snap, AttributeAggregator src)
         {
-            float srcBefore = src.Evaluate();
+            float srcBefore = src.Evaluate(default);
             snap.AddAggregatorMod(new ActiveGameplayEffectHandle(777, null), GameplayModifierOperation.AddBase, 1f);
-            return Approx(src.Evaluate(), srcBefore);
+            return Approx(src.Evaluate(default), srcBefore);
         }
 
         // ── B. ASC 라우팅 (aggregator 직접) ──
@@ -177,20 +177,20 @@ namespace Test.Editor
             GameplayEffectAttributeCaptureSpec live = new GameplayEffectAttributeCaptureSpec(liveDef, asc);
             GameplayEffectAttributeCaptureSpec snap = new GameplayEffectAttributeCaptureSpec(snapDef, asc);
 
-            live.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, out float liveBefore);
-            snap.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, out float snapBefore);
+            live.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, default, out float liveBefore);
+            snap.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, default, out float snapBefore);
             check("capture 초기값 live/snap 모두 100", Approx(liveBefore, 100f) && Approx(snapBefore, 100f));
 
             // 소스 어트리뷰트를 +50 흔든다.
             AttributeAggregator aggregator = FindOrCreateAggregator(asc, handle);
             aggregator.AddAggregatorMod(new ActiveGameplayEffectHandle(99, asc), GameplayModifierOperation.AddBase, 50f);
 
-            live.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, out float liveAfter);
-            snap.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, out float snapAfter);
+            live.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, default, out float liveAfter);
+            snap.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, default, out float snapAfter);
             check("non-snapshot capture 추종 → 150", Approx(liveAfter, 150f));
             check("snapshot capture 고정 → 100", Approx(snapAfter, 100f));
 
-            snap.TryGetCapturedValue(AttributeCaptureValueType.BaseValue, out float snapBase);
+            snap.TryGetCapturedValue(AttributeCaptureValueType.BaseValue, default, out float snapBase);
             check("snapshot base 캡처 → 100", Approx(snapBase, 100f));
 
             // 직접 얹은 +50 mod를 걷어 다음 레이어로 새지 않게 한다.

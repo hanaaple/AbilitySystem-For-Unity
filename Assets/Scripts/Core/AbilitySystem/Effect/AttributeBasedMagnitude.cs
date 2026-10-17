@@ -46,9 +46,16 @@ namespace Core.AbilitySystem.Effect
         /// 캡처값에서 최종 magnitude를 계산한다: (capturedValue + PreMultiplyAdditive) * Coefficient + PostMultiplyAdditive. 캡처 이후에 호출해야 한다.
         /// 조회 실패 시 캡처값 0으로 계산하되 경고를 남긴다 — 0이 조용히 흘러 결과가 틀리는 걸 막기 위함.
         /// </summary>
+        /// <remarks>UE: FAttributeBasedFloat::CalculateMagnitude</remarks>
         public float Evaluate(GameplayEffectSpec spec)
         {
-            if (!spec.CapturedRelevantAttributes.TryGetCapturedValue(backingAttribute, captureValueType, out float capturedValue))
+            // 캡처한 어트리뷰트의 mod 자격은 이 Spec의 Source·Target 태그(액터 + Spec 태그)로 판정한다
+            TagContainerAggregator capturedSourceTags = spec.CapturedSourceTags;
+            TagContainerAggregator capturedTargetTags = spec.CapturedTargetTags;
+            var evaluationParameters = new AggregatorEvaluateParameters(capturedSourceTags.GetAggregatedTags(), capturedTargetTags.GetAggregatedTags());
+
+            GameplayEffectAttributeCaptureSpecContainer capturedRelevantAttributes = spec.CapturedRelevantAttributes;
+            if (!capturedRelevantAttributes.TryGetCapturedValue(backingAttribute, captureValueType, evaluationParameters, out float capturedValue))
             {
                 Debug.LogWarning($"[AttributeBased] 캡처값 조회 실패 — '{spec.Definition.name}'. 캡처값 0으로 계산한다(미등록·미캡처·무효 캡처).");
             }
