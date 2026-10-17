@@ -34,11 +34,16 @@ namespace Core.AbilitySystem.Effect.Editor
         // 새 modifier 추가 시 coefficient 기본값(1)을 세팅하기 위한 중첩 경로 조각(attributeBased.coefficient).
         private const string CoefficientPropertyName = "coefficient";
 
+        // 태그 조건의 하위 필드는 GameplayTagContainer·GameplayTagQuery 드로어가 그린다. 여기선 위임만.
+        private const string SourceTagsPropertyName = "sourceTags";
+        private const string TargetTagsPropertyName = "targetTags";
+
         private const float LineGap = 4f;
         private const float SectionGap = 8f;
         private const float ElementVerticalPadding = 6f;
         private const float ModifierLabelWidth = 140f;
         private const float CollapsedHeaderPadding = 4f;
+        private const float FoldoutIndent = 10f;
 
         private static readonly Dictionary<GameplayModifierOperation, string> _operationDisplayNames = new()
         {
@@ -274,9 +279,10 @@ namespace Core.AbilitySystem.Effect.Editor
                 return height + ElementVerticalPadding * 2;
             }
 
-            // Modifier Op + Magnitude(라벨 + Calc Type + 값 영역, 가변). SectionGap은 Op↔Magnitude 분리 + 하단 박스 여백.
+            // Modifier Op + Magnitude(라벨 + Calc Type + 값 영역, 가변) + 태그 조건(가변). SectionGap은 섹션 분리 + 하단 박스 여백.
             height += LineGap + lineH                                   // Modifier Op
                     + spacing + SectionGap + spacing * 2 + GetMagnitudeValueHeight(modifier)  // Magnitude 섹션
+                    + SectionGap + GetTagRequirementsHeight(modifier)   // Source/Target Tags
                     + SectionGap;                                       // 박스 하단 여백 버퍼
             return height + ElementVerticalPadding * 2;
         }
@@ -360,9 +366,40 @@ namespace Core.AbilitySystem.Effect.Editor
                 "Modifier Op", opPopupIndex, _operationPopupOptions);
             operation.enumValueIndex = (int)_operationValues[newOpPopupIndex];
 
+            float magnitudeY = opY + spacing + SectionGap;
             DrawMagnitudeSection(
-                new Rect(rect.x, opY + spacing + SectionGap, rect.width, lineH),
+                new Rect(rect.x, magnitudeY, rect.width, lineH),
                 lineH, spacing, modifier, calcType, magnitude);
+
+            float tagsY = magnitudeY + spacing * 2 + GetMagnitudeValueHeight(modifier) + SectionGap;
+            DrawTagRequirements(rect.x, tagsY, rect.width, modifier);
+
+            EditorGUIUtility.labelWidth = prevLabelWidth;
+        }
+
+        // 높이와 그리기가 같은 두 프로퍼티 높이를 써야 다음 요소와 겹치지 않는다.
+        private static float GetTagRequirementsHeight(SerializedProperty modifier)
+        {
+            float sourceHeight = EditorGUI.GetPropertyHeight(modifier.FindPropertyRelative(SourceTagsPropertyName), true);
+            float targetHeight = EditorGUI.GetPropertyHeight(modifier.FindPropertyRelative(TargetTagsPropertyName), true);
+            return sourceHeight + LineGap + targetHeight;
+        }
+
+        // 요소 헤더 foldout처럼 화살표 자리만큼 밀고, 값 열이 위 행들과 맞도록 라벨 폭을 그만큼 줄인다.
+        private static void DrawTagRequirements(float x, float y, float width, SerializedProperty modifier)
+        {
+            SerializedProperty sourceTags = modifier.FindPropertyRelative(SourceTagsPropertyName);
+            SerializedProperty targetTags = modifier.FindPropertyRelative(TargetTagsPropertyName);
+
+            float prevLabelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = prevLabelWidth - FoldoutIndent;
+
+            float sourceHeight = EditorGUI.GetPropertyHeight(sourceTags, true);
+            EditorGUI.PropertyField(new Rect(x + FoldoutIndent, y, width - FoldoutIndent, sourceHeight), sourceTags, true);
+
+            float targetY = y + sourceHeight + LineGap;
+            float targetHeight = EditorGUI.GetPropertyHeight(targetTags, true);
+            EditorGUI.PropertyField(new Rect(x + FoldoutIndent, targetY, width - FoldoutIndent, targetHeight), targetTags, true);
 
             EditorGUIUtility.labelWidth = prevLabelWidth;
         }
