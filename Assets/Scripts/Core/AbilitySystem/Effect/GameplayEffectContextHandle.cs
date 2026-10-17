@@ -1,3 +1,4 @@
+using Core.AbilitySystem.Tag;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
@@ -29,6 +30,12 @@ namespace Core.AbilitySystem.Effect
         public void AddSourceObject(Object sourceObject)
         {
             _context?.AddSourceObject(sourceObject);
+        }
+
+        /// <remarks>UE: FGameplayEffectContextHandle::GetOwnedGameplayTags</remarks>
+        public void GetOwnedGameplayTags(GameplayTagContainer actorTagContainer, GameplayTagContainer specTagContainer)
+        {
+            _context?.GetOwnedGameplayTags(actorTagContainer, specTagContainer);
         }
 
         public bool TryGetContext<T>(out T context) where T : GameplayEffectContext

@@ -23,16 +23,23 @@ namespace Core.AbilitySystem.Effect
             Spec = spec;
         }
 
-        /// <summary>캡처된 어트리뷰트의 CurrentValue를 조회한다. <paramref name="captureDefinition"/>은 이 Execution이 <see cref="GameplayEffectExecution.Defs"/>로 선언한 것과 값이 같아야 매치. 미캡처·무효면 false.</summary>
-        public bool AttemptCalculateCapturedAttributeMagnitude(GameplayEffectAttributeCaptureDefinition captureDefinition, out float magnitude)
+        /// <summary>
+        /// 캡처된 어트리뷰트의 CurrentValue를 조회한다. <paramref name="captureDefinition"/>은 이 Execution이 <see cref="GameplayEffectExecution.Defs"/>로 선언한 것과 값이 같아야 매치. 미캡처·무효면 false.
+        /// 캡처한 어트리뷰트의 mod 자격은 <paramref name="evaluationParameters"/>의 태그로 판정한다 — 보통 <see cref="Spec"/>의 CapturedSourceTags·CapturedTargetTags 합친 태그를 넘긴다.
+        /// </summary>
+        /// <remarks>UE: FGameplayEffectCustomExecutionParameters::AttemptCalculateCapturedAttributeMagnitude</remarks>
+        public bool AttemptCalculateCapturedAttributeMagnitude(GameplayEffectAttributeCaptureDefinition captureDefinition, AggregatorEvaluateParameters evaluationParameters, out float magnitude)
         {
-            return Spec.CapturedRelevantAttributes.TryGetCapturedValue(captureDefinition, AttributeCaptureValueType.CurrentValue, out magnitude);
+            GameplayEffectAttributeCaptureSpecContainer capturedRelevantAttributes = Spec.CapturedRelevantAttributes;
+            return capturedRelevantAttributes.TryGetCapturedValue(captureDefinition, AttributeCaptureValueType.CurrentValue, evaluationParameters, out magnitude);
         }
 
-        /// <summary>값 종류(BaseValue)만 다르고 나머지는 <see cref="AttemptCalculateCapturedAttributeMagnitude"/>와 같다.</summary>
+        /// <summary>캡처된 어트리뷰트의 BaseValue를 조회한다. mod와 무관해 태그 문맥을 받지 않는다. 나머지는 <see cref="AttemptCalculateCapturedAttributeMagnitude"/>와 같다.</summary>
+        /// <remarks>UE: FGameplayEffectCustomExecutionParameters::AttemptCalculateCapturedAttributeBaseValue</remarks>
         public bool AttemptCalculateCapturedAttributeBaseValue(GameplayEffectAttributeCaptureDefinition captureDefinition, out float baseValue)
         {
-            return Spec.CapturedRelevantAttributes.TryGetCapturedValue(captureDefinition, AttributeCaptureValueType.BaseValue, out baseValue);
+            GameplayEffectAttributeCaptureSpecContainer capturedRelevantAttributes = Spec.CapturedRelevantAttributes;
+            return capturedRelevantAttributes.TryGetCapturedValue(captureDefinition, AttributeCaptureValueType.BaseValue, default, out baseValue);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;
+using Core.AbilitySystem.Tag;
 using UnityEngine;
 
 namespace Core.AbilitySystem
@@ -15,6 +16,10 @@ namespace Core.AbilitySystem
 
         // 활성 GE의 소유·수명·실행·집계 + 반응성 aggregator를 이 컨테이너가 맡는다. ASC는 공개 API 위임 래퍼와 AttributeSet 저장만 남긴다.
         private ActiveGameplayEffectsContainer _activeGameplayEffectsContainer;
+
+        // TODO: 소유 태그(참조 카운트·Loose 태그)는 아직 없어 늘 비어 있다.
+        // 생기면 태그가 바뀔 때 Target 태그 조건을 가진 지속형 mod의 CurrentValue를 다시 계산해야 한다.
+        private readonly GameplayTagContainer _ownedGameplayTags = new();
 
         private void Awake()
         {
@@ -73,6 +78,23 @@ namespace Core.AbilitySystem
         public void SetAttributeBaseValue(GameplayAttributeHandle handle, float newValue)
         {
             _activeGameplayEffectsContainer.SetAttributeBaseValue(handle, newValue);
+        }
+
+        // ── Gameplay Tag ──────────────────────────────────────────────────────────
+
+        /// <summary>소유 태그를 <paramref name="tagContainer"/>에 채운다. 기존 내용은 비운다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetOwnedGameplayTags</remarks>
+        public void GetOwnedGameplayTags(GameplayTagContainer tagContainer)
+        {
+            tagContainer.Reset();
+            tagContainer.AppendTags(_ownedGameplayTags);
+        }
+
+        /// <summary>소유 태그. 읽기 전용으로 쓴다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetOwnedGameplayTags</remarks>
+        public GameplayTagContainer GetOwnedGameplayTags()
+        {
+            return _ownedGameplayTags;
         }
 
         // ── Context / Spec 팩토리 ─────────────────────────────────────────────────

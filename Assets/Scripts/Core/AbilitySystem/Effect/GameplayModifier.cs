@@ -23,6 +23,10 @@ namespace Core.AbilitySystem.Effect
         // AttributeBased 전용. 캡처 어트리뷰트 기반 magnitude 계산 정의.
         [SerializeField] private AttributeBasedMagnitude attributeBased;
 
+        // Instant/Periodic 실행과 aggregator 평가(ActiveGameplayEffectsContainer·AttributeAggregator)가 이 두 조건을 판정한다.
+        [SerializeField] private GameplayTagRequirements sourceTags;
+        [SerializeField] private GameplayTagRequirements targetTags;
+
         public GameplayModifierOperation Operation => operation;
         public MagnitudeCalculationType MagnitudeCalculationType => magnitudeCalculationType;
 
@@ -30,6 +34,12 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>AttributeBased 계산 정의. <see cref="MagnitudeCalculationType"/>가 AttributeBased일 때만 의미가 있다.</summary>
         public AttributeBasedMagnitude AttributeBased => attributeBased;
+
+        /// <summary>이 modifier가 적용되려면 Source(발동 주체)가 갖춰야 할 태그 조건.</summary>
+        public GameplayTagRequirements SourceTags => sourceTags;
+
+        /// <summary>이 modifier가 적용되려면 Target(받는 대상)이 갖춰야 할 태그 조건.</summary>
+        public GameplayTagRequirements TargetTags => targetTags;
 
         /// <summary>이 modifier의 최종 magnitude를 계산한다 — ScalableFloat이면 고정값, AttributeBased면 spec 캡처값으로. 캡처(Source 생성 시·Target 적용 시) 이후에 호출해야 한다.</summary>
         public bool AttemptCalculateMagnitude(GameplayEffectSpec spec, out float outCalculatedMagnitude)

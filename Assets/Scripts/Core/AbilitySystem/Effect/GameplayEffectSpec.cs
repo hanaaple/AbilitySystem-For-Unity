@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Core.AbilitySystem.Tag;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
@@ -23,6 +24,14 @@ namespace Core.AbilitySystem.Effect
         /// <summary>이 GE 계산(AttributeBased·Execution)이 참조하는 캡처 어트리뷰트 묶음. 생성 시 Source, 적용 시 Target을 캡처.</summary>
         public GameplayEffectAttributeCaptureSpecContainer CapturedRelevantAttributes { get; private set; }
 
+        /// <summary>Source 태그. 액터 태그는 생성 시 Instigator에서 캡처한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::CapturedSourceTags</remarks>
+        public TagContainerAggregator CapturedSourceTags { get; private set; } = new();
+
+        /// <summary>Target 태그. 액터 태그는 적용·실행 때마다 대상에서 다시 캡처한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::CapturedTargetTags</remarks>
+        public TagContainerAggregator CapturedTargetTags { get; private set; } = new();
+
         public GameplayEffectSpec(GameplayEffectAsset definition, GameplayEffectContextHandle context = default, float level = 1f)
         {
             Definition = definition;
@@ -35,7 +44,7 @@ namespace Core.AbilitySystem.Effect
         /// <summary>
         /// 적용 시점에 대상별로 복제하는 복사 생성자 — <see cref="Initialize"/>를 재실행하지 않고(Source 재캡처·execution 재resolve 없음) 상태만 옮긴다.
         /// 복사 심도: Definition·Executions는 공유(불변/무상태), Context·Level은 값 복사, Modifiers는 배열 값 복사(struct 슬롯이라 독립),
-        /// CapturedRelevantAttributes는 깊은 복사 — 대상별 target 캡처가 서로 덮어쓰지 않게.
+        /// CapturedRelevantAttributes·CapturedSourceTags·CapturedTargetTags는 깊은 복사 — 대상별 target 캡처가 서로 덮어쓰지 않게.
         /// </summary>
         private GameplayEffectSpec(GameplayEffectSpec other)
         {
@@ -47,6 +56,8 @@ namespace Core.AbilitySystem.Effect
             Modifiers = (GameplayModifierSpec[])other.Modifiers.Clone();
             Executions = other.Executions;
             CapturedRelevantAttributes = other.CapturedRelevantAttributes.Clone();
+            CapturedSourceTags = new TagContainerAggregator(other.CapturedSourceTags);
+            CapturedTargetTags = new TagContainerAggregator(other.CapturedTargetTags);
         }
 
         /// <summary>적용 시점에 대상별로 복제해 target 캡처가 섞이지 않게 하는 독립 복사본. <see cref="CaptureAttributeDataFromTarget"/> 전에 호출.</summary>
@@ -133,10 +144,22 @@ namespace Core.AbilitySystem.Effect
             }
         }
 
-        /// <summary>Source(발동 주체) 어트리뷰트를 spec 생성 시 1회 캡처. Source ASC는 Context.Instigator — 없으면 캡처가 무효 표시된다.</summary>
+        /// <summary>Source(발동 주체)의 태그·어트리뷰트를 spec 생성 시 1회 캡처. Source ASC는 Context.Instigator — 없으면 어트리뷰트 캡처가 무효 표시되고 태그는 빈다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::CaptureDataFromSource</remarks>
         private void CaptureDataFromSource()
         {
+            RecaptureSourceActorTags();
             CapturedRelevantAttributes.CaptureAttributes(Context.GetInstigator(), AttributeCaptureSource.Source);
+        }
+
+        /// <summary>Source 액터 태그를 Instigator의 지금 소유 태그로 다시 채운다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::RecaptureSourceActorTags</remarks>
+        public void RecaptureSourceActorTags()
+        {
+            GameplayTagContainer actorTags = CapturedSourceTags.GetActorTags();
+            GameplayTagContainer specTags = CapturedSourceTags.GetSpecTags();
+            actorTags.Reset();
+            Context.GetOwnedGameplayTags(actorTags, specTags);
         }
 
         /// <summary>

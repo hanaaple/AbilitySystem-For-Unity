@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core.AbilitySystem.Attribute;
+using Core.AbilitySystem.Tag;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
@@ -12,19 +13,50 @@ namespace Core.AbilitySystem.Effect
     public sealed class AttributeAggregator
     {
         /// <summary>담긴 mod 한 건. <see cref="ActiveHandle"/>로 식별해 제거한다.</summary>
+        /// <remarks>UE: FAggregatorMod</remarks>
         private readonly struct Mod
         {
             public readonly ActiveGameplayEffectHandle ActiveHandle;
             public readonly GameplayModifierOperation Operation;
             public readonly float EvaluatedMagnitude;
 
-            public Mod(ActiveGameplayEffectHandle activeHandle, GameplayModifierOperation operation, float evaluatedMagnitude)
+            // null이면 조건 없음. modifier 정의의 인스턴스를 그대로 참조한다(UE도 정의를 포인터로 든다).
+            public readonly GameplayTagRequirements SourceTagReqs;
+            public readonly GameplayTagRequirements TargetTagReqs;
+
+            // 이 mod를 건 GE의 Source 액터 태그. CurrentValue 평가는 평가 문맥에 Source가 없어 이것으로 Source 조건을 판정한다. null이면 빈 태그.
+            public readonly GameplayTagContainer EffectSourceTags;
+
+            public Mod(ActiveGameplayEffectHandle activeHandle, GameplayModifierOperation operation, float evaluatedMagnitude, GameplayTagRequirements sourceTagReqs, GameplayTagRequirements targetTagReqs, GameplayTagContainer effectSourceTags)
             {
                 ActiveHandle = activeHandle;
                 Operation = operation;
                 EvaluatedMagnitude = evaluatedMagnitude;
+                SourceTagReqs = sourceTagReqs;
+                TargetTagReqs = targetTagReqs;
+                EffectSourceTags = effectSourceTags;
+            }
+
+            /// <summary>Source·Target 태그 조건을 모두 만족하는지. 조건이 없거나 비었으면 만족으로 본다.</summary>
+            /// <remarks>UE: FAggregatorMod::UpdateQualifies</remarks>
+            public bool Qualifies(GameplayTagContainer sourceTags, GameplayTagContainer targetTags)
+            {
+                return RequirementsMet(SourceTagReqs, sourceTags) && RequirementsMet(TargetTagReqs, targetTags);
+            }
+
+            private static bool RequirementsMet(GameplayTagRequirements requirements, GameplayTagContainer tags)
+            {
+                if (requirements == null || requirements.IsEmpty())
+                {
+                    return true;
+                }
+
+                return requirements.RequirementsMet(tags ?? EmptyTags);
             }
         }
+
+        // 평가 문맥에 태그가 없을 때(null) 판정에 쓰는 빈 컨테이너. 읽기만 한다.
+        private static readonly GameplayTagContainer EmptyTags = new();
 
         private float _baseValue;
 
@@ -75,9 +107,13 @@ namespace Core.AbilitySystem.Effect
             }
         }
 
-        public void AddAggregatorMod(ActiveGameplayEffectHandle source, GameplayModifierOperation operation, float magnitude)
+        /// <param name="sourceTagReqs">Source 태그 조건. null이면 조건 없음.</param>
+        /// <param name="targetTagReqs">Target 태그 조건. null이면 조건 없음.</param>
+        /// <param name="effectSourceTags">이 mod를 건 GE의 Source 액터 태그. CurrentValue 평가의 Source 조건 판정에 쓴다.</param>
+        /// <remarks>UE: FAggregator::AddAggregatorMod</remarks>
+        public void AddAggregatorMod(ActiveGameplayEffectHandle source, GameplayModifierOperation operation, float magnitude, GameplayTagRequirements sourceTagReqs = null, GameplayTagRequirements targetTagReqs = null, GameplayTagContainer effectSourceTags = null)
         {
-            _mods.Add(new Mod(source, operation, magnitude));
+            _mods.Add(new Mod(source, operation, magnitude, sourceTagReqs, targetTagReqs, effectSourceTags));
             BroadcastOnDirty();
         }
 
@@ -128,11 +164,29 @@ namespace Core.AbilitySystem.Effect
         }
 
         /// <summary>
-        /// base·mod로 CurrentValue를 계산한다(순수). 값 취득의 유일 경로다.
+        /// 평가 문맥의 태그로 자격을 판정해 값을 계산한다(순수). 캡처 어트리뷰트 평가(AttributeBased·Execution)의 경로다.
         /// = ((Base + ΣAddBase) * MultiplyAdditive / DivideAdditive * ΠMultiplyCompound) + ΣAddFinal.
         /// Override가 있으면 그 값으로 덮어쓴다(마지막 Override 우선).
         /// </summary>
-        public float Evaluate()
+        /// <remarks>UE: FAggregator::Evaluate</remarks>
+        public float Evaluate(AggregatorEvaluateParameters parameters)
+        {
+            return EvaluateWithBase(parameters.SourceTags, parameters.TargetTags, false);
+        }
+
+        /// <summary>
+        /// 어트리뷰트 CurrentValue를 계산한다. Target 조건은 <paramref name="ownerTags"/>(이 어트리뷰트를 가진 ASC의 소유 태그)로,
+        /// Source 조건은 각 mod를 건 GE의 Source 액터 태그로 판정한다. 식은 <see cref="Evaluate"/>와 같다.
+        /// </summary>
+        // UE 5.6은 CurrentValue를 빈 태그로 계산해 Require가 있는 mod가 빠진다. 이 프로젝트는 CurrentValue에도 조건을 적용하기로 해 따로 둔다
+        public float EvaluateCurrentValue(GameplayTagContainer ownerTags)
+        {
+            return EvaluateWithBase(null, ownerTags, true);
+        }
+
+        /// <param name="useEffectSourceTags">true면 <paramref name="sourceTags"/> 대신 각 mod를 건 GE의 Source 액터 태그로 Source 조건을 판정한다.</param>
+        /// <remarks>UE: FAggregatorModChannel::EvaluateWithBase</remarks>
+        private float EvaluateWithBase(GameplayTagContainer sourceTags, GameplayTagContainer targetTags, bool useEffectSourceTags)
         {
             float addBase = 0f;
             float multiplyAdditive = 1f;
@@ -142,6 +196,12 @@ namespace Core.AbilitySystem.Effect
 
             foreach (Mod mod in _mods)
             {
+                GameplayTagContainer modSourceTags = useEffectSourceTags ? mod.EffectSourceTags : sourceTags;
+                if (!mod.Qualifies(modSourceTags, targetTags))
+                {
+                    continue;
+                }
+
                 switch (mod.Operation)
                 {
                     case GameplayModifierOperation.AddBase:
@@ -228,7 +288,9 @@ namespace Core.AbilitySystem.Effect
 
                 if (modDef.ToResolvedAttribute() == attributeHandle)
                 {
-                    _mods[modIndex] = new Mod(activeEffect.Handle, modDef.Operation, gameplayEffectSpec.Modifiers[modIndex].EvaluatedMagnitude);
+                    TagContainerAggregator capturedSourceTags = gameplayEffectSpec.CapturedSourceTags;
+                    GameplayTagContainer effectSourceTags = capturedSourceTags.GetActorTags();
+                    _mods[modIndex] = new Mod(activeEffect.Handle, modDef.Operation, gameplayEffectSpec.Modifiers[modIndex].EvaluatedMagnitude, modDef.SourceTags, modDef.TargetTags, effectSourceTags);
                 }
             }
 
