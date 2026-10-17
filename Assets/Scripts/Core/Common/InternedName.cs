@@ -9,9 +9,12 @@ namespace Core.Common
     {
         [SerializeField] private string name;
 
+        [NonSerialized] private int _hash;
+
         public InternedName(string inName)
         {
             name = Intern(inName);
+            _hash = ComputeHash(name);
         }
 
         public bool Equals(InternedName other)
@@ -27,7 +30,7 @@ namespace Core.Common
 
         public override int GetHashCode()
         {
-            return name != null ? name.GetHashCode() : 0;
+            return _hash;
         }
 
         public override string ToString()
@@ -35,10 +38,16 @@ namespace Core.Common
             return name;
         }
 
-        // Unity 역직렬화는 생성자를 우회하고 필드를 직접 채우므로, 로드 직후 다시 인터닝해야 참조 비교가 성립한다.
+        public bool IsNullOrEmpty()
+        {
+            return string.IsNullOrEmpty(name);
+        }
+
+        // Unity 역직렬화는 생성자를 우회하고 필드를 직접 채우므로, 로드 직후 다시 인터닝해야 참조 비교가 성립하고 해시도 채워진다.
         void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
             name = Intern(name);
+            _hash = ComputeHash(name);
         }
 
         void ISerializationCallbackReceiver.OnBeforeSerialize()
@@ -48,6 +57,12 @@ namespace Core.Common
         private static string Intern(string inName)
         {
             return string.IsNullOrEmpty(inName) ? null : string.Intern(inName);
+        }
+
+        // default(InternedName)의 해시(0)와 맞춰 null은 0으로 둔다.
+        private static int ComputeHash(string internedName)
+        {
+            return internedName != null ? internedName.GetHashCode() : 0;
         }
     }
 }
