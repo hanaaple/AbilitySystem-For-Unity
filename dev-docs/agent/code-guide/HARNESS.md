@@ -18,16 +18,19 @@
 
 ## 연쇄 호출
 
-- 타입을 건너뛰는 연쇄 호출 금지. 중간 결과를 지역 변수로 받아 한 단계씩 접근한다.
-- LINQ 외 fluent 메서드 체인은 쓰지 않는다. (LINQ 쿼리 체인의 줄바꿈은 CODE_CONVENTION '긴 줄' 참고.)
+- 다른 객체로 건너가며 파고드는 연쇄 호출 금지. 중간 결과를 지역 변수로 받아 한 단계씩 접근한다.
+- LINQ·빌더처럼 한 대상을 이어서 조립·변환하는 fluent 체인은 허용한다. (줄바꿈은 CODE_CONVENTION '긴 줄' 참고.)
 
 ```csharp
-// ❌ 타입을 건너뛰는 연쇄 호출
+// ❌ 다른 객체로 건너가며 파고드는 연쇄 호출
 var ammo = player.GetGameObject().GetWeapon().GetAmmo();
 
 // ✅ 한 단계씩 지역 변수로
 var weapon = player.GetWeapon();
 var ammo = weapon.GetAmmo();
+
+// ✅ 허용 — 한 대상을 이어서 조립하는 fluent 체인(LINQ·빌더)
+var expr = new GameplayTagQueryExpression().AnyTagsMatch().AddTags(tags);
 ```
 
 ---
@@ -38,7 +41,8 @@ var ammo = weapon.GetAmmo();
 
 - 이름이 먼저. 주석은 이름이 담을 수 없는 "왜"에만.
 - "왜"를 적고 "무엇"은 적지 않는다.
-- 외부 포인터(`→D8`·`(UE: FAggregator)`) 금지. 결정 근거·설계 이력은 `dev-docs/`에 둔다.
+- 외부 포인터(`→D8`·본문 속 `(UE: FAggregator)`) 금지. 결정 근거·설계 이력은 `dev-docs/`에 둔다.
+  - 예외 — UE 원본에 대응하는 함수는 XML 주석에 `/// <remarks>UE: 클래스::함수</remarks>` 한 줄로 대응 UE 함수를 적는다. 대응 관계만 적고, 근거·UE와의 차이는 `dev-docs/`에 둔다.
 - 변하기 쉬운 값(임계값·경계)을 주석에 복제하지 않는다.
 - "여길 바꾸면 저기도"인 상호 의존은 주석으로 명시한다.
 - 동작 명세는 테스트로 고정한다.
@@ -64,4 +68,5 @@ public void TakeDamage(int damage) { }
 
 | 문서 | 내용 |
 |---|---|
-| [`editor-drawer-guide.md`](editor-drawer-guide.md) | 에디터 커스텀 인스펙터·PropertyDrawer 실전 규칙·안티패턴·재사용 유틸. 새 드로어 전에 먼저 본다. |
+| [`editor-drawer-guide.md`](editor-drawer-guide.md) | 에디터 GUI 실전 규칙·안티패턴·재사용 유틸. **에디터 GUI 코드(PropertyDrawer·CustomEditor·EditorWindow)를 새로 짜거나 고치기 전에** 먼저 본다 — 기존 파일 수정도 포함. |
+| [`editor-ui-readability-guide.md`](editor-ui-readability-guide.md) | 에디터 UI(IMGUI) 가독성 진단표·패턴·구현 주의·적용 절차. 중첩·목록 UI를 만들거나 유저가 가독성을 지적하면 먼저 본다. |
