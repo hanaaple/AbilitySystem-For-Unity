@@ -9,6 +9,7 @@ namespace Core.AbilitySystem.Tag
         /// <summary>Resources 기준 고정 경로. 이 경로의 에셋 하나만 정의 출처로 삼아 로드 지점을 단일화한다.</summary>
         public const string ResourcesPath = "AbilitySystem/GameplayTagRegistry";
 
+        // 태그 관리 UI가 이 직렬화 필드 이름으로 편집한다. 이름을 바꾸면 GameplayTagRegistryEditing도 바꿔야 한다.
         [SerializeField] private List<string> _tags = new();
 
         public IReadOnlyList<string> Tags => _tags;
