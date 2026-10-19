@@ -12,6 +12,7 @@
 ## 빌드·검증
 
 이 프로젝트에는 CLI 빌드·테스트가 없다. 에이전트는 코드 정합성(참조·시그니처·구조)까지만 책임진다.
+컴파일 에러만은 Unity 없이 확인할 수 있다 — 방법: `dev-docs/project/dev-tools.md` '컴파일 확인'.
 
 ## 개발 방향
 
@@ -49,7 +50,9 @@
 - 아키텍처 — `dev-docs/project/architecture` (overview.md가 인덱스). 시스템 구조·설계를 개념·방향 중심으로 정리한 **에이전트·개발자·외부 공용** 문서. 작성 규약은 `architecture/HARNESS.md`.
 - 개발 도구 설정 — `dev-docs/project/dev-tools.md`
 - 커밋·PR 등 git 관련 규약 — `dev-docs/project/git-convention.md`
-- 세션 프로토콜 — `dev-docs/agent/session-protocol.md`.
+- 세션 프로토콜(세션 시작·종료) — `dev-docs/agent/session-protocol.md`.
+- 대화 규율(답변 방식) — `dev-docs/agent/conversation.md`. 유저에게 답하기 전.
+- 작업 착수·범위 — `dev-docs/agent/work-scope.md`. 무엇을 얼마나 할지 정할 때.
 - wiki 편집 규약 — `wiki/HARNESS.md`.
 - 보관(비활성 비-GAS) — `dev-docs/_parked/` (README: `dev-docs/_parked/README.md`).
 

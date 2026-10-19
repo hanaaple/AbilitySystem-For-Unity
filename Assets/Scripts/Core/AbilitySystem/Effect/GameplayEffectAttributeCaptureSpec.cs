@@ -59,8 +59,12 @@ namespace Core.AbilitySystem.Effect
             }
         }
 
-        /// <summary>캡처값을 조회한다 — snapshot이면 고정값, 아니면 조회 시점 라이브값. 무효(<see cref="IsValid"/>=false)면 false.</summary>
-        public bool TryGetCapturedValue(AttributeCaptureValueType valueType, out float value)
+        /// <summary>
+        /// 캡처값을 조회한다 — snapshot이면 고정값, 아니면 조회 시점 라이브값. 무효(<see cref="IsValid"/>=false)면 false.
+        /// CurrentValue는 <paramref name="parameters"/>의 태그로 mod 자격을 판정해 계산한다. BaseValue는 mod와 무관해 쓰지 않는다.
+        /// </summary>
+        /// <remarks>UE: FGameplayEffectAttributeCaptureSpec::AttemptCalculateAttributeMagnitude / AttemptCalculateAttributeBaseValue</remarks>
+        public bool TryGetCapturedValue(AttributeCaptureValueType valueType, AggregatorEvaluateParameters parameters, out float value)
         {
             if (!_isValid)
             {
@@ -70,7 +74,20 @@ namespace Core.AbilitySystem.Effect
 
             value = valueType == AttributeCaptureValueType.BaseValue
                 ? _capturedAttributeAggregator.GetBaseValue()
-                : _capturedAttributeAggregator.Evaluate();
+                : _capturedAttributeAggregator.Evaluate(parameters);
+            return true;
+        }
+
+        /// <summary>캡처한 aggregator의 base·mod를 <paramref name="outAggregatorSnapshot"/>에 복사한다. 무효면 false.</summary>
+        /// <remarks>UE: FGameplayEffectAttributeCaptureSpec::AttemptGetAttributeAggregatorSnapshot</remarks>
+        public bool AttemptGetAttributeAggregatorSnapshot(AttributeAggregator outAggregatorSnapshot)
+        {
+            if (!_isValid)
+            {
+                return false;
+            }
+
+            outAggregatorSnapshot.TakeSnapshotOf(_capturedAttributeAggregator);
             return true;
         }
 

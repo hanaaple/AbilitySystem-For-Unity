@@ -22,36 +22,181 @@ MonoBehaviour:
         Culture=neutral, PublicKeyToken=null
       fieldName: speed
     operation: 0
-    magnitudeCalculationType: 1
-    magnitude: -5
-    attributeBased:
-      backingAttribute:
-        captureSource: 0
-        attribute:
-          attributeSetTypeName: Character.CombatAttributeSet, Assembly-CSharp, Version=0.0.0.0,
-            Culture=neutral, PublicKeyToken=null
-          fieldName: damage
-        snapshot: 0
-      captureValueType: 1
-      coefficient: 1
-      preMultiplyAdditive: 0
-      postMultiplyAdditive: 0
+    modifierMagnitude:
+      magnitudeCalculationType: 1
+      scalableFloatMagnitude: -5
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: Character.CombatAttributeSet, Assembly-CSharp,
+              Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+            fieldName: damage
+          snapshot: 0
+        captureValueType: 1
+        coefficient: 1
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
+    sourceTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 05030200000005010700
+        _userDescription: 
+        _autoDescription: ' ALL(  ALL( ), undefined,  ALL(  ANY EXACT( ) ) )'
+    targetTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
   - attribute:
       attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: speed
     operation: 0
-    magnitudeCalculationType: 0
-    magnitude: -5
-    attributeBased:
-      backingAttribute:
-        captureSource: 0
+    modifierMagnitude:
+      magnitudeCalculationType: 0
+      scalableFloatMagnitude: -5
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: 
+            fieldName: 
+          snapshot: 0
+        captureValueType: 0
+        coefficient: 0
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
+    sourceTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+    targetTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+  executions:
+  - calculationClass: Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+    calculationModifiers:
+    - capturedAttribute:
+        captureSource: 1
         attribute:
-          attributeSetTypeName:
-          fieldName:
-        snapshot: 0
-      captureValueType: 0
-      coefficient: 0
-      preMultiplyAdditive: 0
-      postMultiplyAdditive: 0
-  executions: []
+          attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
+            Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+          fieldName: health
+        snapshot: 1
+      modifierOp: 0
+      modifierMagnitude:
+        magnitudeCalculationType: 0
+        scalableFloatMagnitude: 0
+        attributeBasedMagnitude:
+          backingAttribute:
+            captureSource: 0
+            attribute:
+              attributeSetTypeName: 
+              fieldName: 
+            snapshot: 0
+          captureValueType: 0
+          coefficient: 1
+          preMultiplyAdditive: 0
+          postMultiplyAdditive: 0
+      sourceTags:
+        _requireTags:
+          _gameplayTags: []
+        _ignoreTags:
+          _gameplayTags: []
+        _tagQuery:
+          _tokenStreamVersion: 0
+          _tagDictionary: []
+          _queryTokenStream: 
+          _userDescription: 
+          _autoDescription: 
+      targetTags:
+        _requireTags:
+          _gameplayTags: []
+        _ignoreTags:
+          _gameplayTags: []
+        _tagQuery:
+          _tokenStreamVersion: 0
+          _tagDictionary: []
+          _queryTokenStream: 
+          _userDescription: 
+          _autoDescription: 
+  gameplayEffectComponents:
+  - rid: 8482666675861979471
+  - rid: 8482666675861979384
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666675861979384
+      type: {class: TargetTagRequirementsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Assembly-CSharp}
+      data:
+        applicationTagRequirements:
+          _requireTags:
+            _gameplayTags: []
+          _ignoreTags:
+            _gameplayTags: []
+          _tagQuery:
+            _tokenStreamVersion: 0
+            _tagDictionary: []
+            _queryTokenStream: 
+            _userDescription: 
+            _autoDescription: 
+        ongoingTagRequirements:
+          _requireTags:
+            _gameplayTags: []
+          _ignoreTags:
+            _gameplayTags: []
+          _tagQuery:
+            _tokenStreamVersion: 0
+            _tagDictionary: []
+            _queryTokenStream: 
+            _userDescription: 
+            _autoDescription: 
+        removalTagRequirements:
+          _requireTags:
+            _gameplayTags: []
+          _ignoreTags:
+            _gameplayTags: []
+          _tagQuery:
+            _tokenStreamVersion: 0
+            _tagDictionary: []
+            _queryTokenStream: 
+            _userDescription: 
+            _autoDescription: 
+    - rid: 8482666675861979471
+      type: {class: AssetTagsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Assembly-CSharp}
+      data:
+        inheritableAssetTags:
+          _combinedTags:
+            _gameplayTags: []
+          _added:
+            _gameplayTags: []
+          _removed:
+            _gameplayTags: []
