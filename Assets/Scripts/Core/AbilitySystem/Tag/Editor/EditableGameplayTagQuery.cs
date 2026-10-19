@@ -10,6 +10,7 @@ namespace Core.AbilitySystem.Tag.Editor
     public sealed class EditableGameplayTagQuery : ScriptableObject
     {
         // 질의 편집 창이 이 직렬화 필드 이름으로 그린다. 이름을 바꾸면 GameplayTagQueryEditorWindow도 바꿔야 한다.
+        [Tooltip("비우면 식에서 만든 설명을 쓴다.")]
         [SerializeField] private string _userDescription;
         [SerializeReference] private EditableGameplayTagQueryExpression _rootExpression;
 

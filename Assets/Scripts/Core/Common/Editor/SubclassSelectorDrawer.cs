@@ -60,8 +60,83 @@ namespace Core.Common.Editor
             }
         }
 
+        /// <summary>
+        /// [SerializeReference] 필드용 선택기 — 지금 인스턴스의 타입을 <see cref="DrawSelector"/>와 같은 스크립트 필드로 보이고, 오른쪽 풀다운으로 다른 구체 서브클래스를 고르면 새 인스턴스로 바꾼다(값은 새로 시작).
+        /// <paramref name="excluded"/> 타입은 후보에서 뺀다(예: 같은 목록의 다른 요소가 이미 쓰는 타입). None은 없다 — 지우기는 목록의 − 로 한다.
+        /// </summary>
+        public static void DrawManagedReferenceSelector(Rect position, SerializedProperty property, Type baseType, IReadOnlyCollection<Type> excluded, GUIContent label)
+        {
+            position = EditorGUI.PrefixLabel(position, label);
+
+            object value = property.managedReferenceValue;
+            Type current = value?.GetType();
+            string currentName = current != null ? current.AssemblyQualifiedName
+                : string.IsNullOrEmpty(property.managedReferenceFullTypename) ? string.Empty : property.managedReferenceFullTypename;
+
+            Rect scriptRect = new Rect(position.x, position.y, position.width - DropdownWidth - Gap, position.height);
+            Rect dropdownRect = new Rect(position.xMax - DropdownWidth, position.y, DropdownWidth, position.height);
+
+            DrawScriptField(scriptRect, current, currentName);
+
+            if (EditorGUI.DropdownButton(dropdownRect, GUIContent.none, FocusType.Keyboard, EditorStyles.miniPullDown))
+            {
+                Rect popupRect = position;
+                if (popupRect.width > SubclassAdvancedDropdown.MinWidth)
+                {
+                    popupRect.width = SubclassAdvancedDropdown.MinWidth;
+                }
+
+                // SerializedProperty는 콜백 시점에 무효화될 수 있어 serializedObject + path로 재조회한다.
+                SerializedObject so = property.serializedObject;
+                string path = property.propertyPath;
+                IReadOnlyList<Type> types = EditorTypeUtility.GetConcreteSubclasses(baseType)
+                    .Where(type => type == current || excluded == null || !excluded.Contains(type))
+                    .ToList();
+
+                var dropdown = new SubclassAdvancedDropdown(
+                    ObjectNames.NicifyVariableName(baseType.Name), types, includeNone: false,
+                    type => ReplaceManagedReference(so, path, type), onNewScript: null, emptyMessage: "선택 가능한 타입 없음", new AdvancedDropdownState());
+                dropdown.Show(popupRect);
+            }
+        }
+
+        private static void ReplaceManagedReference(SerializedObject so, string path, Type type)
+        {
+            so.Update();
+            SerializedProperty property = so.FindProperty(path);
+            if (property == null || type == null || property.managedReferenceValue?.GetType() == type)
+            {
+                return;
+            }
+
+            property.managedReferenceValue = Activator.CreateInstance(type);
+            so.ApplyModifiedProperties();
+        }
+
         // 선택된 런타임 타입의 소스 스크립트를 오브젝트 필드처럼 그린다.
         // 단일 클릭 → Project 하이라이트(ping), 더블 클릭 → 스크립트 열기. 오브젝트 참조 필드의 UX를 타입 문자열에 흉내낸다.
+        // 아이콘을 포함한 내용이 rect에 들어가도록 text 끝을 "…"로 줄인다. 다 들어가면 그대로.
+        // 아이콘은 원본 크기가 아니라 줄 높이에 맞춰 그려지므로 CalcSize에 넣지 않고 줄 높이만큼 자리로 뺀다.
+        private static string TruncateToFit(string text, Texture icon, Rect rect, GUIStyle style)
+        {
+            float textWidth = rect.width - (icon != null ? rect.height : 0f);
+            if (style.CalcSize(new GUIContent(text)).x <= textWidth)
+            {
+                return text;
+            }
+
+            for (int length = text.Length - 1; length > 0; length--)
+            {
+                string candidate = text.Substring(0, length).TrimEnd() + "…";
+                if (style.CalcSize(new GUIContent(candidate)).x <= textWidth)
+                {
+                    return candidate;
+                }
+            }
+
+            return "…";
+        }
+
         private static void DrawScriptField(Rect rect, Type current, string aqn)
         {
             MonoScript script = current != null ? EditorTypeUtility.FindScript(current) : null;
@@ -71,7 +146,10 @@ namespace Core.Common.Editor
                 : string.IsNullOrEmpty(aqn) ? "None" : "Missing";
 
             Texture icon = script != null ? AssetPreview.GetMiniThumbnail(script) : null;
-            var content = new GUIContent(display, icon);
+
+            // 칸보다 긴 내용은 IMGUI가 아이콘째 밀어 왼쪽부터 잘린다. 이름 끝을 줄여 아이콘·앞부분을 남기고, 전체 이름은 툴팁으로 둔다
+            string shown = TruncateToFit(display, icon, rect, EditorStyles.objectField);
+            var content = new GUIContent(shown, icon, display);
 
             // 스크립트를 못 찾으면(None·Missing·파일명≠클래스명) ping/open 대상이 없으므로 비활성 표시.
             // 시각만 오브젝트 필드 스타일 박스로 그린다.

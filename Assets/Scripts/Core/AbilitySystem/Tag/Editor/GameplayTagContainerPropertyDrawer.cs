@@ -42,6 +42,10 @@ namespace Core.AbilitySystem.Tag.Editor
             label = EditorGUI.BeginProperty(position, label, property);
             int indentLevel = EditorGUI.indentLevel;
 
+            // 값이 다른 오브젝트를 함께 고르면 합집합 칩(일부에만 있으면 흐리게)을 직접 보이므로, Unity가 칩·▾ 글자를 '—'로 바꾸지 않게 끈다
+            bool showMixedValue = EditorGUI.showMixedValue;
+            EditorGUI.showMixedValue = false;
+
             // 피커를 여는 경로가 GUI를 중단(ExitGUI)할 수 있어 들여쓰기·프로퍼티 스택을 반드시 되돌린다
             try
             {
@@ -54,6 +58,7 @@ namespace Core.AbilitySystem.Tag.Editor
             }
             finally
             {
+                EditorGUI.showMixedValue = showMixedValue;
                 EditorGUI.indentLevel = indentLevel;
                 EditorGUI.EndProperty();
             }
