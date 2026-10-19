@@ -3,6 +3,166 @@
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다. 시간순 "판단의 이야기"로 쓴다.
 > (주의: 아래 기존 두 항목은 오름차순이나, 규약은 '최신이 위로'. 이 항목부터 최신을 위에 둔다.)
 
+## 2026-10-19 — 태그 연동 PlayMode 테스트
+> 유저: "Test Code 만들어서 Test해"
+- 에디터 셀프체크(G)는 한 번에 호출해 보는 것이라 시간에 걸린 동작이 빠져 있었다 → 새 `Test/TagRequirementsPlayModeTest.cs`(런타임 MonoBehaviour, GE는 리플렉션으로 메모리에서). 실제 프레임(ASC.Update → 컨테이너 Tick)에서: 부여 GE 만료 → 의존 GE 꺼짐, 꺼진 주기 GE 실행 멈춤·재개, Tick 중 Removal 제거, 꺼진 Duration GE 만료. 저장 안 하는 임시 씬에서 MCP로 Play → 9/0, 에러 0. tests.md §6-2.
+
+## 2026-10-19 — Target Tag Requirements 판정 (현재 목표 5)
+> 유저: "Target Tag Requirements도 해"
+- **UE 대조(5.6 `TargetTagRequirementsGameplayEffectComponent.cpp` 전체).** `CanGameplayEffectApply`(소유 태그로 Application 충족 + Removal 미충족), `OnActiveGameplayEffectAdded`(Ongoing·Removal 조건의 Ignore·Require·Query 태그마다 `RegisterGameplayTagEvent(NewOrRemoved)`, 구독 목록은 `EventSet.OnEffectRemoved`에 건 콜백이 들고 있다가 제거 때 해제, 반환 = Ongoing 충족), `OnTagChanged`(Removal 충족이면 제거, 아니면 Ongoing으로 `SetActiveGameplayEffectInhibit`), `HaveRemovalRequirementsBeenMet`.
+- **재료 추가(UE 이름 그대로).** `Effect/ActiveGameplayEffectEvents`(`OnEffectRemoved`만 — 지금 쓰는 것만, UE의 OnInhibitionChanged·OnStackChanged·OnTimeChanged는 없음), `ActiveGameplayEffect.EventSet`, 컨테이너 `Owner`·`GetActiveGameplayEffect`, ASC `GetActiveGameplayEffect`·`GetActiveEffectEventSet`. 컨테이너 제거는 효과를 거둔 뒤 `OnEffectRemoved`를 알린다(UE `InternalOnActiveGameplayEffectRemoved` 순서).
+- **UE와 다른 것.** 네트워크 권한·예측 플래그 분기(`bNetAuthority`·`AllowClientSideRemoval`)는 없음 — 프로젝트 전체 미채택. `IsDataValid`(Instant인데 Ongoing 조건) 에디터 오류는 검증 체계가 없어 Granted Tags와 같이 유저 결정 대기.
+- **확인.** 셀프체크 G 9개(Application Require·Ignore, Removal로 적용 막기, Ongoing 켜고 끄기, 제거 뒤 구독 해제, 적용 중 Removal 제거, 다른 GE의 Granted Tag로 Ongoing, TagQuery 구독) → GE Component 61/0, Aggregator 55/0, Modifier Tag 65/0, Calculation Modifier 18/0, 구독 해제 실패 로그 0.
+
+## 2026-10-19 — Granted Tags Component (현재 목표 3)
+> 유저: "UTargetTagsGameplayEffectComponent 구현 들어가. 이번에는 해당 Comopnent만 구현하면 끝인가?"
+- **답.** 거의 — 부여·회수 경로(`Add/RemoveActiveGameplayEffectGrantedTagsAndModifiers`의 `UpdateTagMap(def.GetGrantedTags(), ±1)`, inhibit 포함)는 10-18·10-19에 이미 UE 위치(`GameplayEffect.cpp:4373`·`:4670`)대로 있었다. 빠진 건 캐시를 채우는 Component.
+- **구현.** `GameplayEffectComponents/TargetTagsGameplayEffectComponent` — UE와 같은 함수(`GetConfiguredTargetTagChanges`·`OnGameplayEffectChanged`·`SetAndApplyTargetTagChanges`·`ApplyTargetTagChanges`), `InheritedTagContainer`·부모 없음(→D30 그대로), 설명은 필드 `[Tooltip]`. GE `CachedGrantedTags`(internal), `Spec.GetAllGrantedTags`(UE `:2174-2181`, Dynamic 태그는 TODO). 인스펙터는 공용 Component 드로어가 그려 전용 드로어 없음.
+- **확인.** 셀프체크 F 9개(부여·회수, 같은 태그 개수 누적 2→1→0, 자식 태그의 부모 매칭, Instant는 안 줌, 주기 GE, 꺼진 GE) → GE Component 52/0, Aggregator 55/0, Modifier Tag 65/0, Calculation Modifier 18/0.
+- **남김.** UE `IsDataValid`의 "Instant GE에 Granted Tags" 에디터 오류 — 데이터 검증 체계가 없어 유저에게 물음.
+
+## 2026-10-19 — Tag 에디터 하드코딩 점검 (라벨·툴팁 → 필드 Attribute)
+> 유저: "Tag쪽 에디터도 확인해봐" → 물음에 "하드코딩·규격 점검"
+- **점검 결과.** 필드 드로어 3개(`GameplayTag`·`GameplayTagContainer`·`GameplayTagQuery`)는 넘겨받은 `label`을 그대로 써 규칙에 맞음. 라벨만 바꾸는 전용 드로어 없음. 버튼·메뉴 문구(OK·Cancel·+ Expression·Manage Gameplay Tags… 등)와 섹션 제목("Tags (N)")은 필드 라벨이 아니라 그대로 둠.
+- **고친 것.** Query 편집기 창의 `GUIContent` 상수 3개(User Description+툴팁, Root Expression, Tags) — 필드 이름과 같은 글자라 지우고 `property.displayName`·`tooltip`을 읽게, 설명은 `EditableGameplayTagQuery._userDescription`의 `[Tooltip]`으로. 설명이 XML 주석에만 있어 인스펙터 툴팁이 안 뜨던 필드에 `[Tooltip]`: `GameplayTagRequirements`(Require·Ignore·Query), `GameplayModifier`·`GameplayEffectExecutionScopedModifierInfo`의 Source/Target Tags.
+- **확인.** 컴파일 통과, Unity 리로드 뒤 콘솔 에러 0, SerializedProperty로 라벨(전과 같은 글자)·툴팁이 Attribute에서 읽힘. 창 화면은 안 봄(라벨 글자가 같아 모양 변화 없음).
+
+## 2026-10-19 — GE 인스펙터 Component 목록 (현재 목표 4)
+> 유저: "GE Component Editor 쪽 연결해", 이어서 "Add 뿐 아니라 drop down으로 Component 선택하는거 넣어", "각 Component 별 Draw하는건 하드코딩 하지 말고 개별로 Drawer해서 그리도록", "GE Asset Inspector Component, Modifier, Execution 순으로", "억지로 늘린거나 단순 Tooltip 같은거는 가능하면 Attribute 자체적으로 해결하도록, Editor 하드 코딩을 줄이고 Attribute 쪽으로 유도해"
+- **목록.** `GameplayEffectAssetDrawer`에 Components(`[SerializeReference]`) — Modifiers·Executions와 같은 틀(머리 줄 접기·개수, 요소 머리 줄 요약, 구분선). Add는 검색형 타입 드롭다운(`TypeChoiceList`, ItemData 모듈 목록과 같은 `managedReferenceValue` 방식). 칸마다 "Component Class" 줄 = 공용 `SubclassSelectorDrawer.DrawManagedReferenceSelector`(새 함수 — Execution의 Calculation Class 줄과 같은 스크립트 필드 + 풀다운, 고르면 새 인스턴스). 같은 종류는 하나만(에이전트 판단 — GE가 Component를 종류로 찾는다).
+- **본문 드로어.** `GameplayEffectComponentDrawer`(useForChildren) — 필드를 선언 순서로, 라벨·툴팁은 필드 이름·`[Tooltip]`. 처음엔 Asset Tags·Target Tag Requirements 전용 드로어를 만들었으나 라벨·툴팁만 덧붙이는 것이라 유저 지시로 지웠다. `InheritedTagContainerDrawer`는 결과 태그를 읽기 전용으로 두는 동작만 남기고 설명은 필드 `[Tooltip]`으로(UE 표시 이름은 툴팁에). GE Duration 영역 툴팁도 필드 `[Tooltip]`을 읽게. 규칙은 editor-drawer-guide '3. DO'에.
+- **순서.** Duration → Components → Modifiers → Executions.
+- **확인.** 런타임·에디터 컴파일 통과. 임시 GE(GE_HealthBoost 사본)에 인스펙터와 같은 경로(요소 삽입 → `managedReferenceValue`)로 Asset Tags·Target Tag Requirements를 넣고 Apply → OnValidate로 `GetAssetTags()` = `Test.GEComponent.Other`, 두 요소 참조 id 다름. 화면 캡처: 순서·Component Class 줄·값 열 정렬·필드 이름 라벨. 드롭다운으로 종류 바꾸기는 클릭이 필요해 직접 확인 못 함. 임시 에셋 휴지통, 선택 되돌림.
+
+## 2026-10-19 — GE 인스펙터 접기 + Calc Type 구현 예정 2종 (gameplay-effect 소관)
+> 유저: "알아서 정리하고 Editor Modifier Magnitude 접을수 있게 해", "MagnitudeCalculationType에 따라 하위 field들 접을수 있게 해"(선택: `AttributeBasedMagnitude`), "Set By Caller, Custom Calculation Class 넣어두고 그거를 선택한 경우 구현 예정으로 뜨게 해"
+
+- **Magnitude 섹션 접기.** `GameplayEffectAssetDrawer` — 제목을 볼드 Foldout(`EditorDrawUtility.BoldFoldoutStyle` 재사용)으로, 상태는 Calc Type 프로퍼티의 `isExpanded`(요소 접힘과 같은 방식). 접으면 `Modifier Magnitude — Scalable Float -5`처럼 요약. 높이·그리기가 같은 `GetMagnitudeSectionHeight`를 쓴다.
+- **AttributeBased 하위 묶음 접기.** `AttributeBasedMagnitudeDrawer` — 첫 줄 `Attribute Based` Foldout(상태는 그 프로퍼티 `isExpanded`), 접으면 `Source health × 0.5` 요약. 하위 행은 Tags 접기처럼 밀고 라벨 폭을 줄여 값 열을 맞춤. ScalableFloat은 값 한 줄이라 그대로.
+- **기본값.** 기존 modifier는 둘 다 접힘으로 시작(isExpanded 기본 false), 새로 추가한 modifier는 펼침 — 에이전트 판단.
+- **Calc Type 2종.** `MagnitudeCalculationType`에 UE `EGameplayEffectMagnitudeCalculation` 순서대로 `CustomCalculationClass`·`SetByCaller`를 뒤에 붙임(기존 0·1 값 유지). 인스펙터는 값 자리에 "구현 예정" HelpBox, 접힘 요약에 "(구현 예정)". 런타임 `GameplayModifier.AttemptCalculateMagnitude`는 이 둘을 계산 실패로 돌려 Spec이 경고를 남기고 0을 쓴다(조용한 0 방지, 버그 성격이라 묻지 않음). 그 switch의 `{}` 누락(규약)도 함께 맞춤.
+- **확인.** 런타임·에디터 컴파일 통과. 화면: 접기 추가 전 펼친 상태, 접힌 Magnitude 요약 2종(유저 에셋 화면). 캡처 중 유저가 `GE_EquipSpeedDown`을 선택하고 0번 Calc Type을 Custom Calculation Class로 바꿔 둔 상태였다(디스크는 AttributeBased) — 그 뒤로 Unity 조작을 멈춤. 펼친 AttributeBased 묶음·HelpBox 화면은 못 봄.
+- **정리.** 임시 에셋 `_McpCheck` 휴지통, NOW.md를 재개용으로 줄임(경위는 이 worklog·decisions·progress에 있음).
+
+## 2026-10-19 — Asset Tags Component (→D30)
+> 유저: "GE Component Asset Tags Component구현하자. UE에 맞춰서"
+
+- **경고 정리 먼저.** 유저 "modifier self check에 warning은 괜찮나" — D-4 태그 경고는 UE도 낸다(`GameplayEffectTypes.cpp:543`). `[GESpec] … Calculation Failed` 4줄은 `GameplayEffectSpec.Initialize`가 생성 때 magnitude를 계산해서였고 UE는 안 한다 → 호출 삭제(gameplay-effect progress에 사유). 셀프체크 4종 통과.
+- **물은 것 세 가지.** ① UE Asset Tags는 `FInheritedTagContainer`(부모 = 블루프린트 CDO 아키타입)인데 SO 에셋엔 부모가 없다 → 유저 "정확히 뭐가 문젠데" → UE 원문(`GameplayEffect.cpp:6046-6075`)으로 "부모 결과에 쌓는(Override 아님) 구조"를 설명 → "부모 없이 가자 일단"(D30). ② Component가 GE 캐시에 쓰는 길 → "UE에 따라 당연히 추가해야지" → `GetOwner()`(직렬화 안 함, GE가 `OnGameplayEffectChanged` 때 `SetOwner`). ③ 인스펙터 목록 → "나중에".
+- **구현.** `Effect/InheritedTagContainer.cs`(UE 함수 4개 그대로), `AssetTagsGameplayEffectComponent`(`OnGameplayEffectChanged` → `SetAndApplyAssetTagChanges` → 부모 null로 Combined 계산 → `ApplyTo(owner.CachedAssetTags)`), GE `CachedAssetTags`(internal, UE friend 접근 대응), Spec 생성 때 Source Spec 태그에 Asset Tags(UE `:1627`, `CaptureDataFromSource` 앞), `Spec.GetAllAssetTags`(Dynamic 태그는 아직 없음).
+- **폴더.** 유저 "GameplayEffectComponent 폴더 만들어서 그쪽으로 해" → "AbilitySystem/GamepalyEffectComponents". `Core/AbilitySystem/GameplayEffectComponents/`(오타는 고침)로 구체 Component 둘(Asset Tags·Target Tag Requirements)을 옮김. 단수형은 네임스페이스가 같은 위치의 `GameplayEffectComponent` 클래스와 겹쳐 쓸 수 없다. 베이스·`InheritedTagContainer`는 UE처럼 폴더 밖(`Effect/`)에 둠(에이전트 판단). 옮긴 Component를 직렬화한 에셋은 없었다(grep).
+- **확인.** 셀프체크 E 16개(상속 계산·ApplyTo·캐시·Spec 태그·UE 판정 경로: Instant는 액터 태그만, 캡처 평가는 합친 태그) → GE Component 43/0, Aggregator 55/0, Modifier Tag 65/0. 같은 날 PlayMode도 다시 돌려 14/0.
+
+## 2026-10-19 — GE Component 호출 골격 (구체 Component 없이)
+> 유저: "GameplayEffectComponent 구현하자. Concrete Class 구현말고 추상화된 상태에서 구현만"
+
+- **UE 대조(5.6).** GE가 Component를 도는 함수 4개(`UGameplayEffect::CanApply`·`OnAddedToActiveContainer`·`OnExecuted`·`OnApplied`, `GameplayEffect.cpp:881-935`)와 호출 위치: `CanApply`는 ASC 적용 입구에서 Spec 복사 전(`AbilitySystemComponent.cpp:844`), `OnAddedToActiveContainer`는 `InternalOnActiveGameplayEffectAdded`(`GameplayEffect.cpp:4305`)에서 결과로 inhibit을 정함, `OnExecuted`는 `ExecuteActiveEffectsFrom` 끝(`:3224`), `OnApplied`는 Instant 실행 뒤·지속형 추가 뒤(`AbilitySystemComponent.cpp:957`).
+- **구현.** `GameplayEffectAsset`에 4개 함수(null 칸 건너뜀, `OnAddedToActiveContainer`는 UE처럼 false가 나와도 나머지를 모두 부름). 컨테이너에 `InternalOnActiveGameplayEffectAdded`·`SetActiveGameplayEffectInhibit`·`InternalExecutePeriodicGameplayEffect`, ASC에 같은 이름의 공개 래퍼. `ActiveGameplayEffect.IsInhibited`.
+- **inhibit을 같이 넣음(에이전트 판단, 유저 미확인).** `OnActiveGameplayEffectAdded`의 반환값이 GE를 끌지 정하는데 끄는 경로가 없으면 반환값이 쓸 데가 없다. UE대로 꺼지면 modifier·부여 태그를 거두고(`AbilitySystemComponent.cpp:307-315`), 주기 실행(`GameplayEffect.cpp:4467`)·magnitude 의존 갱신(`:3381`)을 건너뛰고, 제거 때 이미 꺼졌으면 거두지 않는다(`:4635`).
+- **UE와 다르게 둔 것(에이전트 판단, 유저 미확인).** `CanApply`·`OnApplied`는 ASC가 아니라 컨테이너의 `ApplyGameplayEffectSpec`에서 부른다 — 우리 컨테이너가 UE ASC 적용 함수와 컨테이너 적용 함수를 합친 형태라서. `CanApply`만 public, 알림 3개는 internal. `OnInhibitionChanged` 이벤트·PredictionKey는 넣지 않음.
+- **확인.** 오프라인 컴파일(런타임·에디터) 통과, Unity 리로드 뒤 Aggregator 55/0·Modifier Tag 65/0(Component를 가진 GE가 없어 동작은 같아야 함). PlayMode는 안 돌림.
+- **테스트(유저 "이벤트 함수들 UE와 같이 적절히 작동하는지 Test Code").** 새 `Test/Editor/GameplayEffectComponentSelfCheck.cs` — 호출을 기록하는 테스트 전용 Component로 호출 순서·인자·CanApply 차단·Added 결과에 따른 inhibit·켜고 끄기·꺼진 GE 제거·켜는 중 제거·꺼진 주기 GE를 UE 원문 위치와 대조(27개). MCP 실행 27/0, 경고·에러 0. 부여 태그는 Granted Tags Component가 없어 GE 캐시에 직접 넣음. 표·UE 근거 → tests.md §6.
+
+## 2026-10-19 — 셀프체크 재실행 + progress·tests 정리
+> 유저: "Test 해야될거 Test해", "그리고 필요없는 문서 내용은 없애고"(범위: gameplay-tag 문서 전체)
+
+- **셀프체크.** 2026-10-18 코드(D27·D28·D29)를 MCP로 확인: Modifier Tag 65/0(경고 5줄 정상)·Aggregator 55/0·PlayMode 14/0. PlayMode는 임시 씬 배선과 Play 진입을 한 MCP 명령에서 했더니 참조가 null이 돼 선행조건 실패 → 명령을 나눠 통과(코드 문제 아님).
+- **문서 정리.** progress: 낡은 "현재 상태"·"설계 합의 단계" 머리말을 현재 코드 기준으로 고침, 끝난 다음 작업(3·10·11·12)과 그 계획·경위를 지움(ID는 유지), 세부 TODO 2·8 ☑. tests: 끝난 확인의 긴 경위를 한 줄로, 해소된 §1-5·§1-6과 UE와 같아진 §1-7 행(1·6·7)을 지움, 맨 위에 남은 확인 목록. worklog(아카이브)·decisions(10-18 정리됨)는 그대로.
+
+## 2026-10-18 — 현재 목표 정리 + 1번: 태그만 주는 GE 허용
+> 유저: "지금 내 목표는 GameplayTag & GameplayEffect 쪽을 온전히 개발하고 넘어가는거야 … 일반적인 Tag 기능만 넣으면 돼", 범위 "음 그대로 가자. GE 관련으로는 나중으로 넘길거고 대소문자는 나중에", 보드 정리 요청 뒤 "1번 진행해".
+
+- **목표 범위.** UE 5.6 `GameplayEffectComponents/` 폴더(10개)와 남은 progress·보드 항목을 대조해 일반 기능 6개(태그만 주는 GE 허용·Asset Tags·Granted Tags·인스펙터 Component 목록·Target Tag Requirements 판정·태그로 활성 GE 찾기/제거)와 검증을 골랐다. SetByCaller·GE 스택·D3 대소문자·부가 Component는 미룸. 순서·항목은 TODO-BOARD '현재 목표'.
+- **실수.** 목록만 묻는 질문이었는데 1번 코드를 먼저 지웠다가 유저 지적("지금 당장 구현하라는 얘기 아니었어")으로 되돌렸다. 이후 "1번 진행해"로 다시 넣음.
+- **1번.** `ActiveGameplayEffectsContainer.ApplyGameplayEffectSpec`의 "Modifier·Execution 둘 다 없으면 Invalid" 블록 삭제 — UE `ApplyGameplayEffectSpecToSelf`엔 이런 거부가 없다(원문 확인: 거부는 `CanApply`(`AbilitySystemComponent.cpp:844`)와 modifier 어트리뷰트 무효(`:851-858`)뿐). Spec(`defs.Count` 0 → 빈 배열)·실행 루프·ASC 인스펙터(`(none)`)가 0개를 이미 처리해 다른 수정은 없다. 셀프체크 D-16(빈 Infinite GE 적용·제거). 컴파일 통과, 셀프체크 미실행.
+- **Source/Target 태그 판정 경로 UE 대조(유저 "모든 경로가 UE와 동일하게 작동하나? 확실히 확인해").** 원문(5.6)과 우리 코드를 경로별로 맞췄다.
+  - 같음: ① Instant/Periodic 실행 — 실행마다 Target 액터 태그 다시 읽기 → magnitude 재계산 → Source·Target **액터 태그**로 modifier 건너뛰기(`GameplayEffect.cpp:3081-3112`, cvar `UseModTagReqsOnAllGE` 기본 true `:77-78`) ② 적용 시 Target 태그 → Target 캡처 → magnitude(`:4153-4159`, Instant는 ASC `:907` 뒤 실행 경로) ③ 지속형 mod 등록에 정의의 조건 그대로(`:4350`)·라이브 갱신(`GameplayEffectAggregator.cpp:503-521`) ④ CurrentValue = 빈 평가 파라미터(`:3311-3360`) ⑤ AttributeBased 캡처 평가 = Spec의 **합친 태그**(`:983-984`), BaseValue 캡처는 태그 없음 ⑥ non-snapshot 재평가도 같은 계산(`:1196-1209`) ⑦ 판정 함수 `RequirementsMet`·`IsEmpty`(`GameplayEffectTypes.cpp:873-885`)와 빈 컨테이너 `HasAll`=true·`HasAny`=false ⑧ Source 액터 태그는 Spec 생성 때(`:1774-1779`).
+  - 다름(지금 결과는 같음): Spec 생성 때 GE Asset 태그를 Spec 태그에 넣는 줄(`:1627`)이 없다 — Asset 태그가 늘 비어 있어 차이 없음, 현재 목표 2에서 넣는다. AttributeBased `SourceTagFilter`/`TargetTagFilter`(`:985-986`) 없음 — UE 기본값이 비어 있어 같음, 미룬 부가 기능. Instigator 태그를 ASC에서만 얻음(UE는 액터 태그 인터페이스 먼저, tests.md §1-7 ④).
+  - 셀프체크로 고정(유저 "해당 내가 말한 거를 Test 코드로 만들어봐. Period > 0, period == 0 & durtiaon/infinite, instant 이렇게 3가지로. 확인은 나중에 할게"): `ModifierTagSelfCheck` E-1~E-15(tests.md §1-2 E). 쓰다가 찾은 함정 — 자신에게 거는 GE는 Instigator가 자신이라 **Spec을 만들 때의 소유 태그가 Source 태그**가 된다(UE도 Spec 생성 때 Instigator 태그 캡처, `:1774-1779`). "Source 빈 + 소유 태그 있음"을 보려면 Spec을 먼저 만들고 태그를 넣어야 해서 E-5·E-14를 그렇게 짰다. 컴파일 통과, 미실행. 기준 65/0.
+  - 다름(태그 판정 밖): UE는 modifier 어트리뷰트가 무효면 GE 적용 자체를 거부하고(`AbilitySystemComponent.cpp:851-858`) 지속형 mod는 Owner에 그 AttributeSet이 없으면 건너뛴다(`GameplayEffect.cpp:4337`). 우리는 무효 핸들만 건너뛴다.
+
+## 2026-10-18 — CurrentValue를 UE로 되돌리고 GE Component를 빈 껍데기로
+> 유저: "GameplayTag CurrentValue에 적용시 UE에 따라 Source/Target 검사하는거 Ongoing Tag Requirements 담당으로 넘기고 가보자. 기존에 선택 치우고". 질문(GE 구조·범위)에 "UE 처럼 GE Component 도입할거야", "셋 다", 이어서 "빈 거로 넣어둬".
+
+- **UE 원문 확인.** `OnAttributeAggregatorDirty`는 빈 평가 파라미터로 계산하고 소유 태그 조건은 GE 단위로 켜고 끈다고 적는다(`GameplayEffect.cpp:3311-3317`). 그 일은 `UTargetTagRequirementsGameplayEffectComponent`가 한다 — 적용 때 Application·Removal 검사(`.cpp:19-35`), 추가 때 Ongoing·Removal 태그마다 `NewOrRemoved` 구독(`:37-101`), 바뀌면 제거하거나 `SetActiveGameplayEffectInhibit`(`:118-150`). GE 쪽은 `UGameplayEffect::CanApply`·`OnAddedToActiveContainer`·`OnExecuted`·`OnApplied`가 Component를 돈다(`GameplayEffect.cpp:881-935`).
+- **걷어낸 것(→D28, D21·D23 되돌림).** `AttributeAggregator`: `EvaluateCurrentValue`, mod의 `EffectSourceTags`, `AddAggregatorMod`의 `effectSourceTags` 인자, `EvaluateQualificationForAllMods`의 `useEffectSourceTags`(이제 평가 파라미터 하나), `BroadcastOnDirty` 다시 private. `ActiveGameplayEffectsContainer`: CurrentValue 두 곳을 `Evaluate(default)`로, modifier Target 태그 구독(`RegisterModifierTargetTagEvents`·`OnModifierTargetTagChanged`·`ModifierTagEventBinding` 등) 삭제.
+- **넣은 것(→D29, 빈 껍데기).** 새 `GameplayEffectComponent`(UE와 같은 가상 함수 5개, 기본 true/빈 본문)·`TargetTagRequirementsGameplayEffectComponent`(Application·Ongoing·Removal 필드만). `GameplayEffectAsset`에 `[SerializeReference]` 목록, `OnGameplayEffectChanged`가 각 Component에 넘긴다. "빈 거로"는 `GetAssetTags` 때처럼 구조만으로 읽었다 — GE 쪽 호출·inhibit·인스펙터는 없다.
+- **셀프체크(`ModifierTagSelfCheck`).** B-7~B-9(CurrentValue 경로)·D-9~D-13(태그 변화 재계산·구독 수) 삭제. 기대값 변경: C-9 150→100, C-11 200→100, D-8 "태그를 넣어도 100". B-10은 GE별 Source 없이 문맥 하나로. 53 → 45개.
+- **검증.** 런타임·에디터 컴파일 통과(Unity 없이). 셀프체크는 Unity가 꺼져 있어 못 돌렸다.
+
+## 2026-10-18 — mod 자격 판정을 UE처럼 갱신·확인 두 단계로
+> 유저: "Source/Target Tag를 Qualifies를 Update하고 Check하는걸 만들어 UE처럼".
+
+- **UE 원문 확인.** `FAggregatorMod`는 `UpdateQualifies(Parameters)`가 `mutable bool IsQualified`를 채우고 `Qualifies()`는 읽기만 한다(`GameplayEffectAggregator.h:66-77`). `FAggregator::Evaluate`류는 모두 `EvaluateQualificationForAllMods`를 먼저 부르고, 그 뒤 `CustomQualifiesFunc`가 자격을 바꿀 수 있다(`.cpp:378-430`). 우리는 계산 루프 안에서 mod마다 바로 판정하고 있었다(tests.md §1-7 ⑦).
+- **구현(`AttributeAggregator`, →D27).** `Mod`에 `_isQualified` + `UpdateQualifies(source, target)`·`Qualifies()`. `readonly struct` → `struct`. private `EvaluateQualificationForAllMods(source, target, useEffectSourceTags)`가 모든 mod를 갱신하고 복사본을 목록에 다시 넣는다(값 타입이라). `EvaluateWithBase()`는 인자 없이 `Qualifies()`만 본다. CurrentValue 경로(D21)는 mod마다 그 GE의 Source 액터 태그로 갱신한다. `Evaluate` 요약의 "(순수)"는 이제 mod 상태를 바꾸므로 뺐다.
+- **뺀 것.** `IgnoreHandles`·예측 mod·적용 태그 필터(§1-7 ③), `CustomQualifiesFunc`·`SetExplicitQualifies`. 이것들이 없으니 계산 결과는 전과 같다.
+- **검증.** 런타임·에디터 컴파일 통과(Unity 없이, dev-tools '컴파일 확인'). 셀프체크는 Unity가 꺼져 있어 못 돌렸다 — 결과가 같아야 하니 Modifier Tag B(B-1~B-12)·Aggregator가 기준값 그대로인지 보면 된다.
+
+## 2026-10-17 — Query 편집기: 상태를 잃으면 오류 대신 빈 편집기
+> 유저: "tagquery editor 열어둘때 null이 뜨거나 하면 그냥 빈 editor로 되게 해줘. 오류 안뜨게", 이어서 "아예 새로 만들라는게 아니라 빈 Window의 Editor로 만들라는거였어".
+
+- **재현.** 창을 연 채 스크립트 리로드 → `FindTargetProperty`(:621)에서 NullReferenceException이 매 repaint. 리로드 뒤 `_targets`·편집 사본 참조는 남고 `SerializedObject` 배열만 사라져서다. 같은 원인으로 정적 `_openWindow`가 비어 새 창을 열어도 이전 창이 안 닫혀 창이 둘이 됐다(유저가 열어 둔 GE_EquipSpeedDown 창이 그랬다 — 그 에셋 dirty의 출처도 이 창으로 보인다).
+- **수정(`GameplayTagQueryEditorWindow`).** 리로드 뒤(편집 SerializedObject 없음)나 대상 오브젝트·필드가 사라지면 `ClearTarget()`로 대상 정보(대상·경로·원래 값·커밋 여부)를 모두 버리고 빈 질의로 사본을 만든다. 제목은 `Tag Query Editor`. 처음엔 리로드 뒤 대상 값으로 다시 잇게 만들었다가 유저 말대로 빈 편집기로 바꿨다. 대상이 없으면 고쳐도 아무 데도 쓰지 않는다. `FindTargetProperty`·`WriteQueries`·`GetTargetDirtyCount` null 가드. `CloseOpenWindow`는 정적 참조 대신 열린 창을 모두 찾아 닫는다(`_openWindow` 제거).
+- **검증(MCP).** 리로드 뒤 열려 있던 두 창 → 오류 없이 빈 편집기(캡처), 빈 편집기에서 고쳐도 오류 없고 GE_EquipSpeedDown 값 그대로, 새로 열면 창 1개·사본 1개, 열린 채 대상 modifier를 지우면 빈 편집기로 바뀜·오류 없음.
+- **참고.** GE_EquipSpeedDown 파일이 19:14:35에 저장돼 있었다(에이전트는 저장 안 함). 질의 내용은 그대로이고 `_tokenStreamVersion: 0` 4줄이 붙었다.
+
+## 2026-10-17 — 결정 4건 확정 + `TokenStreamVersion` 구현
+> 유저: "undefined는 굳이 건드리지 말고, 접힌 상태는 뭐 지금대로 두자. Undo나 Redo 둘 것도 아니고", 이어서 "TokenStreamVersion 넣자".
+
+- **기록.** D24(접힘 상태 키=배열 경로 그대로), D25(None 하위 식=UE처럼 `undefined` 저장, `GE_EquipSpeedDown`도 손대지 않음), D26(토큰 형식 버전 저장). "undefined는 굳이 건드리지 말고"는 편집기 동작과 에셋 둘 다로 읽었다(둘 다 `undefined` 이야기였음).
+- **구현(D26).** 새 `Tag/GameplayTagQueryStreamVersion.cs`(UE `EGameplayTagQueryStreamVersion`과 같은 세 값). `GameplayTagQuery`에 `_tokenStreamVersion`(UE처럼 int·private), `Build`가 `LatestVersion`, `Equals`가 비교. UE는 스트림 첫 토큰에도 버전을 넣지만 필드만 넣었다 — 이유는 D26 에이전트 판단(스트림 형식을 바꾸면 저장된 유일한 질의 `GE_EquipSpeedDown`을 변환해야 함).
+- **검증.** Unity 컴파일 에러 0, `GE_EquipSpeedDown` 질의가 버전 0으로 읽히고 설명 그대로, Aggregator 55/0·Modifier Tag 53/0.
+- **발견.** `GE_EquipSpeedDown`이 메모리에서 dirty(변경 10회)다. 다른 GE는 0이고, GE 인스펙터를 그려도 dirty가 되지 않음을 확인했다. 에이전트는 이 에셋을 읽기만 해서 출처를 모른다. D25에 따라 저장하지 않았다.
+
+## 2026-10-17 — 결정 대기로 두었던 버그 2건도 수정
+> 유저: "말했다싶이 단순 오류나 버그는 하고 결정해야되는거만". 직전 보고에서 `UpdateAggregatorMod`를 "언제 고칠지"로 물은 것을 두고 한 말.
+
+- **판단.** 수정안이 이미 정해진 버그는 시점 결정이 필요 없다고 봤다. `UpdateAggregatorMod`(결정 대기 ③)와, 주기 실행 때 magnitude를 다시 계산하지 않는 것(④, non-snapshot 캡처가 굳으니 버그로 봄) 둘 다 UE 방식으로 고쳤다. 같은 성격의 단순 오류 2개 — `Evaluate` 요약 주석 "마지막 Override 우선", `GameplayEffectType` 주석의 "(미구현)" — 도 고쳤다.
+- **수정.** `AttributeAggregator.UpdateAggregatorMod`: 핸들로 빼고 다시 넣고 dirty 1회(UE `GameplayEffectAggregator.cpp:503-521`). `ActiveGameplayEffectsContainer.ExecuteGameplayEffect`: Target 태그 다음 `spec.CalculateModifierMagnitudes()`(UE `GameplayEffect.cpp:3081-3084`, private → internal).
+- **검증(MCP).** Aggregator 셀프체크 G 6개(고정+라이브 섞인 aggregator, 라이브 modifier 번호 > mod 수)·H 2개(주기 실행 증가분이 바뀐 Health를 따름) 추가 → 55/0. Modifier Tag 53/0.
+- **남은 결정.** ① D21 캡처 문맥(유저 "나중에"), ② GE 에셋 태그 합치기(세부 TODO 4 뒤), ⑤ Query 편집기 접힘 상태 키, ⑥ `TokenStreamVersion`, `GE_EquipSpeedDown` Query, None 칸 막기.
+
+## 2026-10-17 — 찾은 버그 수정 + Unity를 앞으로 띄워 남은 확인
+> 유저: "버그 뭐 결정 없이 고쳐야 되는 건 고치고 결정 필요한건 설명해", 이어서 "그래 맨 앞에 띄워서 해봐".
+
+- **결정 없이 고친 것(4건)과 그렇게 본 이유.**
+  - aggregator 없는 어트리뷰트의 Current 미갱신: aggregator D14가 이미 ③단계로 정해 둔 동작이고 UE도 같다(`GameplayEffect.cpp:3850-3854`). `OnAttributeAggregatorDirty`의 Current 쓰기·델리게이트 부분을 `InternalUpdateNumericalAttribute`(UE 함수 이름)로 뽑아 else 분기에서도 부른다. UE는 값이 같아도 델리게이트를 부르고, 기존 dirty 경로는 같으면 건너뛰는데, 이 차이는 건드리지 않았다(헬퍼는 UE대로 늘 쓰고, 건너뛰기는 dirty 경로에만 남김). 동작 명세라 Aggregator 셀프체크 F로 고정.
+  - 다중 선택 `—`: tests.md 4-5가 기대를 적어 두었고 드로어도 이미 `Multiple Values`·흐린 칩을 직접 그리게 짜여 있었다. Unity의 `showMixedValue`만 끄면 된다.
+  - GE 인스펙터 빈 줄·Query 루트 3px: 드로어 가이드 "높이(`GetPropertyHeight`)와 그리기의 소스를 일치"와 tests.md 3-4·2-12 기대에 어긋나는 계산 실수.
+- **결정이 필요해 남긴 것.** `GE_EquipSpeedDown`의 깨진 Query(유저의 미커밋 변경이라 되돌릴지는 유저 몫), None 칸 저장 막기(UE도 막지 않음 — 막으면 UE와 갈림), 기존 `UpdateAggregatorMod` 버그(수정안은 있고 시점이 결정 대기 ③).
+- **Unity 앞으로.** `WScript.Shell.AppActivate`로 띄우고, 캡처는 화면 복사(Unity가 앞일 때만 — 아니면 건너뜀), 메뉴 선택은 `SendKeys`. OS 메뉴가 열려 있는 동안 MCP 명령은 끝나지 않아(2분 뒤 백그라운드) PowerShell에서 ESC·방향키로 닫았다. 확인: §2-11·2-12 툴팁(실제 커서를 잠깐 옮겼다 돌려놓음)·4-3·4-4·4-5 재확인·4-6 메뉴. **`DisplayDialog`는 MCP로 돌리는 동안 안 뜨고 바로 true** — 직접 띄워 봐도 같아서, 대화창이 걸린 4-6 일부는 확인 불가.
+- **멈춘 지점.** 4-1 관리 창에서 이름 입력란을 연 뒤 유저가 Chrome을 쓰기 시작해 키 입력을 보내지 않았다. 다시 띄우기도 한 번 해 봤지만 Windows가 포커스를 넘기지 않아(사용 중) 거기서 멈췄다. 그때 찍힌 캡처는 다른 창이 섞였을 수 있어 열지 않고 지웠다. 레지스트리는 안 바뀜(백업과 md5 같음), 관리 창은 닫고 임시 폴더는 휴지통.
+- **부수 효과.** 칩 Copy 확인으로 클립보드에 `Test.ModifierTag.Native.Enraged`가 들어갔다.
+
+## 2026-10-17 — 에디터 확인을 에이전트가 직접 (tests.md §1-3·§2~§5)
+> 유저: "에디터 확인은 직접 해." (할 일 목록을 달라고 한 뒤)
+
+- **화면을 보는 방법 찾기.** 처음엔 `InternalEditorUtility.ReadScreenPixel`로 화면을 읽었는데, Unity가 다른 창 뒤에 있어 그 창이 찍혔다 — 파일은 바로 지웠다. 다음으로 `GUIView.GrabPixels`(리플렉션; MCP 명령에서 `System.Reflection`이 막혀 `Assets/_McpCheck/Editor/`에 임시 도우미를 둠)는 IMGUI 탭만 찍히고 UI Toolkit 본문(인스펙터)이 빠졌다. 최종: PowerShell에서 Windows `PrintWindow(PW_RENDERFULLCONTENT)`로 **Unity 창만** 캡처 — 가려져 있어도 찍힌다. 클릭은 `EditorWindow.SendEvent`. 좌표는 도킹 창이면 탭 포함 도킹 영역 기준, 유틸리티 창이면 내용 영역 기준.
+- **안 되는 것.** Unity가 앞에 없으면 드롭다운 창(태그 피커)이 열리자마자 닫히고, 키보드 입력이 안 들어가며, 종류 팝업은 OS 메뉴라 메인 스레드를 막을 수 있어 누르지 않았다. 종류 선택·태그 추가·User Description은 편집 사본의 SerializedProperty에 직접 써서 대신했다(창의 쓰기 경로와 같음).
+- **Play 모드(§1-3).** Setup 메뉴는 열린 씬을 저장하고 `_PlayModeTest` 에셋을 다시 써서(그중 `AttrInit_PlayModeTest`는 유저의 미커밋 변경이 있음) 쓰지 않고, 저장 안 하는 임시 씬에 같은 배선을 해서 Play — 14/0. 에디터가 뒤에 있으면 Play가 멈춰 이번 Play 세션만 `Application.runInBackground = true`(프로젝트 설정 파일은 안 바꿈). 실제 GE를 Player 초기값으로 적용해 손 계산과 비교했다.
+  - Base는 모두 맞았지만 **aggregator 없는 어트리뷰트의 CurrentValue가 Base를 안 따라감**을 발견. 코드와 UE(`GameplayEffect.cpp:3850-3854`)를 비교해 기존 버그로 확인(HEAD에도 같은 코드) → TODO-BOARD (bug).
+  - `GE_EquipSpeedDown`의 미커밋 변경에 `undefined`가 든 Query가 있어 0번 modifier가 빠지고 에러가 났다. UE도 None 칸을 `undefined`로 저장하고 평가 때 ensure 후 false(`GameplayTagContainer.cpp:2079`·`:517`) → 코드 문제가 아니라 데이터 문제로 보고 TODO-BOARD (data). Query 편집기 확인 중에 None 칸을 둔 채 두면 같은 값이 생기는 걸 재현했다.
+- **Query 편집기·Modifier 인스펙터(§2·§3).** 테스트 GE 사본으로 확인. 위험 지점이던 `GetDirtyCount` 변경 감지는 정상(창을 닫지 않아도 대상 값이 바로 바뀜). 인스펙터 목록 펼침을 `SerializedObject`로 밖에서 바꾸면 목록 높이 캐시가 안 바뀌어 겹쳐 보였는데, 인스펙터를 다시 만들면 정상 — 확인 방법 탓이었다. 요소 아래 빈 줄은 높이 계산이 Op 줄을 두 번 세서(태그 작업 전부터) → TODO-BOARD (code, low).
+- **테마 전환.** `SwitchSkinAndRepaintAllViews`가 스크립트 리로드를 일으켜 열려 있던 Query 창이 그려지지 않다가, 건드리자 설계대로 스스로 닫혔다(편집 사본도 남지 않음). Light로 바꾼 뒤 창을 새로 열어 확인하고 Dark로 되돌렸다.
+- **다중 선택(§4-5) 실패.** 칩 글자·▾가 `—`. `BeginProperty`가 켠 `showMixedValue` 상태로 `EditorGUI.DropdownButton`을 그려서임을 코드로 확인 → TODO-BOARD (bug). 고치지는 않았다.
+- **레지스트리 자동 생성(§5-4).** 백업(md5 확인)까지 했지만 레지스트리를 휴지통으로 옮기는 명령이 권한 판정에서 "되돌릴 수 없는 삭제"로 거부됐다. 우회하지 않고 남겼다.
+- **정리.** 임시 폴더 `Assets/_McpCheck/`(캡처 도우미·GE 사본·태그 테스트 에셋 2개)는 휴지통으로 옮겼다. 씬은 저장 안 한 빈 씬, 테마는 Dark. 원본 에셋은 손대지 않음 — 레지스트리는 백업과 md5 같음, 나머지(`GE_EquipSpeedDown`·`_PlayModeTest`·`Data/Test` GE·`_Test/GameplayTagTest`)는 수정 시각이 모두 오늘 이전.
+- **확인 중 생긴 유저 쪽 변경.** 17:44에 `SpeedBoostExecution.cs` 로그 문구가 바뀌었다(에이전트가 고친 것 아님, 미커밋).
+
+## 2026-10-17 — 소유 태그 입구 + 태그가 바뀔 때 CurrentValue 재계산
+> 유저: "Modifier에 Source/Target 태그 조건을 붙이고, 실제 수치 계산에 연결 이 부분 하자. 뭐 해야됐던거 있었는데". 해야 했던 것 = progress 다음 작업 3(2026-10-16 "문서로 자세히 써놔 다음에 하게").
+
+- **범위 질문.** 계획에 "착수 전 범위를 다시 묻는다"고 적어 둔 대로 물었다. 카운트 컨테이너는 "UE와 같은 구조", D21 결정 ①(캡처 평가 문맥)은 "나중에". 재계산 범위엔 유저가 "ue 쪽은 어떻게 하는데"라고 되물었다.
+- **UE 원문 확인 → 기억과 달랐던 점.** 처음 계획(progress 다음 작업 3-3)은 "UE `OnTagUpdated` 자리에서 컨테이너에 알린다"였다. 원문을 보니 `OnTagUpdated`는 빈 가상 함수(`AbilitySystemComponent.h:1923`)이고, 5.6엔 예전의 `OnOwnerTagChange`·`ActiveEffectTagDependencies`가 없다(grep 0건). 태그 반응은 `UTargetTagRequirementsGameplayEffectComponent`가 GE 단위로 태그별 구독한다(`TargetTagRequirementsGameplayEffectComponent.cpp:72-150`). modifier 단위 재계산은 UE에 없다 — CurrentValue를 빈 태그로 계산하기 때문(`GameplayEffect.cpp:3311-3316`). 이걸 설명하고 다시 물어 "UE식 태그별 구독"(→D23)과 이벤트 "UE 두 종류 모두"(→D22)를 받았다.
+- **구현.**
+  - 새 `Core/AbilitySystem/GameplayTagCountContainer.cs`(UE `FGameplayTagCountContainer` 함수 단위 대응: `UpdateTagMap_Internal`·`UpdateTagMapDeferredParentRemoval_Internal`·`UpdateExplicitTags`·`GatherTagChangeDelegates`)와 `GameplayTagEventType.cs`. 이벤트는 모아 두었다가 개수·명시 태그 갱신이 끝난 뒤 부른다(UE처럼 콜백이 갱신된 소유 태그를 본다).
+  - ASC: `_ownedGameplayTags`(늘 빈 컨테이너)를 카운트 컨테이너로 교체. Loose 태그 5개·조회 2개·이벤트 등록/해제 추가.
+  - `ActiveGameplayEffectsContainer`: persistent GE 적용 때 modifier Target 조건 태그 구독, 제거 때 해제, 콜백에서 그 GE의 Target 조건 어트리뷰트 aggregator dirty. `AttributeAggregator.BroadcastOnDirty`를 private → internal(UE는 private — 이유는 D23 에이전트 판단).
+  - API 모양·안 가져온 UE 함수는 D22 에이전트 판단에 적었다.
+- **막힌 곳.** 셀프체크에서 저장된 CurrentValue를 읽으려고 ASC `TryGetAttributeData`(internal)를 썼다가, 셀프체크가 에디터 어셈블리라 접근이 안 된다는 걸 컴파일 전에 알아챘다. 셀프체크가 만든 `CharacterAttributeSet`을 넘겨받아 `health.GetCurrentValue()`로 읽게 바꿨다. `GetAttributeCurrentValue`는 조회 때마다 다시 계산하므로 "태그 변화 때 실제로 다시 계산돼 저장됐는가"는 저장 값을 봐야 확인된다.
+- **검증(2026-10-17, Unity MCP).** Unity 동봉 Roslyn 컴파일 에러 0(손댄 파일 경고 0) → Unity 리로드 후 Modifier Tag 셀프체크 **53/0**(기존 38 + 새 D 15: 개수·부모 매칭·이벤트 7, 재계산·Instant 8), Aggregator 셀프체크 44/0. 경고 3줄: 기존 `[GESpec]` 2줄 + D-4가 일부러 낸 "명시로 더한 태그가 아님" 1줄.
+- **남은 것.** Play 모드에서 실제 캐릭터로 확인(tests.md §1-3). GE 부여 태그(세부 TODO 5)는 다음 작업 8 범위. 캡처 평가 문맥(D21 ①)은 보류.
+
 ## 2026-10-16 — 세션 회고 후 규약 개선 (유저 승인)
 
 - **요청(유저).** 세션 회고의 규약 개선 제안 두 개에 "규약 개선해".

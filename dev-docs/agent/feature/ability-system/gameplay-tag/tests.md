@@ -1,37 +1,36 @@
 # gameplay-tag — 유저 확인 목록 (검증)
 
 > 이 feature에서 **유저가 Unity 에디터에서 직접 확인해야 하는 것**을 순서대로 모은 문서다. 위에서부터 그대로 따라 하면 된다.
-> Unity MCP가 연결돼 있으면 에이전트가 콘솔 읽기·메뉴 실행·코드 실행까지는 한다(2026-10-17 §0-1·§1-1·§1-3-1·§5-5를 MCP로 확인). 창·인스펙터 클릭이나 Play 중 눈으로 보는 확인은 여전히 유저 몫이다.
+> Unity MCP가 연결돼 있으면 에이전트가 콘솔 읽기·메뉴 실행·코드 실행·화면 캡처까지 한다. **피커·우클릭 메뉴·OS 메뉴·키 입력·툴팁은 Unity가 맨 앞에 있어야 하고**, `EditorUtility.DisplayDialog`는 MCP로 돌리는 동안 화면에 안 뜨고 바로 OK로 돌아온다 — 대화창이 걸린 확인은 유저 몫.
 > 결과 기록: 항목 앞 `- [ ]`를 `- [x]`로 바꾸고 날짜를 적는다. 실패하면 콘솔 로그(빨간 줄 전체)를 복사해 에이전트에게 주면 된다.
-> 진행 문서: [progress.md](progress.md). 최종 갱신: 2026-10-17 (KST)
+> 진행 문서: [progress.md](progress.md). 최종 갱신: 2026-10-19 (KST)
+
+**남은 확인:** §4-1·4-2·4-6(대화창)·5-1(피커 화면)·5-4(레지스트리 자동 생성).
 
 ---
 
 ## 0. 공통 준비
 
-- [x] _(2026-10-17, MCP 콘솔 조회 errorCount 0)_ **0-1. Unity를 열고 컴파일이 끝날 때까지 기다린다.** 하단 오른쪽 스피너가 멈추고 Console에 빨간 에러(`error CS…`)가 **0개**여야 한다.
-  - 에러가 있으면 여기서 멈추고 에러 줄을 전부 복사해 에이전트에게 준다. 아래 모든 확인은 컴파일이 돼야 의미가 있다.
-- [ ] **0-2. Console 창 준비.** `Window ▸ General ▸ Console`. 오른쪽 위 검색창으로 로그를 거를 수 있다(아래 항목마다 거를 문자열을 적어 둠). `Clear on Play`는 꺼도 켜도 상관없다.
-- **0-3. 이번에 테스트용으로 추가한 태그**(피커 트리에 보이는 게 정상):
+- [x] _(2026-10-17, MCP)_ **0-1. Unity를 열고 컴파일이 끝날 때까지 기다린다.** Console에 빨간 에러(`error CS…`)가 **0개**여야 한다. 에러가 있으면 여기서 멈추고 에러 줄을 전부 에이전트에게 준다.
+- **0-2. Console 창.** `Window ▸ General ▸ Console`. 오른쪽 위 검색창으로 로그를 거른다(아래 항목마다 거를 문자열을 적어 둠).
+- **0-3. 테스트용 태그**(피커 트리에 보이는 게 정상):
   - native(코드 정의, 에디터에서만): `Test.ModifierTag.Native`, `Test.ModifierTag.Native.Enraged` — `Assets/Scripts/Test/Editor/ModifierTagSelfCheck.cs`.
   - 레지스트리(에셋에 저장, 빌드에도 포함): `Test.ModifierTag.Registry.Stunned` — `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset` 마지막 줄.
 
 ---
 
-## 1. Modifier Source/Target 태그 판정 (2026-10-16 구현) ← 가장 먼저
+## 1. Modifier Source/Target 태그 판정
 
-관련 결정: D14(지속형 판정=UE 그대로), D18(판정 태그 출처=ASC 조회 함수만·빈 값), D19(Execution 캡처 조회=UE처럼 평가 파라미터 인자), D20(Spec 캡처 태그=UE `FTagContainerAggregator` 구조), D21(지속형 태그 조건을 CurrentValue에도 적용). 경위: [worklog.md](worklog.md) 2026-10-16 판정 연결 항목.
+관련 결정: D14(modifier 태그 판정=UE 경로), D22(소유 태그=UE `FGameplayTagCountContainer` 구조+Loose·이벤트), D28(CurrentValue=UE처럼 빈 문맥·소유 태그 on/off는 Ongoing Tag Requirements).
 
-**알아 둘 전제:** ASC 소유 태그를 넣는 입구가 아직 없다(D18). 그래서 실제 캐릭터에서는 **Target 조건의 Require는 늘 실패, Ignore는 늘 통과**한다. 셀프체크는 이 제약을 우회해, Target 조건은 aggregator에 태그를 직접 넘겨서(B), Source 조건은 Spec에 태그를 직접 넣어서(C) 확인한다.
+**전제:** 캐릭터에 태그를 넣는 UI와 Granted Tags Component가 아직 없어서, 소유 태그는 코드(`AddLooseGameplayTag`)로만 넣는다. 셀프체크 C는 소유 태그가 빈 상태, D·E는 Loose 태그를 넣고 뺀 상태를 본다. Source 조건은 Spec에 태그를 직접 넣어서 본다.
 
 ### 1-1. 셀프체크 실행
 
-- [x] _(2026-10-17)_ **1-1-1.** 메뉴 `Tools ▸ Ability System ▸ Run Modifier Tag Self-Check`를 누른다. Play 모드는 필요 없다.
-- [x] _(2026-10-17, 에이전트가 MCP로 메뉴 실행 — PASS 38줄·FAIL 0줄·에러 0·경고 2(아래 `[GESpec]`))_ **1-1-2.** Console 검색창에 `ModifierTag`를 넣는다. 마지막 줄이 **`[ModifierTag Self-Check] passed 38 / failed 0`** 이면 통과.
-  - `[ModifierTag PASS] …`가 38줄, `[ModifierTag FAIL] …`(빨간 줄)이 0줄이어야 한다.
+- [x] _(2026-10-19 MCP 65/0)_ **1-1-1.** 메뉴 `Tools ▸ Ability System ▸ Run Modifier Tag Self-Check`(Play 모드 필요 없음) → Console 검색 `ModifierTag` → 마지막 줄이 **`[ModifierTag Self-Check] passed 65 / failed 0`** 이면 통과.
+  - 노란 경고 `[GameplayTagCountContainer] … 명시로 더한 태그가 아닙니다` 1줄은 정상이다(D-4가 일부러 냄, UE도 같은 경고 — `GameplayEffectTypes.cpp:543`). 2026-10-19 전엔 `[GESpec] … Calculation Failed` 4줄도 나왔는데, Spec 생성 때 magnitude를 계산하던 것을 UE처럼 없애 사라졌다.
   - `테스트 태그 준비 실패로 중단`이 나오면 1-2의 0번 항목부터 본다.
-  - 실행 중 노란 경고 2줄 `[GESpec] ''의 0번 modifier magnitude Calculation Failed - falling back to 0.`(C-12·C-13의 Speed GE Spec 생성 시)은 **실패가 아니다**. Target 캡처를 쓰는 AttributeBased GE는 Spec을 만들 때 Target이 아직 없어 계산이 실패하고, 적용 때 다시 계산된다(C-12·C-13 값이 맞음). 원인은 `GameplayEffectSpec.Initialize`가 생성 시점에도 `CalculateModifierMagnitudes`를 부르는 기존 코드(HEAD에도 있음, 이번 작업과 무관). UE 5.6 `FGameplayEffectSpec::Initialize`·`CaptureDataFromSource`(`GameplayEffect.cpp:1609-1630`·`:1754-1774`)는 생성 시 magnitude를 계산하지 않으므로 이 경고가 나지 않는다. gameplay-effect 소관.
-- [x] _(2026-10-17, 실패 없음 — 해당 없음)_ **1-1-3.** 실패한 줄이 있으면 그 줄의 ID(예: `B-9`)를 아래 표에서 찾아 "실패 시 의심"을 확인하고, 빨간 줄 전체를 에이전트에게 준다.
+  - 실패한 줄이 있으면 그 ID(예: `B-10`)를 아래 표에서 찾아 "실패 시 의심"을 본다.
 
 ### 1-2. 셀프체크 항목별 의미
 
@@ -44,7 +43,7 @@
 | 0-1 | native `Test.ModifierTag.Native.Enraged` 유효 | PASS | native 태그 수집(`NativeGameplayTag.GetRegisteredNativeTags`)이 에디터 어셈블리 필드를 못 찾음. 스크립트 재컴파일 후 다시 실행. |
 | 0-2 | native 부모 `Test.ModifierTag.Native` 유효 | PASS | 위와 같음. |
 | 0-3 | 레지스트리 `Test.ModifierTag.Registry.Stunned` 유효 | PASS | 레지스트리 에셋에 줄이 없음 / 매니저가 에셋 변경 전에 만들어짐 → Unity 재시작 또는 스크립트 재컴파일 후 재실행. |
-| 0-4 | ASC 소유 태그가 비어 있음 | PASS | 누가 소유 태그 입구를 이미 만들었다면 이 항목과 C 기대값을 다시 봐야 한다. |
+| 0-4 | 새 ASC의 소유 태그가 비어 있음 | PASS | ASC가 생성 때 태그를 넣게 바뀌었다면 C 기대값을 다시 봐야 한다. |
 
 **A. `GameplayTagRequirements` 판정 (조건 객체 단독)**
 
@@ -59,7 +58,7 @@
 | A-7 | 같은 TagQuery, Enraged만 보유 | 불충족 |
 | A-8 | 아무 조건도 없는 객체 | `IsEmpty` true |
 
-실패 시 의심: A는 이번 작업 전에 만든 `GameplayTagRequirements`·`GameplayTagContainer`·`GameplayTagQuery` 자체의 문제다(D13·D15).
+실패 시 의심: `GameplayTagRequirements`·`GameplayTagContainer`·`GameplayTagQuery` 자체.
 
 **B. `AttributeAggregator` 자격 판정 (aggregator 단독, 태그를 직접 넘김)**
 
@@ -71,14 +70,11 @@
 | B-4 | mod +50, Source Ignore Stunned / 문맥 Source=Stunned | 100 | Source 조건 |
 | B-5 | 같은 mod / 문맥 비어 있음 | 150 | Ignore만 있으면 빈 태그에서 통과 |
 | B-6 | 조건 없는 mod(기존 호출 형태) / 아무 문맥 | 150 | **기존 GE 회귀 없음** |
-| B-7 | B-1의 mod / CurrentValue, 소유 태그=Enraged | 150 | CurrentValue 경로도 Target 조건 판정(D21) |
-| B-8 | 같은 mod / CurrentValue, 소유 태그 빈 | 100 | |
-| B-9 | Source Require Enraged mod 3개(+10: 건 GE의 Source가 Enraged, +20: 빈 Source, +40: Source 정보 없음) / CurrentValue | 110 | CurrentValue의 Source 조건은 **각 mod를 건 GE의 Source 태그**로 판정(D21, 에이전트 판단) |
-| B-10 | 같은 3개 / 캡처 평가, 문맥 Source=Enraged | 170 | 캡처 경로는 GE별 Source가 아니라 **평가 문맥의 Source**로 판정(UE 그대로) |
+| B-10 | Source Require Enraged mod 3개(GE 3개) / 문맥 Source=Enraged·빈 | 170·100 | 여러 GE의 mod를 평가 문맥 하나로 판정(UE 그대로) |
 | B-11 | B-1 aggregator의 snapshot / 문맥 Enraged·빈 | 150·100 | snapshot이 조건까지 복사 |
 | B-12 | Override 7, Target Require Enraged / 문맥 빈·Enraged | 100·7 | Override도 조건 못 맞추면 무시 |
 
-실패 시 의심: `Assets/Scripts/Core/AbilitySystem/Effect/AttributeAggregator.cs`의 `Mod.Qualifies`·`EvaluateWithBase`·`EvaluateCurrentValue`, `TakeSnapshotOf`.
+실패 시 의심: `Assets/Scripts/Core/AbilitySystem/Effect/AttributeAggregator.cs`의 `Mod.UpdateQualifies`·`EvaluateQualificationForAllMods`(갱신한 복사본을 목록에 다시 넣는지)·`EvaluateWithBase`, `TakeSnapshotOf`.
 
 **C. 실제 ASC에 GE 적용 (메모리에서 만든 GE, 에셋 파일은 안 생김)**
 
@@ -92,24 +88,63 @@
 | C-6 | Infinite +50, Target Ignore Stunned | Current 150 | |
 | C-7 | C-6 제거 | Current 100 | |
 | C-8 | Infinite +50, Source Require Enraged, Source 빈 | Current 100 | |
-| C-9 | 같은 GE, Source에 Enraged 넣고 적용 | Current 150 | **UE 5.6이면 100**(빈 태그로 계산). D21로 달라진 지점 |
+| C-9 | 같은 GE, Source에 Enraged 넣고 적용 | Current 100 | CurrentValue는 UE처럼 빈 문맥(D28) — Source 태그를 보지 않는다 |
 | C-10 | C-9 제거 | Current 100 | |
-| C-11 | Health 버프(Infinite +100, Source Require Enraged, Source에 Enraged) | Health Current 200 | |
-| C-12 | **[현재 설계]** Speed GE(Speed += Health.current × 1, Target 캡처·non-snapshot, Source 태그 빈) 적용 | Speed 100 | Health CurrentValue는 200인데 캡처 평가는 Speed GE의 Source 태그로 판정해 버프가 빠진다. 아래 1-5의 결정 요청 ①. |
-| C-13 | **[현재 설계]** 같은 Speed GE, Source에 Enraged | Speed 200 | |
+| C-11 | Health 버프(Infinite +100, Source Require Enraged, Source에 Enraged) | Health Current 100 | 빈 문맥이라 버프가 CurrentValue에 안 들어간다 |
+| C-12 | Speed GE(Speed += Health.current × 1, Target 캡처·non-snapshot, Source 태그 빈) 적용 | Speed 100 | 캡처 평가는 Speed GE의 Source 태그로 판정해 버프가 빠진다 |
+| C-13 | 같은 Speed GE, Source에 Enraged | Speed 200 | 캡처하는 GE의 태그로 버프가 켜진다 |
 | C-14 | 정리 후 | Health 100, Speed 0 | |
 
 실패 시 의심: `ActiveGameplayEffectsContainer`(`ExecuteGameplayEffect`·`CaptureTargetActorTags`·`AddSpecMods`·`OnAttributeAggregatorDirty`), `GameplayEffectSpec`(Source 태그 캡처·복제), `AttributeBasedMagnitude.Evaluate`.
 
+**D. 소유 태그(Loose 태그)** — "저장값"은 `GetAttributeCurrentValue`(조회 때마다 다시 계산)가 아니라 AttributeSet에 저장된 CurrentValue다.
+
+| ID | 확인 내용 | 기대 |
+|---|---|---|
+| D-1 | Loose Enraged 추가 | Enraged·부모 모두 매칭, 부모 개수 1 |
+| D-2 | Enraged 2회 추가·1회 제거 | 남음, 개수 1 |
+| D-3 | 한 번 더 제거 | Enraged·부모 모두 없음, 소유 태그 빈 |
+| D-4 | Enraged가 있을 때 부모 태그를 빼려 함 | 무시(경고 1줄), Enraged 그대로 |
+| D-5 | `SetLooseGameplayTagCount` 3 → 0 | 개수 3 → 없음 |
+| D-6 | 부모에 `NewOrRemoved`, Enraged에 `AnyCountChange` 등록 후 추가·추가·제거·제거 | 부모 이벤트 2회(1, 0), Enraged 이벤트 4회 |
+| D-7 | 두 이벤트 해제 후 태그 변경 | 해제 true, 콜백 없음 |
+| D-8 | Infinite +50 Target Require Enraged → Enraged 추가 → 제거 | 저장값 100 그대로(modifier 조건은 CurrentValue에 안 씀, D28) |
+| D-14 | Enraged 보유 중 Instant +30 Target Require Enraged | Base 130 |
+| D-15 | 정리 | 소유 태그 빈, Health 100 |
+| D-16 | Modifier·Execution 없는 Infinite GE 적용 → 제거 | 핸들 유효, 제거 true, Health 100 (태그만 주는 GE의 형태) |
+
+실패 시 의심: D-1~D-7은 `GameplayTagCountContainer`(`UpdateExplicitTags`·`GatherTagChangeDelegates`), D-8은 `ActiveGameplayEffectsContainer.OnAttributeAggregatorDirty`(빈 문맥으로 평가하는지), D-16은 `ApplyGameplayEffectSpec` 입구.
+
+**E. GE 종류별 Base·Current의 Source·Target 조건 판정** — 유저 "Base/Current Value 계산시 Source/Target Tag 검사하는 모든 경로가 UE와 동일하게 작동하나?"를 셀프체크로 고정. UE 원문 대조는 worklog 2026-10-18 '판정 경로 UE 대조'. Source 태그는 Spec 생성 때 Instigator(여기선 자신)의 소유 태그다 — "Spec 생성 뒤 태그"는 Spec을 먼저 만들고 태그를 넣은 경우다.
+
+| ID | GE / 상황 | 기대 | UE 경로 |
+|---|---|---|---|
+| E-1 | Instant +30 Target Require Enraged, 소유 태그 빈 | Base·Current 100 | `ExecuteActiveEffectsFrom` — 적용 순간 소유 태그(액터 태그) |
+| E-2 | 같은 GE, 소유 태그 Enraged | 130 | |
+| E-3 | Instant +30 Target Ignore Stunned, 소유 태그 Stunned | 100 | |
+| E-4 | Instant +30 Source Require Enraged, Spec Source에 Enraged | 130 | Source = Spec의 Source 액터 태그 |
+| E-5 | 같은 GE, Spec 생성 뒤 소유 태그 Enraged | 100 | Source는 생성 때 캡처, 소유 태그를 보지 않음 |
+| E-6 | Duration·Infinite(period 0) +50 Target Require Enraged, 소유 태그 Enraged | Base 100, Current 100 | CurrentValue = 빈 평가 문맥(`OnAttributeAggregatorDirty`) |
+| E-7 | Duration·Infinite +50 Target Ignore Stunned, 소유 태그 Stunned | Base 100, Current 150 | 빈 문맥이라 Ignore만 있으면 통과 |
+| E-8 | Duration·Infinite +50 Source Require Enraged, Spec Source에 Enraged | Base 100, Current 100 | |
+| E-9 | Health 버프(Infinite +50 Target Require Enraged) + Speed GE(Speed += Health.current, Target 캡처·non-snapshot), 적용 때 소유 태그 빈 | Health 100, Speed 100 | 캡처 평가 = Spec의 합친 태그(`FAttributeBasedFloat::CalculateMagnitude`) |
+| E-10 | 같은 버프 + Speed GE, 적용 때 소유 태그 Enraged | Health 100, Speed 150 | Speed GE의 Target 태그로 버프가 켜짐 |
+| E-11 | Duration·Infinite Period 1 +10 Target Require Enraged: 적용 실행 → Enraged 추가 후 주기 → 제거 후 주기 | 100 → 110 → 110 | 주기 실행마다 소유 태그를 다시 읽음 |
+| E-12 | Infinite Period 1 +10 Target Ignore Stunned: 적용 → Stunned 추가 후 주기 → 제거 후 주기 | 110 → 110 → 120 | |
+| E-13 | Infinite Period 1 +10 Source Require Enraged, Spec Source에 Enraged: 적용 + 주기 1회 | 120 | |
+| E-14 | 같은 GE, Spec 생성 뒤 소유 태그 Enraged: 적용 + 주기 1회 | 100 | 주기마다 Source를 다시 캡처하지 않음 |
+| E-15 | 정리 | 소유 태그 빈, Health 100 | |
+
+E-6·E-7·E-8·E-11은 Duration·Infinite 두 번씩 나온다(PASS 줄 4개 추가). 실패 시 의심: E-1~E-5·E-11~E-14는 `ActiveGameplayEffectsContainer.ExecuteActiveEffectsFrom`·`CaptureTargetActorTags`, E-6~E-8은 `OnAttributeAggregatorDirty`·`GetAttributeCurrentValue`(`Evaluate(default)`), E-9·E-10은 `AttributeBasedMagnitude.Evaluate`·`ApplyGameplayEffectSpec`의 Target 태그 캡처 순서.
+
 ### 1-3. 기존 기능 회귀 확인
 
-이번 작업으로 aggregator 평가 함수 시그니처가 바뀌었다. 기존 동작이 그대로인지 본다.
-
-- [x] _(2026-10-17, MCP로 메뉴 실행 → `passed 44 / failed 0`, 에러·경고 0. 이전 N은 기록이 없었지만 `AggregatorSelfCheck.cs`의 미커밋 diff가 호출 시그니처 17줄뿐이고 `check(...)` 추가·삭제가 없어 같은 수로 판단)_ **1-3-1. Aggregator 셀프체크.** 메뉴 `Tools ▸ Ability System ▸ Run Aggregator Self-Check`. Console 검색 `Aggregator`. 마지막 줄 `[Aggregator Self-Check] passed N / failed 0`이면 통과(N은 이전과 같아야 함 — 이번에 케이스를 더하지 않았다). **N = 44.**
-- [ ] **1-3-2. PlayMode 셀프체크(선택).** 이미 셋업돼 있으면 해당 씬에서 Play. Console `[PlayMode Self-Check] passed N / failed 0`. 셋업이 없으면 `Tools ▸ Ability System ▸ Setup PlayMode Test`부터(기존 aggregator 도구).
-- [ ] **1-3-3. 실제 게임 GE.** Play 모드에서 평소 쓰던 GE(예: `GameplayEffectPickup`에 연결된 GE, `GE_EquipSpeedDown` 등)를 적용해 이동 속도·체력 변화가 전과 같은지. 기존 GE는 태그 조건이 비어 있어 결과가 같아야 한다.
-- [ ] **1-3-4. ASC 인스펙터의 캡처 값 표시.** Play 모드에서 AttributeBased 또는 Execution을 쓰는 GE를 적용한 캐릭터를 선택 → ASC 인스펙터의 활성 GE 아래 캡처 줄(`Source/Target  어트리뷰트  «by …»  →  Base: … Current: …`)이 에러 없이 나오는지. (이번에 이 줄이 Spec의 태그 문맥으로 값을 계산하도록 바뀌었다.)
-- [ ] **1-3-5. `SpeedBoostExecution`.** 이 Execution을 쓰는 GE가 있으면 적용해서 Console의 `{health} + {stamina} = {result}` 로그가 전과 같은 값인지. (호출 시그니처가 바뀌었다.)
+- [x] _(2026-10-19 MCP 55/0)_ **1-3-1. Aggregator 셀프체크.** 메뉴 `Tools ▸ Ability System ▸ Run Aggregator Self-Check` → Console 검색 `Aggregator` → 마지막 줄 `[Aggregator Self-Check] passed 55 / failed 0`.
+- [x] _(2026-10-19 MCP 14/0)_ **1-3-2. PlayMode 셀프체크.** Console `[PlayMode Self-Check] passed 14 / failed 0`. 셋업이 없으면 `Tools ▸ Ability System ▸ Setup PlayMode Test`부터 — 단 이 메뉴는 열린 씬을 저장하고 `_PlayModeTest` 에셋을 다시 쓴다. 에이전트는 저장 안 하는 임시 씬에 배선해서 돌린다.
+- [x] _(2026-10-17, MCP)_ **1-3-3. 실제 게임 GE.** Play 모드에서 평소 쓰던 GE(`GameplayEffectPickup`에 연결된 GE, `GE_EquipSpeedDown` 등)를 적용해 이동 속도·체력 변화가 전과 같은지. `GE_Speed`·`GE_Test`·`GE_BoxSelfEffect`·`GE_BoxEffect` 모두 손 계산과 같았다.
+  - 함께 찾은 것: aggregator 없는 어트리뷰트의 Current가 Base를 안 따라오던 버그(같은 날 수정, Aggregator 셀프체크 F). `GE_EquipSpeedDown.asset` 0번 modifier의 깨진 Source Tag Query(`undefined` 토큰) → [TODO-BOARD](../../../TODO-BOARD.md) (data).
+- [x] _(2026-10-17, MCP)_ **1-3-4. ASC 인스펙터의 캡처 값 표시.** AttributeBased·Execution GE를 적용한 캐릭터를 선택 → 활성 GE 아래 캡처 줄이 에러 없이 나오는지.
+- [x] _(2026-10-17, MCP)_ **1-3-5. `SpeedBoostExecution`.** 이 Execution을 쓰는 GE를 적용해 Console의 계산 로그 값이 전과 같은지.
 
 ### 1-4. 인스펙터에서 조건을 넣어 보는 수동 확인 (선택)
 
@@ -117,109 +152,157 @@
 
 - [ ] **1-4-1.** 테스트용 GE 에셋 하나를 복제해 Modifier를 펼친다 → Magnitude 아래 `Source Tags`·`Target Tags` 접기 → 안에 `Require Tags`·`Ignore Tags`·`Tag Query`.
 - [ ] **1-4-2.** `Target Tags ▸ Ignore Tags`에 `Test.ModifierTag.Registry.Stunned`를 넣고 Play에서 적용 → 평소처럼 적용되는지(소유 태그가 비어 있으므로).
-- [ ] **1-4-3.** `Target Tags ▸ Require Tags`에 `Test.ModifierTag.Native.Enraged`를 넣고 적용 → **적용되지 않는지**(Instant면 Base 그대로, Infinite면 Current 그대로). 소유 태그 입구가 생기기 전엔 이게 정상이다.
+- [ ] **1-4-3.** `Target Tags ▸ Require Tags`에 `Test.ModifierTag.Native.Enraged`를 넣고 적용 → **적용되지 않는지**(Instant면 Base 그대로, Infinite면 Current 그대로). 캐릭터에 태그를 넣는 UI가 없어 태그가 빈 상태이므로 이게 정상이다. (태그가 있을 때는 셀프체크 D-8·D-14가 본다.)
 - [ ] **1-4-4.** 확인 후 복제한 에셋은 지운다.
 
-### 1-5. 결정이 필요한 것 (보고 답해 주면 됨)
+### 1-7. UE(5.6)와 다른 동작
 
-- [ ] **① CurrentValue와 캡처 평가의 태그 문맥 차이(D21 트레이드오프).** 셀프체크 C-11~C-13이 지금 동작을 보여 준다: Health 버프는 스탯(CurrentValue)에 보이지만(200), 그 Health를 캡처하는 다른 GE는 자기 Source 태그로 판정해 버프를 뺄 수 있다(100).
-  - 선택지 A — 그대로(캡처는 UE 방식: "이 계산 문맥에서만 붙는 보너스"를 표현 가능).
-  - 선택지 B — 캡처 평가도 CurrentValue처럼 "각 mod를 건 GE의 Source + 그 어트리뷰트 주인의 소유 태그"로 판정(스탯과 계산이 항상 일치, 대신 UE의 문맥 보너스 표현 불가).
-  - 선택지 C — mod마다 어느 방식을 쓸지 고르게 함(설정 하나 추가).
-- [ ] **② CurrentValue의 Source 조건 데이터(D21, 에이전트 판단).** 지금은 "그 mod를 건 GE를 만들 때 캡처한 Instigator 태그(액터 태그만)". GE 에셋 태그(Spec 태그, 세부 TODO 4)가 생긴 뒤 이것도 합칠지(UE 캡처 경로는 합친 태그를 씀).
-- [ ] **③ 기존 버그 — `UpdateAggregatorMod`.** 상세: [TODO-BOARD](../../../TODO-BOARD.md) (bug) 항목. 언제 고칠지.
-- [ ] **④ UE와 다른 기존 동작 — 주기 실행 magnitude 재계산.** 상세: [TODO-BOARD](../../../TODO-BOARD.md) (code) 항목. UE처럼 맞출지.
-
-### 1-6. 지금은 확인할 수 없는 것 (소유 태그 입구가 생긴 뒤)
-
-- 캐릭터가 태그를 **가졌을 때** Target Require 조건이 켜지는지(Instant·지속형 모두).
-- 태그를 넣고 빼면 지속형 mod가 CurrentValue에 들어오고 빠지는지(재계산). 유저 확정: "태그가 바뀌면 CurrentValue 다시 계산하도록 하는게 맞고".
-- 같은 태그를 두 번 넣고 한 번 빼면 남는지(참조 카운트).
-- 계획: [progress.md](progress.md) 다음 작업 3.
-
-### 1-7. 이번 작업에서 UE(5.6)와 다른 동작 — 상세
-
-| # | 내용 | UE | 우리 | 왜 / 상태 |
+| # | 내용 | UE | 우리 | 상태 |
 |---|---|---|---|---|
-| 1 | 지속형 mod의 CurrentValue 태그 판정 | `OnAttributeAggregatorDirty`가 빈 평가 파라미터로 `Evaluate`(`GameplayEffect.cpp:3317`·`:3358`) → Require 있는 mod는 CurrentValue에서 늘 빠짐 | `EvaluateCurrentValue(소유 태그)` — Target=소유 태그, Source=그 mod를 건 GE의 Source 액터 태그 | 유저 결정 D21("ue에서도 의도에 맞지 않는다고 해"). 원문에서 Epic 입장은 확인 못 함 — 5.4에서 Instant/Periodic의 같은 문제를 버그로 고친 cvar(`AbilitySystem.Fix.UseModTagReqsOnAllGE`, `:77-79`)만 확인. |
-| 2 | 소유 태그가 바뀔 때 | 지속형 mod 태그 조건은 다시 계산 안 함(빈 태그라 의미 없음). GE 전체 on/off는 `TargetTagRequirements` GE Component가 태그 이벤트로 처리 | 아직 다시 계산 안 함 — 소유 태그 입구가 없어 바뀔 일이 없음 | 다음에(progress 다음 작업 3). |
-| 3 | 평가 파라미터 | `FAggregatorEvaluateParameters`에 `AppliedSourceTagFilter`·`AppliedTargetTagFilter`·`IgnoreHandles`·`IncludePredictiveMods` | Source·Target 태그만 | 필터는 세부 TODO 9(AttributeBased 태그 필터)에서. 나머지는 예측·네트워크용이라 해당 없음. |
+| 2 | 소유 태그가 바뀔 때 GE on/off | `TargetTagRequirements` GE Component가 태그별 구독으로 GE를 inhibit·제거(`TargetTagRequirementsGameplayEffectComponent.cpp:72-150`) | Component는 필드만 있고 구독·inhibit 없음 | 현재 목표 5에서 구현(D28·D29). |
+| 3 | 평가 파라미터 | `FAggregatorEvaluateParameters`에 `AppliedSourceTagFilter`·`AppliedTargetTagFilter`·`IgnoreHandles`·`IncludePredictiveMods` | Source·Target 태그만 | 필터는 progress 세부 TODO 9. 나머지는 예측·네트워크용이라 해당 없음. |
 | 4 | Instigator 태그를 얻는 법 | `FGameplayEffectContext::GetOwnedGameplayTags`가 Instigator 액터의 `IGameplayTagAssetInterface`를 먼저 보고, 없으면 ASC(`GameplayEffectTypes.cpp:368-379`) | ASC만 | 액터 태그 인터페이스가 없다. `specTagContainer` 인자는 자리만(UE 기본 구현도 안 채움). |
 | 5 | `FTagContainerAggregator` | `ScopedTags`(5.3부터 deprecated) 포함 | 없음 | 쓰지 않는 필드. |
-| 6 | 주기 실행 magnitude | 실행마다 `CalculateModifierMagnitudes`(`:3084`) | 적용 때 값을 계속 씀(기존 동작) | [TODO-BOARD](../../../TODO-BOARD.md) (code). |
-| 7 | 자격 판정 시점 | `EvaluateQualificationForAllMods`가 mod에 `IsQualified`를 캐시 | 평가 때마다 계산 | 결과 같음. 캐시는 성능 문제가 보이면. |
 
-- 함께 발견한 것: `AttributeAggregator.Evaluate`의 요약 주석은 "마지막 Override 우선"인데, 코드는 목록에서 **먼저 만난** Override를 돌려준다. UE `FAggregatorModChannel::EvaluateWithBase`(`GameplayEffectAggregator.cpp:76-84`)도 먼저 만난(조건 맞는) Override를 돌려주므로 코드가 UE와 같고 주석이 틀렸다. aggregator feature 소관이라 고치지 않았다.
+(행 번호는 worklog가 참조해서 유지한다. 1·6·7은 UE와 같아져 지웠다.)
 
 ---
 
-## 2. Query 편집기 (2026-10-16 구현) — progress 다음 작업 12
+## 2. Query 편집기
 
-관련 결정: D16(Query 자동 설명=UE처럼 저장·Build 때 생성), D17(Query 편집기=UE처럼 별도 창·8종·Categories 전달). 확인 위치: GE 에셋 → Modifier 펼치기 → `Source Tags` 또는 `Target Tags` 펼치기 → `Tag Query` 줄.
+관련 결정: D16(Query 자동 설명=UE처럼 저장·Build 때 생성)·D17(Query 편집기=UE처럼 별도 창·8종·Categories 전달) — 둘 다 치운 결정. 확인 위치: GE 에셋 → Modifier 펼치기 → `Source Tags` 또는 `Target Tags` 펼치기 → `Tag Query` 줄.
 
-- [ ] **2-1. 인스펙터 줄 모양.** 회색 `Empty` + 오른쪽 `Edit` 버튼 + `×` 버튼이 한 줄에 보인다.
-- [ ] **2-2. 창 열기.** `Empty`(설명 글자) 또는 `Edit`를 누르면 제목이 `Tag Query Editor: Tag Query {에셋 이름}`인 작은 창이 인스펙터 줄의 **왼쪽, 조금 위**에 뜬다. 다시 누르면 기존 창이 닫히고 새로 열린다(창은 하나만).
-- [ ] **2-3. 태그 식.** 창의 `Root Expression` 팝업 → `Any Tags Match` → 아래 `Tags` 상자에서 피커로 `Test.ModifierTag.Native.Enraged` 추가 → **창을 닫지 않아도** 인스펙터 줄이 ` ANY( Test.ModifierTag.Native.Enraged )`로 바뀐다.
-- [ ] **2-4. 하위 식.** `Root Expression`을 `All Expressions Match`로 → 본문 끝 `+ Expression` 두 번 → `[0]`을 `Any Tags Match`+태그 A, `[1]`을 `No Tags Match`+태그 B → 인스펙터 줄이 ` ALL(  ANY( A ),  NONE( B ) )` 꼴.
-- [ ] **2-5. 사용자 설명.** `User Description`에 글자를 넣으면 인스펙터 줄이 그 글자로 바뀐다. 지우면 자동 설명으로 돌아간다.
-- [ ] **2-6. Cancel.** 몇 가지 고친 뒤 `Cancel` → 창이 닫히고 인스펙터 줄이 **창을 열었을 때 값**으로 돌아간다.
-- [ ] **2-7. OK·저장.** 고친 뒤 `OK` → 닫히고 값 유지 → `Ctrl+S` → Unity 재시작 → 값 유지.
-- [ ] **2-8. Undo.** 창을 연 채로 고친 뒤 `Ctrl+Z` → 인스펙터 줄과 **창 내용**이 함께 되돌아간다.
-- [ ] **2-9. Clear.** 창을 연 채로 인스펙터 줄의 `×` → 창 내용도 빈 질의로 바뀐다.
-- [ ] **2-10. 삭제.** 하위 식의 `−` → 그 칸이 **목록에서 사라진다**(빈 칸만 남으면 실패).
-- [ ] **2-11. 창 안 피커.** `Tags` 상자에서 피커가 열리고, 태그를 고르면 창이 바로 다시 그려진다.
-- [ ] **2-12. 가독성(접기·구분선·묶음).**
-  - 종류를 고른 식 줄에 접기 화살표가 있고, 누르면 그 아래가 접힌다. `None` 줄은 화살표가 없고 글자 위치만 다른 줄과 맞다.
-  - 본문이 옅은 회색 칠 + 왼쪽 색 안내선(깊이마다 파랑·초록·주황·보라)으로 묶여 보이고, 안내선이 위 줄의 화살표 아래에 온다.
-  - 접은 식 줄 끝에 회색 요약(` ANY( A )` 꼴)이 뜨고, 마우스를 올리면 전체 문구 툴팁.
-  - 태그 상자가 위 줄의 종류 팝업과 같은 세로 열에서 시작한다.
-  - 같은 목록의 칸 사이에 가는 가로줄.
-  - 접은 칸 **앞** 칸을 `−`로 지워도 접혀 있던 칸이 그대로 접혀 있다.
-  - 접을 때 Console에 GUI 레이아웃 에러(`Getting control … position`)가 없다.
-  - `Edit ▸ Preferences ▸ General ▸ Editor Theme`를 Light로 바꿔도 칠·안내선이 보인다.
-- **위험 지점(에이전트 추측):** 변경 감지를 `EditorUtility.GetDirtyCount`로 한다. 편집용 사본(`HideFlags.DontSave`)에서 이 값이 안 오르면 2-3의 "즉시 반영"이 안 된다 — 그러면 2-3이 실패로 나타난다.
+2026-10-17 에이전트가 모두 확인했다(종류 팝업 선택·태그 추가·User Description 입력은 편집 사본의 SerializedProperty에 직접 써서 대신함 — 창이 쓰는 경로와 같음).
+
+- [x] **2-1. 인스펙터 줄 모양.** 회색 `Empty` + 오른쪽 `Edit` 버튼 + `×` 버튼이 한 줄.
+- [x] **2-2. 창 열기.** `Empty` 또는 `Edit` → 제목 `Tag Query Editor: Tag Query {에셋 이름}` 창이 줄 왼쪽 조금 위에 뜬다. 다시 누르면 기존 창이 닫히고 새로 열린다(창 하나).
+- [x] **2-3. 태그 식.** `Root Expression` → `Any Tags Match` → `Tags`에 태그 추가 → **창을 닫지 않아도** 인스펙터 줄이 ` ANY( 태그 )`로 바뀐다.
+- [x] **2-4. 하위 식.** `All Expressions Match` → `+ Expression` 두 번 → `[0]` Any+A, `[1]` None+B → ` ALL(  ANY( A ),  NONE( B ) )`.
+- [x] **2-5. 사용자 설명.** `User Description`을 넣으면 인스펙터 줄이 그 글자로, 지우면 자동 설명으로.
+- [x] **2-6. Cancel.** 고친 뒤 `Cancel` → 창을 열었을 때 값으로 돌아간다.
+- [x] **2-7. OK·저장.** `OK` → 값 유지 → 저장 → 다시 읽어도 유지.
+- [x] **2-8. Undo.** 창을 연 채로 `Ctrl+Z` → 인스펙터 줄과 창 내용이 함께 되돌아간다.
+- [x] **2-9. Clear.** 창을 연 채로 인스펙터 `×` → 창도 빈 질의.
+- [x] **2-10. 삭제.** 하위 식 `−` → 그 칸이 목록에서 사라진다.
+- [x] **2-11. 창 안 피커.** `Tags` 상자에서 피커가 열리고, 고르면 창이 바로 다시 그려진다.
+- [x] **2-12. 가독성.** 접기 화살표(`None` 줄은 화살표 없이 글자 정렬), 깊이별 색 안내선과 옅은 칠, 접은 줄 끝 회색 요약 + 툴팁, 태그 상자가 위 줄 팝업과 같은 열, 칸 사이 가로줄, 앞 칸을 지워도 접힘 유지, GUI 레이아웃 에러 0, Light 테마에서도 보임.
+- [x] **2-13. 창을 열어 둔 채 재컴파일·대상 삭제.** 오류 없이 빈 편집기(제목 `Tag Query Editor`, Root `None`)가 되고, 빈 편집기에서 고쳐도 이전 대상에 안 써진다.
 
 ---
 
-## 3. Modifier Source/Target Tags 인스펙터 (2026-10-16 구현) — progress 다음 작업 10
+## 3. Modifier Source/Target Tags 인스펙터
 
-관련 결정: D13(Modifier Source/Target Tags=UE Requirements 전체), D15(Query=직렬화+판정).
+관련 결정: D13(Modifier Source/Target Tags=UE Requirements 전체)·D15(Query=직렬화+판정) — 둘 다 치운 결정. 2026-10-17 에이전트가 모두 확인했다.
 
-- [ ] **3-1.** GE 에셋의 Modifier를 펼치면 Magnitude 아래에 `Source Tags`·`Target Tags` 접기 두 개.
-- [ ] **3-2.** 각각 펼치면 `Require Tags`·`Ignore Tags`(태그 상자 + 피커)·`Tag Query`(2번 항목의 줄). 라벨은 UE 표시 이름(Must Have Tags 등)이 아니라 필드 이름이다(에이전트 판단, 바꾸고 싶으면 말해 줌).
-- [ ] **3-3.** 태그를 넣고 `Ctrl+S` → Unity 재시작 → 그대로 있는지.
-- [ ] **3-4.** Modifier가 여러 개일 때 요소 높이가 맞고 구분선·다음 요소와 겹치지 않는지.
-- [ ] **3-5.** 접기 화살표가 리스트 드래그 핸들과 겹치지 않고, 값 열이 `Modifier Op` 줄의 값 열과 같은 세로선에 있는지.
+- [x] **3-1.** GE 에셋의 Modifier를 펼치면 Magnitude 아래에 `Source Tags`·`Target Tags` 접기 두 개.
+- [x] **3-2.** 각각 펼치면 `Require Tags`·`Ignore Tags`(태그 상자 + 피커)·`Tag Query`(2번 항목의 줄). 라벨은 UE 표시 이름(Must Have Tags 등)이 아니라 필드 이름이다(에이전트 판단, 바꾸고 싶으면 말해 줌).
+- [x] **3-3.** 태그를 넣고 저장 → 다시 읽어도 그대로.
+- [x] **3-4.** Modifier가 여러 개일 때 요소 높이가 맞고 겹치지 않는다.
+- [x] **3-5.** 접기 화살표가 드래그 핸들과 안 겹치고, 값 열이 `Modifier Op` 줄의 값 열과 같은 세로선.
 
 ---
 
-## 4. 태그 드로어·피커·태그 관리 창 (2026-10-15 구현) — progress 다음 작업 9
+## 4. 태그 드로어·피커·태그 관리 창
 
-관련 결정: D10(태그 드로어=UE 동작 최대 미러), D11(피커 루트 입구=UE `GetFilteredGameplayRootTags`), D12(태그 관리 포함=레지스트리 편집). 확인용 에셋: `Assets/_Test/GameplayTagTest.asset`(단일·List·Container 필드).
+관련 결정: D12(태그 관리 포함=레지스트리 편집). 확인용 에셋: `Assets/_Test/GameplayTagTest.asset`(단일·List·Container 필드). **4-1·4-2는 Unity를 맨 앞에 띄워야 한다.** 레지스트리를 고치므로 에이전트가 할 때는 백업 후 진행하고, 끝나면 추가한 태그를 지운 뒤 백업과 비교한다.
 
-- [ ] **4-1. 관리 창.** `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset` 선택 → 인스펙터 `Manage Gameplay Tags...` → 창의 `+`로 `Test.A`·`Test.A.B`·`Test.C` 추가 → 레지스트리 에셋 목록에 저장되는지.
+- [ ] **4-1. 관리 창.** `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset` 선택 → 인스펙터 `Manage Gameplay Tags...` → 창의 `+`로 `Test.A`·`Test.A.B`·`Test.C` 추가 → 레지스트리 에셋 목록에 저장되는지. _(2026-10-17 에이전트가 이름 입력란까지 열고 멈춤 — 레지스트리는 안 바뀜)_
 - [ ] **4-2. 행 메뉴.** 관리 창 행의 메뉴에서 Rename·Delete가 동작하는지. native 태그(`Test.ModifierTag.Native…`) 행은 Rename·Delete가 회색(비활성)인지.
-- [ ] **4-3. 필드별 피커.** `GameplayTagTest.asset`의 단일·List 요소·컨테이너 필드마다 피커가 열리는지. 체크·해제(형제가 없으면 부모가 들어감), 칩의 `×`, 칩 우클릭 Copy/Paste/Clear.
-- [ ] **4-4. 저장.** 값을 넣고 `Ctrl+S` → Unity 재시작 → 값 유지(아래 5-3과 겹침).
-- [ ] **4-5. 다중 선택.** 테스트 에셋을 두 개 만들어 값을 다르게 하고 둘 다 선택 → `Multiple Values` 표시, 일부에만 있는 태그는 흐린 칩, 피커 체크박스는 미정 상태.
-- [ ] **4-6. 위험 지점.** 피커 팝업 안의 메뉴(행 ▾·우클릭·설정)를 열 때 팝업이 닫혀 버리지 않는지. 미등록 태그 경고 대화창 뒤에 팝업이 뜨는지. 행 체크박스가 눌리는지.
+- [x] _(2026-10-17)_ **4-3. 필드별 피커.** 단일·List 요소·컨테이너 필드마다 피커가 열리고, 체크·해제(형제가 없으면 부모가 들어감), 칩의 `×`, 칩 우클릭 Copy/Paste/Clear가 된다.
+- [x] _(2026-10-17)_ **4-4. 저장.** 값을 넣고 저장 → 다시 읽어도 유지(5-3과 겹침).
+- [x] _(2026-10-17)_ **4-5. 다중 선택.** 값이 다른 두 에셋을 같이 선택 → `Multiple Values`, 일부에만 있는 태그는 흐린 칩, 피커 체크박스는 미정 상태.
+- [ ] **4-6. 위험 지점 — 대화창(유저 몫).** 미등록 태그(예: `No.Such.Tag`)가 든 필드에서 피커를 열 때, 미등록 태그 경고 대화창 뒤에 피커 팝업이 뜨는지(대화창과 피커의 앞뒤). _(나머지 — 피커 안의 행 ▾·우클릭·설정 메뉴를 열어도 피커가 남는지, 행 체크박스 — 는 2026-10-17 에이전트 확인)_
 - 참고: 중첩 struct/class 필드·`[GameplayTagCategories]` 확인용 필드는 유저 요청으로 지웠다(2026-10-15). 이 둘을 보려면 확인용 필드가 따로 있어야 한다.
 
 ---
 
-## 5. Tag 코어 (2026-10-12~15 구현) — progress 다음 작업 1·2·6
+## 5. Tag 코어
 
-- [ ] **5-1. native 태그.** 1번 셀프체크의 0-1·0-2가 통과하면 native 태그 수집·트리 구성은 확인된 것이다. 추가로 레지스트리에 native와 같은 경로의 하위 태그(예: `Test.ModifierTag.Native.Calm`)를 넣으면 피커에서 native 노드 아래로 합쳐 보이는지.
-- [ ] **5-2. 계층 매칭.** 1번 셀프체크 A-3이 통과하면 "부모 Require가 자식 태그로 충족"은 확인된 것이다. 나머지(progress 다음 작업 1의 `MatchesTagDepth`·`RequestGameplayTagChildren` 등)는 셀프체크가 없다 — 필요하면 에이전트에게 셀프체크 추가를 요청.
-- [ ] **5-3. 저장 후 매칭.** 인스펙터에서 컨테이너에 `A.B.C`를 넣고 저장 → 재시작 → 그 에셋을 코드로 읽어 `HasTag("A.B")`가 true인지(역직렬화 시 이름 파싱 복원, progress 다음 작업 6). 지금은 확인용 코드가 없다 — 필요하면 요청.
-- [ ] **5-4. 레지스트리 자동 생성.** 레지스트리 에셋을 (백업 후) 지우고 Unity를 다시 열면 `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset`이 자동으로 생기는지(progress 다음 작업 2). 끝나면 백업을 되돌린다.
-- [x] _(2026-10-17, MCP 코드 실행 — `No.Such.Tag.McpCheckA` 2회 + `…B` 1회 요청 → 에러 2줄(이름당 1회), 세 결과 모두 `IsValid()` false)_ **5-5. 미등록 이름.** 코드에서 `GameplayTag.RequestGameplayTag("No.Such.Tag")`를 두 번 부르면 에러 로그가 **이름당 한 번**만 나오는지.
+- [ ] **5-1. native 태그 — 피커 화면.** 데이터는 확인됨(2026-10-17: native 갈래와 레지스트리 갈래가 한 트리). 남은 것: 레지스트리에 native와 같은 경로의 하위 태그(예: `Test.ModifierTag.Native.Calm`)를 넣으면 피커에서 native 노드 아래로 합쳐 보이는지. Unity를 맨 앞에 띄워야 하고, 끝나면 넣은 태그를 지운다.
+- [x] _(2026-10-17, MCP)_ **5-2. 계층 매칭.** `RequestGameplayTagParents`·`RequestGameplayTagChildren`·`RequestGameplayTagDirectParent`·`GameplayTagsMatchDepth`·`MatchesTag`/`MatchesTagExact`·`IsValidGameplayTagString` 모두 UE 의미대로.
+- [x] _(2026-10-17, MCP)_ **5-3. 저장 후 매칭.** 컨테이너에 태그를 저장 → 다시 읽어 부모 `HasTag` true, `HasTagExact(부모)` false.
+- [ ] **5-4. 레지스트리 자동 생성(유저 몫 또는 삭제 허락 필요).** 레지스트리 에셋을 백업 후 지우고 Unity를 다시 열면 `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset`이 자동으로 생기는지. 끝나면 백업을 되돌린다.
+- [x] _(2026-10-17, MCP)_ **5-5. 미등록 이름.** `GameplayTag.RequestGameplayTag("No.Such.Tag")`를 두 번 불러도 에러 로그는 **이름당 한 번**.
 
 ---
 
-## 6. 테스트용으로 추가한 것 (정리 대상)
+## 6. GE Component 호출·inhibit (2026-10-19 구현)
+
+관련 결정: D29(GE Component 도입, 첫 단계는 빈 껍데기), D30(Asset Tags=UE `FInheritedTagContainer` 구조, 부모 없음). A~D는 호출을 기록하는 테스트 전용 Component(`RecordingComponent`, 셀프체크 파일 안)를 GE에 넣어 보고, E는 실제 `AssetTagsGameplayEffectComponent`를 쓴다. 부여 태그는 Granted Tags Component 대신 GE 캐시(`GetGrantedTags()`)에 직접 넣는다.
+
+- [x] _(2026-10-19 MCP 61/0, 경고·에러 0. 같은 날 27 → E(Asset Tags) 43 → F(Granted Tags) 52 → G(Target Tag Requirements) 61)_ **6-1.** 메뉴 `Tools ▸ Ability System ▸ Run GE Component Self-Check`(Play 모드 필요 없음) → Console 검색 `GEComponent` → 마지막 줄 **`[GEComponent Self-Check] passed 61 / failed 0`**.
+
+| ID | 확인 내용 | 기대 | UE 근거 |
+|---|---|---|---|
+| A-1·2 | Instant 적용 | CanApply → Executed → Applied, Invalid 핸들 | `AbilitySystemComponent.cpp:844`·`:950-957`, `GameplayEffect.cpp:3224` |
+| A-3·4 | 호출 인자 | CanApply는 넘긴 Spec 원본, Executed·Applied는 적용 때 만든 같은 복사본, 모든 호출이 이 ASC의 컨테이너 | CanApply는 Spec 복사 전(`:844`), OnApplied는 `OurCopyOfSpec`(`:957`) |
+| A-5~7 | Infinite(period 0) | CanApply → Added → Applied(Executed 없음), Added가 받은 활성 GE는 이미 목록에 있고 반환 핸들과 같음, 켜진 채 시작 | `GameplayEffect.cpp:4305` |
+| A-8 | 제거 | Component 호출 없음 | 베이스에 제거 훅이 없다(`GameplayEffectComponent.h:47-74`) |
+| A-9·10 | Periodic(적용 시 실행) | CanApply → Added → Applied → Executed, 주기마다 Executed만 | UE는 적용 시 실행을 다음 틱으로 미뤄 Applied가 먼저 |
+| A-11 | Component 여러 개 + 빈 칸 | 함수마다 목록 순서, 빈 칸 건너뜀 | `GameplayEffect.cpp:881-935` |
+| A-12 | `OnGameplayEffectChanged` | Component마다 전달 | |
+| B-1·2 | CanApply false | 적용 안 됨, 뒤 Component의 CanApply도 안 부름(첫 false에서 끝) | `GameplayEffect.cpp:883-889` |
+| C-1 | Added에서 한 Component가 false | 나머지 Component의 Added도 부름, GE는 꺼진 채 시작 | `:898-903` |
+| C-2·3 | 꺼진 채 시작 | 활성 목록에 있음, modifier·부여 태그 안 걸림 | `:4306-4309` |
+| C-4~6 | `SetActiveGameplayEffectInhibit` 켜기·다시 켜기·끄기 | 같은 핸들 반환, 켜면 걸고 끄면 거둠, 같은 상태로 다시 부르면 변화 없음 | `AbilitySystemComponent.cpp:297-315` |
+| C-7 | 꺼진 GE 제거 | 거둔 효과를 또 거두지 않음(같은 Loose 태그 1개가 그대로) | `GameplayEffect.cpp:4635` |
+| C-8 | 켜진 GE의 부여 태그 | 적용 중 1 → 제거 후 0 | |
+| C-9 | 켜는 중 부여 태그 이벤트가 GE를 제거 | Invalid 반환 | `AbilitySystemComponent.cpp:324-327` |
+| D-1~3 | 꺼진 채 시작한 주기 GE | Applied는 부르지만 적용 시·주기 실행 안 함, 켠 뒤 주기에 실행 | `GameplayEffect.cpp:4467` |
+| E-1 | `InheritedTagContainer` 부모 없음 | Combined = Added | `GameplayEffect.cpp:6046-6075` |
+| E-2·3 | 부모 있음(코드로만 — 에셋엔 부모가 없다, D30) | Removed는 부모 태그를 계층으로 뺌, Added는 Removed에 정확히 같은 태그만 막힘 | 같은 곳 |
+| E-4 | `AddTag`·`RemoveTag` | 서로의 목록에서 지우고 Combined도 고침 | `:6106-6118` |
+| E-5·6 | `ApplyTo` | 기존 컨테이너: Removed에 걸리는 태그를 빼고 Removed와 같은 Added는 안 넣음 / 빈 컨테이너: Combined 그대로 | `:6082-6104` |
+| E-7~9 | Asset Tags Component + GE 캐시 | `GetOwner()`가 그 GE, `GetAssetTags()` = 설정, 다시 모아도 중복 없음 | `AssetTagsGameplayEffectComponent.cpp`, `UGameplayEffect::OnGameplayEffectChanged` |
+| E-10·11 | Spec | Asset Tags가 Source Spec 태그·합친 태그에 들어가고 액터 태그엔 없음, `GetAllAssetTags` | `GameplayEffect.cpp:1627`·`:2191-2198` |
+| E-12 | 적용 | Asset Tags는 대상 소유 태그에 안 들어감 | Asset Tags 정의(헤더 주석) |
+| E-13 | Instant modifier Source Require = GE 자신의 Asset Tag | 건너뜀 — 실행 판정은 액터 태그만 | `:3102` |
+| E-14 | 캡처 평가 | 캡처하는 GE의 Asset Tag가 버프의 Source Require를 맞춤(100 → 150) | `:983`(합친 태그) |
+
+실패 시 의심(E): `InheritedTagContainer`, `AssetTagsGameplayEffectComponent`, `GameplayEffectAsset.OnGameplayEffectChanged`(`SetOwner`·캐시 비우기), `GameplayEffectSpec.Initialize`(Spec 태그).
+
+| ID | 확인 내용 | 기대 | UE 근거 |
+|---|---|---|---|
+| F-1~3 | Target Tags Component + GE 캐시 + Spec | `GetOwner()`, `GetGrantedTags()` = 설정(다시 모아도 중복 없음), `Spec.GetAllGrantedTags` | `TargetTagsGameplayEffectComponent.cpp`, `GameplayEffect.cpp:2174-2181` |
+| F-4 | Infinite 적용 | 대상 소유 태그 1개 | `GameplayEffect.cpp:4373` |
+| F-5 | 같은 태그를 두 GE가 부여 | 2 → 하나 제거 1 → 0 (참조 카운트) | `:4373`·`:4670` |
+| F-6 | 자식 태그 부여 | 부모 태그로도 매칭 | 소유 태그 컨테이너가 부모 개수를 센다 |
+| F-7 | Instant | 주지 않음(활성 목록에 안 남음) | UE는 에디터 검증에서 오류(`TargetTagsGameplayEffectComponent.cpp` `IsDataValid`) — 우리는 검증 없음 |
+| F-8 | 주기 GE | 활성인 동안 1 → 제거 0 | 부여는 period와 무관(`:4373`) |
+| F-9 | 꺼진 채 시작 | 꺼진 동안 0 → 켜면 1 → 제거 0 | `AbilitySystemComponent.cpp:307-315` |
+
+실패 시 의심(F): `TargetTagsGameplayEffectComponent`, `GameplayEffectAsset.CachedGrantedTags`, `ActiveGameplayEffectsContainer.Add/RemoveActiveGameplayEffectGrantedTagsAndModifiers`, `AbilitySystemComponent.UpdateTagMap`.
+
+| ID | 확인 내용 | 기대 | UE 근거 |
+|---|---|---|---|
+| G-1·2 | Application Require / Ignore | 조건을 못 맞추면 적용 안 됨(Instant·Infinite) | `TargetTagRequirementsGameplayEffectComponent.cpp` `CanGameplayEffectApply` |
+| G-3 | Removal 조건을 이미 맞춤 | 적용도 막힘 | 같은 함수 |
+| G-4 | Ongoing Require | 조건 없이 적용 → 꺼진 채 / 태그 생김 → 켜짐 / 없어짐 → 꺼짐(제거 아님) | `OnActiveGameplayEffectAdded` 반환값, `OnTagChanged` |
+| G-5 | GE 제거 뒤 태그 변화 | 아무 일 없음(구독 해제) | `OnGameplayEffectRemoved` |
+| G-6 | Removal Require | 적용 중 태그 생김 → 제거 | `OnTagChanged` |
+| G-7 | 다른 GE의 Granted Tag로 Ongoing 충족 | 부여 GE 적용 → 켜짐, 제거 → 꺼짐 | 태그 연동 전체 흐름 |
+| G-8 | Ongoing TagQuery | 질의에 나오는 태그도 구독해 켜짐 | 구독 태그에 `TagQuery.GetGameplayTagArray` 포함 |
+| G-9 | 정리 | Health 100, 태그 0 | |
+
+실패 시 의심(G): `TargetTagRequirementsGameplayEffectComponent`, `ActiveGameplayEffectEvents`(제거 알림), `ActiveGameplayEffectsContainer.RemoveActiveGameplayEffect`(알림 순서)·`SetActiveGameplayEffectInhibit`, `GameplayTagCountContainer` 이벤트.
+
+실패 시 의심: A·B는 `ActiveGameplayEffectsContainer.ApplyGameplayEffectSpec`·`ExecuteActiveEffectsFrom` 끝과 `GameplayEffectAsset`의 `CanApply`·`OnAddedToActiveContainer`·`OnExecuted`·`OnApplied`, C·D는 `InternalOnActiveGameplayEffectAdded`·`SetActiveGameplayEffectInhibit`·`RemoveActiveGameplayEffect`·`InternalExecutePeriodicGameplayEffect`.
+
+---
+
+### 6-2. 시간이 걸린 동작 — PlayMode (2026-10-19)
+
+`Assets/Scripts/Test/TagRequirementsPlayModeTest.cs`. 저장 안 하는 씬에 이 컴포넌트만 붙이고 Play(에디터에서 — native 테스트 태그가 에디터 어셈블리에 있다) → Console `[TagPlayMode Self-Check] passed 9 / failed 0`. ASC.Update가 도는 실제 프레임 위에서 만료·주기 실행과 태그 연동이 맞물리는지 본다.
+
+- [x] _(2026-10-19 MCP 9/0, 에러 0)_ **6-2-1.** P-1·2 부여 GE(Duration 0.3초) 만료 → 태그 없어짐 → 그 태그로 켜져 있던 GE 꺼짐(제거 아님) / P-3~5 꺼진 주기 GE는 시간이 지나도 실행 안 함, 켜지면 재개, 다시 꺼지면 멈춤 / P-6·7 주기 GE가 도는 중 Removal 태그 → 즉시 제거, 그 뒤 실행 없음 / P-8 꺼진 Duration GE도 시간이 되면 만료 / P-9 정리.
+
+---
+
+## 7. 테스트용으로 추가한 것 (정리 대상)
 
 | 것 | 위치 | 지울 때 |
 |---|---|---|
 | 셀프체크 코드 + native 테스트 태그 2개 | `Assets/Scripts/Test/Editor/ModifierTagSelfCheck.cs` | 파일 삭제 → native 태그도 사라짐 |
+| PlayMode 태그 연동 테스트(GE는 메모리에서 만듦) | `Assets/Scripts/Test/TagRequirementsPlayModeTest.cs` | 파일 삭제 |
+| GE Component 셀프체크 + native 테스트 태그 `Test.GEComponent.Granted`·`Test.GEComponent.Asset`·`Test.GEComponent.Asset.Child`·`Test.GEComponent.Other` | `Assets/Scripts/Test/Editor/GameplayEffectComponentSelfCheck.cs` | 파일 삭제 → native 태그도 사라짐 |
 | 레지스트리 테스트 태그 | `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset`의 `Test.ModifierTag.Registry.Stunned` | 관리 창에서 Delete 또는 줄 삭제. 지우면 셀프체크 0-3이 실패한다 |

@@ -40,15 +40,13 @@
 - [x] 4. owner 주입(`SetOwner`) + 세터 위임 (→D6(Set owner back-ref))
 
 ## 결정 기록
-→ [decisions.md](decisions.md). progress엔 인덱스만.
+→ [decisions.md](decisions.md). progress엔 인덱스만. 치운 결정(D4·D5)은 decisions 끝에 한 줄씩.
 
 | ID | 제목 | 날짜 | 결정 (요지) |
 |---|---|---|---|
 | D1 | Handle struct·FieldInfo 캐싱 | 2026-05-26 | 런타임 핸들 = FieldInfo 캐싱 불변 struct (string 탐색 제거) |
 | D2 | Set=마커+구체 Set | 2026-05-26 | `AttributeSet` 빈 추상 마커, 구체 Set이 `AttributeData` 필드 보유 |
 | D3 | 초기값 SO+Reflection | 2026-05-26 | 초기값은 SO + Reflection 세팅 |
-| D4 | New Script 생성 | 2026-08-07 | Set 셀렉터 "New Script..." — 템플릿 생성 후 자동 배정 |
-| D5 | 직렬화/런타임 참조 분리 | 2026-08-21 | 참조를 직렬화 `GameplayAttribute` + 런타임 `GameplayAttributeHandle`로 분리 |
 | D6 | Set owner back-ref | 2026-08-22 | `AttributeSet` owner back-ref + 세터 ASC 위임, 주입은 `SetOwner` |
 
 ## 작업 로그

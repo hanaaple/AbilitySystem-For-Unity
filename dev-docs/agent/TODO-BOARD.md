@@ -3,65 +3,57 @@
 > feature 단위 추적은 `feature-list.md`가 담당한다. **이 보드는 그보다 잘게 쪼개진 잡다한 작업·개인 TODO·이슈**를 모은다 — 문서 정비, 인프라(GitHub 설정 등), 실험, 리팩터, 아이디어 등 feature로 묶기 애매한 것들.
 > 관리 규약은 `TODO-BOARD.harness.md`. 항목은 상태가 바뀌면 아래 칸 사이를 이동한다.
 
-- 최종 갱신: 2026-10-17 (KST)
+- 최종 갱신: 2026-10-18 (KST)
 
 ---
 
+## 📋 TODO (현재 목표 — GameplayTag & GameplayEffect 태그 연동 완성)
 
+> 목표(2026-10-18 유저): "GameplayTag & GameplayEffect 쪽을 온전히 개발하고 넘어가는거야" — UE 기준, 단 "부가 기능까지 전부 구현하고 넘어가겠다는 말은 아냐. 일반적인 Tag 기능만". 범위는 아래 1~6 + 검증("음 그대로 가자"). 미룬 것(SetByCaller·GE 스택·대소문자·부가 기능)은 아래 '뒤로 미룸'.
+> 순서는 위에서부터(에이전트 제안 — 1이 있어야 태그 주는 GE를 만들고, 그 GE로 5를 확인할 수 있다). 상세: [gameplay-tag progress](feature/ability-system/gameplay-tag/progress.md) 세부 TODO 4~6·13, decisions D28(CurrentValue=UE처럼 빈 문맥)·D29(GE Component=빈 껍데기).
 
-## 📋 TODO (당장 목표)
+- [ ] **(code)** **6. 태그로 활성 GE 찾기·제거** — UE `FGameplayEffectQuery` + ASC 조회·제거 API(예: "Debuff 전부 해제"), UE `URemoveOtherGameplayEffectComponent`. progress 세부 TODO 13. _(2026-10-16 등록 — 태그 후보 조사, 2026-10-18 목표에 편입)_
+- [ ] **(verify)** **gameplay-tag 태그 관리 창·대화창 남은 것** — tests.md §4-1(관리 창 추가)·4-2(행 메뉴 Rename·Delete, native 행 비활성)·4-6의 미등록 태그 경고 대화창과 피커 앞뒤·§5-1 피커 화면(레지스트리에 `Test.ModifierTag.Native.Calm`을 넣어 native 노드 아래로 합쳐 보이는지). 2026-10-17 Unity를 앞으로 띄워 이어 하다 유저가 다른 창을 써서 멈췄다. 대화창은 MCP로 돌리는 동안 화면에 안 떠(바로 OK) 유저 확인이 필요하다. _(2026-10-17 등록, 같은 날 갱신)_
+- [ ] **(verify)** **gameplay-tag §5-4 레지스트리 자동 생성** — 에이전트가 백업까지 했으나 레지스트리를 휴지통으로 옮기는 명령이 권한 판정에서 "되돌릴 수 없는 삭제"로 거부됐다. 유저가 하거나 삭제를 허락해야 한다. _(2026-10-17 등록, 같은 날 갱신)_
+- [ ] **(verify)** **중첩 struct `ISerializationCallbackReceiver` 콜백 실측** — 인스펙터에 `GameplayTag` 필드 저장→로드 후 `Equals` true인지. 실패 시 fallback(컨테이너 재-intern / `Ordinal`). gameplay-tag progress 다음 작업 6. _(2026-10-18 보드 등록)_
 
-> gameplay-tag 다음 순서(2026-10-16 정리, 2026-10-17 항목별로 쪼갬). 상세는 각 링크 — 여기는 순서와 할 일만.
-> 유저 에디터 확인 = [gameplay-tag/tests.md](feature/ability-system/gameplay-tag/tests.md). 실패하면 콘솔 빨간 줄 전체를 에이전트에게.
+## 📋 TODO (뒤로 미룸)
 
-- [ ] **(verify)** **gameplay-tag Play 모드 회귀** — tests.md §1-3-2~5: PlayMode 셀프체크(선택), 평소 쓰던 GE(`GE_EquipSpeedDown` 등)로 이동 속도·체력이 전과 같은지, ASC 인스펙터의 활성 GE 캡처 줄이 에러 없이 나오는지, `SpeedBoostExecution` 로그 값. §1-3-2는 Play 진입을 허락하면 에이전트가 MCP로 돌릴 수 있다. (선택) §1-4 테스트 GE에 태그 조건을 넣어 적용해 보기. _(2026-10-17 등록)_
-- [ ] **(verify)** **gameplay-tag Query 편집기** — tests.md §2(2-1~2-12): 인스펙터 줄 모양, 창 열기, 즉시 반영, 하위 식, 사용자 설명, Cancel, OK·저장, Undo, Clear, 삭제, 창 안 피커, 가독성(접기·안내선·요약·Light 테마). _(2026-10-17 등록)_
-- [ ] **(verify)** **gameplay-tag Modifier Source/Target Tags 인스펙터** — tests.md §3(3-1~3-5): 접기 두 개, 안의 Require·Ignore·Query, 저장 후 재시작 유지, Modifier 여러 개일 때 높이·구분선, 화살표·값 열 정렬. _(2026-10-17 등록)_
-- [ ] **(verify)** **gameplay-tag 태그 드로어·피커·관리 창** — tests.md §4(4-1~4-6): 관리 창 추가·Rename·Delete(native 행 비활성), 필드별 피커, 저장, 다중 선택, 팝업 안 메뉴에서 팝업이 닫히지 않는지. _(2026-10-17 등록)_
-- [ ] **(verify)** **gameplay-tag Tag 코어 남은 것** — tests.md §5-1(레지스트리 하위 태그가 native 노드 아래로 합쳐 보이는지), §5-3(저장·재시작 후 `HasTag` — 확인 코드 없음, 원하면 에이전트가 작성), §5-4(레지스트리 자동 생성 — 백업 후 삭제). _(2026-10-17 등록)_
-- [ ] **(decision)** **gameplay-tag ① CurrentValue와 캡처 평가의 태그 문맥 차이** — tests.md §1-5 ①, D21(지속형 태그 조건을 CurrentValue에도 적용) 트레이드오프. A 그대로(UE 방식) / B 캡처도 CurrentValue처럼 / C mod별 선택. 현재 동작은 셀프체크 C-11~C-13(Health 200인데 Speed 100). _(2026-10-16 등록, 10-17 분리)_
-- [ ] **(decision)** **gameplay-tag ② CurrentValue Source 조건에 GE 에셋 태그도 합칠지** — tests.md §1-5 ②. GE 에셋 태그(progress 세부 TODO 4)가 생긴 뒤. _(2026-10-16 등록, 10-17 분리)_
-- [ ] **(decision)** **gameplay-tag ③ `UpdateAggregatorMod` 버그 수정 시점** — 상세는 아래 '우선순위 낮음'의 (bug) 항목. _(2026-10-16 등록, 10-17 분리)_
-- [ ] **(decision)** **gameplay-tag ④ 주기 실행 magnitude 재계산을 UE처럼 할지** — 상세는 아래 '우선순위 낮음'의 (code) 주기 실행 항목. _(2026-10-16 등록, 10-17 분리)_
-- [ ] **(decision)** **gameplay-tag ⑤ Query 편집기 접힘 상태 키** — 배열 경로 키 유지(drawer 가이드 안티패턴에 걸림) vs `managedReferenceId`. _(2026-10-16 등록, 10-17 분리)_
-- [ ] **(decision)** **gameplay-tag ⑥ `TokenStreamVersion` 도입 여부** — D15(Query=직렬화+판정)의 트리거(편집 UI 착수 시 결정)에 걸렸으나 아직 안 정함. _(2026-10-16 등록, 10-17 분리)_
-- [ ] **(code)** **gameplay-tag 소유 태그 입구 + 태그 변경 시 CurrentValue 재계산** — 유저: "태그가 바뀌면 CurrentValue 다시 계산하도록 하는게 맞고" / "문서로 자세히 써놔 다음에 하게". 계획·UE 위치: [gameplay-tag progress](feature/ability-system/gameplay-tag/progress.md) 다음 작업 3. 착수 전 범위(카운트 컨테이너·Loose 태그·이벤트 등록) 확인. 끝나면 셀프체크에 Target 통과·재계산 케이스 추가, tests.md §1-6을 검증 항목으로. 선행: 위 (verify). _(2026-10-16 등록)_
-- [ ] **(code)** **gameplay-tag GE·ASC 태그 연동** — progress 다음 작업 8의 질문 ①~④ 답 대기(① GE 구조: 평면 필드 vs UE 5.3+ GE Component부터). ③ ASC 범위는 위 소유 태그 항목과 겹쳐 함께 묻는다. 답 → decisions 기록 → 세부 TODO 4~6 착수. _(2026-10-16 등록)_
-- [ ] **(code)** **gameplay-tag 태그 후보(순서·포함 미정)** — progress 세부 TODO 9~13(AttributeBased 태그 필터·SetByCaller·Spec 동적 태그·Execution 태그·활성 GE 태그 질의). 착수 때 하나씩 묻는다. _(2026-10-16 등록)_
+> 2026-10-18 목표 전환으로 미뤘다. 항목 본문은 옮기기 전 그대로다.
 
-> 이하 기존 항목.
+> **현재 목표에서 미룬 것** (유저 2026-10-18: "GE 관련으로는 나중으로 넘길거고 대소문자는 나중에 넘기자")
 
+- [ ] **(code)** GE **SetByCaller** 구현 — 유저 도입 확정(→gameplay-effect D20(spec API+clone 유지)). 런타임 계산값(차징·콤보·RNG 등 **어트리뷰트가 아닌 값**)을 spec에 태그 키로 꽂아 적용. spec 직접생성 API(`MakeOutgoingSpec`)+`Clone()`의 실사용 소비처 — 이 기능 때문에 asset-only 축소를 반려하고 spec-API·clone을 유지했다(D20(spec API+clone 유지)). AttributeBased(어트리뷰트 유도)로 표현 안 되는 magnitude를 다룬다. 2026-10-19 `MagnitudeCalculationType.SetByCaller` 자리만 생김(인스펙터 "구현 예정", 런타임 계산 실패 → 0 + 경고). _(2026-08-04 등록 — class/struct·clone 설계 논의 중 확정)_
+- [ ] **(code)** GE **Custom Calculation Class** magnitude 구현 — UE `UGameplayModMagnitudeCalculation`(`EGameplayEffectMagnitudeCalculation::CustomCalculationClass`). 2026-10-19 enum 자리만 생김(인스펙터 "구현 예정", 런타임 계산 실패 → 0 + 경고). _(2026-10-19 등록)_
+- [ ] **(code)** GE Execution **Calculation Modifier 런타임 적용 + Transient(임시 변수) 집계기** — 편집기·데이터는 2026-10-19(→gameplay-effect D23), 적용은 아직 없다. ① Execution 파라미터를 만들 때 Calculation Modifier로 집계기 두 묶음: 캡처 어트리뷰트 → 그 aggregator 사본 + mod(실제 값 불변), Transient 태그 → 기본값 0 새 aggregator + mod(UE `GameplayEffectExecutionCalculation.cpp:26-57`). ② Transient: Execution이 `Defs()`처럼 virtual 함수로 태그 선언 → 편집기 Backing Data 선택지에 추가, Calculation Modifier에 `aggregatorType`·`transientAggregatorIdentifier` 필드, Execute는 `AttemptCalculateTransientAggregatorMagnitude`로 읽음(mod 없으면 false → 기본값은 Execute가). 쓰임: 같은 Execution을 여러 GE가 쓰면서 GE별 보정값(+20·×1.5)을 줄 때. 코드 TODO 주석: `GameplayEffectExecution`·`GameplayEffectExecutionScopedModifierInfo`·`GameplayEffectExecutionParameters`. 구현하면 `CalculationModifierSelfCheck` E-2(지금은 "런타임이 아직 안 씀"을 고정) 기대값을 바꾼다. 착수 전 확인: `AttributeAggregator` 단독 생성 가능 여부, UE가 mod 없는 캡처도 사본에 넣는지(`:63` 생성자). _(2026-10-19 등록 — 유저 "TODO로 두자")_
+- [ ] GE 스택 구현
+- [ ] **(code)** **gameplay-tag D3 대소문자 무시 비교 + 표기 보존** — 결정은 됐고 구현이 없다(`InternedName`은 대소문자 구분). progress 다음 작업 5. _(2026-10-18 보드 등록)_
+- [ ] **(code)** **GE 태그 부가 기능** — UE GE Component 중 Immunity·Chance to Apply·Additional Effects·Custom Can Apply, Spec 동적 태그(`DynamicGrantedTags`·`DynamicAssetTags`, 세부 TODO 11), AttributeBased 태그 필터(세부 TODO 9), Execution `PassedInTags`·scoped modifier 태그(세부 TODO 12). Block Ability Tags·Abilities Component는 gameplay-ability 때. _(2026-10-18 등록 — 목표 범위 정리 중 제외)_
+- [ ] Gameplay Cue 구현
+- [ ] **(code)** **Conditional GE** (신규) — GE 적용 시 Source 태그 조건이 맞으면 다른 GE를 따라 적용한다. UE `FConditionalGameplayEffect::RequiredSourceTags`(5.6 `GameplayEffect.h:495`). 우리 쪽엔 기능 자체가 없다. 선행: gameplay-tag의 GE 태그 연동. _(2026-10-16 등록 — 태그 후보 조사)_
+- [ ] **(code)** **Gameplay Event** (신규) — `HandleGameplayEvent`/`SendGameplayEventToActor`, 이벤트 기반 능력 발동(예: 피격→반격). 선행: Tag. _(2026-08-09 등록)_
+- [ ] **(idea)** **게임 쪽 태그 적용** — ① `InputModule`의 입력 enum(`GameplayInputAction`·`ItemInputAction`)을 InputTag로 바꿀지(Lyra 패턴, 에이전트 기억이며 원문 미확인) ② 아이템 종류·진영·데미지 타입 분류 태그. 적용 여부는 유저 미정. _(2026-10-16 등록 — 태그 후보 조사)_
+
+> **이전 당장 목표·진행 중이던 것**
 
 - [ ] **(design)** ⭐ **데모 씬 한 장면 확정** — 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../project/design.md))의 **다음 액션.** 씬을 정하면 필요한 GAS 최소 집합이 역산된다. 초안: 플레이어 도트뎀+스턴 / 자버프 / 적 피격→반격, 스탯·상태·쿨다운 UI Toolkit HUD. **확정 전 GA/Tag/… feature 폴더 신설 금지**(등록 먼저 — feature/HARNESS '폴더 구조·네이밍'). _(2026-08-09 등록)_
 - [ ] **(verify/setup)** **BoxRoom 검증 세팅 완성** — 디버그 도구는 만들어짐(2026-08-05, `BoxRoom.cs`+`.prefab`, ASC Inspector 창). 남은 세팅: ① 프리팹의 BoxRoom이 **Missing Script면** `m_Script` guid를 실제 값으로 교체(에이전트가 `.cs.meta` GUID `3a9f2b7c…` 발급). ② 3모드 GE 슬롯 꽂기 — 특히 **Buff에 `GE_EquipSpeedDown`**(Source damage 기반 speed 감소) → 5b evaluate end-to-end 검증과 직결. ③ **Room ASC `attributeInitData`**(Source 캡처 테스트 시) + **Player ASC에 `CombatAttributeSet`**(없으면 캡처 무효→경고+0). ④ 씬 배치·시각화(선택). 검증 항목 = [gameplay-effect/tests.md](feature/ability-system/gameplay-effect/tests.md). _(2026-08-05 등록)_
 - [ ] Item Instance - Item Behaviour, Socket에 Item prefab 장착까지
+- [ ] **(code)** ⭐ **① AttributeCapture 계층** → **② Execution Calculation Modifiers** — **순서 확정(유저, 2026-07-20).** 근거: **캡처가 있어야 스냅샷을 할 수 있으므로** 캡처가 선행한다. **진행(2026-08-03): 파일 9개 중 ~5/9** — 정의 `GameplayEffectAttributeCaptureDefinition`(→D12(캡처 정의 struct)) + 결과 계층 Spec·Container(→D13(캡처 계층+snapshot), snapshot 완전 구현) + `GameplayEffectSpec` 컨테이너 소유·compose·Source 캡처(→D14(Spec이 캡처 소유)) 완료. 부수로 어트리뷰트 참조를 `GameplayAttribute` 단일 타입으로 추출(→D15(GameplayAttribute 타입)), 캡처 컨테이너를 UE 원형에 맞춰 `_definitions` 제거(→D16(캡처 컨테이너 UE 정렬)). 상세는 gameplay-effect progress/worklog. Target 캡처+spec 복사는 2026-08-04 완료(→D18(ActiveEffect가 Owner 보유)/D19(Spec 복사/Clone)/D20(spec API+clone 유지) — 적용 경계 clone+`CaptureAttributeDataFromTarget`). **evaluate(5b)도 2026-08-04 완료** — `GameplayModifier.EvaluateMagnitude`+`GameplayEffectSpec.CalculateModifierMagnitudes`로 캡처값을 실제 magnitude로 조회. **다음: 유저 에디터 검증**(캡처가 실제로 값을 담는지 첫 관측). 이후 ② Execution Calculation Modifiers. _(2026-07-20 등록, 07-28 착수)_
+- [ ] **(design)** ⭐ **기획안 확정 (선행 — 아이템 설계보다 먼저)** — 아이템 구조를 못 정하는 이유가 결국 **기획이 안 정해져서**임이 드러났다(2026-07-13). 전투가 콤보·탄약·재장전·패링을 실제로 요구하는지에 따라 구조 결론이 뒤집힌다(design-draft의 미결 D-1). `dev-docs/project/design.md`를 전투 중심으로 확실히 세운 뒤 아이템 설계로 돌아온다. _(2026-07-13 등록)_
+- [ ] **(design)** 아이템 시스템 신규 설계 — **기획안 확정 대기로 보류.** 유저와 설계 논의 중, 결론 전 구현 금지. 아래 유저 의도가 목적:
+  - 어떤 캐릭터든 아이템 장착에 따라 **알아서** 작동 (캐릭터 특화 없이)
+  - 아이템에 종속되는 로직이 아이템 외부에 작성되지 않을 것
+  - Gun·Melee 등 종류별 로직이 들어갈 자리가 있되, 아이템별 클래스 분리·상속을 강제하지 않을 것 (전략 패턴 방향은 유저 언급)
+  - 아이템을 구현할 때 알아야 하는 것(컨텍스트, 외부 접근 방법, 시스템 전체 이해)이 복잡하지 않을 것 — 복잡도 대비 이득 없는 과설계 배제
+  - 표현부(ItemBehaviour·GameplayCue 활용 포함)의 역할과 Combat 로직과의 연동 방식은 재검토 대상
+  - **진행(2026-07-12):** 규약 백지화 완료(이전 INV·D·로드맵 → `feature/item-system/archive/`). 새 판단 기준 4축 채택(feature/HARNESS '폴더 구조·네이밍', Nystrom Type Object vs Subclass Sandbox).
+  - **진행(2026-07-13):** 설계도 백지에서 재작성 → [`feature/item-system/design-draft.md`](feature/item-system/design-draft.md)(확정 아님). `ItemModule`·`ItemInstance`·"모듈 조합"은 **권위 없음**으로 강등하고, 그렇게 서술하던 project 문서(architecture/item-equipment.md·overview.md, design.md)를 **전부 미정 처리**. 후보 3안(A: 무기=Runtime 서브클래스 / B: 현행 시스템이 알고리즘 보유 / C: 어빌리티) — GAS엔 GameplayAbility가 없음(코드 확인). **결론은 기획안(위 ⭐)이 서야 남** — 콤보/탄약/패링 채택 여부가 A vs B를 가름. _(2026-07-10 등록, 07-13 갱신)_
 
-## 📋 TODO (순서 무관 우선순위 낮음)
-
-> **아래 GAS 대분류·기술은 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../project/design.md))의 목표 기능이다.** 데모 씬 확정 후 필요분만 착수·feature 등록한다. 각 기능은 UE-complete가 아니라 "최소한 진짜 도는 버전". (기존 GA/Cue/Stack/Execution 항목도 이 방향에 포함.)
+> **이전 우선순위 낮음** (아래 GAS 대분류·기술은 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../project/design.md))의 목표 기능이다. 데모 씬 확정 후 필요분만 착수·feature 등록한다. 각 기능은 UE-complete가 아니라 "최소한 진짜 도는 버전".)
 
 - [ ] **(infra)** **Ability System 플러그인화(asmdef/UPM 패키지)** — 유저 의도: "애초에 Ability System은 별개의 플러그인처럼". 2026-10-12 논의 후 **유저가 미룸**. 에이전트 제안(미확정): `Packages/com.<scope>.abilitysystem` embedded package(개발·설치 경로 동일). 정할 것: 패키지 이름(scope), feature-local `Editor/` 폴더 처리(asmdef 아래선 Editor 폴더 규칙이 안 먹힘 → 표준 Runtime/Editor 구조 vs `.asmref`), `Core.Common` 처리(패키지 안으로 vs 별도 common 패키지), 브랜치. 확인한 사실: 에셋에 `Core.AbilitySystem…, Assembly-CSharp` AQN 저장 0건, `Common`→AbilitySystem 코드 의존 없음. 착수 시 gameplay-tag D5(생성 차단=Request 입구+internal 생성 함수)의 `GameplayTag.Create`가 실제로 막히는지 확인. _(2026-10-12 등록)_
 
-- [ ] **(code)** **Gameplay Tag 시스템** (신규 대분류) — 계층 태그(`Status.Stun`)+매칭, `GameplayTagContainer`(HasAny/HasAll), ASC `GameplayTagCountContainer`(레퍼런스 카운트·변경 이벤트), GE 훅(GrantedTags·Ongoing/Application/Removal 요구). UE 툴링(에디터 레지스트리·복제·`FGameplayTagQuery`)은 제외. **Cue·Event·GE 태그조건의 선행이라 레버리지 큼.** _(2026-08-09 등록)_
-- [ ] **(code)** **Gameplay Event** (신규) — `HandleGameplayEvent`/`SendGameplayEventToActor`, 이벤트 기반 능력 발동(예: 피격→반격). 선행: Tag. _(2026-08-09 등록)_
-- [ ] **(code)** **Conditional GE** (신규) — GE 적용 시 Source 태그 조건이 맞으면 다른 GE를 따라 적용한다. UE `FConditionalGameplayEffect::RequiredSourceTags`(5.6 `GameplayEffect.h:495`). 우리 쪽엔 기능 자체가 없다. 선행: gameplay-tag의 GE 태그 연동. _(2026-10-16 등록 — 태그 후보 조사)_
-- [ ] **(bug)** **`AttributeAggregator.UpdateAggregatorMod`가 다른 GE의 mod를 덮어쓰거나 범위를 벗어난다** — feature: aggregator. _(2026-10-16 등록 — gameplay-tag 판정 연결 중 발견)_
-  - **위치:** `Assets/Scripts/Core/AbilitySystem/Effect/AttributeAggregator.cs` `UpdateAggregatorMod`. 호출 경로: 소스 aggregator dirty → `AbilitySystemComponent.OnMagnitudeDependencyChange` → `ActiveGameplayEffectsContainer.OnMagnitudeDependencyChange` → `UpdateAggregatorModMagnitudes` → `UpdateAggregatorMod`. non-snapshot AttributeBased(또는 캡처 의존) 지속형 GE의 magnitude가 라이브로 바뀔 때만 탄다.
-  - **원인:** Spec의 modifier 번호(`modIndex`, GE 안에서의 순서)를 aggregator의 `_mods` 목록 번호로 그대로 쓴다(`_mods[modIndex] = …`). `_mods`에는 여러 GE의 mod가 등록 순서대로 섞여 있어 두 번호는 서로 관계가 없다.
-  - **증상 예 1(덮어쓰기):** Health base 100. GE A(Health +10)를 먼저 걸고, GE B(Health += 다른 어트리뷰트 기반, 지금 +20)를 건다 → `_mods = [A, B]`. B의 소스 값이 바뀌면 B의 modifier 번호 0으로 `_mods[0]`(A의 칸)을 B로 덮는다 → `[B, B]`. A가 사라지고 B가 두 번 들어가 130이 아니라 140이 된다. 이후 A를 제거하면 지울 칸이 없어 값이 안 돌아오고, B를 제거하면 B 두 칸이 함께 지워진다.
-  - **증상 예 2(예외):** GE B의 modifier가 `[0: Speed, 1: Speed, 2: Health]`이고 Health aggregator에 B의 mod 하나만 있으면 `_mods[2]` → `ArgumentOutOfRangeException`.
-  - **우연히 맞는 경우:** 그 aggregator에 그 GE의 mod만 있고, GE 안에서 그 어트리뷰트를 겨냥한 modifier 번호가 `_mods` 순서와 우연히 같을 때. 기존 셀프체크(`AggregatorSelfCheck` E)는 이 경우만 돌아 통과한다.
-  - **UE 방식(5.6 `GameplayEffectAggregator.cpp:503-521` `FAggregator::UpdateAggregatorMod`):** 그 활성 핸들의 mod를 전부 지우고(`RemoveAggregatorMod(ActiveHandle)`), Spec의 modifier 중 이 어트리뷰트를 겨냥한 것을 조건(`&ModDef.SourceTags`·`&ModDef.TargetTags`)과 함께 다시 넣은 뒤 dirty를 한 번 알린다.
-  - **수정안:** UE처럼 "핸들로 제거 → 해당 modifier 재추가 → dirty 1회". 재추가 시 조건과 GE Source 액터 태그(`spec.CapturedSourceTags.GetActorTags()`)도 함께 넘긴다(지금 코드는 이미 넘김). 제거·추가 사이에 dirty를 두 번 울리지 않게 `RemoveAggregatorMod`·`AddAggregatorMod`의 broadcast를 피하거나 내부 리스트를 직접 고친다.
-  - **검증안:** `AggregatorSelfCheck`에 "GE A(+10 고정) 먼저 + GE B(live AttributeBased) → B 소스 변경 → A가 남아 있는지·합이 맞는지" 케이스와 "modifier 번호가 aggregator mod 수보다 큰 GE" 케이스 추가.
-- [ ] **(code)** **주기 실행(Periodic) 때 magnitude를 다시 계산하지 않음 — UE와 다름** — feature: gameplay-effect. _(2026-10-16 등록 — gameplay-tag 판정 연결 중 확인)_
-  - **UE(5.6):** `FActiveGameplayEffectsContainer::ExecuteActiveEffectsFrom`(`GameplayEffect.cpp:3065-3110`)이 실행할 때마다 ① Target 태그를 Owner에서 다시 읽고(`:3081-3082`) ② `SpecToUse.CalculateModifierMagnitudes()`(`:3084`)로 모든 modifier magnitude를 다시 계산한 뒤 ③ 태그 조건을 판정해 적용한다.
-  - **우리:** `ActiveGameplayEffectsContainer.ExecuteGameplayEffect`가 ①과 ③은 하지만 ②를 안 한다. magnitude는 적용 때(`CaptureAttributeDataFromTarget` → `CalculateModifierMagnitudes`) 계산한 값을 이후 모든 주기 실행에 그대로 쓴다. 주기 GE는 `RegisterLinkedAggregatorCallbacks`도 하지 않아(period 0만 함) 라이브 갱신 경로도 없다.
-  - **차이가 드러나는 예:** DOT GE(Periodic, 1초마다 Health −= Source 공격력(non-snapshot) × 0.1). 적용 뒤 공격자가 공격력 버프를 받으면 UE는 다음 틱부터 데미지가 커지고, 우리는 끝까지 처음 값.
-  - **태그와의 관계:** 이번 작업으로 주기 실행 때 Target 태그는 새로 읽지만, 그 태그로 캡처 평가를 다시 하지 않으므로 "Target 태그에 따라 달라지는 캡처 값"도 첫 적용 값으로 고정된다.
-  - **수정안:** `GameplayEffectSpec.CalculateModifierMagnitudes`를 컨테이너가 부를 수 있게 열고(UE는 public), `ExecuteGameplayEffect`에서 `CaptureTargetActorTags` 바로 다음에 호출. Instant는 적용 때 이미 계산하므로 두 번 계산하게 된다(UE도 같음).
-  - **검증안:** 셀프체크에 "Periodic GE(Speed AddBase = Health.current × 1, non-snapshot) 적용 → Health 변경 → 다음 실행 증가분이 바뀐 Health를 따르는지" 케이스 추가.
-- [ ] **(idea)** **게임 쪽 태그 적용** — ① `InputModule`의 입력 enum(`GameplayInputAction`·`ItemInputAction`)을 InputTag로 바꿀지(Lyra 패턴, 에이전트 기억이며 원문 미확인) ② 아이템 종류·진영·데미지 타입 분류 태그. 적용 여부는 유저 미정. _(2026-10-16 등록 — 태그 후보 조사)_
 - [ ] **(code)** **AttributeSet Hook** (신규) — `PreAttributeChange`(클램핑)·`PostGameplayEffectExecute`(파생·후처리)·meta attribute(Damage 등). 현재 `AttributeSet`은 빈 base class라 후크 없음. _(2026-08-09 등록)_
 - [ ] **(ui)** **UI Toolkit HUD** — 데모 HUD(어트리뷰트 바·쿨다운·상태/Tag 아이콘)를 UI Toolkit으로. AttributeChanged(컨테이너 이벤트) 바인딩. 저비용 원칙(AI 스캐폴딩, 씨름 시 uGUI 후퇴) — 스킬 투자 아님. _(2026-08-09 등록)_
 - [ ] **(fx)** **DOTween — Cue juice** — Cue 레이어 전용(피격 `DOPunch`·스턴 `DOShake`·버프 pulse·데미지 숫자·카메라 shake). GAS 코어엔 넣지 않고 Cue 이음새 뒤에. `SetLink`로 오브젝트 파괴 시 자동 kill. _(2026-08-09 등록)_
@@ -77,13 +69,8 @@
 - [ ] GameplayAbility (GA) 구현
 - [ ] GE Execution 구현
 - [ ] **(docs/refactor)** **에이전트 생성 "왜"의 유저 소유화 — 이번 세션(2026-08-04) 산출물 정리** — 유저 지적: 코드 주석·decisions(특히 D21(ModifierSpec UE 정렬))에 에이전트가 만든 근거가 많고 본인 생각이 반영 안 됨(HARNESS '왜는 지어내지 않는다'/'왜의 근거는 유저 의도 → UE 원본'). 방침: **코드 주석은 사실(무엇/어떻게+함정)만 lean하게, "왜"는 decisions에만·유저가 소유한 것만.** 접근 미정 — ① `GameplayModifierSpec` 시범 후 세션 파일(`AttributeBasedMagnitude`·`GameplayModifier`·`GameplayModifierSpec`·`GameplayEffectSpec`) 톤 일괄 적용(추천) ② D21(ModifierSpec UE 정렬)부터 같이 훑으며 근거 재작성/삭제. 하네스 규칙화(주석 lean·왜는 유저 소유)도 유저 승인 시 session-protocol '작업 중'/HARNESS '왜는 지어내지 않는다'에 추가. _(2026-08-04 등록)_
-- [ ] **(code, low)** GE 캡처 **Target 기반 AttributeBased의 생성 시점 경고 억제** — `GameplayEffectSpec.Initialize`가 캡처 후 `CalculateModifierMagnitudes`를 1회 도는데, Target 기반 AttributeBased는 이 시점 target 미캡처라 `AttributeBasedMagnitude.Evaluate`가 캡처 실패 경고를 낸다(그 결과는 소비 안 됨 — 적용 시 재평가본만 소비). Source 기반(현 검증 대상 `GE_EquipSpeedDown`)은 무영향. 지금은 warn-always로 단순하게 뒀음. 억제하려면 UE `CanCalculateMagnitude`류(캡처 준비됐을 때만 경고)가 필요 — 필요해지면 처리. _(2026-08-04 등록 — 5b evaluate 구현 중 도출)_
-  - **2026-10-17 확인:** 지금 나오는 경고는 `[GESpec] '<GE 이름>'의 N번 modifier magnitude Calculation Failed - falling back to 0.`(`GameplayEffectSpec.cs` `CalculateModifierMagnitudes`, `Initialize`에서 호출). gameplay-tag Modifier Tag 셀프체크 C-12·C-13에서 2줄 나온다(값은 맞음). UE 5.6은 `FGameplayEffectSpec::Initialize`(`GameplayEffect.cpp:1609-1660`)·`CaptureDataFromSource`(`:1754-1774`) 안에서 `CalculateModifierMagnitudes`를 부르지 않는다(이 파일의 호출 위치 grep 결과: `:2953`·`:3084`·`:3690`·`:3703`·`:3718`·`:4159`·`:4857`·`:5183`). 그래서 UE에선 생성 시점에 이 경고가 나지 않는다. 경고 문구 자체는 UE에도 있다(`:1958`).
 - [ ] **(code)** GE **AttributeCapture 계층** 도입 — **방향 확정(유저).** 반대 결정이던 D6(캡처 미도입(폐기))은 폐기·결번 처리됨. Modifier(AttributeBased)·Execution 양쪽이 소비하며, Execution엔 UE `RelevantAttributesToCapture`에 해당하는 캡처 선언 멤버가 필요. 계획 초안(파일 9개 단위)은 2026-07-19 세션 대화에 있음. **진행 중 ~9/9(코드)** — 정의(D12(캡처 정의 struct))·결과 계층(D13(캡처 계층+snapshot))·Spec 소유+compose+Source 캡처(D14(Spec이 캡처 소유))·`_definitions` 제거 UE정렬(D16(캡처 컨테이너 UE 정렬))·`GameplayAttribute`(D15(GameplayAttribute 타입))·Execution 캡처 선언 `Defs()`+Spec 등록(D17(Execution Defs 등록))·Target 캡처+spec 복사(D18(ActiveEffect가 Owner 보유)/D19(Spec 복사/Clone)/D20(spec API+clone 유지))·**evaluate 5b(✅ 2026-08-04 — `EvaluateMagnitude`+`CalculateModifierMagnitudes`)** 완료. **남음: 유저 에디터 검증**(관측 변화 0→유의미 첫 지점 — `GE_EquipSpeedDown`이 Source damage 기반 speed 감소하는지) + 소비처 Execute 배선·SetByCaller는 별도. 진행 추적은 progress.md 세부 TODO 3. _(2026-07-19 등록)_
 - [ ] **(code)** GE **Calculation Modifiers** 구현 (UE: `FGameplayEffectExecutionScopedModifierInfo`) — Execution 실행 스코프 동안만 캡처 값을 보정하는 GE 에셋별 데이터(실제 어트리뷰트 불변). 같은 계산 클래스를 쓰면서 GE마다 "방어력 50% 무시"·"공격력 1.5배"를 코드 수정 없이 지정하는 용도. **선행 조건: AttributeCapture 계층**(→gameplay-effect decisions D6(캡처 미도입(폐기))에서 미도입) — 현재는 Execution이 ASC를 직접 읽어 개입 지점이 없다. 코드 TODO는 `GameplayEffectExecutionParameters.cs`에 기록. _(2026-07-19 등록 — UE Execution 분석 중 도출)_
-- [ ] GE 스택 구현
-- [ ] **(code)** GE **SetByCaller** 구현 — 유저 도입 확정(→gameplay-effect D20(spec API+clone 유지)). 런타임 계산값(차징·콤보·RNG 등 **어트리뷰트가 아닌 값**)을 spec에 태그 키로 꽂아 적용. spec 직접생성 API(`MakeOutgoingSpec`)+`Clone()`의 실사용 소비처 — 이 기능 때문에 asset-only 축소를 반려하고 spec-API·clone을 유지했다(D20(spec API+clone 유지)). AttributeBased(어트리뷰트 유도)로 표현 안 되는 magnitude를 다룬다. _(2026-08-04 등록 — class/struct·clone 설계 논의 중 확정)_
-- [ ] Gameplay Cue 구현
 - [ ] **(code)** **Player 이동 구동 방식 교체** — 현재 `PlayerCharacter.MoveDelta`가 `transform.position`에 직접 대입해 **충돌을 전부 무시한다**(벽 통과, 중력 없음). `CharacterController.Move()`로 교체하면 충돌·계단(`stepOffset`)·경사(`slopeLimit`)가 해결된다. 중력은 별도로 y속도 누적 + `isGrounded` 필요(`Move`는 중력을 넣지 않음). 교체 후 `transform.position` 직접 대입과 혼용 금지(컨트롤러 내부 상태와 어긋남).
   - **부수 정리:** Player 루트에 `CapsuleCollider`·`CharacterController`·`NavMeshAgent`가 붙어 있었으나 **코드 참조 0건**(전부 미사용, 첫 커밋 `c49afa1` 프로토타입부터 존재).
     - ✅ **`CapsuleCollider` 제거 완료(2026-07-20, 유저)** — `CharacterController`가 `Collider` 상속이라 형상까지 중복(둘 다 r0.5/h2/center0)이었고 **트리거 콜백 2회의 원인**이었다. 해소됨.
@@ -100,25 +87,52 @@
 - [ ] **(docs)** architecture 하류 문서 **반영 기준 마커 정비** — `camera.md`·`item-equipment.md`·`controller-character.md`·`architecture/overview.md`는 마커 자체가 없어 session-protocol '최종 갱신 타임스탬프'의 낡음 판별(하류 날짜 < 상류 날짜)이 불가능하다. 실제 반영 날짜를 알 수 없어 **지어내지 않고 그대로 뒀다**(그 절 "모르는 날짜는 지어내지 않는다"). 채우려면 **유저가 날짜를 알려주거나, 다음에 그 문서를 실제로 갱신할 때 그날 날짜로 stamp**한다. 더불어 `ability-system/overview.md`는 상류를 feature-id가 아닌 **그룹명**(`ability-system`)으로 적어, 어느 progress와 비교할지 모호하다(그룹 대표 규칙을 정하든 하위 3개 중 하나로 바꾸든 결정 필요). _(2026-07-19 등록 — 하네스 점검 중 발견)_
 - [ ] **(docs)** architecture 문서 **UE 구조 미러링 분류 검토** — UE 모듈/타입 계층(`GameplayAbilities` → `U*` → `F*`)을 참고한 폴더·네이밍 분류. 억지로 서두르지 않음. _(상위/하위 계층 정리·Capture 전용 문서(`capture.md`) 분리는 2026-09-10 완료.)_ 상세 `architecture/HARNESS.md` '문서 구조'. _(2026-09-10 등록 — 유저 발의)_
 - [ ] **(docs)** **attribute 런타임 타입 이름 정렬 + D5(직렬화/런타임 참조 분리) 재작성** — 코드는 `GameplayAttributeHandle`인데 2026-08-21 세션에 내가 적은 문서·주석 일부가 아직 `ResolvedGameplayAttribute`다(그 이름으로 확정했다가 유저가 되돌림). 정정 대상: attribute `decisions.md`(D5(직렬화/런타임 참조 분리))·`progress.md`, architecture `overview`·`attribute`·`gameplay-effect`, 잔재 2건(`AttributeAggregator.cs` 주석 `Dictionary<ResolvedGameplayAttribute,…>`·`GameplayEffectSpec.cs` 경고 문자열). **D5(직렬화/런타임 참조 분리)는 근거 자체 재작성 필요** — "Handle이 부정확"이라 `Resolved-`를 택한 논리가 최종 `GameplayAttributeHandle`(Handle 유지)과 모순. 유저에게 "왜 Handle로 되돌렸나" 받아 그 근거로 다시 쓴다(HARNESS '왜는 지어내지 않는다'). _(2026-08-21 등록)_
+  - **2026-10-18:** decisions 정리로 attribute D5는 "치운 결정"으로 내려갔다(이름은 `GameplayAttributeHandle`로 되돌아갔고 분리는 D1·gameplay-effect D15). D5 재작성은 더 필요 없고, 남은 일은 문서·주석의 `ResolvedGameplayAttribute` 잔재 정리뿐.
 - [ ] **(docs)** **§번호 제거 잔여분** — 이번(2026-08-22) 스윕에서 **의도적으로 남긴 것**: ① ✅ Done 로그의 과거 § 기록(동결 이력 — 당시 섹션번호를 서술한 기록이라 §9로 보존) ② `ue-reference.md` 자체 섹션 번호(§2·§9·§11 — 자기완결 UE 참고 자료, decisions/worklog가 "참고문서 §N"으로 참조) ③ `wiki/HARNESS.md` 자체 번호(§2·§2.1). ①은 이력이라 그대로 두는 게 맞고, ②③은 해당 문서 자체를 이름 기반으로 개편할지 유저 판단 필요. _(2026-08-22 등록)_
-
 
 ## 🔧 진행 중
 
-- [ ] **(code)** ⭐ **① AttributeCapture 계층** → **② Execution Calculation Modifiers** — **순서 확정(유저, 2026-07-20).** 근거: **캡처가 있어야 스냅샷을 할 수 있으므로** 캡처가 선행한다. **진행(2026-08-03): 파일 9개 중 ~5/9** — 정의 `GameplayEffectAttributeCaptureDefinition`(→D12(캡처 정의 struct)) + 결과 계층 Spec·Container(→D13(캡처 계층+snapshot), snapshot 완전 구현) + `GameplayEffectSpec` 컨테이너 소유·compose·Source 캡처(→D14(Spec이 캡처 소유)) 완료. 부수로 어트리뷰트 참조를 `GameplayAttribute` 단일 타입으로 추출(→D15(GameplayAttribute 타입)), 캡처 컨테이너를 UE 원형에 맞춰 `_definitions` 제거(→D16(캡처 컨테이너 UE 정렬)). 상세는 gameplay-effect progress/worklog. Target 캡처+spec 복사는 2026-08-04 완료(→D18(ActiveEffect가 Owner 보유)/D19(Spec 복사/Clone)/D20(spec API+clone 유지) — 적용 경계 clone+`CaptureAttributeDataFromTarget`). **evaluate(5b)도 2026-08-04 완료** — `GameplayModifier.EvaluateMagnitude`+`GameplayEffectSpec.CalculateModifierMagnitudes`로 캡처값을 실제 magnitude로 조회. **다음: 유저 에디터 검증**(캡처가 실제로 값을 담는지 첫 관측). 이후 ② Execution Calculation Modifiers. _(2026-07-20 등록, 07-28 착수)_
-
-- [ ] **(design)** ⭐ **기획안 확정 (선행 — 아이템 설계보다 먼저)** — 아이템 구조를 못 정하는 이유가 결국 **기획이 안 정해져서**임이 드러났다(2026-07-13). 전투가 콤보·탄약·재장전·패링을 실제로 요구하는지에 따라 구조 결론이 뒤집힌다(design-draft의 미결 D-1). `dev-docs/project/design.md`를 전투 중심으로 확실히 세운 뒤 아이템 설계로 돌아온다. _(2026-07-13 등록)_
-
-- [ ] **(design)** 아이템 시스템 신규 설계 — **기획안 확정 대기로 보류.** 유저와 설계 논의 중, 결론 전 구현 금지. 아래 유저 의도가 목적:
-  - 어떤 캐릭터든 아이템 장착에 따라 **알아서** 작동 (캐릭터 특화 없이)
-  - 아이템에 종속되는 로직이 아이템 외부에 작성되지 않을 것
-  - Gun·Melee 등 종류별 로직이 들어갈 자리가 있되, 아이템별 클래스 분리·상속을 강제하지 않을 것 (전략 패턴 방향은 유저 언급)
-  - 아이템을 구현할 때 알아야 하는 것(컨텍스트, 외부 접근 방법, 시스템 전체 이해)이 복잡하지 않을 것 — 복잡도 대비 이득 없는 과설계 배제
-  - 표현부(ItemBehaviour·GameplayCue 활용 포함)의 역할과 Combat 로직과의 연동 방식은 재검토 대상
-  - **진행(2026-07-12):** 규약 백지화 완료(이전 INV·D·로드맵 → `feature/item-system/archive/`). 새 판단 기준 4축 채택(feature/HARNESS '폴더 구조·네이밍', Nystrom Type Object vs Subclass Sandbox).
-  - **진행(2026-07-13):** 설계도 백지에서 재작성 → [`feature/item-system/design-draft.md`](feature/item-system/design-draft.md)(확정 아님). `ItemModule`·`ItemInstance`·"모듈 조합"은 **권위 없음**으로 강등하고, 그렇게 서술하던 project 문서(architecture/item-equipment.md·overview.md, design.md)를 **전부 미정 처리**. 후보 3안(A: 무기=Runtime 서브클래스 / B: 현행 시스템이 알고리즘 보유 / C: 어빌리티) — GAS엔 GameplayAbility가 없음(코드 확인). **결론은 기획안(위 ⭐)이 서야 남** — 콤보/탄약/패링 채택 여부가 A vs B를 가름. _(2026-07-10 등록, 07-13 갱신)_
+(없음)
 
 ## ✅ Done
+
+- [x] **(code)** **5. Target Tag Requirements 판정** — 지금 필드만 있는 빈 껍데기(D29). GE 쪽 Component 호출·inhibit 경로는 2026-10-19 완료(`SetActiveGameplayEffectInhibit`). 남은 것: Application·Removal로 적용 거부, Ongoing·Removal 태그 구독 → GE inhibit·제거(UE `TargetTagRequirementsGameplayEffectComponent.cpp:19-150`, `SetActiveGameplayEffectInhibit`). D28 뒤 소유 태그로 지속형 GE를 켜고 끄는 유일한 길. **2026-10-19 완료**: `CanGameplayEffectApply`(Application·Removal로 적용 거부), `OnActiveGameplayEffectAdded`(Ongoing·Removal 조건 태그 구독, Ongoing으로 켜진 채 시작할지), `OnTagChanged`(Removal이면 제거·아니면 Ongoing으로 켜고 끔), GE 제거 때 구독 해제. 새 `ActiveGameplayEffectEvents.OnEffectRemoved`(UE `FActiveGameplayEffectEvents`), 컨테이너 `Owner`, ASC `GetActiveGameplayEffect`·`GetActiveEffectEventSet`. GE Component 셀프체크 G(9). 남은 것: UE `IsDataValid`의 "Instant인데 Ongoing 조건" 오류(Granted Tags와 같은 결정 대기). _(2026-10-18 등록, 2026-10-19 완료)_
+
+- [x] **(code)** **3. Granted Tags Component** — UE `UTargetTagsGameplayEffectComponent`. GE가 활성인 동안 대상에 태그 부여. 부여·회수 배선(`Add/RemoveActiveGameplayEffectGrantedTagsAndModifiers`)은 이미 있고 설정 Component만 없다. 2026-10-19 완료: `GameplayEffectComponents/TargetTagsGameplayEffectComponent`(Asset Tags와 같은 `InheritedTagContainer`·부모 없음 — gameplay-tag D30), GE `CachedGrantedTags`, `Spec.GetAllGrantedTags`. 부여·회수 경로는 이미 있었다. GE Component 셀프체크 F(9). 남은 것: UE `IsDataValid`의 "Instant GE에 Granted Tags" 오류 — 데이터 검증 체계가 없어 유저 결정 대기. _(2026-10-18 등록, 2026-10-19 완료)_
+
+- [x] **(editor)** **4. GE 인스펙터 Component 목록** — `GameplayEffectAssetDrawer`가 필드를 직접 나열해 `gameplayEffectComponents`가 안 보인다. 이게 없으면 2·3·5를 에셋에서 설정할 수 없다. 2026-10-19 완료: Components 목록(검색형 Add + 칸마다 "Component Class" 드롭다운으로 종류 바꾸기, 같은 종류 중복 막음), 본문은 `GameplayEffectComponentDrawer`(필드 이름·[Tooltip]으로 그림, 전용 드로어는 그리기가 다를 때만), 인스펙터 순서 Components → Modifiers → Executions. 편집 → OnValidate → GE Asset Tags 캐시 갱신 확인. _(2026-10-18 등록, 2026-10-19 완료)_
+
+- [x] **(code)** **2. Asset Tags Component** — UE `UAssetTagsGameplayEffectComponent`. GE 자체 태그(`GetAssetTags()`, 지금 늘 빈 값)를 채우고, Spec 생성 때 Spec 태그에 넣는다(UE `GameplayEffect.cpp:1627`). UE의 `FInheritedTagContainer`(부모 GE 상속)를 어떻게 할지, Component가 GE 캐시에 쓰는 길(UE `GetOwner()`가 없음)을 착수 때 정한다. 2026-10-19 완료(→gameplay-tag D30 부모 없음): `InheritedTagContainer`·`GameplayEffectComponents/AssetTagsGameplayEffectComponent`·Component `GetOwner()`·Spec 태그·`Spec.GetAllAssetTags`, GE Component 셀프체크 E. 인스펙터에서 넣는 건 4번. _(2026-10-18 등록, 2026-10-19 완료)_
+
+- [x] **(code, low)** GE 캡처 **Target 기반 AttributeBased의 생성 시점 경고 억제** — `GameplayEffectSpec.Initialize`가 캡처 후 `CalculateModifierMagnitudes`를 1회 도는데, Target 기반 AttributeBased는 이 시점 target 미캡처라 `AttributeBasedMagnitude.Evaluate`가 캡처 실패 경고를 낸다(그 결과는 소비 안 됨 — 적용 시 재평가본만 소비). Source 기반(현 검증 대상 `GE_EquipSpeedDown`)은 무영향. 지금은 warn-always로 단순하게 뒀음. 억제하려면 UE `CanCalculateMagnitude`류(캡처 준비됐을 때만 경고)가 필요 — 필요해지면 처리. _(2026-08-04 등록 — 5b evaluate 구현 중 도출)_
+  - **2026-10-17 확인:** 지금 나오는 경고는 `[GESpec] '<GE 이름>'의 N번 modifier magnitude Calculation Failed - falling back to 0.`(`GameplayEffectSpec.cs` `CalculateModifierMagnitudes`, `Initialize`에서 호출). gameplay-tag Modifier Tag 셀프체크 C-12·C-13에서 2줄 나온다(값은 맞음). UE 5.6은 `FGameplayEffectSpec::Initialize`(`GameplayEffect.cpp:1609-1660`)·`CaptureDataFromSource`(`:1754-1774`) 안에서 `CalculateModifierMagnitudes`를 부르지 않는다(이 파일의 호출 위치 grep 결과: `:2953`·`:3084`·`:3690`·`:3703`·`:3718`·`:4159`·`:4857`·`:5183`). 그래서 UE에선 생성 시점에 이 경고가 나지 않는다. 경고 문구 자체는 UE에도 있다(`:1958`).
+  - **2026-10-19 완료** — 유저 "modifier self check에 warning은 괜찮나". `GameplayEffectSpec.Initialize`의 `CalculateModifierMagnitudes` 호출을 UE처럼 없앰(적용 때 Target 캡처 직후 계산은 그대로). 경고 4줄 사라짐, Modifier Tag 65/0·Aggregator 55/0·GE Component 27/0·PlayMode 14/0. feature: gameplay-effect(gameplay-tag 작업 중 수정).
+
+- [x] **(verify)** **셀프체크 다시 돌리기** — 2026-10-18 코드(D27 자격 판정 분리·D28 CurrentValue=빈 문맥·D29 GE Component 빈 껍데기) 확인. MCP 실행 결과 Modifier Tag 65/0(경고 5줄 정상), Aggregator 55/0, PlayMode 14/0. _(2026-10-18 등록, 2026-10-19 완료)_
+
+- [x] **(docs)** **decisions 전체 정리 + 결정 기록 기준 개정** — 유저 "진짜로 중요한 UE의 기능을 가져오면서 선택해야되는 순간이나 새로운 게 나오거나 설계를 하거나 등에 대한 것을 적는거지. 그리고 그것은 간단 명료해야해." `feature/HARNESS.md` '결정 기록 품질 기준' → '결정 기록 기준'(무엇을·어떻게 적나, 항목 템플릿). 4개 feature decisions를 새 형식(결정·왜·대안·대가·재검토)으로 다시 쓰고, 사소하거나 낡은 결정은 "치운 결정" 한 줄로: gameplay-tag 12개 유지, gameplay-effect 9개 유지(D8 미결은 progress 결정 대기로), aggregator 5개 유지, attribute 4개 유지. progress 인덱스도 맞춤. 이전 본문은 git `ca110d2`·`c98c21a`. _(2026-10-18)_
+
+- [x] **(code)** **현재 목표 1. 태그만 주는 GE 허용** — `ActiveGameplayEffectsContainer.ApplyGameplayEffectSpec`의 "Modifier·Execution 둘 다 없으면 거부"를 지웠다(UE엔 없는 거부). Modifier Tag 셀프체크 D-16 추가(기준 46/0, 미실행). 컴파일 통과. _(2026-10-18 등록, 같은 날 완료)_
+
+- [x] **(decision)** **gameplay-tag ①② CurrentValue 태그 문맥 질문 해소** — CurrentValue를 UE처럼 빈 문맥으로 되돌려(→D28, 유저 "UE에 따라 … Ongoing Tag Requirements 담당으로 넘기고 가보자. 기존에 선택 치우고") 두 질문이 없어졌다. D21·D23 코드를 걷어냈고, GE Component를 빈 껍데기로 넣었다(→D29, 유저 "UE 처럼 GE Component 도입할거야"·"셋 다"·"빈 거로 넣어둬"). GE·ASC 태그 연동 질문 ① GE 구조도 이것으로 답함. Modifier Tag 셀프체크 기준 53 → 45(미실행, 같은 날 D-16으로 46). _(2026-10-16 등록, 2026-10-18 완료)_
+
+- [x] **(code)** **mod 자격 판정 UE처럼 갱신·확인 분리** — `Mod.UpdateQualifies`·`Qualifies()`·`EvaluateQualificationForAllMods`(→D27). 결과는 전과 같음, 컴파일만 확인. _(2026-10-18)_
+
+- [x] **(bug)** **Query 편집기를 열어 둔 채 재컴파일하면 NullReferenceException 반복 + 창이 두 개 뜨던 것** — feature: gameplay-tag. 유저 "null이 뜨거나 하면 그냥 빈 editor로 되게 해줘. 오류 안뜨게"·"빈 Window의 Editor로". 리로드 뒤나 대상이 지워지면 대상 연결을 끊고 빈 편집기로 둠(`ClearTarget`), 열 때 열린 창을 모두 찾아 닫음(정적 `_openWindow` 제거). MCP로 확인(tests.md §2-13). _(2026-10-17)_
+
+- [x] **(decision)** **gameplay-tag 결정 4건 확정** — ⑤ Query 편집기 접힘 상태 키 = 배열 경로 그대로(유저 "접힌 상태는 뭐 지금대로 두자. Undo나 Redo 둘 것도 아니고", →D24). None 하위 식 `undefined` 저장 = UE처럼 막지 않음, `GE_EquipSpeedDown.asset`(유저 미커밋 변경의 깨진 Query)도 손대지 않음(유저 "undefined는 굳이 건드리지 말고", →D25). ⑥ `TokenStreamVersion` = 넣음(유저 "TokenStreamVersion 넣자", →D26) — `GameplayTagQuery._tokenStreamVersion` + `GameplayTagQueryStreamVersion` enum 구현, 스트림 첫 토큰엔 안 넣음(에이전트 판단, D26). Aggregator 55/0·Modifier Tag 53/0. _(2026-10-16 등록, 2026-10-17 완료)_
+
+- [x] **(bug)** **`AttributeAggregator.UpdateAggregatorMod`가 다른 GE의 mod를 덮어쓰거나 범위를 벗어나던 것** — feature: aggregator. 원인: Spec의 modifier 번호를 `_mods`(여러 GE의 mod가 섞인 목록) 칸 번호로 써서, 라이브 재평가 때 먼저 건 GE의 mod를 덮거나(130 → 140) 범위 밖 예외. 유저 "단순 오류나 버그는 하고"로 결정 대기(③ 수정 시점)를 거치지 않고 수정 — UE `FAggregator::UpdateAggregatorMod`(`GameplayEffectAggregator.cpp:503-521`)처럼 그 핸들의 mod를 빼고 이 어트리뷰트를 겨냥한 modifier를 조건·GE Source 액터 태그와 함께 다시 넣은 뒤 dirty 1회. Aggregator 셀프체크 G 6개(고정+라이브 섞임, modifier 번호 > mod 수). 같이 `Evaluate` 요약 주석 "마지막 Override 우선" → "조건을 만족하는 Override 중 먼저 만난 것"(코드·UE와 맞춤). _(2026-10-16 등록, 2026-10-17 완료)_
+
+- [x] **(bug)** **주기 실행 때 magnitude를 다시 계산하지 않던 것** — feature: gameplay-effect. non-snapshot 캡처가 주기 GE에선 첫 적용 값으로 굳었다(DOT가 공격자 버프를 안 따름). 유저 "단순 오류나 버그는 하고"로 결정 대기(④)를 거치지 않고 수정 — UE `ExecuteActiveEffectsFrom`(`GameplayEffect.cpp:3081-3084`)처럼 실행마다 Target 태그를 읽은 뒤 `GameplayEffectSpec.CalculateModifierMagnitudes()`(private → internal). Instant는 적용 때와 실행 때 두 번 계산(UE도 같음). Aggregator 셀프체크 H 2개. 같이 `GameplayEffectType` 주석의 Instant·Duration "(미구현)" 제거(둘 다 구현돼 동작). Aggregator 55/0·Modifier Tag 53/0. _(2026-10-16 등록, 2026-10-17 완료)_
+
+- [x] **(bug)** **에디터 확인에서 찾은 버그 4건 수정 (유저 "결정 없이 고쳐야 되는 건 고치고")** — ① aggregator가 없는 어트리뷰트는 Base가 바뀌어도 Current가 그대로(주기·Instant GE, 기존 버그) → `SetAttributeBaseValue`가 aggregator 없으면 Current=Base(UE `InternalUpdateNumericalAttribute`), Aggregator 셀프체크 F 추가 47/0. ② 태그 드로어 다중 선택 시 칩·▾ 글자가 `—` → 드로어가 그리는 동안 `showMixedValue` 끔, 재확인 통과. ③ GE 인스펙터 Modifier 요소 아래 빈 줄(높이 계산이 Op 줄 두 번 셈) → 그리기와 같게. ④ Query 편집기 루트 단계 Tags 상자 3px 어긋남 → 위 줄 팝업 x를 받게. Modifier Tag 셀프체크 53/0 유지. 기록: gameplay-tag tests.md·worklog, aggregator·gameplay-effect progress. _(2026-10-17)_
+
+- [x] **(verify)** **gameplay-tag 에디터 확인 — Unity 앞으로 띄운 뒤(유저 "맨 앞에 띄워서 해봐")** — tests.md §2-11 창 안 피커, §2-12 요약 툴팁, §4-3 필드별 피커(형제 없으면 부모·칩 ×·우클릭 Copy/Paste/Clear All), §4-4 단일·List 저장, §4-5 다중 선택(수정 뒤), §4-6 피커 안 메뉴 3종에서 피커 유지. 남은 것은 '당장 목표' (verify) 2개. _(2026-10-17)_
+
+- [x] **(verify)** **gameplay-tag 에디터 확인(에이전트, 유저 "에디터 확인은 직접 해")** — Unity 창을 `PrintWindow`로 캡처해 보고 `EditorWindow.SendEvent`로 클릭. 통과: §1-3-2 PlayMode 셀프체크 14/0, §1-3-3 실제 GE의 Base 값이 계산과 같음, §1-3-4 ASC 인스펙터 캡처 줄 에러 0, §1-3-5 `SpeedBoostExecution` 로그, §2-1~2-10·2-12(Query 편집기), §3-1~3-5(Modifier 태그 인스펙터), §5-2·§5-3. 발견: CurrentValue 미갱신·다중 선택 `—`·빈 줄·3px(→ 같은 날 수정, 위 항목), `GE_EquipSpeedDown` Query('당장 목표' (data))·None 칸('우선순위 낮음' (idea)). 임시로 만든 `Assets/_McpCheck/`(캡처 도구·테스트 에셋)는 휴지통으로 옮김. Editor 테마는 Light 확인 뒤 Dark로 되돌림. _(2026-10-17)_
+
+- [x] **(code)** **gameplay-tag 소유 태그 입구 + 태그 변경 시 CurrentValue 재계산** — `GameplayTagCountContainer`(UE 구조) + ASC Loose 태그·조회·이벤트, persistent GE가 modifier Target 조건 태그를 구독해 바뀌면 해당 어트리뷰트만 다시 계산(gameplay-tag D22·D23). Modifier Tag 셀프체크 53/0, Aggregator 44/0(MCP). Play 모드 회귀는 같은 날 위 에이전트 에디터 확인에서 통과. _(2026-10-16 등록, 2026-10-17 완료)_
 
 - [x] **(verify)** **gameplay-tag MCP 자동 확인분** — Unity MCP로 tests.md §0-1 컴파일 에러 0, §1-1 Modifier Tag 셀프체크 `passed 38 / failed 0`, §1-3-1 Aggregator 셀프체크 `passed 44 / failed 0`, §5-5 미등록 태그 이름 에러가 이름당 1회. 나머지 확인은 위 '당장 목표'의 (verify) 항목들. _(2026-10-17)_
 

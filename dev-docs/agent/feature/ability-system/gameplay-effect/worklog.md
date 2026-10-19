@@ -3,6 +3,52 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
 
+### 2026-10-19 — Subclass 선택기 좁을 때 잘림 방향
+> 유저: "SubClass Selector에 Inspector width가 부족하니 짤리는데 왼쪽은 유지하고 오른쪽부터 짤리게"
+- **원인.** 스크립트 필드(`SubclassSelectorDrawer.DrawScriptField`, `EditorStyles.objectField` — MiddleLeft·Clip 확인)에 칸보다 긴 이름이 들어가면 IMGUI가 아이콘째 밀어 왼쪽 아이콘이 사라졌다.
+- **고침.** 이름 끝을 "…"로 줄여 칸에 맞춘다(`TruncateToFit`), 전체 이름은 툴팁. 처음엔 아이콘까지 `CalcSize`에 넣어 원본 아이콘 크기로 재는 바람에 "A…"까지 줄었다 → 글자 폭만 재고 아이콘 자리는 줄 높이만큼 뺌. 공용 함수라 Execution Calculation Class·Component Class·AttributeSet 선택기 모두 적용.
+- **확인.** 캡처 — 긴 이름은 아이콘·앞부분 유지 + 끝 "…", 들어가는 이름은 그대로.
+
+### 2026-10-19 — 접힌 목록 머리 줄 글자 잘림
+> 유저: "components, modifiers, executions 접을때 살짝 작아서 텍스트가 짤리는데 위아래 padding 적당히"
+- **원인.** 접힌 머리 줄을 26px로 잡고 글자를 4px 내려 그렸는데, ReorderableList 머리 줄 배경 스타일(`defaultBehaviours.headerBackground`)이 `fixedHeight = 20`이라 배경은 20px만 그려져 글자 아래가 테두리에 걸렸다(MCP로 스타일 값 확인).
+- **고침.** 접힌 머리 줄도 그 목록의 `headerHeight`와 ReorderableList의 글자 여백(좌우 6·위아래 1)을 그대로 써서 펼친 머리 줄과 같게. 캡처로 확인 — 글자가 테두리 안, 접힘·펼침 머리 줄 높이·위치 같음.
+- **남은 선택.** 두 상태 모두 Unity 기본 머리 줄 높이(20px)라 여백은 위아래 1px. 더 넉넉히 하려면 배경을 높이 고정 없는 스타일로 직접 그려야 한다(유저에게 물음).
+
+### 2026-10-19 — Modifier 대상 줄 라벨 정렬
+> 유저: "Modifier Editor 부분에서 Attribute Set, Attribute는 오른쪽으로 가있는데 바로 아래 있는 것들은 왼쪽으로 되어있네", "하드코딩으로 고치지 말고 깔끔하게 고쳐"
+- **원인.** `GameplayAttributeDrawer`(attribute 폴더, 범용)가 스스로 `EditorGUI.indentLevel++`로 두 줄을 들여써 라벨만 오른쪽으로 밀렸다(값 열은 그대로).
+- **고침.** 드로어 안 들여쓰기를 지웠다 — 범용 드로어는 묶음 표시 같은 배치 정책을 갖지 않고 쓰는 쪽이 정한다(editor-drawer-guide '범용 드로어는 정책을 모른다'). 위치 숫자 보정 없음. 사용처 둘(GE Modifier 대상, AttributeBased 캡처) 모두 라벨 열이 위아래 줄과 같아짐 — 캡처로 확인.
+
+### 2026-10-19 — 런타임 확인 (D22·D23 구조 변경 뒤)
+> 유저: "런타임 체크해봐"
+- **PlayMode 셀프체크** 14/0(저장 안 하는 임시 씬, 씬 생성·배선·Play 진입을 MCP 명령 셋으로 나눔).
+- **실제 GE 적용(Play 중, GE마다 새 ASC).** Player 초기값(`Player_AttributeInitData`: health 1·stamina 100·maxStamina 1000·speed 10)으로 gameplay-tag tests.md §1-3-3 기준값과 같음: `GE_Speed` maxStamina 1001·speed 121.01(Base=Current), `GE_Test` speed 21.01, `GE_BoxEffect` speed 10(주기 없는 Duration이라 Execution 안 돎). Box 초기값으로 `GE_BoxSelfEffect` a·b·c 20.1·201·2010. 활성 GE를 든 ASC 4개로 6788프레임 Tick 동안 에러 0(경고 1줄은 Unity Account API 네트워크 경고, 무관).
+- **안 본 것.** `GE_EquipSpeedDown`(깨진 Tag Query 데이터 그대로 — gameplay-tag D25, Combat 어트리뷰트 필요), `GE_MeleeDamage`(기준값 기록 없음).
+
+### 2026-10-19 — Calculation Modifier 셀프체크
+> 유저: "Calculation Modifiers는 잘 작동할지 Test 해봐"
+- **범위.** 런타임 적용은 아직 없어(→D23) 편집기·데이터·현재 런타임 동작만 본다. 새 `Test/Editor/CalculationModifierSelfCheck.cs`, 메뉴 `Tools ▸ Ability System ▸ Run Calculation Modifier Self-Check`. 편집기 함수는 `GameplayEffectAssetDrawer` private static이라 리플렉션. 임시 에셋은 `Assets/_SelfCheckTemp/`(GE_Speed 사본)에 만들고 끝에 지운다.
+- **항목(18).** A Backing Data 후보 = Execution `Defs()`(빈 클래스·비Execution 타입은 없음) / B 추가 기본값(첫 후보·Add (Base)·0·coefficient 1·펼침, 앞 칸 복사 안 됨, 후보 없으면 대상 비움, 새 Execution은 Calculation Modifier 0개) / C 요약 문구·Execution 높이 순서 / D 저장·강제 재임포트 후 값 유지 / E 런타임: Execution 해석 정상, Calculation Modifier를 붙여도 Speed 증가량이 같음(61.5) — **적용을 구현하면 E-2 기대값을 바꾼다**.
+- **결과.** 18/0, 경고·에러 0. 확인용 UI 에셋 `_McpCheck/GE_McpCheck_UI`는 휴지통, 선택을 원래 `GE_EquipSpeedDown`으로 돌림.
+
+### 2026-10-19 — GE 인스펙터 Modifiers·Executions UI 규격 통일
+> 유저: "Execution 쪽이랑 Modifiers 쪽이랑 Editor UI 규격이 동일하게 맞춰야 좋은데 UI Design을 잘 해봐. 가독성과 일괄성 있게", 이어서 "Calculation Modifiers 접고 필때 생기는 수직선이 접는 기호랑 너무 붙어있고 … 명확하지 않아. outline을 그려"
+- **규격(`GameplayEffectAssetDrawer` 머리 주석).** 세 목록(Modifiers·Executions·Calculation Modifiers) 요소 = 위아래 여백 6 + 머리 줄(접기 + "대상 — 부가 정보" 요약) + 본문(라벨 열 140, 줄 간격 4, 묶음 간격 8) + 형제 사이 1px 구분선. 값 열은 모든 목록에서 같은 x — 안쪽 목록은 들여쓴 만큼 라벨 폭을 줄인다. Modifier와 Calculation Modifier 본문은 같은 순서(대상 → Modifier Op → Magnitude → Source/Target Tags)를 공통 함수(`LayoutModifierBody`) 하나로 그린다.
+- **바꾼 것.** Executions 머리 줄을 Modifiers처럼 접기 + 개수, 목록 전체 접기도 같은 함수. Execution 요소도 머리 줄 요약(`Speed Boost Execution — Calculation Modifiers 2`)을 접고, 본문에 라벨 붙은 `Calculation Class`. 요약 문구 꼴 통일 — Calculation Modifier는 Modifier와 같은 `Set.field`에 캡처 출처(`(Target, Snapshot)`)를 붙인다. Calculation Modifiers는 테두리(1px, 반투명 회색) 상자 안 목록 + 상자 끝 "+ Calculation Modifier"(가독성 가이드 3.2·3.7). 높이와 그리기는 같은 Layout 함수(draw 플래그)로 계산.
+- **유저 지적 반영.** 처음엔 왼쪽 안내선(2px)이었는데 접기 화살표와 붙고 칠 차이가 흐리다 → 테두리로 바꾸고 안쪽 여백 8 → 14px. 추가 버튼은 마지막 칸과 8px 띄움.
+- **수치(에이전트 판단, 유저 미확정).** 상자 칠 알파 0.06, 테두리 회색 0.5·알파 0.8, 안쪽 여백 좌 14·상하 4, 칸 사이 8, − 버튼 22px, 추가 버튼 150px.
+- **확인.** 에디터 컴파일 통과, 임시 GE(`Assets/_McpCheck/GE_McpCheck_UI.asset`, GE_Speed 사본 + Calculation Modifier 2개)로 캡처: 값 열이 Modifier·Execution·Calculation Modifier 모두 같은 x, 테두리 보임. 남은 점: 좁은 인스펙터에서 Calculation Modifier 머리 줄 요약(`CharacterAttributeSet.health (Target, Snapshot) — Add (Base)`)이 − 버튼 앞에서 잘린다. 밝은 스킨은 안 봄.
+
+### 2026-10-19 — Execution Calculation Modifiers 편집기 + Magnitude 구조체 (→D22, →D23)
+> 유저: "GE Execution에 Calculation Modifiers Editor 먼저 구현해봐. 내부 구현은 이후에. Defs로 받아와서 읽어오면 어떻게 UE처럼 가능할거야". (gameplay-tag 세션에서 이어 함)
+- **UE 확인(5.6).** `FGameplayEffectExecutionDefinition`(`CalculationClass`·`PassedInTags`·`CalculationModifiers`·`ConditionalGameplayEffects`, `GameplayEffect.h:517-534`), `FGameplayEffectExecutionScopedModifierInfo`(`:420-474`), 편집기 Backing Data 콤보는 계산 클래스 CDO의 `GetValidScopedModifierAttributeCaptureDefinitions`+Transient 식별자(`GameplayEffectExecutionScopedModifierInfoDetails.cpp:285-301`).
+- **물은 것.** ① 기존 에셋 → "자동이관으로 하지 말고 어셋에 직접 넣어" ② Magnitude → "구조체로 뽑아 같이 씀"(D22) ③ Transient → "그게 뭔데?"(설명 후 답 대기, 이번엔 캡처만).
+- **런타임.** 새 `GameplayEffectModifierMagnitude`(계산 함수 4개를 `GameplayModifier`에서 옮김), `GameplayEffectExecutionDefinition`, `GameplayEffectExecutionScopedModifierInfo`(런타임 미사용 TODO). `GameplayEffectAsset.executions`, `GameplayEffectSpec.ResolveExecutions`는 정의의 `CalculationClass`를 읽음. 호출처(Spec·컨테이너·ASC 인스펙터·`GameplayModifierSpec`)는 `ModifierMagnitude`를 거친다.
+- **에디터.** 새 `GameplayEffectModifierMagnitudeDrawer`(박스·접기·요약·Calc Type별 값/구현 예정 안내 — GE 드로어에서 옮김, 접힘 상태는 구조체 프로퍼티 자신의 `isExpanded`). GE 드로어 Executions 요소 = 계산 클래스 + "Calculation Modifiers (N)" 접기 → 칸마다 헤더(캡처 — 연산, −), Backing Data 팝업(`Defs()`; 선언에 없는 값을 들고 있으면 "(선언에 없음)"으로 표시), Modifier Op, Magnitude, Source/Target Tags, 끝에 "+ Calculation Modifier". 새 칸·새 Execution은 `boxedValue`로 빈 값부터(삽입이 앞 칸을 복사하므로). 안쪽 목록은 ReorderableList 대신 직접 그림(인덱스 경로 캐시 안티패턴 회피).
+- **에셋.** 10개 GE를 perl 변환으로 직접 고침(modifier 3필드 → `modifierMagnitude` 아래로 이름 변경, `executionTypeNames` → `executions[].calculationClass`). 백업은 세션 scratchpad. `GE_EquipSpeedDown`은 유저가 에디터에서 바꿔 둔 저장 안 된 상태였는데, Unity가 새 코드를 먼저 리로드해 메모리 사본의 magnitude·Execution이 빠졌다 → 디스크(원래 값)를 변환하고 강제 재임포트해 원래 값으로 돌림. 유저의 저장 안 한 Calc Type 변경(Custom Calculation Class)은 사라졌다.
+- **확인.** 런타임·에디터 컴파일 통과. 재임포트 뒤 10개 에셋 값이 변환 전과 같음, Spec의 Execution 해석 정상(SpeedBoost 3개). 셀프체크 Aggregator 55/0·Modifier Tag 65/0·GE Component 43/0. 화면: Executions 접힌 상태·Magnitude 접힌 요약. 못 본 것: Calculation Modifier 펼친 화면, PlayMode(유저가 Unity를 쓰는 중이라 안 돌림).
+
 ### 2026-08-07 — GameplayEffectAsset 인스펙터: Executions에 검색형 Add 추가
 - `executionTypeNames`(`List<string>` + `[SubclassSelector(typeof(GameplayEffectExecution))]`)가 Unity 기본 리스트로 그려져 요소 드로어 때문에 "+"가 안 뜨고 Size 필드로만 늘려야 했다(유저 리포트 "Add가 없네"). AttributeSet 리스트와 같은 검색형 `TypeChoiceList`로 교체 — `GameplayEffectAssetDrawer`에 `_executionList` 신설, 후보=GameplayEffectExecution 구체 서브클래스−이미 담긴 것, add 시 요소 stringValue=AQN, 요소는 `[SubclassSelector]` 전용 드로어로 그림.
 - **New Script는 제외**(AttributeSet 리스트엔 있지만): `GameplayEffectExecution.Execute`가 abstract라 빈 서브클래스 템플릿(`: GameplayEffectExecution {}`)이 컴파일되지 않는다. 붙이려면 New Script 템플릿에 abstract override 스텁 생성이 선행돼야 함(현재 미구현). 유저에게 사유 보고.
