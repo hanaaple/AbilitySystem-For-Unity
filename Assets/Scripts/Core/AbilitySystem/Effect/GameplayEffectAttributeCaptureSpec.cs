@@ -78,6 +78,19 @@ namespace Core.AbilitySystem.Effect
             return true;
         }
 
+        /// <summary>캡처한 aggregator의 base·mod를 <paramref name="outAggregatorSnapshot"/>에 복사한다. 무효면 false.</summary>
+        /// <remarks>UE: FGameplayEffectAttributeCaptureSpec::AttemptGetAttributeAggregatorSnapshot</remarks>
+        public bool AttemptGetAttributeAggregatorSnapshot(AttributeAggregator outAggregatorSnapshot)
+        {
+            if (!_isValid)
+            {
+                return false;
+            }
+
+            outAggregatorSnapshot.TakeSnapshotOf(_capturedAttributeAggregator);
+            return true;
+        }
+
         public bool ShouldRefreshLinkedAggregator(AttributeAggregator changedAggregator)
         {
             return ((BackingDefinition.Snapshot == false) && (changedAggregator == null || _capturedAttributeAggregator == changedAggregator));
