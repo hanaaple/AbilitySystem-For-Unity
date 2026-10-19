@@ -488,10 +488,14 @@ namespace Core.AbilitySystem.Effect
                 return;
             }
 
-            foreach (GameplayEffectExecution execution in executions)
+            IReadOnlyList<GameplayEffectExecutionDefinition> executionDefinitions = spec.ExecutionDefinitions;
+            for (int executionIndex = 0; executionIndex < executions.Count; executionIndex++)
             {
+                GameplayEffectExecution execution = executions[executionIndex];
+                GameplayEffectExecutionDefinition executionDefinition = executionDefinitions[executionIndex];
+
                 // execution 스코프 지역 변수. 호출당 소량 할당은 스코프 명확성을 위해 감수한다.
-                GameplayEffectExecutionParameters execParams = new GameplayEffectExecutionParameters(_owner, spec);
+                GameplayEffectExecutionParameters execParams = new GameplayEffectExecutionParameters(_owner, spec, executionDefinition.CalculationModifiers);
                 GameplayEffectExecutionOutput execOutput = GameplayEffectExecutionOutput.Create();
 
                 execution.Execute(execParams, execOutput);

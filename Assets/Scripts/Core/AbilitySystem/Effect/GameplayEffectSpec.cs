@@ -21,6 +21,9 @@ namespace Core.AbilitySystem.Effect
         /// <summary>정의에 적힌 AQN을 resolve해 만든 Execution 인스턴스들. 실패한 항목은 경고 후 제외.</summary>
         public IReadOnlyList<GameplayEffectExecution> Executions { get; private set; }
 
+        /// <summary><see cref="Executions"/>와 평행한 Execution 정의(ExecutionDefinitions[i] ↔ Executions[i]). 실행 때 정의의 Calculation Modifier를 읽는다.</summary>
+        public IReadOnlyList<GameplayEffectExecutionDefinition> ExecutionDefinitions { get; private set; }
+
         /// <summary>이 GE 계산(AttributeBased·Execution)이 참조하는 캡처 어트리뷰트 묶음. 생성 시 Source, 적용 시 Target을 캡처.</summary>
         public GameplayEffectAttributeCaptureSpecContainer CapturedRelevantAttributes { get; private set; }
 
@@ -55,6 +58,7 @@ namespace Core.AbilitySystem.Effect
             // struct 슬롯 배열이라 Clone()=값 복사=독립. magnitude는 target 캡처 후 CalculateModifierMagnitudes가 다시 채운다.
             Modifiers = (GameplayModifierSpec[])other.Modifiers.Clone();
             Executions = other.Executions;
+            ExecutionDefinitions = other.ExecutionDefinitions;
             CapturedRelevantAttributes = other.CapturedRelevantAttributes.Clone();
             CapturedSourceTags = new TagContainerAggregator(other.CapturedSourceTags);
             CapturedTargetTags = new TagContainerAggregator(other.CapturedTargetTags);
@@ -69,7 +73,8 @@ namespace Core.AbilitySystem.Effect
         /// <summary>멤버 세팅 후 초기화 — Modifier·Execution 변환과 어트리뷰트 캡처. 생성자가 확정한 Definition·Context·Level에 의존.</summary>
         private void Initialize()
         {
-            Executions = ResolveExecutions(Definition);
+            Executions = ResolveExecutions(Definition, out IReadOnlyList<GameplayEffectExecutionDefinition> executionDefinitions);
+            ExecutionDefinitions = executionDefinitions;
             BuildModifierSpecs();
 
             // 캡처: 필요한 캡처 정의를 컨테이너에 모으고 Source를 즉시 캡처. Target은 아직 미정이라 적용 시점에 캡처한다.
@@ -156,6 +161,19 @@ namespace Core.AbilitySystem.Effect
                     CapturedRelevantAttributes.AddCaptureDefinition(definition);
                 }
             }
+
+            // ③ Calculation Modifier의 magnitude가 AttributeBased면 그 backing 캡처 정의.
+            foreach (GameplayEffectExecutionDefinition executionDefinition in ExecutionDefinitions)
+            {
+                foreach (GameplayEffectExecutionScopedModifierInfo scopedModifier in executionDefinition.CalculationModifiers)
+                {
+                    GameplayEffectModifierMagnitude modifierMagnitude = scopedModifier.ModifierMagnitude;
+                    foreach (GameplayEffectAttributeCaptureDefinition definition in modifierMagnitude.GetAttributeCaptureDefinitions())
+                    {
+                        CapturedRelevantAttributes.AddCaptureDefinition(definition);
+                    }
+                }
+            }
         }
 
         /// <summary>Source(발동 주체)의 태그·어트리뷰트를 spec 생성 시 1회 캡처. Source ASC는 Context.Instigator — 없으면 어트리뷰트 캡처가 무효 표시되고 태그는 빈다.</summary>
@@ -203,15 +221,18 @@ namespace Core.AbilitySystem.Effect
         }
 
         /// <summary>Execution 정의의 계산 클래스(AQN)를 Execution 인스턴스 목록으로 변환한다. resolve 실패는 경고 후 건너뛴다.</summary>
-        private static IReadOnlyList<GameplayEffectExecution> ResolveExecutions(GameplayEffectAsset definition)
+        /// <param name="outResolvedDefinitions">반환 목록과 평행한, resolve에 성공한 정의들.</param>
+        private static IReadOnlyList<GameplayEffectExecution> ResolveExecutions(GameplayEffectAsset definition, out IReadOnlyList<GameplayEffectExecutionDefinition> outResolvedDefinitions)
         {
             IReadOnlyList<GameplayEffectExecutionDefinition> executionDefinitions = definition.Executions;
             if (executionDefinitions == null || executionDefinitions.Count == 0)
             {
+                outResolvedDefinitions = Array.Empty<GameplayEffectExecutionDefinition>();
                 return Array.Empty<GameplayEffectExecution>();
             }
 
             var executions = new List<GameplayEffectExecution>(executionDefinitions.Count);
+            var resolvedDefinitions = new List<GameplayEffectExecutionDefinition>(executionDefinitions.Count);
             foreach (GameplayEffectExecutionDefinition executionDefinition in executionDefinitions)
             {
                 string typeName = executionDefinition?.CalculationClass;
@@ -228,8 +249,10 @@ namespace Core.AbilitySystem.Effect
                 }
 
                 executions.Add((GameplayEffectExecution)Activator.CreateInstance(type));
+                resolvedDefinitions.Add(executionDefinition);
             }
 
+            outResolvedDefinitions = resolvedDefinitions;
             return executions;
         }
 
