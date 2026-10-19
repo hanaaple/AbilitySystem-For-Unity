@@ -87,7 +87,9 @@
 | 문서 | 내용 |
 |---|---|
 | `docs.harness.md` | **문서 작성·수정(write) 시 규약** — 문서/규약 분리·상위 재진술 금지. write 직전 확인. |
-| `session-protocol.md` | 세션 시작·작업 중·종료·대화 규율 |
+| `session-protocol.md` | 세션 시작(이어하기)·종료 절차 — 회고·하네스 점검. 세션을 시작하거나 끝낼 때. |
+| `conversation.md` | 대화 규율(답변 방식) — **유저에게 답하기 전에** 따른다. |
+| `work-scope.md` | 작업 착수·범위 — 착수 지시 구분, 지시 범위만, 큰 작업은 먼저 묻기. **코드·문서·에셋을 만들거나 고치기 전에**. |
 | `TODO-BOARD.harness.md` | `TODO-BOARD.md` 규약 (단일 파일 규약 = `<파일>.harness.md`) |
 
 **agent 상태 문서**

@@ -66,7 +66,15 @@ public void TakeDamage(int damage) { }
 
 ---
 
-## 하위 문서
+## 관련 문서 (Indexing)
+
+**스타일 규약** (`dev-docs/project/`)
+
+| 문서 | 내용 |
+|---|---|
+| [`CODE_CONVENTION.md`](../../project/CODE_CONVENTION.md) | 네이밍·포맷·`=>`·`var`·긴 줄·멤버 순서. `.editorconfig`로 자동 적용. **코드를 새로 쓰거나 고치기 전에** 이 규약과 함께 본다. |
+
+**하위 문서**
 
 | 문서 | 내용 |
 |---|---|
