@@ -9,6 +9,9 @@ namespace Core.AbilitySystem.Tag
     [Serializable]
     public struct GameplayTagQuery : IEquatable<GameplayTagQuery>
     {
+        // 토큰 형식을 바꾸면 저장된 질의를 이 값으로 구분해 옮긴다. 필드가 없던 에셋은 0(InitialVersion)으로 읽혀 지금 형식과 같다
+        [SerializeField] private int _tokenStreamVersion;
+
         // 토큰 스트림은 태그를 직접 담지 않고 이 목록의 인덱스로 참조한다
         // struct 복사본끼리 리스트를 공유하므로, 두 리스트는 제자리 수정하지 않고 항상 새로 만들어 교체한다
         // 질의 편집 창이 사용자 설명을 _userDescription 이름으로 읽는다. 이름을 바꾸면 GameplayTagQueryEditorWindow도 바꿔야 한다.
@@ -29,11 +32,11 @@ namespace Core.AbilitySystem.Tag
             return !left.Equals(right);
         }
 
-        /// <summary>참조 태그 목록·토큰 스트림·사용자 설명·자동 설명이 모두 같으면 같다. 빈 목록과 null, 빈 문자열과 null은 같게 본다.</summary>
+        /// <summary>토큰 형식 버전·참조 태그 목록·토큰 스트림·사용자 설명·자동 설명이 모두 같으면 같다. 빈 목록과 null, 빈 문자열과 null은 같게 본다.</summary>
         /// <remarks>UE: FGameplayTagQuery::operator==</remarks>
         public bool Equals(GameplayTagQuery other)
         {
-            return ListEquals(_tagDictionary, other._tagDictionary) && ListEquals(_queryTokenStream, other._queryTokenStream) && (_userDescription ?? string.Empty) == (other._userDescription ?? string.Empty) && (_autoDescription ?? string.Empty) == (other._autoDescription ?? string.Empty);
+            return _tokenStreamVersion == other._tokenStreamVersion && ListEquals(_tagDictionary, other._tagDictionary) && ListEquals(_queryTokenStream, other._queryTokenStream) && (_userDescription ?? string.Empty) == (other._userDescription ?? string.Empty) && (_autoDescription ?? string.Empty) == (other._autoDescription ?? string.Empty);
         }
 
         public override bool Equals(object obj)
@@ -139,6 +142,7 @@ namespace Core.AbilitySystem.Tag
             var autoDescription = new StringBuilder();
             rootQueryExpr.EmitTokens(tokenStream, tagDictionary, autoDescription);
 
+            _tokenStreamVersion = (int)GameplayTagQueryStreamVersion.LatestVersion;
             _queryTokenStream = tokenStream;
             _tagDictionary = tagDictionary;
             _userDescription = userDescription;
