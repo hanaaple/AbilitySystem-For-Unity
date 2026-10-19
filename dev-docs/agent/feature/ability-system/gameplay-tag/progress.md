@@ -2,11 +2,11 @@
 
 - 상태: 🚧 IN PROGRESS
 - 우선순위: P1
-- 최종 갱신: 2026-10-19 (KST)
+- 최종 갱신: 2026-10-20 (KST)
 
 > `ability-system` 그룹의 하위 feature. 형제: [attribute](../attribute/progress.md) · [gameplay-effect](../gameplay-effect/progress.md) · [gameplay-ability](../gameplay-ability/progress.md) · [aggregator](../aggregator/progress.md).
 > 유저가 에디터에서 확인할 항목·절차: [tests.md](tests.md).
-> 현재 목표·순서는 [TODO-BOARD](../../../TODO-BOARD.md) '현재 목표'(2026-10-18 유저)가 기준이다. 아래 `수용 기준`·`범위`는 에이전트 제안(유저 미확정).
+> 2026-10-18 유저 목표(Tag + GE 태그 연동 일반 기능 1~6)는 2026-10-20에 끝났고 보드의 그 칸은 지웠다(경위: [worklog](worklog.md) 2026-10-18 '현재 목표 정리'). 남은 일은 [TODO-BOARD](../../../TODO-BOARD.md) 'GE·Tag 남은 것'. 아래 `수용 기준`·`범위`는 에이전트 제안(유저 미확정).
 
 ## 목표
 캐릭터/이펙트에 상태를 나타내는 GameplayTag를 부여하고, GameplayEffect가 그 태그와 연동되게 한다 — GE가 대상에 태그를 부여/회수하고, 대상이 가진 태그에 따라 GE 적용·유지가 조건부로 걸린다. (유저 확정 목표: "Tag + GE 태그 연동")
@@ -85,10 +85,10 @@ FGameplayTagQuery (USTRUCT)   컨테이너 대상 논리 질의(컴파일된 형
 - [x] 1. 태그 표현 타입 — `InternedName`(`Core.Common`) 인터닝 래퍼. D3(대소문자=무시비교+표기보존)는 아직 미충족(단일 필드·대소문자 구분) → 다음 작업 5.
 - [x] 2. GameplayTag 식별자 + 계층 매칭 — 노드 트리·매칭 API(태그 `MatchesTag*`·컨테이너 `HasTag/HasAny/HasAll(+Exact)`·매니저 Parents/Children/DirectParent/MatchDepth). 2026-10-17 확인(tests.md §5-2).
 - [x] 3. owned-tag 컨테이너(참조 카운트) + ASC 조회 API — `GameplayTagCountContainer` + ASC Loose 태그·조회·이벤트(→D22). 셀프체크 D.
-- [ ] 4. GE 태그 필드 + Spec 전달 — UE 5.6 캐시 구조(`_cachedAssetTags`·`_cachedGrantedTags`, UE `GameplayEffect.h:2412,2415`) + `GetAssetTags()`·`GetGrantedTags()` + `OnGameplayEffectChanged()`(`OnEnable`·에디터 `OnValidate`에서 호출, Component에 넘김 →D29). 2026-10-19 Asset Tags 완료(→D30 Asset Tags=UE `FInheritedTagContainer` 구조, 부모 없음): `InheritedTagContainer`(`Effect/`), `AssetTagsGameplayEffectComponent`(새 폴더 `GameplayEffectComponents/` — 유저 지시, `TargetTagRequirements…`도 옮김), Component `GetOwner()`, GE `CachedAssetTags`(internal), Spec 생성 때 Source Spec 태그에 Asset Tags(UE `GameplayEffect.cpp:1627`), `Spec.GetAllAssetTags`. 셀프체크 E(tests.md §6). Granted Tags(UE `UTargetTagsGameplayEffectComponent` → `TargetTagsGameplayEffectComponent`)·인스펙터 Component 목록도 2026-10-19 완료(worklog).
-- [ ] 5. GE 적용/해제 시 태그 부여/회수 배선 — `ActiveGameplayEffectsContainer.Add/RemoveActiveGameplayEffectGrantedTagsAndModifiers`(UE `GameplayEffect.cpp:4312`, `:4652`): period 0이면 modifier 등록·해제, period와 상관없이 `ASC.UpdateTagMap(GetGrantedTags(), ±1)`. 적용 시 주기 실행은 부여 뒤(UE `:4247-4249`). 태그만 주는 GE 허용(셀프체크 D-16). 2026-10-19 억제(inhibit) 경로가 생겨 Add/Remove는 `SetActiveGameplayEffectInhibit`을 거친다(아래 6). 남은 것: Spec `DynamicGrantedTags`(11).
+- [x] 4. GE 태그 필드 + Spec 전달 — UE 5.6 캐시 구조(`_cachedAssetTags`·`_cachedGrantedTags`, UE `GameplayEffect.h:2412,2415`) + `GetAssetTags()`·`GetGrantedTags()` + `OnGameplayEffectChanged()`(`OnEnable`·에디터 `OnValidate`에서 호출, Component에 넘김 →D29). 2026-10-19 Asset Tags 완료(→D30 Asset Tags=UE `FInheritedTagContainer` 구조, 부모 없음): `InheritedTagContainer`(`Effect/`), `AssetTagsGameplayEffectComponent`(새 폴더 `GameplayEffectComponents/` — 유저 지시, `TargetTagRequirements…`도 옮김), Component `GetOwner()`, GE `CachedAssetTags`(internal), Spec 생성 때 Source Spec 태그에 Asset Tags(UE `GameplayEffect.cpp:1627`), `Spec.GetAllAssetTags`. 셀프체크 E(tests.md §6). Granted Tags(UE `UTargetTagsGameplayEffectComponent` → `TargetTagsGameplayEffectComponent`)·인스펙터 Component 목록도 2026-10-19 완료(worklog).
+- [x] 5. GE 적용/해제 시 태그 부여/회수 배선 — `ActiveGameplayEffectsContainer.Add/RemoveActiveGameplayEffectGrantedTagsAndModifiers`(UE `GameplayEffect.cpp:4312`, `:4652`): period 0이면 modifier 등록·해제, period와 상관없이 `ASC.UpdateTagMap(GetGrantedTags(), ±1)`. 적용 시 주기 실행은 부여 뒤(UE `:4247-4249`). 태그만 주는 GE 허용(셀프체크 D-16). 2026-10-19 억제(inhibit) 경로가 생겨 Add/Remove는 `SetActiveGameplayEffectInhibit`을 거친다(아래 6). 남은 것: Spec `DynamicGrantedTags`(11).
 - [x] 6. GE 적용 요구(Application requirement) 검사 — `TargetTagRequirementsGameplayEffectComponent`에 Application·Ongoing·Removal 필드만(→D29). 2026-10-19 GE Component 호출 골격 완료: GE `CanApply`·`OnAddedToActiveContainer`·`OnExecuted`·`OnApplied`(UE `GameplayEffect.cpp:881-935`)를 컨테이너가 UE 위치에서 부르고, `ActiveGameplayEffect.IsInhibited` + `SetActiveGameplayEffectInhibit`(UE `AbilitySystemComponent.cpp:288`)로 GE를 끄고 켠다(꺼지면 modifier·부여 태그를 거두고 주기 실행·magnitude 반영을 건너뜀). 셀프체크 `Run GE Component Self-Check` 27/0(tests.md §6). 2026-10-19 판정 완료: Application·Removal 적용 거부, Ongoing·Removal 조건 태그 구독 → 켜고 끄기·제거, GE 제거 때 구독 해제(UE `TargetTagRequirementsGameplayEffectComponent.cpp` 그대로, 네트워크 권한 분기는 없음). 새 `ActiveGameplayEffectEvents`(`OnEffectRemoved`)·컨테이너 `Owner`·ASC `GetActiveGameplayEffect`·`GetActiveEffectEventSet`. 셀프체크 G. 남은 것: UE `IsDataValid`(Instant인데 Ongoing 조건) 에디터 오류 — 검증 체계 없음, 유저 결정 대기.
-- [ ] 7. 에디터 확인 경로 — 태그 드로어·피커·관리 창·Query 편집기 구현(2026-10-15~16), 확인은 tests.md §2~§4(남은 것 §4-1·4-2·4-6). 남은 것: ASC 인스펙터에 owned-tag 표시.
+- [ ] 7. 에디터 확인 경로 — 태그 드로어·피커·관리 창·Query 편집기 구현(2026-10-15~16), 확인은 tests.md §2~§4(2026-10-20 전부 통과). 남은 것: ASC 인스펙터에 owned-tag 표시.
 - [x] 8. Modifier Source/Target Tags(UE `FGameplayModifierInfo::SourceTags/TargetTags`) — 필드·`GameplayTagRequirements`·Query 직렬화·인스펙터·판정(→D14). 셀프체크 A~E, tests.md §1·§3.
 
 > 아래 9~13은 2026-10-16 "지금 코드에서 태그 달 만한 곳" 조사로 나온 **후보**다(유저: "필요한거 TODO로 해둬"). 9·11·12는 TODO-BOARD '뒤로 미룸'(GE 태그 부가 기능), 10은 SetByCaller(미룸), 13은 현재 목표 6. UE 위치는 5.6 헤더에서 확인했다.
@@ -96,7 +96,7 @@ FGameplayTagQuery (USTRUCT)   컨테이너 대상 논리 질의(컴파일된 형
 - [ ] 10. SetByCaller 크기 — UE `FSetByCallerFloat::DataTag`(`:267`) + `FGameplayEffectSpec::SetByCallerTagMagnitudes`(`:1244`). `MagnitudeCalculationType`에 새 유형, Spec에 "태그 → 값" 저장. 쓸 곳 후보: `MeleeAttackModule`의 실행 중 데미지(에이전트 추론).
 - [ ] 11. Spec 동적 태그 — UE `FGameplayEffectSpec::DynamicGrantedTags/DynamicAssetTags`(`:1209,1214`). 에셋을 고치지 않고 이번 적용에만 태그를 덧붙인다. 4 이후.
 - [ ] 12. Execution 태그 — UE `FGameplayEffectExecutionDefinition::PassedInTags`(`:525`)·`FGameplayEffectCustomExecutionParameters::PassedInTags`(`GameplayEffectExecutionCalculation.h:192`), scoped modifier `SourceTags/TargetTags`(`GameplayEffect.h:470,474`).
-- [ ] 13. 활성 GE 태그 질의·제거 — UE `FGameplayEffectQuery`(`OwningTagQuery`·`EffectTagQuery`·`SourceTagQuery` 등, `:1462-1474`). `ActiveGameplayEffectsContainer`에 태그로 찾기·제거 API(예: "Debuff 전부 해제"). 4·5 이후.
+- [x] 13. 활성 GE 태그 질의·제거 _(2026-10-20 완료 — `GameplayEffectQuery`·ASC 질의 API·`RemoveOtherGameplayEffectComponent`, →gameplay-effect D24·D25)_ — UE `FGameplayEffectQuery`(`OwningTagQuery`·`EffectTagQuery`·`SourceTagQuery` 등, `:1462-1474`). `ActiveGameplayEffectsContainer`에 태그로 찾기·제거 API(예: "Debuff 전부 해제"). 4·5 이후.
 
 ## 결정 기록
 상세는 → [decisions.md](decisions.md). progress엔 요지 인덱스만.
@@ -131,14 +131,11 @@ FGameplayTagQuery (USTRUCT)   컨테이너 대상 논리 질의(컴파일된 형
 없음.
 
 ## 다음 작업
-> 구현 순서는 TODO-BOARD '현재 목표'(2 Asset Tags → 3 Granted Tags → 4 인스펙터 Component 목록 → 5 Target Tag Requirements 판정 → 6 태그로 활성 GE 찾기·제거), 착수는 유저가 말할 때만. 아래 번호는 항목 ID라 끝난 항목(3·10·11·12)을 지워도 다시 매기지 않는다.
+> 2026-10-18 목표 항목 1~6(태그만 주는 GE → Asset Tags → Granted Tags → 인스펙터 Component 목록 → Target Tag Requirements 판정 → 태그로 활성 GE 찾기·제거)은 2026-10-20까지 모두 완료. 남은 일은 TODO-BOARD 'GE·Tag 남은 것', 착수는 유저가 말할 때만. 아래 번호는 항목 ID라 끝난 항목(2·3·6·9·10·11·12)을 지워도 다시 매기지 않는다.
 
-- **1. [검증·후속] Tag 코어** (→D5 생성 차단=Request 입구+internal 생성 함수, →D6 native=코드 정의+저장 안 함) — 동작 확인은 tests.md §5에서 끝났고 §5-1 피커 화면(레지스트리 하위 태그가 native 노드 아래로 합쳐 보이는지)만 남음.
-  - 후속(미룸): IL2CPP 코드 제거 시 마커 필드 유실 대응(`[Preserve]` 등), 빌드 탐색 비용 측정, 레지스트리 편집 시 에디터 매니저 재구성, 노드 출처·명시/암시 기록. D5의 막는 이유 유저 확인.
-- **2. [검증] 레지스트리 자동 생성** — 레지스트리를 지우고 다시 열면 `GameplayTagRegistryInitializer`가 `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset`을 만드는지. tests.md §5-4(유저가 하거나 삭제 허락 필요).
+- **1. [검증·후속] Tag 코어** (→D5 생성 차단=Request 입구+internal 생성 함수, →D6 native=코드 정의+저장 안 함) — 동작 확인은 tests.md §5에서 끝남(§5-1 피커 화면 2026-10-20).
+  - 후속(미룸): IL2CPP 코드 제거 시 마커 필드 유실 대응(`[Preserve]` 등), 빌드 탐색 비용 측정, 노드 출처·명시/암시 기록. D5의 막는 이유 유저 확인. (레지스트리 편집 시 에디터 매니저 재구성은 관리 창 편집 경로에서 이미 됨 — 2026-10-20 확인.)
 - **4. [결정 대기 3] 태그 조회 입력 ergonomics** 유저 확정 후 `RequestGameplayTag` 입력 경로 확정.
 - **5. [D3 구현] 대소문자 무시비교 + 표기 보존** — `InternedName`을 canonical/display 이중화로. 경량 경계(결정 대기 1)와 묶임. TODO-BOARD '뒤로 미룸'.
-- **6. [검증] 중첩 struct `ISerializationCallbackReceiver` 콜백 실측** — 인스펙터에 `GameplayTag` 필드 저장→로드 후 `Equals` true 확인. 실패 시 fallback(컨테이너 재-intern / `Ordinal`). 컨테이너 저장 후 매칭은 tests.md §5-3에서 확인됨. → worklog 2026-09-28.
 - **7. [Query] 내부 표현** — UE대로 토큰 스트림(`_tagDictionary`·`_queryTokenStream`)으로 구현·직렬화, 형식 버전 저장(D26, 치운 결정). 식 트리로 바꿀지는 유저 미확정(바꾸면 저장된 질의를 옮겨야 함).
 - **8. [결정 대기 2] GE 연동 범위 ②④** 유저 확정 → 결정 기록 후 세부 TODO 4~6.
-- **9. [검증] 태그 관리 창·대화창** — tests.md §4-1(관리 창 태그 추가)·§4-2(행 메뉴 Rename·Delete, native 행 비활성)·§4-6(미등록 태그 경고 대화창과 피커 앞뒤, 유저 몫). Unity를 앞으로 띄워야 한다.

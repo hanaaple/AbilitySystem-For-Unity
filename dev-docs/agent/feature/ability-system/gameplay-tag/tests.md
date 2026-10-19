@@ -1,11 +1,11 @@
 # gameplay-tag — 유저 확인 목록 (검증)
 
 > 이 feature에서 **유저가 Unity 에디터에서 직접 확인해야 하는 것**을 순서대로 모은 문서다. 위에서부터 그대로 따라 하면 된다.
-> Unity MCP가 연결돼 있으면 에이전트가 콘솔 읽기·메뉴 실행·코드 실행·화면 캡처까지 한다. **피커·우클릭 메뉴·OS 메뉴·키 입력·툴팁은 Unity가 맨 앞에 있어야 하고**, `EditorUtility.DisplayDialog`는 MCP로 돌리는 동안 화면에 안 뜨고 바로 OK로 돌아온다 — 대화창이 걸린 확인은 유저 몫.
+> Unity MCP가 연결돼 있으면 에이전트가 콘솔 읽기·메뉴 실행·코드 실행·화면 캡처까지 한다. **피커·우클릭 메뉴·OS 메뉴·키 입력·툴팁은 Unity가 맨 앞에 있어야 하고**, `EditorUtility.DisplayDialog`는 MCP로 돌리는 동안 화면에 안 뜨고 바로 OK로 돌아온다 — 대화창이 걸린 확인은 MCP 밖에서 실제 마우스 클릭으로 열어야 뜬다(2026-10-20 §4-6).
 > 결과 기록: 항목 앞 `- [ ]`를 `- [x]`로 바꾸고 날짜를 적는다. 실패하면 콘솔 로그(빨간 줄 전체)를 복사해 에이전트에게 주면 된다.
-> 진행 문서: [progress.md](progress.md). 최종 갱신: 2026-10-19 (KST)
+> 진행 문서: [progress.md](progress.md). 최종 갱신: 2026-10-20 (KST)
 
-**남은 확인:** §4-1·4-2·4-6(대화창)·5-1(피커 화면)·5-4(레지스트리 자동 생성).
+**남은 확인:** 없음(2026-10-20 §5-4까지 끝남). §1-4 수동 확인은 선택.
 
 ---
 
@@ -206,22 +206,22 @@ E-6·E-7·E-8·E-11은 Duration·Infinite 두 번씩 나온다(PASS 줄 4개 추
 
 관련 결정: D12(태그 관리 포함=레지스트리 편집). 확인용 에셋: `Assets/_Test/GameplayTagTest.asset`(단일·List·Container 필드). **4-1·4-2는 Unity를 맨 앞에 띄워야 한다.** 레지스트리를 고치므로 에이전트가 할 때는 백업 후 진행하고, 끝나면 추가한 태그를 지운 뒤 백업과 비교한다.
 
-- [ ] **4-1. 관리 창.** `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset` 선택 → 인스펙터 `Manage Gameplay Tags...` → 창의 `+`로 `Test.A`·`Test.A.B`·`Test.C` 추가 → 레지스트리 에셋 목록에 저장되는지. _(2026-10-17 에이전트가 이름 입력란까지 열고 멈춤 — 레지스트리는 안 바뀜)_
-- [ ] **4-2. 행 메뉴.** 관리 창 행의 메뉴에서 Rename·Delete가 동작하는지. native 태그(`Test.ModifierTag.Native…`) 행은 Rename·Delete가 회색(비활성)인지.
+- [x] _(2026-10-20, 에이전트)_ **4-1. 관리 창.** `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset` 선택 → 인스펙터 `Manage Gameplay Tags...` → 창의 `+`로 `Test.A`·`Test.A.B`·`Test.C` 추가 → 레지스트리 에셋 목록에 저장되는지. 추가 뒤 입력란이 비고, Enter로 추가한 뒤에도 다음 태그를 이어 칠 수 있는지(2026-10-20 수정분).
+- [x] _(2026-10-20, 에이전트)_ **4-2. 행 메뉴.** 관리 창 행의 메뉴에서 Rename·Delete가 동작하는지. native 태그(`Test.ModifierTag.Native…`) 행은 Rename·Delete가 회색(비활성)인지.
 - [x] _(2026-10-17)_ **4-3. 필드별 피커.** 단일·List 요소·컨테이너 필드마다 피커가 열리고, 체크·해제(형제가 없으면 부모가 들어감), 칩의 `×`, 칩 우클릭 Copy/Paste/Clear가 된다.
 - [x] _(2026-10-17)_ **4-4. 저장.** 값을 넣고 저장 → 다시 읽어도 유지(5-3과 겹침).
 - [x] _(2026-10-17)_ **4-5. 다중 선택.** 값이 다른 두 에셋을 같이 선택 → `Multiple Values`, 일부에만 있는 태그는 흐린 칩, 피커 체크박스는 미정 상태.
-- [ ] **4-6. 위험 지점 — 대화창(유저 몫).** 미등록 태그(예: `No.Such.Tag`)가 든 필드에서 피커를 열 때, 미등록 태그 경고 대화창 뒤에 피커 팝업이 뜨는지(대화창과 피커의 앞뒤). _(나머지 — 피커 안의 행 ▾·우클릭·설정 메뉴를 열어도 피커가 남는지, 행 체크박스 — 는 2026-10-17 에이전트 확인)_
+- [x] _(2026-10-20, 에이전트)_ **4-6. 위험 지점 — 대화창.** 미등록 태그(예: `No.Such.Tag`)가 든 필드에서 피커를 열 때, 미등록 태그 경고 대화창 뒤에 피커 팝업이 뜨는지(대화창과 피커의 앞뒤). 결과: 대화창(`Invalid Tags that have been removed: No.Such.Tag`)이 먼저 뜨고, OK 뒤 피커가 맨 앞에 열리며 필드는 None. _(나머지 — 피커 안의 행 ▾·우클릭·설정 메뉴를 열어도 피커가 남는지, 행 체크박스 — 는 2026-10-17 에이전트 확인)_
 - 참고: 중첩 struct/class 필드·`[GameplayTagCategories]` 확인용 필드는 유저 요청으로 지웠다(2026-10-15). 이 둘을 보려면 확인용 필드가 따로 있어야 한다.
 
 ---
 
 ## 5. Tag 코어
 
-- [ ] **5-1. native 태그 — 피커 화면.** 데이터는 확인됨(2026-10-17: native 갈래와 레지스트리 갈래가 한 트리). 남은 것: 레지스트리에 native와 같은 경로의 하위 태그(예: `Test.ModifierTag.Native.Calm`)를 넣으면 피커에서 native 노드 아래로 합쳐 보이는지. Unity를 맨 앞에 띄워야 하고, 끝나면 넣은 태그를 지운다.
+- [x] _(2026-10-20, 에이전트)_ **5-1. native 태그 — 피커 화면.** 데이터는 확인됨(2026-10-17: native 갈래와 레지스트리 갈래가 한 트리). 남은 것: 레지스트리에 native와 같은 경로의 하위 태그(예: `Test.ModifierTag.Native.Calm`)를 넣으면 피커에서 native 노드 아래로 합쳐 보이는지. Unity를 맨 앞에 띄워야 하고, 끝나면 넣은 태그를 지운다.
 - [x] _(2026-10-17, MCP)_ **5-2. 계층 매칭.** `RequestGameplayTagParents`·`RequestGameplayTagChildren`·`RequestGameplayTagDirectParent`·`GameplayTagsMatchDepth`·`MatchesTag`/`MatchesTagExact`·`IsValidGameplayTagString` 모두 UE 의미대로.
 - [x] _(2026-10-17, MCP)_ **5-3. 저장 후 매칭.** 컨테이너에 태그를 저장 → 다시 읽어 부모 `HasTag` true, `HasTagExact(부모)` false.
-- [ ] **5-4. 레지스트리 자동 생성(유저 몫 또는 삭제 허락 필요).** 레지스트리 에셋을 백업 후 지우고 Unity를 다시 열면 `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset`이 자동으로 생기는지. 끝나면 백업을 되돌린다.
+- [x] _(2026-10-20, 에이전트 — 유저 허락)_ **5-4. 레지스트리 자동 생성.** 레지스트리 에셋을 백업 후 지우고 Unity를 다시 열면 `Assets/Resources/AbilitySystem/GameplayTagRegistry.asset`이 자동으로 생기는지. 끝나면 백업을 되돌린다. 결과: 지운 뒤 Refresh만으로는 안 생기고, 도메인 리로드(`EditorUtility.RequestScriptReload`) 직후 `_tags: []`로 생김. 재시작 대신 리로드로 확인(`[InitializeOnLoad]`는 둘 다에서 돈다).
 - [x] _(2026-10-17, MCP)_ **5-5. 미등록 이름.** `GameplayTag.RequestGameplayTag("No.Such.Tag")`를 두 번 불러도 에러 로그는 **이름당 한 번**.
 
 ---
@@ -230,7 +230,7 @@ E-6·E-7·E-8·E-11은 Duration·Infinite 두 번씩 나온다(PASS 줄 4개 추
 
 관련 결정: D29(GE Component 도입, 첫 단계는 빈 껍데기), D30(Asset Tags=UE `FInheritedTagContainer` 구조, 부모 없음). A~D는 호출을 기록하는 테스트 전용 Component(`RecordingComponent`, 셀프체크 파일 안)를 GE에 넣어 보고, E는 실제 `AssetTagsGameplayEffectComponent`를 쓴다. 부여 태그는 Granted Tags Component 대신 GE 캐시(`GetGrantedTags()`)에 직접 넣는다.
 
-- [x] _(2026-10-19 MCP 61/0, 경고·에러 0. 같은 날 27 → E(Asset Tags) 43 → F(Granted Tags) 52 → G(Target Tag Requirements) 61)_ **6-1.** 메뉴 `Tools ▸ Ability System ▸ Run GE Component Self-Check`(Play 모드 필요 없음) → Console 검색 `GEComponent` → 마지막 줄 **`[GEComponent Self-Check] passed 61 / failed 0`**.
+- [x] _(2026-10-20 MCP 89/0, 경고·에러 0. 2026-10-19 27 → E(Asset Tags) 43 → F(Granted Tags) 52 → G(Target Tag Requirements) 61, 2026-10-20 H(질의 API)·I(Remove Other) 89)_ **6-1.** 메뉴 `Tools ▸ Ability System ▸ Run GE Component Self-Check`(Play 모드 필요 없음) → Console 검색 `GEComponent` → 마지막 줄 **`[GEComponent Self-Check] passed 89 / failed 0`**.
 
 | ID | 확인 내용 | 기대 | UE 근거 |
 |---|---|---|---|
@@ -285,6 +285,24 @@ E-6·E-7·E-8·E-11은 Duration·Infinite 두 번씩 나온다(PASS 줄 4개 추
 | G-9 | 정리 | Health 100, 태그 0 | |
 
 실패 시 의심(G): `TargetTagRequirementsGameplayEffectComponent`, `ActiveGameplayEffectEvents`(제거 알림), `ActiveGameplayEffectsContainer.RemoveActiveGameplayEffect`(알림 순서)·`SetActiveGameplayEffectInhibit`, `GameplayTagCountContainer` 이벤트.
+
+| ID | 확인 내용 | 기대 | UE 근거 |
+|---|---|---|---|
+| H-1 | `IsEmpty` | 빈 질의 true, 태그 질의 false | `GameplayEffect.cpp` `FGameplayEffectQuery::IsEmpty` |
+| H-2~8 | 태그 질의 4종 | Effect=Asset Tags(부모 태그로도 맞음), Owning=Asset+Granted, Source Spec 태그엔 Asset Tags도 들어 있음 | `FGameplayEffectQuery::Matches(Spec)` `:5792-5845` |
+| H-9·10 | ModifyingAttribute·EffectDefinition | 그 어트리뷰트를 바꾸는 GE·그 에셋의 GE만 | 같은 함수 `:5848-5885` |
+| H-11·12 | IgnoreHandles·CustomMatchDelegate | 무시 핸들은 빠짐, 델리게이트만 채워도 비어 있지 않음 | `Matches(ActiveGE)` `:5752-5781` |
+| H-13 | `GetAggregatedStackCount` | 켜진 GE만 셈(스택 없어 GE당 1) | `GetActiveEffectCount` `:5394` |
+| H-14·15 | 시간 조회 | 지속·남은 시간, 가장 늦게 끝나는 시각, 끝없는 GE가 섞이면 -1 | `:5210-5338` |
+| H-16 | 레벨 변경(질의) | 맞는 GE만 레벨이 바뀜 | `SetActiveGameplayEffectLevel` `:3679` |
+| H-17~20 | 제거 API | 지운 수 반환, 효과·부여 태그 회수 | `RemoveActiveEffects` `:5375`, ASC `RemoveActiveEffectsWith*` |
+| H-21 | 연쇄 제거 | 지우다 다른 GE가 스스로 빠져도 예외 없음 | UE는 scope lock — 우리는 핸들을 먼저 모음 |
+| I-1~3 | Remove Other | 맞는 다른 GE 제거, 자기·먼저 걸린 같은 GE는 남김, 에셋 질의 그대로 | `RemoveOtherGameplayEffectComponent.cpp:16-50` |
+| I-4 | 질의 둘 | 둘째 질의에서도 자기는 남음 | UE와 다름 → gameplay-effect D24 |
+| I-5·6 | 빈 질의·Instant | 빈 질의 건너뜀, Instant도 적용 때 지움 | 같은 함수 |
+| I-7 | 정리 | Health 100, 활성 GE 0 | |
+
+실패 시 의심(H·I): `GameplayEffectQuery`, `ActiveGameplayEffectsContainer` 질의 절, `ActiveGameplayEffect.GetDuration·GetTimeRemaining·GetEndTime`, `RemoveOtherGameplayEffectComponent`.
 
 실패 시 의심: A·B는 `ActiveGameplayEffectsContainer.ApplyGameplayEffectSpec`·`ExecuteActiveEffectsFrom` 끝과 `GameplayEffectAsset`의 `CanApply`·`OnAddedToActiveContainer`·`OnExecuted`·`OnApplied`, C·D는 `InternalOnActiveGameplayEffectAdded`·`SetActiveGameplayEffectInhibit`·`RemoveActiveGameplayEffect`·`InternalExecutePeriodicGameplayEffect`.
 

@@ -3,6 +3,20 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
 
+### 2026-10-20 — Calculation Modifier 런타임 적용 (Transient 제외, →D23)
+> 유저: "실제 계산 구현해둬 Transient만 미루고. 이미 있는거로 하면 금방 되는거 아냐?" (런타임 적용이 Transient만 빠진 줄 알았다가 전체가 없음을 확인한 뒤)
+- **UE 확인(5.6).** `FGameplayEffectCustomExecutionParameters` 생성자(`GameplayEffectExecutionCalculation.cpp:16-59`): Calculation Modifier마다 대상 캡처 정의로 `ScopedModifierAggregators`를 찾고, 없으면 캡처 Spec의 `AttemptGetAttributeAggregatorSnapshot`(`GameplayEffect.cpp:2352`)으로 사본을 만들어 `AddAggregatorMod`. 계산 못 하면 경고. 조회(`AttemptCalculateCapturedAttributeMagnitude`·`…BaseValue`, `:111-171`)는 사본이 있으면 사본을 읽는다. 캡처 정의 수집(`FGameplayEffectExecutionDefinition::GetAttributeCaptureDefinitions`, `:1402-1422`)은 Calculation Modifier magnitude의 캡처도 포함.
+- **구현(있는 부품 이음).** 캡처 Spec `AttemptGetAttributeAggregatorSnapshot`(`TakeSnapshotOf` 재사용). `GameplayEffectExecutionParameters`가 Calculation Modifier 목록을 받아 사본 사전을 만들고(없으면 null — 할당 없음), 두 조회가 사본을 먼저 본다. Spec에 `ExecutionDefinitions`(`Executions`와 평행 — resolve 실패로 건너뛴 항목이 있어 인덱스를 맞추려고), 캡처 정의 수집 ③ Calculation Modifier magnitude. 컨테이너 `RunExecutions`가 정의의 Calculation Modifier를 넘긴다. 사본 mod의 핸들은 기본값(UE는 새 핸들을 만들지만 사본은 실행 뒤 버려져 제거할 일이 없다).
+- **확인.** Calculation Modifier 셀프체크 E-2를 "적용됨"으로 바꾸고 E-3(실제 어트리뷰트 그대로) 추가 → 19/0, E-2 Speed 차이 24.07 = 기대값. Aggregator 55/0·GE Component 89/0·Modifier Tag 65/0. PlayMode는 Execution 쓰는 GE가 없어 안 돌림.
+- **UE와 다른 점(유저 질문 "호출 경로나 과정, 파라미터같은건 ue에 맞춰서 했나?"에 답한 것).** 호출 위치·순서·사본 생성·조회 우선순위는 UE 그대로. 다름: Execution 목록을 정의 대신 미리 만든 인스턴스로 돌아 평행 `ExecutionDefinitions`를 둠 / 생성자 `(target, spec, scopedMods)` — UE `(Spec, ScopedMods, Target, PassedInTags, PredictionKey)`와 순서 다르고 뒤 둘 없음 / 사본 mod 핸들 기본값 / 채널·예측 인자 없음 / 출력 뒤처리(스택·Conditional·Cue) 없음. 없는 조회 API는 유저 "빠진것들 TODO로 빈 시그니처로만 만들어둬" → 3개는 `NotImplementedException` 빈 메서드+TODO, `AttemptGatherAttributeMods`·`ForEachQualifiedAttributeMod`는 `AttributeAggregator.Mod`가 private이라 시그니처를 둘 수 없어 TODO 주석만. TODO-BOARD 등록. 생성자 순서를 UE대로 바꿀지는 답 없음.
+
+### 2026-10-20 — 태그로 활성 GE 찾기·제거 (`GameplayEffectQuery`·ASC 질의 API·Remove Other)
+> 유저: "태그로 활성 GE 찾기·제거 구현하자. 간단해 보이는데?" — 범위 "UE대로", `StacksToRemove` "자리만 두기", Remove Other 자기 제외 "UE의 의도대로 가야될 거 같은데 더 찾아봐"
+- **질의.** `GameplayEffectQuery`(UE `FGameplayEffectQuery`) — 태그 질의 4종·ModifyingAttribute·EffectSource·EffectDefinition + 코드용 `IgnoreHandles`·`CustomMatchDelegate`, `MakeQuery_*` 9종. Owning은 UE처럼 Asset+Granted.
+- **API.** 컨테이너·ASC에 찾기·개수·시간·끝나는 시각·레벨 변경·제거(`RemoveActiveEffects`, `RemoveActiveEffectsWith{Tags,SourceTags,AppliedTags,GrantedTags}`). 제거는 핸들을 먼저 모은 뒤 지운다 — 제거가 태그 변화로 다른 GE 제거(Target Tag Requirements)를 불러도 안전. 시간은 `RemainingDuration` 기준, 끝없는 GE는 `GameplayEffectConstants.InfiniteDuration`(UE `FGameplayEffectConstants::INFINITE_DURATION` — 유저가 대문자를 말했다가 "code convention 있었을텐데"로 규약(상수 PascalCase)을 따름) (→D25). 레벨 변경용 `Spec.SetLevel`·`UpdateAllAggregatorModMagnitudes` 추가. 같은 지적으로 새 코드를 규약에 맞춤: `GameplayEffectQuery` 프로퍼티 setter를 블록 본문으로(한때 public 필드로 바꿨다가 유저 "왜 갑자기 public으로" → private `_필드` + 프로퍼티로 되돌림), Remove Other 직렬화 필드 `_removeGameplayEffectQueries`, 여러 줄 식을 한 줄로.
+- **Remove Other.** UE는 자기 핸들 목록을 첫 질의에 `MoveTemp`로 넘겨 둘째 질의부터 자기 제외가 빠진다 — `TArray` 이동 코드·UE 자신의 2칸 이관(`ConvertRemoveOtherComponent`)까지 보고 버그로 판단, 모든 질의에 건다(→D24).
+- **확인.** 컴파일(Unity 없이) 통과. GE Component 셀프체크 H(21)·I(7) 추가 → 89/0, Aggregator 55/0·Calculation Modifier 18/0·Modifier Tag 65/0. Remove Other 인스펙터 화면은 안 봄.
+
 ### 2026-10-19 — Subclass 선택기 좁을 때 잘림 방향
 > 유저: "SubClass Selector에 Inspector width가 부족하니 짤리는데 왼쪽은 유지하고 오른쪽부터 짤리게"
 - **원인.** 스크립트 필드(`SubclassSelectorDrawer.DrawScriptField`, `EditorStyles.objectField` — MiddleLeft·Clip 확인)에 칸보다 긴 이름이 들어가면 IMGUI가 아이콘째 밀어 왼쪽 아이콘이 사라졌다.

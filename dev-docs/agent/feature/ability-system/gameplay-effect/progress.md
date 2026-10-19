@@ -2,7 +2,7 @@
 
 - 상태: ✅ 임시완료
 - 우선순위: P0
-- 최종 갱신: 2026-10-19 (KST)
+- 최종 갱신: 2026-10-20 (KST)
 
 > `ability-system` 그룹의 하위 feature. 형제: [attribute](../attribute/progress.md) · [gameplay-ability](../gameplay-ability/progress.md) · [aggregator](../aggregator/progress.md).
 > 핵심 배관(정의·Spec·Modifier·Execution·Capture·AttributeBased)은 구현·검증됨. 라이브 재평가(non-snapshot 추종)는 [aggregator](../aggregator/progress.md)가 얹었다.
@@ -68,7 +68,9 @@
 | D19 | Spec 복사/Clone | 2026-08-04 | `GameplayEffectSpec` 복사 생성자(+`Clone()`) — 적용 시점 대상별 복제 |
 | D20 | spec API+clone 유지 | 2026-08-04 | spec 직접 생성 API + apply 시점 clone 유지 — SetByCaller 도입 예정이라 clone은 선배관 |
 | D22 | Magnitude=UE 구조체 공유 | 2026-10-19 | `GameplayEffectModifierMagnitude`로 추출해 GE Modifier·Calculation Modifier가 같이 씀(전용 드로어 하나). 에셋 10개 직접 수정. |
-| D23 | Execution=UE ExecutionDefinition, Calculation Modifier는 Defs()에서 | 2026-10-19 | `executions`(계산 클래스 AQN + Calculation Modifiers). 편집기 Backing Data = Execution `Defs()`. 런타임 적용·Transient·PassedInTags 없음. 기존 에셋은 직접 수정. |
+| D23 | Execution=UE ExecutionDefinition, Calculation Modifier는 Defs()에서 | 2026-10-19 | `executions`(계산 클래스 AQN + Calculation Modifiers). 편집기 Backing Data = Execution `Defs()`. 런타임 적용 2026-10-20(캡처 aggregator 사본). Transient·PassedInTags 없음. 기존 에셋은 직접 수정. |
+| D24 | Remove Other=모든 질의에서 자기 제외 | 2026-10-20 | UE는 `MoveTemp`로 둘째 질의부터 자기 제외가 빠짐(버그로 판단) — 우리는 모든 질의에 건다. |
+| D25 | GE 질의 API=UE 목록 | 2026-10-20 | `GameplayEffectQuery`·ASC 찾기·시간·레벨·제거 UE대로. `StacksToRemove` 자리만, 시간은 `RemainingDuration` 기준, 끝없음 -1. |
 
 ### 결정 대기
 - **Execution 직렬화 형태(구 D8, 2026-07-19 미결)** — AQN 타입 참조(지금 코드, UE `TSubclassOf`와 같음 / GE별 튜닝 값 불가) vs `[SerializeReference]` 인스턴스(GE별 튜닝 값 / 이름 변경 시 참조 깨짐, 드로어 따로). 판단 축: Execution이 GE별 튜닝 값을 갖게 될까.

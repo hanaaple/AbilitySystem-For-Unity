@@ -3,6 +3,40 @@
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다. 시간순 "판단의 이야기"로 쓴다.
 > (주의: 아래 기존 두 항목은 오름차순이나, 규약은 '최신이 위로'. 이 항목부터 최신을 위에 둔다.)
 
+## 2026-10-20 — GE·Tag 전체 회귀 + 코드상 빈 곳 점검
+> 유저: "지금 GameplayEffect, GameplayTag 관련으로 구현되어있는거 전반 다 잘 작동하나? TODO로 남은 것들 리스트로 싹 확인해봐", "코드상에 빈 것도 확인하고"
+
+- **회귀(전부 기준값 그대로).** 에디터 셀프체크 Aggregator 55/0·Calculation Modifier 18/0·GE Component 89/0·Modifier Tag 65/0(경고는 D-4의 1줄), PlayMode는 저장 안 하는 임시 씬에 배선해 Aggregator PlayMode 14/0·Tag PlayMode 9/0. 끝나고 Untitled 기본 씬으로 되돌림. `Application.runInBackground`는 Play 중에 false로 돌린 값이 종료 뒤 true로 남아 있어 다시 false로 둠(`ProjectSettings` 변경 없음).
+- **코드상 빈 곳.** 호출처 없는 미구현 공개 API 5개(`GameplayTag` `<`/`>`, 매니저 `DoneAddingNativeTags`·`CallOrRegister_OnDoneAddingNativeTagsDelegate`·`SplitGameplayTagFName`·`RequestAllGameplayTags`)와 `AddChildrenTags(onlyIncludeDictionaryTags: true)`가 `NotImplementedException`. TODO 주석은 보드 '뒤로 미룸'과 대응(스택·Cue·Transient·Calculation Modifier 적용·동적 태그·AttributeBased 태그 필터·ScalableFloat 커브·Custom Calculation·SetByCaller). GE Component 훅(`OnGameplayEffectExecuted/Applied/Changed`)이 비어 있는 건 UE 베이스와 같은 의도(→D29). 찾은 차이: `AttributeSet.PreAttributeBaseChange`가 `newValue`를 값으로 받아 클램프할 수 없다(UE는 `float& NewValue`, `AttributeSet.h:229`) — 보고만. ASC 인스펙터에 소유 태그 표시는 없다(세부 TODO 7 남은 것과 같음).
+- 세부 TODO 4·5는 내용상 끝나 있어(Asset·Granted Tags·인스펙터 목록, 부여·회수 경로) 체크했다. 남은 하위 항목은 11(동적 태그)이 이어받는다.
+
+## 2026-10-20 — 중첩 struct 역직렬화 콜백 실측 (progress 다음 작업 6)
+> 유저: "해봐" (2026-09-28 "⚠ 미검증" 항목 설명 뒤)
+
+- **무엇을 봤나.** `InternedName.Equals`는 참조 비교라, 에셋에서 읽힌 이름도 `OnAfterDeserialize`에서 intern돼야 맞다. `GameplayTag` 안의 `InternedName`(struct 속 struct)에도 Unity가 콜백을 부르는지가 의문이었다.
+- **방법.** `GameplayTagTestAsset` 필드가 private이고 MCP 명령에선 리플렉션이 막혀, `Assets/_McpCheck/Editor/`에 임시 도우미를 두고 `_tag`·`_tagList`·`_tagContainer._gameplayTags`를 읽었다. 항목마다 이름 문자열이 `string.IsInterned`가 돌려주는 인스턴스와 같은지(`ToString()`이 저장 문자열을 그대로 돌려줌), `RequestGameplayTag`로 만든 태그와 `Equals`·해시가 같은지 봤다.
+- **결과.** 5개 모두 세 경로에서 intern됨·`Equals` true — ① `ImportAsset(ForceUpdate)` 직후 ② `Resources.UnloadAsset`으로 내린 뒤(`== null` 확인) 디스크에서 다시 읽기 ③ `RequestScriptReload` 도메인 리로드 뒤. 컨테이너의 `OnAfterDeserialize`는 다시 intern하지 않으므로(부모 태그만 계산) 컨테이너 안 태그도 중첩 콜백으로 intern된 것이다. → fallback(컨테이너 재-intern / `Ordinal`) 불필요.
+- **안 본 것.** 빌드한 플레이어에서의 로드. 같은 직렬화기라 같을 것으로 보지만 추론이다.
+- 도우미는 지웠고 테스트 에셋 md5는 그대로(`f97858ea…`).
+
+## 2026-10-20 — 레지스트리 자동 생성 확인 (tests.md §5-4)
+> 유저: "gameplay-tag §5-4 레지스트리 자동 생성 마음대로 해"
+
+- 에셋·`.meta`를 백업하고 지웠다. MCP의 `AssetDatabase.DeleteAsset`은 "User interactions are not supported for MCP tool calls"로 거부돼 파일을 직접 지우고 Refresh했다. Refresh만으로는 다시 생기지 않았고, `RequestScriptReload` 도메인 리로드 직후 `GameplayTagRegistryInitializer`(`[InitializeOnLoad]`)가 같은 경로에 빈 목록으로 만들었다(Editor.log: `Begin MonoManager ReloadAssembly` → 해당 에셋 import). GUID는 옛 것(`dc86248b…`)을 그대로 받았다 — Unity가 방금 지운 경로의 GUID를 기억하고 있던 것으로 보인다(추론). 끝나고 백업으로 되돌렸고 md5가 같다.
+- 에디터 재시작은 하지 않았다 — `[InitializeOnLoad]`는 시작과 리로드 때 같은 식으로 돈다.
+
+## 2026-10-20 — 태그 관리 창·대화창 남은 확인 (tests.md §4-1·4-2·4-6·5-1)
+> 유저: "TODO에 gameplay-tag 태그 관리 창·대화창 남은 것 이거 go"
+
+- **방법.** Unity가 이미 맨 앞에 있어서, 2026-10-17의 `SendEvent` 대신 **실제 마우스 클릭**(user32 `mouse_event`, 커서는 원위치)과 `SendKeys`로 했다. 캡처는 `PrintWindow`, 메뉴·팝업은 화면 복사. 레지스트리·`GameplayTagTest.asset`은 시작 전에 백업했고, 끝나고 md5가 백업과 같다(레지스트리 `c253a6b1…`, 테스트 에셋 `f97858ea…`). 에디터 태그 트리도 다시 만들어 넣었던 태그가 사라진 것까지 확인.
+- **대화창(§4-6)이 이번엔 떴다.** 2026-10-17엔 MCP 명령 안에서 띄워 `DisplayDialog`가 바로 true로 돌아왔다. 이번엔 MCP로는 필드 값만 `No.Such.Tag`로 넣고, 피커는 실제 클릭으로 열어 MCP 밖에서 돌게 했다 → 대화창이 먼저 뜨고, OK 뒤 피커가 맨 앞에 열렸다.
+- **찾아서 고친 버그 2건(`GameplayTagPicker.DrawAddNewTagWidget`).** ① 태그를 추가하면 `_newTagName`은 비는데 입력란이 포커스를 쥔 채라 IMGUI 편집기가 옛 글자를 계속 보여 줬다 — 힌트 `X.Y.Z`와 겹쳐 그려지고, 그대로 다시 누르면 빈 이름으로 처리돼 "You must specify tag name." → 이름을 바꿀 땐 포커스를 한 번 풀고 다시 잡는다(추가 뒤에도 다시 잡아 이어 칠 수 있게). UE `CreateNewGameplayTag`도 추가 뒤 입력란을 기본 이름(`DefaultNewName`)으로 되돌린다(`SAddNewGameplayTagWidget.cpp:404` `Reset` → `:248-261` `SetTagName`). ② Enter로 추가하면, 우리 제출 처리 뒤 Enter가 텍스트 필드까지 가서 편집을 끝내 버려 다시 잡은 포커스에 글자가 안 들어갔다 → 입력란에 포커스가 있을 때 Enter 키·`'\n'` 문자 이벤트를 먼저 소비. 둘 다 재컴파일 후 화면으로 확인(`Test.C` Enter 추가 뒤 바로 `Zz`가 입력됨).
+- **고치지 않고 보고만 한 것.** Add Sub Tag·`+`(행 선택 시)로 입력란에 `부모.`를 채우면 Unity 텍스트 필드가 포커스를 얻으며 전체 선택해, 바로 치면 접두어가 지워진다. UE는 `SEditableTextBox`의 `SelectAllTextWhenFocused` 기본값이 false라 이어 칠 수 있다(`SEditableTextBox.h:45`, 피커 쪽 생성 `SAddNewGameplayTagWidget.cpp:69-73`엔 설정 없음). 커서를 끝으로 옮기려면 `EditorGUI` 내부 편집기(internal)를 건드려야 해서 유저에게 물었고, 유저 "그대로 둬 문제 없구만" → UE와의 차이로 남김.
+
+## 2026-10-20 — 태그로 활성 GE 찾기·제거 (세부 TODO 13)
+> 유저: "태그로 활성 GE 찾기·제거 구현하자. 간단해 보이는데?"
+- `GameplayEffectQuery`·ASC 질의 API·`RemoveOtherGameplayEffectComponent`. 경위·결정은 gameplay-effect worklog 2026-10-20, decisions D24(Remove Other는 모든 질의에서 자기 GE를 뺀다)·D25(질의 API=UE 목록). 테스트는 tests.md §6 H·I(89/0).
+
 ## 2026-10-19 — 태그 연동 PlayMode 테스트
 > 유저: "Test Code 만들어서 Test해"
 - 에디터 셀프체크(G)는 한 번에 호출해 보는 것이라 시간에 걸린 동작이 빠져 있었다 → 새 `Test/TagRequirementsPlayModeTest.cs`(런타임 MonoBehaviour, GE는 리플렉션으로 메모리에서). 실제 프레임(ASC.Update → 컨테이너 Tick)에서: 부여 GE 만료 → 의존 GE 꺼짐, 꺼진 주기 GE 실행 멈춤·재개, Tick 중 Removal 제거, 꺼진 Duration GE 만료. 저장 안 하는 임시 씬에서 MCP로 Play → 9/0, 에러 0. tests.md §6-2.

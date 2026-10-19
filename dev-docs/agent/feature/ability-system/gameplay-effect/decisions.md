@@ -41,7 +41,7 @@
 - 결정: `GameplayEffectExecutionAsset`(SO)을 없애고 Execution을 클래스로 둔다. GE는 타입 이름(AQN)을 저장한다.
 - 왜: SO는 "여러 참조가 공유할 데이터를 한 벌만 두기"인데 Execution은 데이터가 아니라 로직이다. UE도 `TSubclassOf`(클래스 참조).
 - 대안: SO 유지(GUID 참조라 이름 변경에 강함 / 계산식마다 에셋 파일, GE별 튜닝 값은 에셋 복제).
-- 대가: 클래스 이름·네임스페이스를 바꾸면 AQN 참조가 끊긴다. GE별 튜닝 값을 실을 수 없다(UE Calculation Modifiers 자리 — 미구현).
+- 대가: 클래스 이름·네임스페이스를 바꾸면 AQN 참조가 끊긴다. GE별 튜닝 값을 실을 수 없다(UE Calculation Modifiers 자리 — 2026-10-20 D23으로 생김).
 - 재검토: Execution에 GE별 튜닝 값이 필요해지면 `[SerializeReference]` 인스턴스(progress 결정 대기 — 구 D8).
 
 ## D14 — AttributeCapture 계층은 UE 구조로: Spec이 캡처 컨테이너를 소유하고 AttributeBased가 캡처 정의를 품는다
@@ -87,11 +87,26 @@
 ## D23 — Execution을 UE `FGameplayEffectExecutionDefinition` 목록으로, Calculation Modifier 편집기는 Execution의 `Defs()`에서 고른다
 
 - 날짜: 2026-10-19
-- 결정: GE의 `executionTypeNames`(AQN 목록)를 `executions`(`GameplayEffectExecutionDefinition` = `calculationClass` AQN + `calculationModifiers`)로 바꾼다. Calculation Modifier(`GameplayEffectExecutionScopedModifierInfo` = 캡처 정의·연산·magnitude·Source/Target 태그)의 대상(Backing Data)은 그 Execution 클래스의 `Defs()` 중에서만 고른다. 런타임 적용은 아직 없다.
+- 결정: GE의 `executionTypeNames`(AQN 목록)를 `executions`(`GameplayEffectExecutionDefinition` = `calculationClass` AQN + `calculationModifiers`)로 바꾼다. Calculation Modifier(`GameplayEffectExecutionScopedModifierInfo` = 캡처 정의·연산·magnitude·Source/Target 태그)의 대상(Backing Data)은 그 Execution 클래스의 `Defs()` 중에서만 고른다. 런타임 적용은 2026-10-20에 넣었다(유저 "실제 계산 구현해둬 Transient만 미루고") — UE처럼 실행마다 캡처 aggregator 사본에 modifier를 더해 Execution이 그 사본을 읽는다.
 - 왜: 유저 — "GE Execution에 Calculation Modifiers Editor 먼저 구현해봐. 내부 구현은 이후에. Defs로 받아와서 읽어오면 어떻게 UE처럼 가능할거야", 기존 에셋은 "자동이관으로 하지 말고 어셋에 직접 넣어". UE 편집기도 계산 클래스 CDO의 캡처 정의로 콤보를 채운다(`GameplayEffectExecutionScopedModifierInfoDetails.cpp:285-301`).
 - 대안: 직렬화 이관 코드(옛 필드를 읽어 새 구조로 옮김 / 에셋 그대로 둬도 됨, 코드가 남음).
 - 대가: UE의 `PassedInTags`·`ConditionalGameplayEffects`, Transient 집계기, Evaluation Channel은 없다. 계산 클래스는 여전히 AQN이라 '결정 대기 — Execution 직렬화 형태'는 그대로 열려 있다.
 - 재검토: Transient 집계기(2026-10-19 유저 "TODO로 두자" → TODO-BOARD)나 PassedInTags가 필요해질 때.
+
+## D24 — Remove Other Component는 모든 질의에서 자기 GE를 뺀다 (UE와 다름)
+
+- 날짜: 2026-10-20
+- 결정: 적용될 때 같은 정의의 활성 GE 핸들을 모아 **모든** 질의의 `IgnoreHandles`에 넣는다. 에셋의 질의는 복사본으로 고쳐 원본을 건드리지 않는다.
+- 왜: 유저 — "UE의 의도대로 가야될 거 같은데 더 찾아봐". UE는 핸들 목록을 첫 질의에 `MoveTemp`로 넘겨(`RemoveOtherGameplayEffectComponent.cpp:44`, `TArray` 이동 뒤 원본 `ArrayNum = 0` — `Array.h:857`) 둘째 질의부터 자기 제외가 빠진다. 주석은 "ensure we never remove ourselves"이고, UE 자신도 옛 데이터를 질의 2칸으로 옮긴다(`GameplayEffect.cpp:731-745`). UE git: `909a54274067`(2023-04) "Fixed a bug … where it would consider itself for removal" — 질의마다 자기 핸들을 넣었는데, `f1a11bc768a6`(2023-08, `OnGameplayEffectApplied` 도입 리팩터)에서 `MoveTemp`로 바뀌며 둘째 질의부터 빠짐 — 회귀로 판단.
+- 대가: 질의가 둘 이상이고 자기와도 맞을 때 UE와 결과가 다르다(우리는 자기를 남긴다).
+
+## D25 — `FGameplayEffectQuery`·ASC 질의 API는 UE 목록 그대로, 스택·시간만 우리 구조에 맞춤
+
+- 날짜: 2026-10-20
+- 결정: `GameplayEffectQuery`(조건 7종 + `IgnoreHandles`·코드용 `CustomMatchDelegate`, `MakeQuery_*` 9종)와 ASC 질의 API(찾기·개수·시간·끝나는 시각·레벨·제거)를 UE대로 둔다. `StacksToRemove`는 자리만 두고 늘 통째로 제거, 개수는 GE당 1. 남은 시간·끝나는 시각은 Tick이 줄이는 `RemainingDuration`으로 계산하고(UE `StartWorldTime` 없음), 끝없는 GE는 `GameplayEffectConstants.InfiniteDuration`(-1, UE `INFINITE_DURATION`).
+- 왜: 유저 — 범위 "UE대로", 스택 인자 "자리만 두기". 블루프린트 델리게이트(`CustomMatchDelegate_BP`)와 서버 권한 검사는 우리에게 없는 것이라 뺐다.
+- 대가: UE 컨테이너의 남은 시간은 끝없는 GE에 `-1 - 경과`를 내지만 우리는 -1(UE `FActiveGameplayEffect::GetTimeRemaining`과 같은 값). 시전자 목록은 액터 대신 ASC.
+- 재검토: GE 스택을 만들 때 `StacksToRemove`·개수를 스택 수로.
 
 ## 치운 결정
 
