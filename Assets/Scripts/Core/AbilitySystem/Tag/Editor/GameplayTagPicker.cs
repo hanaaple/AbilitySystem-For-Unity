@@ -358,12 +358,27 @@ namespace Core.AbilitySystem.Tag.Editor
         private void DrawAddNewTagWidget()
         {
             Event currentEvent = Event.current;
-            bool isSubmitKey = currentEvent.type == EventType.KeyDown && (currentEvent.keyCode == KeyCode.Return || currentEvent.keyCode == KeyCode.KeypadEnter);
-            bool submit = isSubmitKey && GUI.GetNameOfFocusedControl() == NewTagNameControlName;
+            bool submit = false;
+            if (currentEvent.type == EventType.KeyDown && GUI.GetNameOfFocusedControl() == NewTagNameControlName)
+            {
+                bool isSubmitKey = currentEvent.keyCode == KeyCode.Return || currentEvent.keyCode == KeyCode.KeypadEnter;
+                // 텍스트 필드가 Enter(키·'\n' 문자 이벤트)를 받으면 편집을 끝내, 다음 태그를 이어 칠 수 없게 된다
+                if (isSubmitKey || currentEvent.character == '\n')
+                {
+                    submit = isSubmitKey;
+                    currentEvent.Use();
+                }
+            }
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("Name:", GUILayout.Width(NewTagNameLabelWidth));
             Rect nameRect = GUILayoutUtility.GetRect(GUIContent.none, EditorStyles.textField, GUILayout.ExpandWidth(true));
+            if (_focusNewTagName)
+            {
+                // 포커스된 텍스트 필드는 편집 중인 글자를 계속 보여 주므로, 포커스를 풀어야 바꾼 _newTagName이 보인다
+                GUIUtility.keyboardControl = 0;
+            }
+
             GUI.SetNextControlName(NewTagNameControlName);
             _newTagName = EditorGUI.TextField(nameRect, _newTagName);
             DrawHint(nameRect, _newTagName, false, "X.Y.Z", 0f);
@@ -741,6 +756,7 @@ namespace Core.AbilitySystem.Tag.Editor
             SetNotification(null, MessageType.None);
             OnGameplayTagAdded(tagName);
             _newTagName = string.Empty;
+            _focusNewTagName = true;
         }
 
         /// <summary>새 태그가 보이도록 부모를 펼침 상태로 저장하고 그 행으로 스크롤한다.</summary>
