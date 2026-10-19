@@ -16,6 +16,7 @@ namespace Test.Editor
     // 호출을 기록하는 테스트 전용 Component(RecordingComponent)를 GE에 넣어 본다.
     // A: 호출 순서·인자 / B: CanApply 차단 / C: OnAddedToActiveContainer 결과와 inhibit / D: 꺼진 주기 GE
     // E: Asset Tags Component — 상속 태그 계산(InheritedTagContainer), GE 캐시, Spec 태그, 판정 경로
+    // F: Granted Tags / G: Target Tag Requirements / H: GameplayEffectQuery·ASC 질의·제거 API / I: Remove Other Component
     public static class GameplayEffectComponentSelfCheck
     {
         private const float Eps = 0.001f;
@@ -71,6 +72,8 @@ namespace Test.Editor
                 RunAssetTagsChecks(asc, assetTags, Check);
                 RunGrantedTagsChecks(asc, assetTags, Check);
                 RunTargetTagRequirementsChecks(asc, assetTags, Check);
+                RunEffectQueryChecks(asc, assetTags, Check);
+                RunRemoveOtherChecks(asc, assetTags, Check);
             }
             catch (Exception e)
             {
@@ -637,7 +640,188 @@ namespace Test.Editor
             }
         }
 
+        // ── H. GameplayEffectQuery·ASC 질의 API ──
+        private static void RunEffectQueryChecks(AbilitySystemComponent asc, AssetTestTags tags, Action<string, bool> check)
+        {
+            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            var child = new GameplayTagContainer(tags.Child);
+            var parent = new GameplayTagContainer(tags.Parent);
+            var other = new GameplayTagContainer(tags.Other);
+
+            check("H-1 빈 질의는 IsEmpty, 태그 질의는 아니다", new GameplayEffectQuery().IsEmpty() && !GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child).IsEmpty());
+
+            // A: Asset Tag Child, Health +10 / B: Granted Tag Other, Health +20 / C: Duration 100초, Speed +5
+            GameplayEffectAsset geA = MakePersistentEffect(GameplayEffectType.Infinite, new GameplayEffectComponent[] { MakeAssetTagsComponent(tags.Child) }, MakeModifier(health, 10f));
+            GameplayEffectAsset geB = MakePersistentEffect(GameplayEffectType.Infinite, new GameplayEffectComponent[] { MakeTargetTagsComponent(tags.Other) }, MakeModifier(health, 20f));
+            GameplayEffectAsset geC = MakePersistentEffect(GameplayEffectType.Duration, Array.Empty<GameplayEffectComponent>(), MakeModifier(speed, 5f));
+            geA.OnGameplayEffectChanged();
+            geB.OnGameplayEffectChanged();
+            geC.OnGameplayEffectChanged();
+
+            ActiveGameplayEffectHandle handleA = asc.ApplyGameplayEffectToSelf(geA);
+            ActiveGameplayEffectHandle handleB = asc.ApplyGameplayEffectToSelf(geB);
+            ActiveGameplayEffectHandle handleC = asc.ApplyGameplayEffectToSelf(geC);
+
+            check("H-2 MatchAnyEffectTags{Child} = A", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child)), handleA));
+            check("H-3 MatchAnyEffectTags{Asset(부모)} = A(자식 태그를 가진 GE도 맞는다)", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(parent)), handleA));
+            check("H-4 Effect 태그는 Granted를 안 본다: MatchAnyEffectTags{Other} = 없음", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(other))));
+            check("H-5 Owning 태그는 Asset+Granted: {Other} = B, {Child} = A", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(other)), handleB) && IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(child)), handleA));
+            check("H-6 MatchNoEffectTags{Child} = B, C", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchNoEffectTags(child)), handleB, handleC));
+            check("H-7 GetActiveEffectsWithAllTags{Child} = A", IsHandles(asc.GetActiveEffectsWithAllTags(child), handleA));
+            check("H-8 Asset Tags는 시전자 Spec 태그로도 들어가 MatchAnySourceSpecTags{Child} = A", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnySourceSpecTags(child)), handleA));
+            check("H-9 ModifyingAttribute Speed = C", IsHandles(asc.GetActiveEffects(new GameplayEffectQuery { ModifyingAttribute = new GameplayAttribute(speed) }), handleC));
+            check("H-10 EffectDefinition B = B", IsHandles(asc.GetActiveEffects(new GameplayEffectQuery { EffectDefinition = geB }), handleB));
+
+            var ignoreQuery = new GameplayEffectQuery { EffectDefinition = geB };
+            ignoreQuery.IgnoreHandles.Add(handleB);
+            check("H-11 IgnoreHandles에 든 핸들은 다른 조건을 맞춰도 빠진다", IsHandles(asc.GetActiveEffects(ignoreQuery)));
+
+            var customQuery = new GameplayEffectQuery { CustomMatchDelegate = effect => effect.Handle.Equals(handleC) };
+            check("H-12 CustomMatchDelegate만 채운 질의: 비어 있지 않고 C만 고른다", !customQuery.IsEmpty() && IsHandles(asc.GetActiveEffects(customQuery), handleC));
+
+            GameplayEffectQuery ownsOther = GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(other);
+            bool countBefore = asc.GetAggregatedStackCount(ownsOther) == 1;
+            asc.SetActiveGameplayEffectInhibit(handleB, true);
+            bool countInhibited = asc.GetAggregatedStackCount(ownsOther) == 0 && IsHandles(asc.GetActiveEffects(new GameplayEffectQuery { EffectDefinition = geB }), handleB);
+            asc.SetActiveGameplayEffectInhibit(handleB, false);
+            check("H-13 GetAggregatedStackCount: 켜진 GE만 센다(B 1 → 끄면 0, 조회엔 남음)", countBefore && countInhibited);
+
+            var queryA = new GameplayEffectQuery { EffectDefinition = geA };
+            var queryC = new GameplayEffectQuery { EffectDefinition = geC };
+            List<float> durationsC = asc.GetActiveEffectsDuration(queryC);
+            List<float> remainingC = asc.GetActiveEffectsTimeRemaining(queryC);
+            List<float> durationsA = asc.GetActiveEffectsDuration(queryA);
+            List<float> remainingA = asc.GetActiveEffectsTimeRemaining(queryA);
+            check("H-14 지속시간·남은 시간: C = 100·100, 끝 없는 A = -1·-1", durationsC.Count == 1 && Approx(durationsC[0], 100f) && remainingC.Count == 1 && Approx(remainingC[0], 100f) && durationsA.Count == 1 && Approx(durationsA[0], GameplayEffectConstants.InfiniteDuration) && remainingA.Count == 1 && Approx(remainingA[0], GameplayEffectConstants.InfiniteDuration));
+
+            bool foundC = asc.GetActiveEffectsEndTimeAndDuration(queryC, out float endTimeC, out float durationC);
+            var queryAOrC = new GameplayEffectQuery { CustomMatchDelegate = effect => effect.Handle.Equals(handleA) || effect.Handle.Equals(handleC) };
+            bool foundAOrC = asc.GetActiveEffectsEndTimeAndDuration(queryAOrC, out float endTimeAOrC, out float durationAOrC);
+            bool foundNone = asc.GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(other), out _, out _);
+            check("H-15 끝나는 시각: C = 지금+100, 끝 없는 A가 섞이면 -1, 맞는 GE가 없으면 false", foundC && Approx(endTimeC, Time.time + 100f) && Approx(durationC, 100f) && foundAOrC && Approx(endTimeAOrC, GameplayEffectConstants.InfiniteDuration) && Approx(durationAOrC, GameplayEffectConstants.InfiniteDuration) && !foundNone);
+
+            asc.SetActiveGameplayEffectLevelUsingQuery(queryA, 3f);
+            ActiveGameplayEffect activeA = asc.GetActiveGameplayEffect(handleA);
+            ActiveGameplayEffect activeB = asc.GetActiveGameplayEffect(handleB);
+            check("H-16 SetActiveGameplayEffectLevelUsingQuery: A만 레벨 3, Health 130 그대로(고정 magnitude)", Approx(activeA.Spec.Level, 3f) && Approx(activeB.Spec.Level, 1f) && Approx(asc.GetAttributeCurrentValue(health), 130f));
+
+            int removedA = asc.RemoveActiveEffectsWithTags(child);
+            check("H-17 RemoveActiveEffectsWithTags{Child}: 1개, A 제거, Health 120", removedA == 1 && asc.GetActiveGameplayEffect(handleA) == null && Approx(asc.GetAttributeCurrentValue(health), 120f));
+
+            int removedNone = asc.RemoveActiveEffectsWithTags(child);
+            check("H-18 맞는 GE가 없으면 0", removedNone == 0);
+
+            int removedB = asc.RemoveActiveEffectsWithGrantedTags(other);
+            check("H-19 RemoveActiveEffectsWithGrantedTags{Other}: 1개, B 제거, Other 태그 0, Health 100", removedB == 1 && asc.GetActiveGameplayEffect(handleB) == null && asc.GetTagCount(tags.Other) == 0 && Approx(asc.GetAttributeCurrentValue(health), 100f));
+
+            int removedC = asc.RemoveActiveEffects(queryC);
+            check("H-20 RemoveActiveEffects(정의 C): 1개, Speed 0", removedC == 1 && asc.GetActiveGameplayEffect(handleC) == null && Approx(asc.GetAttributeCurrentValue(speed), 0f));
+
+            // 제거가 태그 변화로 다른 GE 제거를 부르는 경우: X가 주는 Other가 사라지면 Y가 Removal 조건(Other 없음)을 맞춰 스스로 빠진다
+            GameplayEffectAsset geX = MakePersistentEffect(GameplayEffectType.Infinite, new GameplayEffectComponent[] { MakeAssetTagsComponent(tags.Child), MakeTargetTagsComponent(tags.Other) }, MakeModifier(health, 10f));
+            var removalRequirements = new TargetTagRequirementsGameplayEffectComponent();
+            GameplayTagContainer removalIgnoreTags = removalRequirements.RemovalTagRequirements.IgnoreTags;
+            removalIgnoreTags.AddTag(tags.Other);
+            GameplayEffectAsset geY = MakePersistentEffect(GameplayEffectType.Infinite, new GameplayEffectComponent[] { MakeAssetTagsComponent(tags.Child), removalRequirements }, MakeModifier(health, 20f));
+            geX.OnGameplayEffectChanged();
+            geY.OnGameplayEffectChanged();
+            ActiveGameplayEffectHandle handleX = asc.ApplyGameplayEffectToSelf(geX);
+            ActiveGameplayEffectHandle handleY = asc.ApplyGameplayEffectToSelf(geY);
+            bool bothApplied = handleX.IsValid && handleY.IsValid && Approx(asc.GetAttributeCurrentValue(health), 130f);
+            int removedXY = asc.RemoveActiveEffectsWithTags(child);
+            check("H-21 연쇄 제거 중에도 예외 없이 둘 다 빠지고 Health 100", bothApplied && removedXY >= 1 && asc.GetActiveGameplayEffect(handleX) == null && asc.GetActiveGameplayEffect(handleY) == null && Approx(asc.GetAttributeCurrentValue(health), 100f));
+
+            UnityEngine.Object.DestroyImmediate(geA);
+            UnityEngine.Object.DestroyImmediate(geB);
+            UnityEngine.Object.DestroyImmediate(geC);
+            UnityEngine.Object.DestroyImmediate(geX);
+            UnityEngine.Object.DestroyImmediate(geY);
+        }
+
+        // ── I. Remove Other Component ──
+        private static void RunRemoveOtherChecks(AbilitySystemComponent asc, AssetTestTags tags, Action<string, bool> check)
+        {
+            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            var child = new GameplayTagContainer(tags.Child);
+            var created = new List<GameplayEffectAsset>();
+
+            GameplayEffectAsset MakeEffect(GameplayEffectType type, float magnitude, params GameplayEffectComponent[] components)
+            {
+                GameplayEffectAsset ge = type == GameplayEffectType.Instant ? MakeGameplayEffect(type, components, MakeModifier(health, magnitude)) : MakePersistentEffect(type, components, MakeModifier(health, magnitude));
+                ge.OnGameplayEffectChanged();
+                created.Add(ge);
+                return ge;
+            }
+
+            RemoveOtherGameplayEffectComponent MakeRemoveOther(params GameplayEffectQuery[] queries)
+            {
+                var component = new RemoveOtherGameplayEffectComponent();
+                SetPrivateField(component, "_removeGameplayEffectQueries", new List<GameplayEffectQuery>(queries));
+                return component;
+            }
+
+            // 자기도 Child를 가진 정화 GE — 자기를 지우면 안 된다
+            GameplayEffectAsset debuff = MakeEffect(GameplayEffectType.Infinite, 10f, MakeAssetTagsComponent(tags.Child));
+            GameplayEffectQuery removeChild = GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child);
+            GameplayEffectAsset cleanse = MakeEffect(GameplayEffectType.Infinite, 1f, MakeAssetTagsComponent(tags.Child), MakeRemoveOther(removeChild));
+
+            ActiveGameplayEffectHandle debuffHandle = asc.ApplyGameplayEffectToSelf(debuff);
+            ActiveGameplayEffectHandle cleanseHandle = asc.ApplyGameplayEffectToSelf(cleanse);
+            check("I-1 적용되면 질의에 맞는 다른 GE를 지우고 자기는 남는다(Health 101)", asc.GetActiveGameplayEffect(debuffHandle) == null && asc.GetActiveGameplayEffect(cleanseHandle) != null && Approx(asc.GetAttributeCurrentValue(health), 101f));
+            check("I-2 에셋의 질의는 고치지 않는다(IgnoreHandles 비어 있음)", removeChild.IgnoreHandles.Count == 0);
+
+            ActiveGameplayEffectHandle cleanseHandle2 = asc.ApplyGameplayEffectToSelf(cleanse);
+            check("I-3 같은 GE가 다시 적용돼도 먼저 걸린 같은 GE는 지우지 않는다", asc.GetActiveGameplayEffect(cleanseHandle) != null && asc.GetActiveGameplayEffect(cleanseHandle2) != null);
+            asc.RemoveActiveGameplayEffect(cleanseHandle);
+            asc.RemoveActiveGameplayEffect(cleanseHandle2);
+
+            // UE는 둘째 질의부터 자기 제외가 빠진다 — 우리는 모든 질의에 건다
+            GameplayEffectAsset cleanseTwoQueries = MakeEffect(GameplayEffectType.Infinite, 1f, MakeAssetTagsComponent(tags.Child), MakeRemoveOther(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child), GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child)));
+            debuffHandle = asc.ApplyGameplayEffectToSelf(debuff);
+            ActiveGameplayEffectHandle twoQueriesHandle = asc.ApplyGameplayEffectToSelf(cleanseTwoQueries);
+            check("I-4 질의가 둘이어도 자기는 남고 대상은 지운다", asc.GetActiveGameplayEffect(twoQueriesHandle) != null && asc.GetActiveGameplayEffect(debuffHandle) == null);
+            asc.RemoveActiveGameplayEffect(twoQueriesHandle);
+
+            GameplayEffectAsset emptyQuery = MakeEffect(GameplayEffectType.Infinite, 1f, MakeRemoveOther(new GameplayEffectQuery()));
+            debuffHandle = asc.ApplyGameplayEffectToSelf(debuff);
+            ActiveGameplayEffectHandle emptyHandle = asc.ApplyGameplayEffectToSelf(emptyQuery);
+            check("I-5 빈 질의는 건너뛴다(아무것도 지우지 않음)", asc.GetActiveGameplayEffect(debuffHandle) != null && asc.GetActiveGameplayEffect(emptyHandle) != null);
+            asc.RemoveActiveGameplayEffect(emptyHandle);
+
+            GameplayEffectAsset instantCleanse = MakeEffect(GameplayEffectType.Instant, 5f, MakeRemoveOther(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child)));
+            asc.ApplyGameplayEffectToSelf(instantCleanse);
+            check("I-6 Instant GE도 적용되면 지운다(Debuff 제거, Base 105)", asc.GetActiveGameplayEffect(debuffHandle) == null && IsBaseAndCurrent(asc, health, 105f));
+
+            SetBase(asc, health, 100f);
+            check("I-7 정리: Health 100, 활성 GE 0", IsBaseAndCurrent(asc, health, 100f) && GetContainer(asc).ActiveGameplayEffects.Count == 0);
+
+            foreach (GameplayEffectAsset ge in created)
+            {
+                UnityEngine.Object.DestroyImmediate(ge);
+            }
+        }
+
         // ── 헬퍼 ──
+
+        // 핸들 목록이 정확히 이것들인지(순서 무관)
+        private static bool IsHandles(List<ActiveGameplayEffectHandle> actual, params ActiveGameplayEffectHandle[] expected)
+        {
+            if (actual.Count != expected.Length)
+            {
+                return false;
+            }
+
+            foreach (ActiveGameplayEffectHandle handle in expected)
+            {
+                if (!actual.Contains(handle))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         private static TargetTagsGameplayEffectComponent MakeTargetTagsComponent(params GameplayTag[] tags)
         {

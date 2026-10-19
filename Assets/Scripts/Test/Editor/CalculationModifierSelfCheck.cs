@@ -10,9 +10,8 @@ using UnityEngine;
 
 namespace Test.Editor
 {
-    // 클릭 한 번으로 Execution Calculation Modifier의 편집기·데이터를 검증하는 에디터 전용 셀프체크(Play 모드 불필요).
-    // 런타임 적용은 아직 없어서, 지금은 "편집기가 만든 값이 맞게 들어가고 저장되는지"와 "런타임이 아직 쓰지 않는지"를 본다.
-    // A: Backing Data 후보(Defs) / B: 추가 시 기본값 / C: 요약·높이 / D: 저장 후 다시 읽기 / E: 런타임 현재 동작
+    // 클릭 한 번으로 Execution Calculation Modifier의 편집기·데이터·런타임 적용을 검증하는 에디터 전용 셀프체크(Play 모드 불필요).
+    // A: Backing Data 후보(Defs) / B: 추가 시 기본값 / C: 요약·높이 / D: 저장 후 다시 읽기 / E: 런타임 적용
     // 편집기 함수는 GameplayEffectAssetDrawer의 private static이라 리플렉션으로 부른다.
     public static class CalculationModifierSelfCheck
     {
@@ -186,9 +185,9 @@ namespace Test.Editor
                 && Approx(reloaded.GetArrayElementAtIndex(1).FindPropertyRelative("modifierMagnitude.scalableFloatMagnitude").floatValue, 7f));
         }
 
-        // ── E. 런타임 현재 동작 ──
-        // Calculation Modifier 적용이 아직 없으므로, 같은 GE에 Calculation Modifier를 붙여도 Execution 결과가 같아야 한다.
-        // 적용을 구현하면 E-2 기대값을 바꾼다.
+        // ── E. 런타임 적용 ──
+        // 임시 GE의 Calculation Modifier: health(Target, Snapshot) × 25, stamina(Source) + 7. 자신에게 걸어 Source = Target.
+        // SpeedBoostExecution = (health + stamina) * 0.01 + 10 → Calculation Modifier가 없을 때보다 ((100 * 25 + 57) - (100 + 50)) * 0.01 만큼 커진다.
         private static void RunRuntimeChecks(Action<string, bool> check)
         {
             var source = AssetDatabase.LoadAssetAtPath<GameplayEffectAsset>(SourceGePath);
@@ -210,7 +209,11 @@ namespace Test.Editor
 
                 float speedWithout = ApplyAndReadSpeed(asc, source);
                 float speedWith = ApplyAndReadSpeed(asc, withModifiers);
-                check($"E-2 런타임은 아직 Calculation Modifier를 쓰지 않는다 — Speed 증가량 같음({speedWithout:0.###} / {speedWith:0.###})", Approx(speedWithout, speedWith));
+                const float expectedIncrease = ((100f * 25f + 57f) - (100f + 50f)) * 0.01f;
+                check($"E-2 Execution이 Calculation Modifier를 건 캡처값을 읽는다 — Speed 차이 {speedWith - speedWithout:0.###} (기대 {expectedIncrease:0.###})", Approx(speedWith - speedWithout, expectedIncrease));
+
+                check("E-3 실제 어트리뷰트는 그대로(health 100, stamina 50)", Approx(asc.GetAttributeCurrentValue(CharacterAttributeSet.Health), 100f)
+                    && Approx(asc.GetAttributeCurrentValue(CharacterAttributeSet.Stamina), 50f));
             }
             finally
             {
