@@ -70,6 +70,7 @@
 
 ## 3. DO — 기본기
 
+- **라벨·툴팁은 필드 Attribute에 두고 드로어는 읽기만 한다.** 설명은 `[Tooltip]`, 라벨은 필드 이름(`property.displayName`)에서 오게 하고, 드로어에 `new GUIContent("…", "설명")`을 하드코딩하지 않는다(단위 표기처럼 라벨만 바꿀 땐 `new GUIContent("Period (s)", prop.tooltip)`). 라벨·툴팁을 바꾸려고 타입별 전용 드로어를 만들지 않는다 — 전용 드로어는 그리기 방식 자체가 다를 때만. (유저 2026-10-19: "별 거 없는데 억지로 늘린거나 단순 Tooltip 같은거는 가능하면 Attribute 자체적으로 해결하도록, Editor 하드 코딩을 줄이고 Attribute 쪽으로 유도해")
 - **공용 헬퍼는 `Core/Common/Editor/`에**, 그중 런타임에서 참조해야 하는 것(속성 등)은 **`Editor` 폴더 밖**의
   런타임 어셈블리(예: `Core.Common`)에 둔다 — 드로잉 로직만 `Editor`에.
 - **에디터 스크립트는 feature-local `Editor/` 폴더**에 둔다(대상 코드 옆, 서브시스템 레벨. 예:
