@@ -257,6 +257,121 @@ namespace Core.AbilitySystem
             return active?.EventSet;
         }
 
+        // ── 활성 GE 질의 (GameplayEffectQuery, 컨테이너에 위임) ───────────────────
+
+        /// <summary>질의에 맞는 활성 GE 핸들.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveEffects</remarks>
+        public List<ActiveGameplayEffectHandle> GetActiveEffects(GameplayEffectQuery query)
+        {
+            return _activeGameplayEffectsContainer.GetActiveEffects(query);
+        }
+
+        /// <summary>Asset Tags가 주어진 태그를 모두 가진 활성 GE 핸들.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsWithAllTags</remarks>
+        public List<ActiveGameplayEffectHandle> GetActiveEffectsWithAllTags(GameplayTagContainer tags)
+        {
+            return GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAllEffectTags(tags));
+        }
+
+        /// <summary>질의에 맞는 켜진 GE 수.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetAggregatedStackCount</remarks>
+        public int GetAggregatedStackCount(GameplayEffectQuery query)
+        {
+            return _activeGameplayEffectsContainer.GetActiveEffectCount(query);
+        }
+
+        /// <summary>질의에 맞는 GE마다 남은 시간. 끝나는 시간이 없는 GE는 <see cref="GameplayEffectConstants.InfiniteDuration"/>.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsTimeRemaining</remarks>
+        public List<float> GetActiveEffectsTimeRemaining(GameplayEffectQuery query)
+        {
+            return _activeGameplayEffectsContainer.GetActiveEffectsTimeRemaining(query);
+        }
+
+        /// <summary>질의에 맞는 GE마다 지속시간. 끝나는 시간이 없는 GE는 <see cref="GameplayEffectConstants.InfiniteDuration"/>.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsDuration</remarks>
+        public List<float> GetActiveEffectsDuration(GameplayEffectQuery query)
+        {
+            return _activeGameplayEffectsContainer.GetActiveEffectsDuration(query);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsTimeRemainingAndDuration</remarks>
+        public List<(float TimeRemaining, float Duration)> GetActiveEffectsTimeRemainingAndDuration(GameplayEffectQuery query)
+        {
+            return _activeGameplayEffectsContainer.GetActiveEffectsTimeRemainingAndDuration(query);
+        }
+
+        /// <summary>질의에 맞는 GE 중 가장 늦게 끝나는 시각(<see cref="Time.time"/> 기준).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsEndTime</remarks>
+        public float GetActiveEffectsEndTime(GameplayEffectQuery query)
+        {
+            return _activeGameplayEffectsContainer.GetActiveEffectsEndTime(query, new List<AbilitySystemComponent>());
+        }
+
+        /// <summary>질의에 맞는 GE 중 가장 늦게 끝나는 시각. <paramref name="instigators"/>에 맞는 GE의 시전자를 더한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsEndTimeWithInstigators</remarks>
+        public float GetActiveEffectsEndTimeWithInstigators(GameplayEffectQuery query, List<AbilitySystemComponent> instigators)
+        {
+            return _activeGameplayEffectsContainer.GetActiveEffectsEndTime(query, instigators);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsEndTimeAndDuration</remarks>
+        public bool GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery query, out float endTime, out float duration)
+        {
+            return _activeGameplayEffectsContainer.GetActiveEffectsEndTimeAndDuration(query, out endTime, out duration, new List<AbilitySystemComponent>());
+        }
+
+        /// <summary>질의에 맞는 활성 GE를 제거한다.</summary>
+        /// <param name="stacksToRemove">UE 시그니처 자리. GE 스택이 아직 없어 늘 통째로 제거한다.</param>
+        /// <returns>제거한 GE 수.</returns>
+        /// <remarks>UE: UAbilitySystemComponent::RemoveActiveEffects</remarks>
+        public int RemoveActiveEffects(GameplayEffectQuery query, int stacksToRemove = -1)
+        {
+            return _activeGameplayEffectsContainer.RemoveActiveEffects(query, stacksToRemove);
+        }
+
+        /// <summary>Asset Tags가 주어진 태그와 하나라도 겹치는 활성 GE를 제거한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::RemoveActiveEffectsWithTags</remarks>
+        public int RemoveActiveEffectsWithTags(GameplayTagContainer tags)
+        {
+            return RemoveActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(tags));
+        }
+
+        /// <summary>시전자 Spec 태그가 주어진 태그와 하나라도 겹치는 활성 GE를 제거한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::RemoveActiveEffectsWithSourceTags</remarks>
+        public int RemoveActiveEffectsWithSourceTags(GameplayTagContainer tags)
+        {
+            return RemoveActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnySourceSpecTags(tags));
+        }
+
+        /// <summary>Owning 태그(Asset+Granted)가 주어진 태그와 하나라도 겹치는 활성 GE를 제거한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::RemoveActiveEffectsWithAppliedTags</remarks>
+        public int RemoveActiveEffectsWithAppliedTags(GameplayTagContainer tags)
+        {
+            return RemoveActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(tags));
+        }
+
+        /// <summary>Owning 태그(Asset+Granted)가 주어진 태그와 하나라도 겹치는 활성 GE를 제거한다. UE도 <see cref="RemoveActiveEffectsWithAppliedTags"/>와 같은 질의를 쓴다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::RemoveActiveEffectsWithGrantedTags</remarks>
+        public int RemoveActiveEffectsWithGrantedTags(GameplayTagContainer tags)
+        {
+            return RemoveActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(tags));
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::SetActiveGameplayEffectLevel</remarks>
+        public void SetActiveGameplayEffectLevel(ActiveGameplayEffectHandle handle, float newLevel)
+        {
+            _activeGameplayEffectsContainer.SetActiveGameplayEffectLevel(handle, newLevel);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::SetActiveGameplayEffectLevelUsingQuery</remarks>
+        public void SetActiveGameplayEffectLevelUsingQuery(GameplayEffectQuery query, float newLevel)
+        {
+            foreach (ActiveGameplayEffectHandle handle in GetActiveEffects(query))
+            {
+                SetActiveGameplayEffectLevel(handle, newLevel);
+            }
+        }
+
         /// <summary>aggregator가 dirty해질 때 그 OnDirty가 호출하는 진입점.</summary>
         internal void OnAttributeAggregatorDirty(AttributeAggregator aggregator, GameplayAttributeHandle gameplayAttributeHandle)
         {
