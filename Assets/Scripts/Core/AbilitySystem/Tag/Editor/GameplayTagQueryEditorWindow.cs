@@ -87,13 +87,9 @@ namespace Core.AbilitySystem.Tag.Editor
             new("No Expressions Match"),
         };
 
-        private static readonly GUIContent _userDescriptionContent = new("User Description", "비우면 식에서 만든 설명을 쓴다.");
-        private static readonly GUIContent _rootExpressionContent = new("Root Expression");
-        private static readonly GUIContent _tagsContent = new("Tags");
         private static readonly GUIContent _addContent = new("+ Expression", "하위 식 추가");
         private static readonly GUIContent _removeContent = new("−", "이 식 제거");
 
-        private static GameplayTagQueryEditorWindow _openWindow;
         private static GUIStyle _bodyStyle;
         private static GUIStyle _summaryStyle;
 
@@ -106,6 +102,9 @@ namespace Core.AbilitySystem.Tag.Editor
         private GameplayTagQuery[] _originalQueries;
         private string _categories;
         private bool _hasCommitted;
+
+        // 사본을 만들 때 대상 필드가 있었는지. 대상 오브젝트나 필드가 지워졌으면 빈 편집기로 두고 아무 데도 쓰지 않는다
+        private bool _hasTarget;
 
         private EditableGameplayTagQuery _editableQuery;
         private SerializedObject _editableSerializedObject;
@@ -123,11 +122,11 @@ namespace Core.AbilitySystem.Tag.Editor
 
         private void OnGUI()
         {
-            // 도메인 리로드 뒤엔 사본·대상이 사라져 있고, 대상 오브젝트나 필드가 지워져도 편집할 곳이 없다
-            if (_editableQuery == null || _targets == null || FindTargetProperty(0) == null)
+            // 도메인 리로드 뒤엔 편집용 SerializedObject가 사라져 있다. 대상과의 연결을 끊고 빈 편집기로 둔다
+            if (_editableQuery == null || _editableSerializedObject == null)
             {
-                Close();
-                return;
+                ClearTarget();
+                RebuildEditableQuery();
             }
 
             // 다시 만들면 그릴 내용이 바뀌므로 레이아웃 단계에서만 한다
@@ -151,11 +150,6 @@ namespace Core.AbilitySystem.Tag.Editor
         private void OnDestroy()
         {
             DestroyEditableQuery();
-
-            if (_openWindow == this)
-            {
-                _openWindow = null;
-            }
         }
 
         /// <summary>필드의 질의를 편집하는 창을 연다. 이미 열린 창은 닫는다.</summary>
@@ -171,18 +165,16 @@ namespace Core.AbilitySystem.Tag.Editor
             window.titleContent = new GUIContent(BuildTitle(property));
             window.ShowUtility();
             window.position = GetWindowRect(anchorRect);
-            _openWindow = window;
         }
 
+        // 정적 참조로 들고 있으면 도메인 리로드 때 비어 이전 창이 안 닫히고 창이 여러 개가 된다. 열린 창을 매번 찾아 닫는다
         /// <remarks>UE: UE::GameplayTags::Editor::CloseGameplayTagQueryWindow</remarks>
         private static void CloseOpenWindow()
         {
-            if (_openWindow != null)
+            foreach (GameplayTagQueryEditorWindow window in Resources.FindObjectsOfTypeAll<GameplayTagQueryEditorWindow>())
             {
-                _openWindow.Close();
+                window.Close();
             }
-
-            _openWindow = null;
         }
 
         /// <remarks>UE: SGameplayTagQueryEntryBox::BuildWindowArgs</remarks>
@@ -234,12 +226,12 @@ namespace Core.AbilitySystem.Tag.Editor
         private void DrawQuery()
         {
             SerializedProperty userDescription = _editableSerializedObject.FindProperty(EditableUserDescriptionPath);
-            EditorGUILayout.PropertyField(userDescription, _userDescriptionContent);
+            EditorGUILayout.PropertyField(userDescription);
             EditorGUILayout.Space(SectionSpacing);
 
-            // 루트 줄은 라벨 폭을 User Description과 같게 해 두 값 열을 맞춘다
+            // 루트 줄은 라벨 폭을 User Description과 같게 해 두 값 열을 맞춘다. 라벨·툴팁은 필드 이름·[Tooltip]에서
             SerializedProperty rootExpression = _editableSerializedObject.FindProperty(RootExpressionPath);
-            DrawExpression(rootExpression, _rootExpressionContent, EditorGUIUtility.labelWidth, null, -1, 0);
+            DrawExpression(rootExpression, new GUIContent(rootExpression.displayName, rootExpression.tooltip), EditorGUIUtility.labelWidth, null, -1, 0);
         }
 
         /// <summary>
@@ -311,7 +303,7 @@ namespace Core.AbilitySystem.Tag.Editor
 
             if (queryExpression.UsesTagSet())
             {
-                DrawTags(expression.FindPropertyRelative(TagsPath), labelWidth - BodyPaddingLeft);
+                DrawTags(expression.FindPropertyRelative(TagsPath), fieldXMin);
             }
             else if (queryExpression.UsesExprSet())
             {
@@ -349,15 +341,16 @@ namespace Core.AbilitySystem.Tag.Editor
             }
         }
 
-        // 라벨은 직접 그리고 컨테이너 드로어엔 빈 라벨을 넘긴다. 전역 labelWidth를 바꾸지 않고도 태그 상자를 위 줄의 종류 팝업과 같은 열에 맞추려고
-        private static void DrawTags(SerializedProperty tags, float labelWidth)
+        /// <summary>라벨은 직접 그리고 컨테이너 드로어엔 빈 라벨을 넘긴다. 전역 labelWidth를 바꾸지 않고도 태그 상자를 위 줄의 종류 팝업과 같은 열에 맞추려고.</summary>
+        /// <param name="fieldXMin">위 줄 종류 팝업의 왼쪽 x. 루트 줄과 본문 안 줄은 왼쪽 여백이 달라, 라벨 폭으로 계산하면 루트에서 몇 px 어긋난다.</param>
+        private static void DrawTags(SerializedProperty tags, float fieldXMin)
         {
             float height = EditorGUI.GetPropertyHeight(tags, GUIContent.none, true);
             Rect rect = EditorGUILayout.GetControlRect(true, height);
-            var labelRect = new Rect(rect.x, rect.y, labelWidth, EditorGUIUtility.singleLineHeight);
-            Rect fieldRect = Rect.MinMaxRect(rect.x + labelWidth, rect.y, rect.xMax, rect.yMax);
+            var labelRect = new Rect(rect.x, rect.y, fieldXMin - rect.x, EditorGUIUtility.singleLineHeight);
+            Rect fieldRect = Rect.MinMaxRect(fieldXMin, rect.y, rect.xMax, rect.yMax);
 
-            EditorGUI.LabelField(labelRect, _tagsContent);
+            EditorGUI.LabelField(labelRect, new GUIContent(tags.displayName, tags.tooltip));
             EditorGUI.PropertyField(fieldRect, tags, GUIContent.none, true);
         }
 
@@ -521,6 +514,12 @@ namespace Core.AbilitySystem.Tag.Editor
                 return;
             }
 
+            if (!_hasTarget)
+            {
+                _lastEditableDirtyCount = editableDirtyCount;
+                return;
+            }
+
             GameplayTagQuery query = _editableQuery.BuildQuery();
             var perObjectQueries = new GameplayTagQuery[_targets.Length];
             Array.Fill(perObjectQueries, query);
@@ -530,13 +529,13 @@ namespace Core.AbilitySystem.Tag.Editor
             _hasCommitted = true;
 
             _lastEditableDirtyCount = editableDirtyCount;
-            _lastTargetDirtyCount = EditorUtility.GetDirtyCount(_targets[0]);
+            _lastTargetDirtyCount = GetTargetDirtyCount();
         }
 
         /// <remarks>UE: SGameplayTagQueryWidget::OnCancelClicked</remarks>
         private void RestoreOriginalQueries()
         {
-            if (!_hasCommitted)
+            if (!_hasCommitted || _originalQueries == null)
             {
                 return;
             }
@@ -548,6 +547,11 @@ namespace Core.AbilitySystem.Tag.Editor
         /// <remarks>UE: SGameplayTagQueryEntryBox::OnQueriesCommitted</remarks>
         private void WriteQueries(GameplayTagQuery[] perObjectQueries)
         {
+            if (_targets == null)
+            {
+                return;
+            }
+
             Undo.SetCurrentGroupName(UndoName);
 
             for (int i = 0; i < _targets.Length; i++)
@@ -563,35 +567,71 @@ namespace Core.AbilitySystem.Tag.Editor
             }
         }
 
-        // Undo·인스펙터 Clear처럼 창 밖에서 대상이 바뀌면 사본을 그 값으로 다시 만든다. 같은 에셋의 다른 필드가 바뀌어도 다시 만들지만, 값은 같아 잃는 것이 없다
+        // Undo·인스펙터 Clear처럼 창 밖에서 대상이 바뀌면 사본을 그 값으로 다시 만든다. 같은 에셋의 다른 필드가 바뀌어도 다시 만들지만, 값은 같아 잃는 것이 없다.
+        // 대상 오브젝트나 필드가 지워진 것도 여기서 알아채 연결을 끊고 빈 편집기로 바꾼다
         private void RebuildIfTargetChanged()
         {
-            if (EditorUtility.GetDirtyCount(_targets[0]) != _lastTargetDirtyCount)
+            if (!_hasTarget)
+            {
+                return;
+            }
+
+            if (FindTargetProperty(0) == null)
+            {
+                ClearTarget();
+                RebuildEditableQuery();
+                return;
+            }
+
+            if (GetTargetDirtyCount() != _lastTargetDirtyCount)
             {
                 RebuildEditableQuery();
             }
         }
 
-        /// <summary>첫 대상의 지금 값으로 편집용 사본을 다시 만든다. 여러 오브젝트를 골랐으면 UE처럼 첫 오브젝트 값을 편집한다.</summary>
+        /// <summary>첫 대상의 지금 값으로 편집용 사본을 다시 만든다. 여러 오브젝트를 골랐으면 UE처럼 첫 오브젝트 값을 편집한다. 대상이 없으면 빈 질의.</summary>
         private void RebuildEditableQuery()
         {
             DestroyEditableQuery();
 
             SerializedProperty property = FindTargetProperty(0);
-            if (property == null)
+            _hasTarget = property != null;
+
+            GameplayTagQuery query = new GameplayTagQuery();
+            string userDescription = string.Empty;
+            if (_hasTarget)
             {
-                return;
+                query = (GameplayTagQuery)property.boxedValue;
+                SerializedProperty userDescriptionProperty = property.FindPropertyRelative(QueryUserDescriptionPath);
+                userDescription = userDescriptionProperty.stringValue;
+            }
+            else
+            {
+                titleContent = new GUIContent(DefaultTitle);
             }
 
-            var query = (GameplayTagQuery)property.boxedValue;
-            SerializedProperty userDescription = property.FindPropertyRelative(QueryUserDescriptionPath);
-
-            _editableQuery = EditableGameplayTagQuery.CreateEditableQuery(query, userDescription.stringValue);
+            _editableQuery = EditableGameplayTagQuery.CreateEditableQuery(query, userDescription);
             _editableSerializedObject = new SerializedObject(_editableQuery);
             GameplayTagDrawerUtility.SetCategoriesOverride(_editableQuery, _categories);
 
             _lastEditableDirtyCount = EditorUtility.GetDirtyCount(_editableQuery);
-            _lastTargetDirtyCount = EditorUtility.GetDirtyCount(_targets[0]);
+            _lastTargetDirtyCount = GetTargetDirtyCount();
+        }
+
+        // 빈 편집기로 바꿀 때 이전 대상에 쓰지 않도록(편집·Cancel 모두) 대상 정보를 모두 버린다
+        private void ClearTarget()
+        {
+            _targets = null;
+            _propertyPath = null;
+            _targetSerializedObjects = null;
+            _originalQueries = null;
+            _hasCommitted = false;
+        }
+
+        private int GetTargetDirtyCount()
+        {
+            bool hasTargetObject = _targets != null && _targets.Length > 0 && _targets[0] != null;
+            return hasTargetObject ? EditorUtility.GetDirtyCount(_targets[0]) : 0;
         }
 
         private void DestroyEditableQuery()
@@ -611,10 +651,21 @@ namespace Core.AbilitySystem.Tag.Editor
 
         private SerializedProperty FindTargetProperty(int index)
         {
+            if (_targets == null || index >= _targets.Length || string.IsNullOrEmpty(_propertyPath))
+            {
+                return null;
+            }
+
             Object target = _targets[index];
             if (target == null)
             {
                 return null;
+            }
+
+            // 도메인 리로드 뒤엔 대상 참조는 남지만 SerializedObject 배열은 사라져 있다
+            if (_targetSerializedObjects == null || _targetSerializedObjects.Length != _targets.Length)
+            {
+                _targetSerializedObjects = new SerializedObject[_targets.Length];
             }
 
             SerializedObject serializedObject = _targetSerializedObjects[index];

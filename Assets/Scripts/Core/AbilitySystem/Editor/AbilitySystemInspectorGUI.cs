@@ -340,8 +340,9 @@ namespace Core.AbilitySystem.Editor
             for (int i = 0; i < modifiers.Count; i++)
             {
                 GameplayModifier modifier = modifiers[i];
-                if (modifier.MagnitudeCalculationType == MagnitudeCalculationType.AttributeBased
-                    && modifier.AttributeBased.BackingAttribute.Equals(def))
+                GameplayEffectModifierMagnitude modifierMagnitude = modifier.ModifierMagnitude;
+                if (modifierMagnitude.MagnitudeCalculationType == MagnitudeCalculationType.AttributeBased
+                    && modifierMagnitude.AttributeBasedMagnitude.BackingAttribute.Equals(def))
                 {
                     origins.Add($"Modifier[{i}]");
                 }
