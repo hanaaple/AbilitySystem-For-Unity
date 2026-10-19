@@ -41,5 +41,10 @@ namespace Core.AbilitySystem.Effect
             GameplayEffectAttributeCaptureSpecContainer capturedRelevantAttributes = Spec.CapturedRelevantAttributes;
             return capturedRelevantAttributes.TryGetCapturedValue(captureDefinition, AttributeCaptureValueType.BaseValue, default, out baseValue);
         }
+
+        // TODO Calculation Modifier 적용 — 만들 때 Execution 정의의 Calculation Modifier로 집계기 두 묶음을 채운다.
+        //  캡처 어트리뷰트: 캡처 정의 → 그 어트리뷰트 aggregator의 사본 + modifier(실제 캐릭터 값은 그대로). 위 두 조회도 사본이 있으면 사본을 읽는다.
+        //  Transient: 태그 → 기본값 0인 새 aggregator + modifier. AttemptCalculateTransientAggregatorMagnitude(태그, evaluationParameters, out 값)로 읽고,
+        //  그 태그에 건 modifier가 없으면 false. (AttributeAggregator를 캐릭터 없이 단독으로 만들 수 있는지 먼저 확인)
     }
 }

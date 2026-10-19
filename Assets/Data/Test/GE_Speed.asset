@@ -22,39 +22,42 @@ MonoBehaviour:
         Culture=neutral, PublicKeyToken=null
       fieldName: maxStamina
     operation: 0
-    magnitudeCalculationType: 1
-    magnitude: 0
-    attributeBased:
-      backingAttribute:
-        captureSource: 0
-        attribute:
-          attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
-            Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-          fieldName: health
-        snapshot: 0
-      captureValueType: 0
-      coefficient: 1
-      preMultiplyAdditive: 0
-      postMultiplyAdditive: 0
+    modifierMagnitude:
+      magnitudeCalculationType: 1
+      scalableFloatMagnitude: 0
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
+              Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+            fieldName: health
+          snapshot: 0
+        captureValueType: 0
+        coefficient: 1
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
   - attribute:
       attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: speed
     operation: 0
-    magnitudeCalculationType: 1
-    magnitude: 0
-    attributeBased:
-      backingAttribute:
-        captureSource: 0
-        attribute:
-          attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
-            Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-          fieldName: stamina
-        snapshot: 0
-      captureValueType: 0
-      coefficient: 1
-      preMultiplyAdditive: 0
-      postMultiplyAdditive: 0
-  executionTypeNames:
-  - Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-    PublicKeyToken=null
+    modifierMagnitude:
+      magnitudeCalculationType: 1
+      scalableFloatMagnitude: 0
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
+              Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+            fieldName: stamina
+          snapshot: 0
+        captureValueType: 0
+        coefficient: 1
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
+  executions:
+  - calculationClass: Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
+    calculationModifiers: []

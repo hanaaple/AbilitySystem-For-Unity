@@ -22,58 +22,62 @@ MonoBehaviour:
         PublicKeyToken=null
       fieldName: a
     operation: 0
-    magnitudeCalculationType: 1
-    magnitude: 0
-    attributeBased:
-      backingAttribute:
-        captureSource: 0
-        attribute:
-          attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
-            Culture=neutral, PublicKeyToken=null
-          fieldName: a
-        snapshot: 0
-      captureValueType: 0
-      coefficient: 1.01
-      preMultiplyAdditive: 0
-      postMultiplyAdditive: 0
+    modifierMagnitude:
+      magnitudeCalculationType: 1
+      scalableFloatMagnitude: 0
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+            fieldName: a
+          snapshot: 0
+        captureValueType: 0
+        coefficient: 1.01
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
   - attribute:
       attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
       fieldName: b
     operation: 0
-    magnitudeCalculationType: 1
-    magnitude: 0
-    attributeBased:
-      backingAttribute:
-        captureSource: 0
-        attribute:
-          attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
-            Culture=neutral, PublicKeyToken=null
-          fieldName: b
-        snapshot: 1
-      captureValueType: 0
-      coefficient: 1.01
-      preMultiplyAdditive: 0
-      postMultiplyAdditive: 0
+    modifierMagnitude:
+      magnitudeCalculationType: 1
+      scalableFloatMagnitude: 0
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+            fieldName: b
+          snapshot: 1
+        captureValueType: 0
+        coefficient: 1.01
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
   - attribute:
       attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
       fieldName: c
     operation: 0
-    magnitudeCalculationType: 1
-    magnitude: 0
-    attributeBased:
-      backingAttribute:
-        captureSource: 1
-        attribute:
-          attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
-            Culture=neutral, PublicKeyToken=null
-          fieldName: c
-        snapshot: 1
-      captureValueType: 0
-      coefficient: 1.01
-      preMultiplyAdditive: 0
-      postMultiplyAdditive: 0
-  executionTypeNames:
-  - Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-    PublicKeyToken=null
+    modifierMagnitude:
+      magnitudeCalculationType: 1
+      scalableFloatMagnitude: 0
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 1
+          attribute:
+            attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+            fieldName: c
+          snapshot: 1
+        captureValueType: 0
+        coefficient: 1.01
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
+  executions:
+  - calculationClass: Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
+    calculationModifiers: []

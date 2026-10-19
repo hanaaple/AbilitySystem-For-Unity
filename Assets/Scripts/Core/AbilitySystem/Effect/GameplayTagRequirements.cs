@@ -10,8 +10,13 @@ namespace Core.AbilitySystem.Effect
     [Serializable]
     public class GameplayTagRequirements : IEquatable<GameplayTagRequirements>
     {
+        [Tooltip("모두 있어야 하는 태그.")]
         [SerializeField] private GameplayTagContainer _requireTags = new();
+
+        [Tooltip("하나라도 있으면 안 되는 태그.")]
         [SerializeField] private GameplayTagContainer _ignoreTags = new();
+
+        [Tooltip("Require·Ignore만으로 표현할 수 없는 조건. 비어 있으면 검사하지 않는다.")]
         [SerializeField] private GameplayTagQuery _tagQuery;
 
         /// <summary>모두 있어야 하는 태그.</summary>

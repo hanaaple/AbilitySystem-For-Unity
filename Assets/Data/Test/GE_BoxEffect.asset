@@ -17,6 +17,7 @@ MonoBehaviour:
   period: 0
   executePeriodicEffectOnApplication: 1
   modifiers: []
-  executionTypeNames:
-  - Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-    PublicKeyToken=null
+  executions:
+  - calculationClass: Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
+    calculationModifiers: []
