@@ -17,9 +17,8 @@ namespace Core.AbilitySystem
         // 활성 GE의 소유·수명·실행·집계 + 반응성 aggregator를 이 컨테이너가 맡는다. ASC는 공개 API 위임 래퍼와 AttributeSet 저장만 남긴다.
         private ActiveGameplayEffectsContainer _activeGameplayEffectsContainer;
 
-        // TODO: 소유 태그(참조 카운트·Loose 태그)는 아직 없어 늘 비어 있다.
-        // 생기면 태그가 바뀔 때 Target 태그 조건을 가진 지속형 mod의 CurrentValue를 다시 계산해야 한다.
-        private readonly GameplayTagContainer _ownedGameplayTags = new();
+        // 소유 태그. Loose 태그(코드가 직접 넣는 태그)와 활성 GE의 부여 태그가 들어온다.
+        private readonly GameplayTagCountContainer _gameplayTagCountContainer = new();
 
         private void Awake()
         {
@@ -87,14 +86,85 @@ namespace Core.AbilitySystem
         public void GetOwnedGameplayTags(GameplayTagContainer tagContainer)
         {
             tagContainer.Reset();
-            tagContainer.AppendTags(_ownedGameplayTags);
+            tagContainer.AppendTags(GetOwnedGameplayTags());
         }
 
         /// <summary>소유 태그. 읽기 전용으로 쓴다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::GetOwnedGameplayTags</remarks>
         public GameplayTagContainer GetOwnedGameplayTags()
         {
-            return _ownedGameplayTags;
+            return _gameplayTagCountContainer.GetExplicitGameplayTags();
+        }
+
+        /// <summary>태그를 가졌는지. 자식 태그만 가져도 부모 태그로 매칭된다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::HasMatchingGameplayTag</remarks>
+        public bool HasMatchingGameplayTag(GameplayTag tagToCheck)
+        {
+            return _gameplayTagCountContainer.HasMatchingGameplayTag(tagToCheck);
+        }
+
+        /// <summary>태그 개수. 자식 태그 개수를 포함한다(A.B와 A.C가 있으면 A는 2).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetTagCount</remarks>
+        public int GetTagCount(GameplayTag tagToCheck)
+        {
+            return _gameplayTagCountContainer.GetTagCount(tagToCheck);
+        }
+
+        /// <summary>GE 없이 코드가 직접 태그를 더한다. 같은 태그를 여러 번 더했으면 그만큼 빼야 없어진다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AddLooseGameplayTag</remarks>
+        public void AddLooseGameplayTag(GameplayTag gameplayTag, int count = 1)
+        {
+            _gameplayTagCountContainer.UpdateTagCount(gameplayTag, count);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::AddLooseGameplayTags</remarks>
+        public void AddLooseGameplayTags(GameplayTagContainer gameplayTags, int count = 1)
+        {
+            _gameplayTagCountContainer.UpdateTagCount(gameplayTags, count);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::RemoveLooseGameplayTag</remarks>
+        public void RemoveLooseGameplayTag(GameplayTag gameplayTag, int count = 1)
+        {
+            _gameplayTagCountContainer.UpdateTagCount(gameplayTag, -count);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::RemoveLooseGameplayTags</remarks>
+        public void RemoveLooseGameplayTags(GameplayTagContainer gameplayTags, int count = 1)
+        {
+            _gameplayTagCountContainer.UpdateTagCount(gameplayTags, -count);
+        }
+
+        /// <summary>Loose 태그 개수를 <paramref name="newCount"/>로 맞춘다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::SetLooseGameplayTagCount</remarks>
+        public void SetLooseGameplayTagCount(GameplayTag gameplayTag, int newCount)
+        {
+            _gameplayTagCountContainer.SetTagCount(gameplayTag, newCount);
+        }
+
+        /// <summary>활성 GE가 부여 태그를 올리고 내릴 때 쓴다. Loose 태그와 같은 개수에 합쳐진다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::UpdateTagMap</remarks>
+        internal void UpdateTagMap(GameplayTagContainer container, int countDelta)
+        {
+            // 부여 태그가 없는 GE가 대부분이라 빈 컨테이너는 개수 갱신 준비(지연 콜백 목록 할당)부터 건너뛴다.
+            if (!container.IsEmpty())
+            {
+                _gameplayTagCountContainer.UpdateTagCount(container, countDelta);
+            }
+        }
+
+        /// <summary>태그 개수가 바뀔 때 부를 콜백을 등록한다. 기본은 태그가 새로 생기거나 완전히 없어질 때만.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::RegisterGameplayTagEvent</remarks>
+        public void RegisterGameplayTagEvent(GameplayTag tag, OnGameplayEffectTagCountChanged callback, GameplayTagEventType eventType = GameplayTagEventType.NewOrRemoved)
+        {
+            _gameplayTagCountContainer.RegisterGameplayTagEvent(tag, callback, eventType);
+        }
+
+        /// <returns>등록돼 있어서 뺐으면 true.</returns>
+        /// <remarks>UE: UAbilitySystemComponent::UnregisterGameplayTagEvent</remarks>
+        public bool UnregisterGameplayTagEvent(OnGameplayEffectTagCountChanged callback, GameplayTag tag, GameplayTagEventType eventType = GameplayTagEventType.NewOrRemoved)
+        {
+            return _gameplayTagCountContainer.UnregisterGameplayTagEvent(callback, tag, eventType);
         }
 
         // ── Context / Spec 팩토리 ─────────────────────────────────────────────────
@@ -163,6 +233,28 @@ namespace Core.AbilitySystem
         public bool RemoveActiveGameplayEffect(ActiveGameplayEffectHandle handle)
         {
             return _activeGameplayEffectsContainer.RemoveActiveGameplayEffect(handle);
+        }
+
+        /// <summary>활성 GE를 끄거나 켠다(제거하지 않음). 켜고 끄는 중에 GE가 제거됐으면 Invalid를 돌려준다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::SetActiveGameplayEffectInhibit</remarks>
+        public ActiveGameplayEffectHandle SetActiveGameplayEffectInhibit(ActiveGameplayEffectHandle activeGameplayEffectHandle, bool inhibit)
+        {
+            return _activeGameplayEffectsContainer.SetActiveGameplayEffectInhibit(activeGameplayEffectHandle, inhibit);
+        }
+
+        /// <summary>핸들의 활성 GE. 없으면(제거됐거나 Instant) null.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveGameplayEffect</remarks>
+        public ActiveGameplayEffect GetActiveGameplayEffect(ActiveGameplayEffectHandle handle)
+        {
+            return _activeGameplayEffectsContainer.GetActiveGameplayEffect(handle);
+        }
+
+        /// <summary>핸들의 활성 GE 수명 이벤트. 활성 GE가 없으면 null.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectEventSet</remarks>
+        public ActiveGameplayEffectEvents GetActiveEffectEventSet(ActiveGameplayEffectHandle handle)
+        {
+            ActiveGameplayEffect active = _activeGameplayEffectsContainer.GetActiveGameplayEffect(handle);
+            return active?.EventSet;
         }
 
         /// <summary>aggregator가 dirty해질 때 그 OnDirty가 호출하는 진입점.</summary>

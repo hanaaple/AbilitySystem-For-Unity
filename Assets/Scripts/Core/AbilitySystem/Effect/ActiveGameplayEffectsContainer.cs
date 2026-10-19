@@ -33,8 +33,19 @@ namespace Core.AbilitySystem.Effect
             _owner = owner;
         }
 
+        /// <summary>이 컨테이너를 가진 ASC(적용 대상).</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::Owner</remarks>
+        public AbilitySystemComponent Owner => _owner;
+
         /// <summary>읽기 전용 뷰 — 에디터 관측 도구가 활성 목록을 훑는 통로.</summary>
         public IReadOnlyDictionary<ActiveGameplayEffectHandle, ActiveGameplayEffect> ActiveGameplayEffects => _activeGameplayEffects;
+
+        /// <summary>핸들의 활성 GE. 없으면(제거됐거나 Instant) null.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveGameplayEffect</remarks>
+        public ActiveGameplayEffect GetActiveGameplayEffect(ActiveGameplayEffectHandle handle)
+        {
+            return _activeGameplayEffects.GetValueOrDefault(handle);
+        }
 
         // ── Apply / Remove ────────────────────────────────────────────────────────
 
@@ -49,8 +60,9 @@ namespace Core.AbilitySystem.Effect
                 return ActiveGameplayEffectHandle.Invalid;
             }
 
-            // Modifier 없이 Execution만 가진 GE도 유효하다(데미지 계산을 전부 Execution에 두는 경우).
-            if (spec.Modifiers.Length == 0 && spec.Executions.Count == 0)
+            GameplayEffectAsset def = spec.Definition;
+
+            if (!def.CanApply(this, spec))
             {
                 return ActiveGameplayEffectHandle.Invalid;
             }
@@ -61,11 +73,10 @@ namespace Core.AbilitySystem.Effect
             CaptureTargetActorTags(appliedSpec);
             appliedSpec.CaptureAttributeDataFromTarget(_owner);
 
-            GameplayEffectAsset def = appliedSpec.Definition;
-
             if (def.Type == GameplayEffectType.Instant)
             {
-                ExecuteGameplayEffect(appliedSpec);
+                ExecuteActiveEffectsFrom(appliedSpec);
+                def.OnApplied(this, appliedSpec);
                 return ActiveGameplayEffectHandle.Invalid;
             }
 
@@ -73,23 +84,20 @@ namespace Core.AbilitySystem.Effect
             var active = new ActiveGameplayEffect(handle, appliedSpec, _owner);
             _activeGameplayEffects.Add(active.Handle, active);
 
+            InternalOnActiveGameplayEffectAdded(active);
+
+            def.OnApplied(this, appliedSpec);
+
+            // UE는 이 실행을 다음 틱으로 미뤄 부여 태그·OnApplied가 먼저다. 바로 실행하는 우리도 그 뒤에 둬 같은 상태를 보게 한다.
             if (def.Period > 0f && def.ExecutePeriodicEffectOnApplication)
             {
-                ExecuteGameplayEffect(appliedSpec);
-            }
-
-            // period == 0인 경우만 persistent modifier로 aggregator에 등록한다(등록이 OnDirty를 울려 CurrentValue가 재계산됨).
-            if (def.Period <= 0f)
-            {
-                AddSpecMods(handle, appliedSpec);
-
-                appliedSpec.CapturedRelevantAttributes.RegisterLinkedAggregatorCallbacks(handle);
+                InternalExecutePeriodicGameplayEffect(active);
             }
 
             return handle;
         }
 
-        /// <summary>핸들의 활성 이펙트를 제거하고, persistent(period 0)였으면 aggregator에서 mod를 해제 후 영향 어트리뷰트를 재계산한다.</summary>
+        /// <summary>핸들의 활성 이펙트를 제거하고 Owner에 건 효과(modifier·부여 태그)를 거둔다.</summary>
         public bool RemoveActiveGameplayEffect(ActiveGameplayEffectHandle handle)
         {
             if (!handle.IsValid || !_activeGameplayEffects.Remove(handle, out ActiveGameplayEffect active))
@@ -97,15 +105,104 @@ namespace Core.AbilitySystem.Effect
                 return false;
             }
 
-            if (active.Spec.Definition.Period == 0f)
+            // 꺼진 GE는 끌 때 이미 효과를 거뒀다
+            if (!active.IsInhibited)
             {
-                RemoveSpecMods(handle, active.Spec);
-
-                // 등록했던 의존자 콜백을 해제한다 — 안 하면 소스 aggregator가 죽은 핸들을 계속 통지하려 한다.
-                active.Spec.CapturedRelevantAttributes.UnregisterLinkedAggregatorCallbacks(handle);
+                RemoveActiveGameplayEffectGrantedTagsAndModifiers(active);
             }
 
+            // UE InternalOnActiveGameplayEffectRemoved처럼 효과를 거둔 뒤 알린다
+            active.EventSet.BroadcastEffectRemoved(active);
+
             return true;
+        }
+
+        /// <summary>새 활성 GE를 GE Component에 알리고, 켜져야 하는지에 따라 효과를 건다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::InternalOnActiveGameplayEffectAdded</remarks>
+        private void InternalOnActiveGameplayEffectAdded(ActiveGameplayEffect active)
+        {
+            GameplayEffectAsset def = active.Spec.Definition;
+            bool shouldBeActive = def.OnAddedToActiveContainer(this, active);
+
+            // 꺼진 상태에서 시작해야 켤 때 상태 변화로 보고 효과를 건다
+            active.IsInhibited = true;
+            SetActiveGameplayEffectInhibit(active.Handle, !shouldBeActive);
+        }
+
+        /// <summary>활성 GE를 끄거나 켠다. 끄면 modifier·부여 태그를 거두고 켜면 다시 건다. 제거하지는 않는다.</summary>
+        /// <returns>계속 쓸 수 있는 핸들. 효과를 걸거나 거두는 중에 GE가 제거됐으면 Invalid.</returns>
+        /// <remarks>UE: UAbilitySystemComponent::SetActiveGameplayEffectInhibit</remarks>
+        internal ActiveGameplayEffectHandle SetActiveGameplayEffectInhibit(ActiveGameplayEffectHandle handle, bool inhibit)
+        {
+            if (!handle.IsValid || !_activeGameplayEffects.TryGetValue(handle, out ActiveGameplayEffect active))
+            {
+                Debug.LogError("[ASC] SetActiveGameplayEffectInhibit에 활성 GE가 아닌 핸들이 들어왔습니다.");
+                return ActiveGameplayEffectHandle.Invalid;
+            }
+
+            if (active.IsInhibited != inhibit)
+            {
+                active.IsInhibited = inhibit;
+
+                if (inhibit)
+                {
+                    RemoveActiveGameplayEffectGrantedTagsAndModifiers(active);
+                }
+                else
+                {
+                    AddActiveGameplayEffectGrantedTagsAndModifiers(active);
+                }
+
+                // 부여 태그가 바뀌면 태그 이벤트를 받은 쪽이 이 GE를 제거할 수 있다
+                if (!_activeGameplayEffects.ContainsKey(handle))
+                {
+                    return ActiveGameplayEffectHandle.Invalid;
+                }
+            }
+
+            return handle;
+        }
+
+        /// <summary>
+        /// 활성 GE의 효과를 Owner에 건다 — period 0이면 modifier를 aggregator에 등록(등록이 OnDirty를 울려 CurrentValue가 재계산됨), period와 상관없이 부여 태그를 올린다.
+        /// <see cref="RemoveActiveGameplayEffectGrantedTagsAndModifiers"/>와 짝 — 한쪽에 넣은 것은 다른 쪽에서 빼야 한다.
+        /// </summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::AddActiveGameplayEffectGrantedTagsAndModifiers</remarks>
+        private void AddActiveGameplayEffectGrantedTagsAndModifiers(ActiveGameplayEffect active)
+        {
+            ActiveGameplayEffectHandle handle = active.Handle;
+            GameplayEffectSpec spec = active.Spec;
+            GameplayEffectAsset def = spec.Definition;
+
+            if (def.Period <= 0f)
+            {
+                AddSpecMods(handle, spec);
+
+                spec.CapturedRelevantAttributes.RegisterLinkedAggregatorCallbacks(handle);
+            }
+
+            GameplayTagContainer grantedTags = def.GetGrantedTags();
+            _owner.UpdateTagMap(grantedTags, 1);
+        }
+
+        /// <summary>활성 GE가 Owner에 건 효과를 거둔다 — period 0이면 modifier 해제 후 영향 어트리뷰트 재계산, 부여 태그를 내린다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::RemoveActiveGameplayEffectGrantedTagsAndModifiers</remarks>
+        private void RemoveActiveGameplayEffectGrantedTagsAndModifiers(ActiveGameplayEffect active)
+        {
+            ActiveGameplayEffectHandle handle = active.Handle;
+            GameplayEffectSpec spec = active.Spec;
+            GameplayEffectAsset def = spec.Definition;
+
+            if (def.Period <= 0f)
+            {
+                RemoveSpecMods(handle, spec);
+
+                // 등록했던 의존자 콜백을 해제한다 — 안 하면 소스 aggregator가 죽은 핸들을 계속 통지하려 한다.
+                spec.CapturedRelevantAttributes.UnregisterLinkedAggregatorCallbacks(handle);
+            }
+
+            GameplayTagContainer grantedTags = def.GetGrantedTags();
+            _owner.UpdateTagMap(grantedTags, -1);
         }
 
         // ── Tick (수명) ───────────────────────────────────────────────────────────
@@ -130,7 +227,7 @@ namespace Core.AbilitySystem.Effect
                     while (active.PeriodTimer >= def.Period)
                     {
                         active.PeriodTimer -= def.Period;
-                        ExecuteGameplayEffect(active.Spec);
+                        InternalExecutePeriodicGameplayEffect(active);
                     }
                 }
 
@@ -152,16 +249,26 @@ namespace Core.AbilitySystem.Effect
 
         // ── GE 실행 (Instant / Periodic) ─────────────────────────────────────────
 
+        /// <summary>주기 GE를 한 번 실행한다. 꺼진 GE는 실행하지 않는다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::InternalExecutePeriodicGameplayEffect</remarks>
+        private void InternalExecutePeriodicGameplayEffect(ActiveGameplayEffect active)
+        {
+            if (!active.IsInhibited)
+            {
+                ExecuteActiveEffectsFrom(active.Spec);
+            }
+        }
+
         /// <summary>
         /// Instant/Periodic GE의 Execute 경로 — Modifier와 Execution을 적용한다. Modifier는 배열 순서대로 BaseValue에
         /// 순차 적용돼 같은 어트리뷰트면 순서가 결과에 영향(persistent와 달리 BaseValue를 영구 변경).
-        /// Source·Target 태그 조건을 못 맞춘 modifier는 건너뛴다. Target 태그는 실행할 때마다 다시 읽는다.
+        /// Source·Target 태그 조건을 못 맞춘 modifier는 건너뛴다. Target 태그와 magnitude는 실행할 때마다 다시 읽고 계산한다.
         /// </summary>
         /// <remarks>UE: FActiveGameplayEffectsContainer::ExecuteActiveEffectsFrom</remarks>
-        // TODO: UE는 태그를 다시 읽은 뒤 magnitude도 다시 계산한다(CalculateModifierMagnitudes). 지금은 적용 때 값을 주기 실행에도 그대로 쓴다.
-        private void ExecuteGameplayEffect(GameplayEffectSpec spec)
+        private void ExecuteActiveEffectsFrom(GameplayEffectSpec spec)
         {
             CaptureTargetActorTags(spec);
+            spec.CalculateModifierMagnitudes();
 
             TagContainerAggregator capturedSourceTags = spec.CapturedSourceTags;
             TagContainerAggregator capturedTargetTags = spec.CapturedTargetTags;
@@ -182,6 +289,9 @@ namespace Core.AbilitySystem.Effect
             }
 
             RunExecutions(spec);
+
+            GameplayEffectAsset def = spec.Definition;
+            def.OnExecuted(this, spec);
         }
 
         private static bool RequirementsMetOrEmpty(GameplayTagRequirements requirements, GameplayTagContainer tags)
@@ -249,7 +359,8 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FActiveGameplayEffectsContainer::OnAttributeAggregatorDirty</remarks>
         internal void OnAttributeAggregatorDirty(AttributeAggregator aggregator, GameplayAttributeHandle gameplayAttributeHandle)
         {
-            float newValue = aggregator.EvaluateCurrentValue(_owner.GetOwnedGameplayTags());
+            // UE처럼 Source/Target 태그 없이 계산한다. 소유 태그에 따라 켜고 끄는 것은 GE 단위 Ongoing Tag Requirements가 맡는다
+            float newValue = aggregator.Evaluate(default);
 
             AttributeSet attributeSet = _owner.GetAttributeSet(gameplayAttributeHandle);
             if (attributeSet == null)
@@ -264,6 +375,14 @@ namespace Core.AbilitySystem.Effect
                 return;
             }
 
+            InternalUpdateNumericalAttribute(gameplayAttributeHandle, attributeSet, newValue);
+        }
+
+        /// <summary>어트리뷰트의 CurrentValue를 쓰고 값 변경 델리게이트를 부른다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::InternalUpdateNumericalAttribute</remarks>
+        private void InternalUpdateNumericalAttribute(GameplayAttributeHandle gameplayAttributeHandle, AttributeSet attributeSet, float newValue)
+        {
+            float oldValue = gameplayAttributeHandle.GetCurrentValue(attributeSet);
             gameplayAttributeHandle.SetCurrentValueRaw(attributeSet, newValue);
 
             if (_attributeValueChangeDelegates.TryGetValue(gameplayAttributeHandle, out OnGameplayAttributeValueChange attributeChanged))
@@ -274,7 +393,7 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>
         /// <paramref name="changedAggregator"/>에 non-snapshot으로 의존하는 활성 GE의 magnitude를 라이브로 재평가하고,
-        /// 바뀐 mod를 대상 aggregator에 제자리 갱신해 반영한다. 그 갱신이 대상을 dirty시켜 재계산·연쇄된다.
+        /// 대상 aggregator에서 그 GE의 mod를 빼고 다시 넣어 반영한다. 그 갱신이 대상을 dirty시켜 재계산·연쇄된다.
         /// </summary>
         internal void OnMagnitudeDependencyChange(ActiveGameplayEffectHandle handle, AttributeAggregator changedAggregator)
         {
@@ -284,17 +403,26 @@ namespace Core.AbilitySystem.Effect
             }
 
             GameplayEffectSpec spec = activeEffect.Spec;
+            GameplayEffectAsset def = spec.Definition;
+
+            // 꺼진 GE·주기 GE는 aggregator에 mod가 없어 magnitude만 갱신한다
+            bool mustUpdateAttributeAggregators = !activeEffect.IsInhibited && def.Period <= 0f;
 
             HashSet<GameplayAttributeHandle> attributesToUpdate = new HashSet<GameplayAttributeHandle>();
 
             for (int modIdx = 0; modIdx < spec.Modifiers.Length; modIdx++)
             {
-                GameplayModifier modifierDefinition = spec.Definition.Modifiers[modIdx];
+                GameplayModifier modifierDefinition = def.Modifiers[modIdx];
+                GameplayEffectModifierMagnitude modifierMagnitude = modifierDefinition.ModifierMagnitude;
 
-                if (modifierDefinition.AttemptRecalculateMagnitudeFromDependentAggregatorChange(spec, changedAggregator, out float recalculatedMagnitude))
+                if (modifierMagnitude.AttemptRecalculateMagnitudeFromDependentAggregatorChange(spec, changedAggregator, out float recalculatedMagnitude))
                 {
                     spec.Modifiers[modIdx].EvaluatedMagnitude = recalculatedMagnitude;
-                    attributesToUpdate.Add(modifierDefinition.ToResolvedAttribute());
+
+                    if (mustUpdateAttributeAggregators)
+                    {
+                        attributesToUpdate.Add(modifierDefinition.ToResolvedAttribute());
+                    }
                 }
             }
 
@@ -346,13 +474,10 @@ namespace Core.AbilitySystem.Effect
         /// persistent spec의 각 modifier를 대상 어트리뷰트 aggregator 채널에 등록한다(identity는 정의에서 인덱스로 읽는다).
         /// 태그 조건은 여기서 거르지 않고 mod와 함께 넘겨, 평가할 때마다 판정한다.
         /// </summary>
-        /// <remarks>UE: FActiveGameplayEffectsContainer::AddActiveGameplayEffectGrantedTagsAndModifiers</remarks>
         private void AddSpecMods(ActiveGameplayEffectHandle source, GameplayEffectSpec spec)
         {
             IReadOnlyList<GameplayModifier> defs = spec.Definition.Modifiers;
             IReadOnlyList<GameplayModifierSpec> mods = spec.Modifiers;
-            TagContainerAggregator capturedSourceTags = spec.CapturedSourceTags;
-            GameplayTagContainer effectSourceTags = capturedSourceTags.GetActorTags();
 
             for (int i = 0; i < mods.Count; i++)
             {
@@ -363,7 +488,7 @@ namespace Core.AbilitySystem.Effect
                 }
 
                 AttributeAggregator aggregator = FindOrCreateAttributeAggregator(handle);
-                aggregator.AddAggregatorMod(source, defs[i].Operation, mods[i].EvaluatedMagnitude, defs[i].SourceTags, defs[i].TargetTags, effectSourceTags);
+                aggregator.AddAggregatorMod(source, defs[i].Operation, mods[i].EvaluatedMagnitude, defs[i].SourceTags, defs[i].TargetTags);
             }
         }
 
@@ -401,7 +526,7 @@ namespace Core.AbilitySystem.Effect
         {
             if (_attributeAggregatorMap.TryGetValue(handle, out AttributeAggregator aggregator))
             {
-                return aggregator.EvaluateCurrentValue(_owner.GetOwnedGameplayTags());
+                return aggregator.Evaluate(default);
             }
 
             return handle.GetCurrentValue(_owner.GetAttributeSet(handle));
@@ -428,6 +553,11 @@ namespace Core.AbilitySystem.Effect
             {
                 oldBaseValue = aggregator.GetBaseValue();
                 aggregator.SetBaseValue(newBaseValue);
+            }
+            else
+            {
+                // aggregator가 없으면 걸린 mod도 없어 CurrentValue가 곧 BaseValue다
+                InternalUpdateNumericalAttribute(attributeHandle, attributeSet, newBaseValue);
             }
 
             attributeSet.PostAttributeBaseChange(attributeHandle, oldBaseValue, newBaseValue);

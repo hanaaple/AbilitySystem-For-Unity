@@ -15,6 +15,11 @@ namespace Core.AbilitySystem.Effect
             return default;
         }
 
+        // TODO Transient(임시 변수) 집계기 — GE 에셋이 Calculation Modifier로 값을 넣고 Execute가 읽는 태그 이름 변수.
+        //  선언: Defs()처럼 virtual 함수로 쓸 수 있는 태그를 돌려준다(예: TransientAggregatorIdentifiers() → { Execution.SpeedBoost.Bonus }).
+        //  편집기는 이 태그를 Backing Data 선택지에 같이 띄우고, Execute는 parameters.AttemptCalculateTransientAggregatorMagnitude(태그, …)로 읽는다.
+        //  그 태그에 건 modifier가 없으면 false라 기본값은 Execute가 정한다.
+
         public abstract void Execute(GameplayEffectExecutionParameters parameters, GameplayEffectExecutionOutput output);
     }
 }

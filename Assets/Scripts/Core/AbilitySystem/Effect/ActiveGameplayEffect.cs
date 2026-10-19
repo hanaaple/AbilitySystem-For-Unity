@@ -14,6 +14,13 @@ namespace Core.AbilitySystem.Effect
         /// <summary>마지막 주기 실행 이후 경과 시간(초).</summary>
         public float PeriodTimer { get; set; }
 
+        /// <summary>꺼져 있는지. 꺼진 GE는 활성 목록에 남지만 modifier·부여 태그를 Owner에 걸지 않고 주기 실행도 하지 않는다.</summary>
+        public bool IsInhibited { get; internal set; }
+
+        /// <summary>이 활성 GE의 수명 이벤트.</summary>
+        /// <remarks>UE: FActiveGameplayEffect::EventSet</remarks>
+        public ActiveGameplayEffectEvents EventSet { get; } = new();
+
         public ActiveGameplayEffect(ActiveGameplayEffectHandle handle, GameplayEffectSpec spec, AbilitySystemComponent owner)
         {
             Handle = handle;

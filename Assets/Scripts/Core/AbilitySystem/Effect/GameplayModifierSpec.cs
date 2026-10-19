@@ -8,7 +8,8 @@ namespace Core.AbilitySystem.Effect
         /// <summary>이 슬롯 magnitude를 (재)계산해 <see cref="EvaluatedMagnitude"/>에 제자리로 채운다. AttributeBased는 <paramref name="spec"/> 캡처값을 읽으므로 캡처 이후 호출. <paramref name="modifier"/>는 같은 인덱스의 정의(계산식을 품음).</summary>
         public void CalculateMagnitude(GameplayModifier modifier, GameplayEffectSpec spec)
         {
-            modifier.AttemptCalculateMagnitude(spec, out EvaluatedMagnitude);
+            GameplayEffectModifierMagnitude modifierMagnitude = modifier.ModifierMagnitude;
+            modifierMagnitude.AttemptCalculateMagnitude(spec, out EvaluatedMagnitude);
         }
     }
 }
