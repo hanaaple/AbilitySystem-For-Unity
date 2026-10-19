@@ -12,7 +12,7 @@ namespace Core.AbilitySystem.Effect
     {
         public GameplayEffectAsset Definition { get; }
         public GameplayEffectContextHandle Context { get; }
-        public float Level { get; }
+        public float Level { get; private set; }
 
         // 정의(Definition.Modifiers)와 평행한 슬롯 배열(Modifiers[i] ↔ Definition.Modifiers[i]).
         // 배열로 노출 — 라이브 재평가 시 슬롯 magnitude를 제자리 갱신해야 하는데 List·IReadOnlyList 인덱서는 값 타입 복사본을 돌려줘 안 먹는다. 배열 교체는 private set으로 막아 평행 인덱스를 지킨다.
@@ -100,6 +100,13 @@ namespace Core.AbilitySystem.Effect
                         $"[GESpec] ResolvedGameplayAttribute 해석 실패 — '{Definition.name}' 의 {i}번 modifier는 적용 시 반영되지 않는다.");
                 }
             }
+        }
+
+        /// <summary>레벨만 바꾼다. magnitude 재계산은 호출부가 한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::SetLevel</remarks>
+        internal void SetLevel(float level)
+        {
+            Level = level;
         }
 
         /// <summary>

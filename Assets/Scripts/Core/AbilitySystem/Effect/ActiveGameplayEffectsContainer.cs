@@ -47,6 +47,174 @@ namespace Core.AbilitySystem.Effect
             return _activeGameplayEffects.GetValueOrDefault(handle);
         }
 
+        // ── 질의 (GameplayEffectQuery) ───────────────────────────────────────────
+
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffects</remarks>
+        public List<ActiveGameplayEffectHandle> GetActiveEffects(GameplayEffectQuery query)
+        {
+            var handles = new List<ActiveGameplayEffectHandle>();
+            foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
+            {
+                if (query.Matches(effect))
+                {
+                    handles.Add(effect.Handle);
+                }
+            }
+
+            return handles;
+        }
+
+        /// <summary>질의에 맞는 GE 수. 꺼진 GE는 <paramref name="enforceOnGoingCheck"/>가 true면 세지 않는다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectCount</remarks>
+        public int GetActiveEffectCount(GameplayEffectQuery query, bool enforceOnGoingCheck = true)
+        {
+            int count = 0;
+            foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
+            {
+                if ((!effect.IsInhibited || !enforceOnGoingCheck) && query.Matches(effect))
+                {
+                    // TODO GE 스택이 생기면 1 대신 스택 수를 더한다(UE Spec.GetStackCount)
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsTimeRemaining</remarks>
+        public List<float> GetActiveEffectsTimeRemaining(GameplayEffectQuery query)
+        {
+            var times = new List<float>();
+            foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
+            {
+                if (query.Matches(effect))
+                {
+                    times.Add(effect.GetTimeRemaining());
+                }
+            }
+
+            return times;
+        }
+
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsDuration</remarks>
+        public List<float> GetActiveEffectsDuration(GameplayEffectQuery query)
+        {
+            var durations = new List<float>();
+            foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
+            {
+                if (query.Matches(effect))
+                {
+                    durations.Add(effect.GetDuration());
+                }
+            }
+
+            return durations;
+        }
+
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsTimeRemainingAndDuration</remarks>
+        public List<(float TimeRemaining, float Duration)> GetActiveEffectsTimeRemainingAndDuration(GameplayEffectQuery query)
+        {
+            var results = new List<(float TimeRemaining, float Duration)>();
+            foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
+            {
+                if (query.Matches(effect))
+                {
+                    results.Add((effect.GetTimeRemaining(), effect.GetDuration()));
+                }
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// 질의에 맞는 GE 중 가장 늦게 끝나는 시각과 그 지속시간을 낸다. 하나라도 끝나는 시간이 없으면 둘 다 <see cref="GameplayEffectConstants.InfiniteDuration"/>.
+        /// <paramref name="instigators"/>에는 맞는 GE의 시전자를 겹치지 않게 더한다.
+        /// </summary>
+        /// <returns>맞는 GE가 하나라도 있었는지.</returns>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsEndTimeAndDuration</remarks>
+        public bool GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery query, out float endTime, out float duration, List<AbilitySystemComponent> instigators)
+        {
+            endTime = 0f;
+            duration = 0f;
+            bool foundSomething = false;
+
+            foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
+            {
+                if (!query.Matches(effect))
+                {
+                    continue;
+                }
+
+                foundSomething = true;
+
+                float thisEndTime = effect.GetEndTime();
+                if (thisEndTime <= GameplayEffectConstants.InfiniteDuration)
+                {
+                    endTime = GameplayEffectConstants.InfiniteDuration;
+                    duration = GameplayEffectConstants.InfiniteDuration;
+                    return true;
+                }
+
+                if (thisEndTime > endTime)
+                {
+                    endTime = thisEndTime;
+                    duration = effect.GetDuration();
+                }
+
+                GameplayEffectContextHandle context = effect.Spec.Context;
+                AbilitySystemComponent instigator = context.GetInstigator();
+                if (!instigators.Contains(instigator))
+                {
+                    instigators.Add(instigator);
+                }
+            }
+
+            return foundSomething;
+        }
+
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsEndTime</remarks>
+        public float GetActiveEffectsEndTime(GameplayEffectQuery query, List<AbilitySystemComponent> instigators)
+        {
+            GetActiveEffectsEndTimeAndDuration(query, out float endTime, out _, instigators);
+            return endTime;
+        }
+
+        /// <summary>질의에 맞는 GE를 제거한다.</summary>
+        /// <param name="stacksToRemove">UE 시그니처 자리. GE 스택이 아직 없어 늘 통째로 제거한다.</param>
+        /// <returns>실제로 제거한 GE 수.</returns>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::RemoveActiveEffects</remarks>
+        public int RemoveActiveEffects(GameplayEffectQuery query, int stacksToRemove = -1)
+        {
+            // 제거가 태그 변화로 다른 GE 제거를 부를 수 있어 먼저 핸들을 모은다. 이미 빠진 핸들은 RemoveActiveGameplayEffect가 false를 낸다
+            List<ActiveGameplayEffectHandle> matchedHandles = GetActiveEffects(query);
+
+            int numRemoved = 0;
+            foreach (ActiveGameplayEffectHandle handle in matchedHandles)
+            {
+                if (RemoveActiveGameplayEffect(handle))
+                {
+                    numRemoved++;
+                }
+            }
+
+            return numRemoved;
+        }
+
+        /// <summary>활성 GE의 레벨을 바꾸고 magnitude를 다시 계산해 aggregator에 반영한다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::SetActiveGameplayEffectLevel</remarks>
+        public void SetActiveGameplayEffectLevel(ActiveGameplayEffectHandle handle, float newLevel)
+        {
+            ActiveGameplayEffect effect = GetActiveGameplayEffect(handle);
+            if (effect == null || Mathf.Approximately(effect.Spec.Level, newLevel))
+            {
+                return;
+            }
+
+            effect.Spec.SetLevel(newLevel);
+            effect.Spec.CalculateModifierMagnitudes();
+            UpdateAllAggregatorModMagnitudes(effect);
+        }
+
         // ── Apply / Remove ────────────────────────────────────────────────────────
 
         /// <summary>
@@ -424,6 +592,25 @@ namespace Core.AbilitySystem.Effect
                         attributesToUpdate.Add(modifierDefinition.ToResolvedAttribute());
                     }
                 }
+            }
+
+            UpdateAggregatorModMagnitudes(attributesToUpdate, activeEffect);
+        }
+
+        /// <summary>GE의 모든 modifier 대상 aggregator에 지금 magnitude를 다시 건다. 주기 GE·꺼진 GE는 aggregator에 mod가 없어 건너뛴다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::UpdateAllAggregatorModMagnitudes</remarks>
+        private void UpdateAllAggregatorModMagnitudes(ActiveGameplayEffect activeEffect)
+        {
+            GameplayEffectAsset def = activeEffect.Spec.Definition;
+            if (def.Period > 0f || activeEffect.IsInhibited)
+            {
+                return;
+            }
+
+            var attributesToUpdate = new HashSet<GameplayAttributeHandle>();
+            foreach (GameplayModifier modifier in def.Modifiers)
+            {
+                attributesToUpdate.Add(modifier.ToResolvedAttribute());
             }
 
             UpdateAggregatorModMagnitudes(attributesToUpdate, activeEffect);

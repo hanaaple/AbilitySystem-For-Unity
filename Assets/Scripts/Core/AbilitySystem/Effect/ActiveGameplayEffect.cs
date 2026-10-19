@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Core.AbilitySystem.Effect
 {
     public sealed class ActiveGameplayEffect
@@ -28,6 +30,27 @@ namespace Core.AbilitySystem.Effect
             Owner = owner;
             RemainingDuration = spec.Definition.Duration;
             PeriodTimer = 0f;
+        }
+
+        /// <summary>정의에 적힌 지속시간. Duration 타입이 아니면 <see cref="GameplayEffectConstants.InfiniteDuration"/>.</summary>
+        /// <remarks>UE: FActiveGameplayEffect::GetDuration</remarks>
+        public float GetDuration()
+        {
+            GameplayEffectAsset def = Spec.Definition;
+            return def.Type == GameplayEffectType.Duration ? def.Duration : GameplayEffectConstants.InfiniteDuration;
+        }
+
+        /// <remarks>UE: FActiveGameplayEffect::GetTimeRemaining</remarks>
+        public float GetTimeRemaining()
+        {
+            return GetDuration() == GameplayEffectConstants.InfiniteDuration ? GameplayEffectConstants.InfiniteDuration : RemainingDuration;
+        }
+
+        /// <summary>끝나는 시각(<see cref="Time.time"/> 기준). 컨테이너가 <see cref="Time.deltaTime"/>으로 남은 시간을 줄이므로 같은 시계다.</summary>
+        /// <remarks>UE: FActiveGameplayEffect::GetEndTime</remarks>
+        public float GetEndTime()
+        {
+            return GetDuration() == GameplayEffectConstants.InfiniteDuration ? GameplayEffectConstants.InfiniteDuration : Time.time + RemainingDuration;
         }
     }
 }
