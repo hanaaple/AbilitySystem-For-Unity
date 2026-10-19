@@ -13,6 +13,8 @@ namespace Test.Editor
     // 클릭 한 번으로 Aggregator를 검증하는 에디터 전용 셀프체크(Play 모드 불필요).
     // A: AttributeAggregator.Evaluate 공식·mod 제거 / B: ASC.GetAttributeCurrentValue 라우팅
     // C: capture 스냅샷 vs 라이브 / D: 실제 GameplayEffectAsset을 ASC에 적용한 다수 케이스.
+    // E: 런타임 dirty 라이브 재평가 / F: aggregator가 없는 어트리뷰트의 Base 변경.
+    // G: 라이브 재평가가 같은 aggregator의 다른 GE mod를 건드리지 않음 / H: 주기 실행마다 magnitude 재계산.
     public static class AggregatorSelfCheck
     {
         private const float Eps = 0.001f;
@@ -51,6 +53,9 @@ namespace Test.Editor
                 RunCaptureSnapshotChecks(asc, Check);
                 RunAssetDrivenChecks(asc, Check);
                 RunRuntimeDirtyReevalChecks(asc, Check);
+                RunNoAggregatorBaseChecks(asc, Check);
+                RunUpdateAggregatorModChecks(asc, Check);
+                RunPeriodicRecalculationChecks(asc, Check);
             }
             catch (Exception e)
             {
@@ -289,6 +294,105 @@ namespace Test.Editor
             UnityEngine.Object.DestroyImmediate(healthBoost);
         }
 
+        // ── F. aggregator가 없는 어트리뷰트의 Base 변경 ──
+        // Stamina는 위 단계에서 mod·캡처가 한 번도 걸리지 않아 aggregator가 없다. Base가 바뀌면 저장된 Current도 같이 바뀌어야 한다.
+        private static void RunNoAggregatorBaseChecks(AbilitySystemComponent asc, Action<string, bool> check)
+        {
+            GameplayAttributeHandle stamina = CharacterAttributeSet.Stamina;
+
+            SetBase(asc, stamina, 40f);
+            check("aggregator 없음: SetBase 40 → Current 40", Approx(asc.GetAttributeCurrentValue(stamina), 40f));
+
+            GameplayEffectAsset instant = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(stamina, GameplayModifierOperation.AddBase, 10f));
+            asc.ApplyGameplayEffectToSelf(instant);
+            check("aggregator 없음: Instant AddBase 10 → Base 50", Approx(asc.GetAttributeBaseValue(stamina), 50f));
+            check("aggregator 없음: Instant 후 Current도 50", Approx(asc.GetAttributeCurrentValue(stamina), 50f));
+            UnityEngine.Object.DestroyImmediate(instant);
+        }
+
+        // ── G. 라이브 재평가가 같은 aggregator의 다른 GE mod를 건드리지 않음 ──
+        // 한 aggregator에는 여러 GE의 mod가 섞여 있다. 라이브 GE의 magnitude만 바뀌어야 하고, 먼저 건 고정 GE의 mod는 그대로 남아야 한다.
+        private static void RunUpdateAggregatorModChecks(AbilitySystemComponent asc, Action<string, bool> check)
+        {
+            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            GameplayAttributeHandle maxHealth = CharacterAttributeSet.MaxHealth;
+            SetBase(asc, health, 100f);
+            SetBase(asc, speed, 0f);
+            SetBase(asc, maxHealth, 0f);
+
+            GameplayEffectAttributeCaptureDefinition healthLive = new GameplayEffectAttributeCaptureDefinition(health, AttributeCaptureSource.Source, false);
+
+            GameplayEffectAsset fixedGe = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(speed, GameplayModifierOperation.AddBase, 10f));
+            GameplayEffectAsset liveGe = MakeGameplayEffect(GameplayEffectType.Infinite, MakeAttributeBasedModifier(speed, healthLive, 0.5f, 0f, 0f));
+            ActiveGameplayEffectHandle fixedHandle = asc.ApplyGameplayEffectToSelf(fixedGe);
+            ActiveGameplayEffectHandle liveHandle = asc.ApplyGameplayEffectToSelf(liveGe);
+            check("고정 +10 먼저, 라이브 Health*0.5 다음 → Speed 60", Approx(asc.GetAttributeCurrentValue(speed), 60f));
+
+            GameplayEffectAsset healthBoost = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 100f));
+            ActiveGameplayEffectHandle boostHandle = asc.ApplyGameplayEffectToSelf(healthBoost);
+            check("Health 200 → 라이브만 100, 고정 +10 유지 → Speed 110", Approx(asc.GetAttributeCurrentValue(speed), 110f));
+
+            asc.RemoveActiveGameplayEffect(fixedHandle);
+            check("고정 GE 제거 → Speed 100", Approx(asc.GetAttributeCurrentValue(speed), 100f));
+            asc.RemoveActiveGameplayEffect(liveHandle);
+            check("라이브 GE 제거 → Speed 0", Approx(asc.GetAttributeCurrentValue(speed), 0f));
+
+            // 라이브 modifier가 GE 안 2번인데 MaxHealth aggregator에는 이 mod 하나뿐인 경우
+            GameplayEffectAsset mixedGe = MakeGameplayEffect(GameplayEffectType.Infinite,
+                MakeModifier(speed, GameplayModifierOperation.AddBase, 1f),
+                MakeModifier(speed, GameplayModifierOperation.AddBase, 2f),
+                MakeAttributeBasedModifier(maxHealth, healthLive, 1f, 0f, 0f));
+            ActiveGameplayEffectHandle mixedHandle = asc.ApplyGameplayEffectToSelf(mixedGe);
+            check("2번 modifier가 라이브인 GE → MaxHealth 200, Speed 3", Approx(asc.GetAttributeCurrentValue(maxHealth), 200f) && Approx(asc.GetAttributeCurrentValue(speed), 3f));
+
+            asc.RemoveActiveGameplayEffect(boostHandle);
+            check("Health 100 → MaxHealth 100, Speed 3 유지", Approx(asc.GetAttributeCurrentValue(maxHealth), 100f) && Approx(asc.GetAttributeCurrentValue(speed), 3f));
+
+            asc.RemoveActiveGameplayEffect(mixedHandle);
+            UnityEngine.Object.DestroyImmediate(fixedGe);
+            UnityEngine.Object.DestroyImmediate(liveGe);
+            UnityEngine.Object.DestroyImmediate(healthBoost);
+            UnityEngine.Object.DestroyImmediate(mixedGe);
+        }
+
+        // ── H. 주기 실행마다 magnitude 재계산 ──
+        // Speed AddBase = Health.current(non-snapshot) × 1을 1초마다 실행. 적용 뒤 Health가 바뀌면 다음 실행은 바뀐 Health만큼 더해야 한다.
+        private static void RunPeriodicRecalculationChecks(AbilitySystemComponent asc, Action<string, bool> check)
+        {
+            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            SetBase(asc, health, 100f);
+            SetBase(asc, speed, 0f);
+
+            ActiveGameplayEffectsContainer container = GetContainer(asc);
+            if (container == null)
+            {
+                check("ActiveGameplayEffectsContainer 접근", false);
+                return;
+            }
+
+            GameplayEffectAttributeCaptureDefinition healthLive = new GameplayEffectAttributeCaptureDefinition(health, AttributeCaptureSource.Source, false);
+            GameplayEffectAsset periodicGe = MakeGameplayEffect(GameplayEffectType.Duration, MakeAttributeBasedModifier(speed, healthLive, 1f, 0f, 0f));
+            SetPrivateField(periodicGe, "duration", 100f);
+            SetPrivateField(periodicGe, "period", 1f);
+            SetPrivateField(periodicGe, "executePeriodicEffectOnApplication", true);
+
+            ActiveGameplayEffectHandle periodicHandle = asc.ApplyGameplayEffectToSelf(periodicGe);
+            check("주기 GE 적용 즉시 1회 실행 → Speed Base 100", Approx(asc.GetAttributeBaseValue(speed), 100f));
+
+            GameplayEffectAsset healthBoost = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 100f));
+            ActiveGameplayEffectHandle boostHandle = asc.ApplyGameplayEffectToSelf(healthBoost);
+
+            container.Tick(1f);
+            check("Health 200 뒤 다음 주기 실행 → +200, Speed Base 300", Approx(asc.GetAttributeBaseValue(speed), 300f));
+
+            asc.RemoveActiveGameplayEffect(periodicHandle);
+            asc.RemoveActiveGameplayEffect(boostHandle);
+            UnityEngine.Object.DestroyImmediate(periodicGe);
+            UnityEngine.Object.DestroyImmediate(healthBoost);
+        }
+
         // ── 헬퍼 ──
 
         private static void AddHealthSet(AbilitySystemComponent asc, float value)
@@ -308,8 +412,10 @@ namespace Test.Editor
             object boxed = default(GameplayModifier);
             SetPrivateField(boxed, "attribute", new GameplayAttribute(handle));
             SetPrivateField(boxed, "operation", op);
-            SetPrivateField(boxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(boxed, "magnitude", magnitude);
+            object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
+            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
+            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 
@@ -325,8 +431,10 @@ namespace Test.Editor
             object boxed = default(GameplayModifier);
             SetPrivateField(boxed, "attribute", new GameplayAttribute(target));
             SetPrivateField(boxed, "operation", GameplayModifierOperation.AddBase);
-            SetPrivateField(boxed, "magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
-            SetPrivateField(boxed, "attributeBased", attributeBased);
+            object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
+            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
+            SetPrivateField(magnitudeBoxed, "attributeBasedMagnitude", attributeBased);
+            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 
@@ -356,6 +464,12 @@ namespace Test.Editor
             {
                 typeof(AbilitySystemComponent).GetMethod("Awake", NonPublicInstance)?.Invoke(asc, null);
             }
+        }
+
+        private static ActiveGameplayEffectsContainer GetContainer(AbilitySystemComponent asc)
+        {
+            FieldInfo containerField = typeof(AbilitySystemComponent).GetField("_activeGameplayEffectsContainer", NonPublicInstance);
+            return containerField?.GetValue(asc) as ActiveGameplayEffectsContainer;
         }
 
         private static AttributeAggregator FindOrCreateAggregator(AbilitySystemComponent asc, GameplayAttributeHandle handle)
