@@ -315,8 +315,13 @@ namespace Core.AbilitySystem.Editor
                 }
                 else
                 {
-                    captureSpec.TryGetCapturedValue(AttributeCaptureValueType.BaseValue, out float baseValue);
-                    captureSpec.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, out float currentValue);
+                    // AttributeBased·Execution이 실제로 평가하는 문맥(이 Spec의 Source·Target 태그)으로 보여 준다
+                    TagContainerAggregator capturedSourceTags = spec.CapturedSourceTags;
+                    TagContainerAggregator capturedTargetTags = spec.CapturedTargetTags;
+                    var evaluationParameters = new AggregatorEvaluateParameters(capturedSourceTags.GetAggregatedTags(), capturedTargetTags.GetAggregatedTags());
+
+                    captureSpec.TryGetCapturedValue(AttributeCaptureValueType.BaseValue, evaluationParameters, out float baseValue);
+                    captureSpec.TryGetCapturedValue(AttributeCaptureValueType.CurrentValue, evaluationParameters, out float currentValue);
                     valueText = $"Base: {baseValue:0.###}  Current: {currentValue:0.###}";
                 }
 
@@ -335,8 +340,9 @@ namespace Core.AbilitySystem.Editor
             for (int i = 0; i < modifiers.Count; i++)
             {
                 GameplayModifier modifier = modifiers[i];
-                if (modifier.MagnitudeCalculationType == MagnitudeCalculationType.AttributeBased
-                    && modifier.AttributeBased.BackingAttribute.Equals(def))
+                GameplayEffectModifierMagnitude modifierMagnitude = modifier.ModifierMagnitude;
+                if (modifierMagnitude.MagnitudeCalculationType == MagnitudeCalculationType.AttributeBased
+                    && modifierMagnitude.AttributeBasedMagnitude.BackingAttribute.Equals(def))
                 {
                     origins.Add($"Modifier[{i}]");
                 }

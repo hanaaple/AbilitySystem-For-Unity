@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core.AbilitySystem.Attribute;
+using Core.AbilitySystem.Tag;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
@@ -12,19 +13,57 @@ namespace Core.AbilitySystem.Effect
     public sealed class AttributeAggregator
     {
         /// <summary>담긴 mod 한 건. <see cref="ActiveHandle"/>로 식별해 제거한다.</summary>
-        private readonly struct Mod
+        /// <remarks>UE: FAggregatorMod</remarks>
+        private struct Mod
         {
             public readonly ActiveGameplayEffectHandle ActiveHandle;
             public readonly GameplayModifierOperation Operation;
             public readonly float EvaluatedMagnitude;
 
-            public Mod(ActiveGameplayEffectHandle activeHandle, GameplayModifierOperation operation, float evaluatedMagnitude)
+            // null이면 조건 없음. modifier 정의의 인스턴스를 그대로 참조한다(UE도 정의를 포인터로 든다).
+            public readonly GameplayTagRequirements SourceTagReqs;
+            public readonly GameplayTagRequirements TargetTagReqs;
+
+            // 평가마다 UpdateQualifies로 모든 mod를 먼저 갱신하고, 값을 계산할 때는 이것만 읽는다
+            private bool _isQualified;
+
+            public Mod(ActiveGameplayEffectHandle activeHandle, GameplayModifierOperation operation, float evaluatedMagnitude, GameplayTagRequirements sourceTagReqs, GameplayTagRequirements targetTagReqs)
             {
                 ActiveHandle = activeHandle;
                 Operation = operation;
                 EvaluatedMagnitude = evaluatedMagnitude;
+                SourceTagReqs = sourceTagReqs;
+                TargetTagReqs = targetTagReqs;
+                _isQualified = false;
+            }
+
+            /// <summary>마지막 <see cref="UpdateQualifies"/>의 판정 결과.</summary>
+            /// <remarks>UE: FAggregatorMod::Qualifies</remarks>
+            public bool Qualifies()
+            {
+                return _isQualified;
+            }
+
+            /// <summary>Source·Target 태그 조건을 모두 만족하는지 판정해 담는다. 조건이 없거나 비었으면 만족으로 본다.</summary>
+            /// <remarks>UE: FAggregatorMod::UpdateQualifies</remarks>
+            public void UpdateQualifies(GameplayTagContainer sourceTags, GameplayTagContainer targetTags)
+            {
+                _isQualified = RequirementsMet(SourceTagReqs, sourceTags) && RequirementsMet(TargetTagReqs, targetTags);
+            }
+
+            private static bool RequirementsMet(GameplayTagRequirements requirements, GameplayTagContainer tags)
+            {
+                if (requirements == null || requirements.IsEmpty())
+                {
+                    return true;
+                }
+
+                return requirements.RequirementsMet(tags ?? EmptyTags);
             }
         }
+
+        // 평가 문맥에 태그가 없을 때(null) 판정에 쓰는 빈 컨테이너. 읽기만 한다.
+        private static readonly GameplayTagContainer EmptyTags = new();
 
         private float _baseValue;
 
@@ -75,9 +114,12 @@ namespace Core.AbilitySystem.Effect
             }
         }
 
-        public void AddAggregatorMod(ActiveGameplayEffectHandle source, GameplayModifierOperation operation, float magnitude)
+        /// <param name="sourceTagReqs">Source 태그 조건. null이면 조건 없음.</param>
+        /// <param name="targetTagReqs">Target 태그 조건. null이면 조건 없음.</param>
+        /// <remarks>UE: FAggregator::AddAggregatorMod</remarks>
+        public void AddAggregatorMod(ActiveGameplayEffectHandle source, GameplayModifierOperation operation, float magnitude, GameplayTagRequirements sourceTagReqs = null, GameplayTagRequirements targetTagReqs = null)
         {
-            _mods.Add(new Mod(source, operation, magnitude));
+            _mods.Add(new Mod(source, operation, magnitude, sourceTagReqs, targetTagReqs));
             BroadcastOnDirty();
         }
 
@@ -128,11 +170,34 @@ namespace Core.AbilitySystem.Effect
         }
 
         /// <summary>
-        /// base·mod로 CurrentValue를 계산한다(순수). 값 취득의 유일 경로다.
+        /// 평가 문맥의 태그로 자격을 판정해 값을 계산한다. 캡처 어트리뷰트 평가(AttributeBased·Execution)는 캡처하는 Spec의 태그를, CurrentValue 계산은 빈 문맥을 넘긴다.
         /// = ((Base + ΣAddBase) * MultiplyAdditive / DivideAdditive * ΠMultiplyCompound) + ΣAddFinal.
-        /// Override가 있으면 그 값으로 덮어쓴다(마지막 Override 우선).
+        /// Override가 있으면 그 값으로 덮어쓴다(조건을 만족하는 Override 중 목록에서 먼저 만난 것).
         /// </summary>
-        public float Evaluate()
+        /// <remarks>UE: FAggregator::Evaluate</remarks>
+        public float Evaluate(AggregatorEvaluateParameters parameters)
+        {
+            EvaluateQualificationForAllMods(parameters);
+            return EvaluateWithBase();
+        }
+
+        /// <summary>모든 mod의 자격을 평가 문맥의 태그로 갱신한다. <see cref="EvaluateWithBase"/> 전에 부른다.</summary>
+        /// <remarks>UE: FAggregator::EvaluateQualificationForAllMods</remarks>
+        private void EvaluateQualificationForAllMods(AggregatorEvaluateParameters parameters)
+        {
+            for (int modIndex = 0; modIndex < _mods.Count; modIndex++)
+            {
+                Mod mod = _mods[modIndex];
+                mod.UpdateQualifies(parameters.SourceTags, parameters.TargetTags);
+
+                // Mod는 값 타입이라 갱신한 복사본을 다시 넣어야 목록에 자격이 남는다
+                _mods[modIndex] = mod;
+            }
+        }
+
+        /// <summary>자격이 있는 mod만 모아 값을 계산한다. 자격은 <see cref="EvaluateQualificationForAllMods"/>가 갱신해 둔 것을 읽는다.</summary>
+        /// <remarks>UE: FAggregatorModChannel::EvaluateWithBase</remarks>
+        private float EvaluateWithBase()
         {
             float addBase = 0f;
             float multiplyAdditive = 1f;
@@ -142,6 +207,11 @@ namespace Core.AbilitySystem.Effect
 
             foreach (Mod mod in _mods)
             {
+                if (!mod.Qualifies())
+                {
+                    continue;
+                }
+
                 switch (mod.Operation)
                 {
                     case GameplayModifierOperation.AddBase:
@@ -218,17 +288,25 @@ namespace Core.AbilitySystem.Effect
             return baseValue;
         }
 
-        /// <summary>이 effect의 <paramref name="attributeHandle"/> 대상 mod magnitude를 spec의 최신 값으로 제자리 갱신한다.</summary>
+        /// <summary>이 effect가 <paramref name="attributeHandle"/>에 건 mod를 모두 빼고 spec의 최신 magnitude로 다시 넣는다.</summary>
+        /// <remarks>UE: FAggregator::UpdateAggregatorMod</remarks>
         public void UpdateAggregatorMod(ActiveGameplayEffect activeEffect, GameplayAttributeHandle attributeHandle)
         {
+            ActiveGameplayEffectHandle activeHandle = activeEffect.Handle;
+
+            // _mods에는 여러 GE의 mod가 섞여 있어 spec의 modifier 번호로 칸을 찾을 수 없다. 핸들로 빼고 다시 넣는다.
+            // 다 넣은 뒤 dirty를 한 번만 알리려고 RemoveAggregatorMod 대신 목록에서 바로 뺀다
+            _mods.RemoveAll(mod => mod.ActiveHandle.Equals(activeHandle));
+
             GameplayEffectSpec gameplayEffectSpec = activeEffect.Spec;
+
             for (int modIndex = 0; modIndex < gameplayEffectSpec.Modifiers.Length; modIndex++)
             {
                 GameplayModifier modDef = gameplayEffectSpec.Definition.Modifiers[modIndex];
 
                 if (modDef.ToResolvedAttribute() == attributeHandle)
                 {
-                    _mods[modIndex] = new Mod(activeEffect.Handle, modDef.Operation, gameplayEffectSpec.Modifiers[modIndex].EvaluatedMagnitude);
+                    _mods.Add(new Mod(activeHandle, modDef.Operation, gameplayEffectSpec.Modifiers[modIndex].EvaluatedMagnitude, modDef.SourceTags, modDef.TargetTags));
                 }
             }
 

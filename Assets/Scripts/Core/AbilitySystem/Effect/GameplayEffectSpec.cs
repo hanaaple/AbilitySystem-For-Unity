@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Core.AbilitySystem.Tag;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Effect
@@ -11,7 +12,7 @@ namespace Core.AbilitySystem.Effect
     {
         public GameplayEffectAsset Definition { get; }
         public GameplayEffectContextHandle Context { get; }
-        public float Level { get; }
+        public float Level { get; private set; }
 
         // 정의(Definition.Modifiers)와 평행한 슬롯 배열(Modifiers[i] ↔ Definition.Modifiers[i]).
         // 배열로 노출 — 라이브 재평가 시 슬롯 magnitude를 제자리 갱신해야 하는데 List·IReadOnlyList 인덱서는 값 타입 복사본을 돌려줘 안 먹는다. 배열 교체는 private set으로 막아 평행 인덱스를 지킨다.
@@ -20,8 +21,19 @@ namespace Core.AbilitySystem.Effect
         /// <summary>정의에 적힌 AQN을 resolve해 만든 Execution 인스턴스들. 실패한 항목은 경고 후 제외.</summary>
         public IReadOnlyList<GameplayEffectExecution> Executions { get; private set; }
 
+        /// <summary><see cref="Executions"/>와 평행한 Execution 정의(ExecutionDefinitions[i] ↔ Executions[i]). 실행 때 정의의 Calculation Modifier를 읽는다.</summary>
+        public IReadOnlyList<GameplayEffectExecutionDefinition> ExecutionDefinitions { get; private set; }
+
         /// <summary>이 GE 계산(AttributeBased·Execution)이 참조하는 캡처 어트리뷰트 묶음. 생성 시 Source, 적용 시 Target을 캡처.</summary>
         public GameplayEffectAttributeCaptureSpecContainer CapturedRelevantAttributes { get; private set; }
+
+        /// <summary>Source 태그. 액터 태그는 생성 시 Instigator에서 캡처한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::CapturedSourceTags</remarks>
+        public TagContainerAggregator CapturedSourceTags { get; private set; } = new();
+
+        /// <summary>Target 태그. 액터 태그는 적용·실행 때마다 대상에서 다시 캡처한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::CapturedTargetTags</remarks>
+        public TagContainerAggregator CapturedTargetTags { get; private set; } = new();
 
         public GameplayEffectSpec(GameplayEffectAsset definition, GameplayEffectContextHandle context = default, float level = 1f)
         {
@@ -35,7 +47,7 @@ namespace Core.AbilitySystem.Effect
         /// <summary>
         /// 적용 시점에 대상별로 복제하는 복사 생성자 — <see cref="Initialize"/>를 재실행하지 않고(Source 재캡처·execution 재resolve 없음) 상태만 옮긴다.
         /// 복사 심도: Definition·Executions는 공유(불변/무상태), Context·Level은 값 복사, Modifiers는 배열 값 복사(struct 슬롯이라 독립),
-        /// CapturedRelevantAttributes는 깊은 복사 — 대상별 target 캡처가 서로 덮어쓰지 않게.
+        /// CapturedRelevantAttributes·CapturedSourceTags·CapturedTargetTags는 깊은 복사 — 대상별 target 캡처가 서로 덮어쓰지 않게.
         /// </summary>
         private GameplayEffectSpec(GameplayEffectSpec other)
         {
@@ -46,7 +58,10 @@ namespace Core.AbilitySystem.Effect
             // struct 슬롯 배열이라 Clone()=값 복사=독립. magnitude는 target 캡처 후 CalculateModifierMagnitudes가 다시 채운다.
             Modifiers = (GameplayModifierSpec[])other.Modifiers.Clone();
             Executions = other.Executions;
+            ExecutionDefinitions = other.ExecutionDefinitions;
             CapturedRelevantAttributes = other.CapturedRelevantAttributes.Clone();
+            CapturedSourceTags = new TagContainerAggregator(other.CapturedSourceTags);
+            CapturedTargetTags = new TagContainerAggregator(other.CapturedTargetTags);
         }
 
         /// <summary>적용 시점에 대상별로 복제해 target 캡처가 섞이지 않게 하는 독립 복사본. <see cref="CaptureAttributeDataFromTarget"/> 전에 호출.</summary>
@@ -58,16 +73,20 @@ namespace Core.AbilitySystem.Effect
         /// <summary>멤버 세팅 후 초기화 — Modifier·Execution 변환과 어트리뷰트 캡처. 생성자가 확정한 Definition·Context·Level에 의존.</summary>
         private void Initialize()
         {
-            Executions = ResolveExecutions(Definition);
+            Executions = ResolveExecutions(Definition, out IReadOnlyList<GameplayEffectExecutionDefinition> executionDefinitions);
+            ExecutionDefinitions = executionDefinitions;
             BuildModifierSpecs();
 
             // 캡처: 필요한 캡처 정의를 컨테이너에 모으고 Source를 즉시 캡처. Target은 아직 미정이라 적용 시점에 캡처한다.
             CapturedRelevantAttributes = new GameplayEffectAttributeCaptureSpecContainer();
             SetupAttributeCaptureDefinitions();
+
+            GameplayTagContainer specTags = CapturedSourceTags.GetSpecTags();
+            specTags.AppendTags(Definition.GetAssetTags());
+
             CaptureDataFromSource();
 
-            // magnitude 계산은 캡처 이후 — AttributeBased가 Source 캡처값을 읽기 때문. Target 필요분은 적용 시점에 재계산.
-            CalculateModifierMagnitudes();
+            // magnitude는 여기서 계산하지 않는다 — Target이 아직 없어 Target 캡처 AttributeBased가 실패한다. 적용 때 Target 캡처 직후 계산한다.
         }
 
         /// <summary>
@@ -88,15 +107,25 @@ namespace Core.AbilitySystem.Effect
             }
         }
 
+        /// <summary>레벨만 바꾼다. magnitude 재계산은 호출부가 한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::SetLevel</remarks>
+        internal void SetLevel(float level)
+        {
+            Level = level;
+        }
+
         /// <summary>
         /// 각 슬롯 magnitude를 현재 캡처 기준으로 제자리 재계산한다. AttributeBased가 캡처값에 의존하므로
-        /// 캡처가 갱신될 때마다(생성 시 Source, 적용 시 Target 후) 다시 부른다. 슬롯 배열은 <see cref="BuildModifierSpecs"/>가 준비.
+        /// 적용 때 Target 캡처 직후 부르고, 주기 실행마다 컨테이너도 부른다(non-snapshot 캡처가 지금 값을 따르게). 슬롯 배열은 <see cref="BuildModifierSpecs"/>가 준비.
         /// </summary>
-        private void CalculateModifierMagnitudes()
+        /// <remarks>UE: FGameplayEffectSpec::CalculateModifierMagnitudes</remarks>
+        internal void CalculateModifierMagnitudes()
         {
             for (int i = 0; i < Modifiers.Length; i++)
             {
-                if (Definition.Modifiers[i].AttemptCalculateMagnitude(this, out float evaluatedMagnitude))
+                GameplayModifier modifier = Definition.Modifiers[i];
+                GameplayEffectModifierMagnitude modifierMagnitude = modifier.ModifierMagnitude;
+                if (modifierMagnitude.AttemptCalculateMagnitude(this, out float evaluatedMagnitude))
                 {
                     Modifiers[i].EvaluatedMagnitude = evaluatedMagnitude;
                 }
@@ -117,9 +146,10 @@ namespace Core.AbilitySystem.Effect
             // ① AttributeBased magnitude를 쓰는 modifier의 backing 캡처 정의.
             foreach (GameplayModifier modifier in Definition.Modifiers)
             {
-                if (modifier.MagnitudeCalculationType == MagnitudeCalculationType.AttributeBased)
+                GameplayEffectModifierMagnitude modifierMagnitude = modifier.ModifierMagnitude;
+                if (modifierMagnitude.MagnitudeCalculationType == MagnitudeCalculationType.AttributeBased)
                 {
-                    CapturedRelevantAttributes.AddCaptureDefinition(modifier.AttributeBased.BackingAttribute);
+                    CapturedRelevantAttributes.AddCaptureDefinition(modifierMagnitude.AttributeBasedMagnitude.BackingAttribute);
                 }
             }
 
@@ -131,12 +161,53 @@ namespace Core.AbilitySystem.Effect
                     CapturedRelevantAttributes.AddCaptureDefinition(definition);
                 }
             }
+
+            // ③ Calculation Modifier의 magnitude가 AttributeBased면 그 backing 캡처 정의.
+            foreach (GameplayEffectExecutionDefinition executionDefinition in ExecutionDefinitions)
+            {
+                foreach (GameplayEffectExecutionScopedModifierInfo scopedModifier in executionDefinition.CalculationModifiers)
+                {
+                    GameplayEffectModifierMagnitude modifierMagnitude = scopedModifier.ModifierMagnitude;
+                    foreach (GameplayEffectAttributeCaptureDefinition definition in modifierMagnitude.GetAttributeCaptureDefinitions())
+                    {
+                        CapturedRelevantAttributes.AddCaptureDefinition(definition);
+                    }
+                }
+            }
         }
 
-        /// <summary>Source(발동 주체) 어트리뷰트를 spec 생성 시 1회 캡처. Source ASC는 Context.Instigator — 없으면 캡처가 무효 표시된다.</summary>
+        /// <summary>Source(발동 주체)의 태그·어트리뷰트를 spec 생성 시 1회 캡처. Source ASC는 Context.Instigator — 없으면 어트리뷰트 캡처가 무효 표시되고 태그는 빈다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::CaptureDataFromSource</remarks>
         private void CaptureDataFromSource()
         {
+            RecaptureSourceActorTags();
             CapturedRelevantAttributes.CaptureAttributes(Context.GetInstigator(), AttributeCaptureSource.Source);
+        }
+
+        /// <summary>이 Spec이 대상에게 부여하는 태그(GE 에셋의 Granted Tags)를 <paramref name="outContainer"/>에 더한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::GetAllGrantedTags</remarks>
+        public void GetAllGrantedTags(GameplayTagContainer outContainer)
+        {
+            // TODO Spec 동적 Granted Tags(DynamicGrantedTags)가 생기면 여기서 함께 더한다.
+            outContainer.AppendTags(Definition.GetGrantedTags());
+        }
+
+        /// <summary>이 Spec의 Asset Tags(GE 에셋의 태그)를 <paramref name="outContainer"/>에 더한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::GetAllAssetTags</remarks>
+        public void GetAllAssetTags(GameplayTagContainer outContainer)
+        {
+            // TODO Spec 동적 Asset Tags(DynamicAssetTags)가 생기면 여기서 함께 더한다.
+            outContainer.AppendTags(Definition.GetAssetTags());
+        }
+
+        /// <summary>Source 액터 태그를 Instigator의 지금 소유 태그로 다시 채운다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::RecaptureSourceActorTags</remarks>
+        public void RecaptureSourceActorTags()
+        {
+            GameplayTagContainer actorTags = CapturedSourceTags.GetActorTags();
+            GameplayTagContainer specTags = CapturedSourceTags.GetSpecTags();
+            actorTags.Reset();
+            Context.GetOwnedGameplayTags(actorTags, specTags);
         }
 
         /// <summary>
@@ -149,18 +220,22 @@ namespace Core.AbilitySystem.Effect
             CalculateModifierMagnitudes();
         }
 
-        /// <summary>AQN 목록을 Execution 인스턴스 목록으로 변환한다. resolve 실패는 경고 후 건너뛴다.</summary>
-        private static IReadOnlyList<GameplayEffectExecution> ResolveExecutions(GameplayEffectAsset definition)
+        /// <summary>Execution 정의의 계산 클래스(AQN)를 Execution 인스턴스 목록으로 변환한다. resolve 실패는 경고 후 건너뛴다.</summary>
+        /// <param name="outResolvedDefinitions">반환 목록과 평행한, resolve에 성공한 정의들.</param>
+        private static IReadOnlyList<GameplayEffectExecution> ResolveExecutions(GameplayEffectAsset definition, out IReadOnlyList<GameplayEffectExecutionDefinition> outResolvedDefinitions)
         {
-            IReadOnlyList<string> typeNames = definition.ExecutionTypeNames;
-            if (typeNames == null || typeNames.Count == 0)
+            IReadOnlyList<GameplayEffectExecutionDefinition> executionDefinitions = definition.Executions;
+            if (executionDefinitions == null || executionDefinitions.Count == 0)
             {
+                outResolvedDefinitions = Array.Empty<GameplayEffectExecutionDefinition>();
                 return Array.Empty<GameplayEffectExecution>();
             }
 
-            var executions = new List<GameplayEffectExecution>(typeNames.Count);
-            foreach (string typeName in typeNames)
+            var executions = new List<GameplayEffectExecution>(executionDefinitions.Count);
+            var resolvedDefinitions = new List<GameplayEffectExecutionDefinition>(executionDefinitions.Count);
+            foreach (GameplayEffectExecutionDefinition executionDefinition in executionDefinitions)
             {
+                string typeName = executionDefinition?.CalculationClass;
                 if (string.IsNullOrEmpty(typeName))
                 {
                     continue;
@@ -174,8 +249,10 @@ namespace Core.AbilitySystem.Effect
                 }
 
                 executions.Add((GameplayEffectExecution)Activator.CreateInstance(type));
+                resolvedDefinitions.Add(executionDefinition);
             }
 
+            outResolvedDefinitions = resolvedDefinitions;
             return executions;
         }
 

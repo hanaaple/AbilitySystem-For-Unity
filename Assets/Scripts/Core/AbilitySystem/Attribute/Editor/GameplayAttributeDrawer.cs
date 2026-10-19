@@ -33,9 +33,6 @@ namespace Core.AbilitySystem.Attribute.Editor
             float lineH = EditorGUIUtility.singleLineHeight;
             var row = new Rect(position.x, position.y, position.width, lineH);
 
-            // 두 행을 한 단 들여써서 "이 어트리뷰트 참조"가 하나의 묶음임을 시각적으로 드러낸다(부모 필드 아래 중첩).
-            EditorGUI.indentLevel++;
-
             // Attribute Set (0 = None → 하위 Field 초기화)
             Type[] setTypes = AttributeReflectionUtility.GetAttributeSetTypes();
             string[] setNames = GetSetDisplayNames(setTypes);
@@ -65,8 +62,6 @@ namespace Core.AbilitySystem.Attribute.Editor
             {
                 EditorGUI.LabelField(row, "Attribute", "—");
             }
-
-            EditorGUI.indentLevel--;
         }
 
         private static string[] GetSetDisplayNames(Type[] setTypes)

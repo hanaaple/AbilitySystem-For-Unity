@@ -123,8 +123,10 @@ namespace Test.Editor
             object boxed = default(GameplayModifier);
             SetPrivateField(boxed, "attribute", new GameplayAttribute(target));
             SetPrivateField(boxed, "operation", op);
-            SetPrivateField(boxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(boxed, "magnitude", magnitude);
+            object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
+            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
+            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 
@@ -143,8 +145,10 @@ namespace Test.Editor
             object boxed = default(GameplayModifier);
             SetPrivateField(boxed, "attribute", new GameplayAttribute(target));
             SetPrivateField(boxed, "operation", GameplayModifierOperation.AddBase);
-            SetPrivateField(boxed, "magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
-            SetPrivateField(boxed, "attributeBased", attributeBased);
+            object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
+            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
+            SetPrivateField(magnitudeBoxed, "attributeBasedMagnitude", attributeBased);
+            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 

@@ -22,18 +22,19 @@ MonoBehaviour:
         Culture=neutral, PublicKeyToken=null
       fieldName: maxHealth
     operation: 0
-    magnitudeCalculationType: 1
-    magnitude: -10
-    attributeBased:
-      backingAttribute:
-        captureSource: 1
-        attribute:
-          attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
-            Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-          fieldName: stamina
-        snapshot: 0
-      captureValueType: 0
-      coefficient: 0
-      preMultiplyAdditive: 0
-      postMultiplyAdditive: 0
-  executionTypeNames: []
+    modifierMagnitude:
+      magnitudeCalculationType: 1
+      scalableFloatMagnitude: -10
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 1
+          attribute:
+            attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
+              Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+            fieldName: stamina
+          snapshot: 0
+        captureValueType: 0
+        coefficient: 0
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
+  executions: []
