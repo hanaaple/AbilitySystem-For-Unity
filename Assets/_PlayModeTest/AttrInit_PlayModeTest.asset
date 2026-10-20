@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AttrInit_PlayModeTest
   m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Attribute.AttributeDefinitionAsset
   attributeSets:
-  - attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+  - attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     attributes:
     - fieldName: health

@@ -1,4 +1,4 @@
-using Character;
+using Game.Character;
 using Core.AbilitySystem;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;

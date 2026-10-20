@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Box Attribute Set
   m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Attribute.AttributeDefinitionAsset
   attributeSets:
-  - attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  - attributeSetTypeName: Game.BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
     attributes:
     - fieldName: a

@@ -18,7 +18,7 @@ MonoBehaviour:
   executePeriodicEffectOnApplication: 1
   modifiers:
   - attribute:
-      attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: maxStamina
     operation: 0
@@ -29,7 +29,7 @@ MonoBehaviour:
         backingAttribute:
           captureSource: 0
           attribute:
-            attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
+            attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
               Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
             fieldName: health
           snapshot: 0
@@ -38,7 +38,7 @@ MonoBehaviour:
         preMultiplyAdditive: 0
         postMultiplyAdditive: 0
   - attribute:
-      attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: speed
     operation: 0
@@ -49,7 +49,7 @@ MonoBehaviour:
         backingAttribute:
           captureSource: 0
           attribute:
-            attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
+            attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
               Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
             fieldName: stamina
           snapshot: 0
@@ -58,6 +58,6 @@ MonoBehaviour:
         preMultiplyAdditive: 0
         postMultiplyAdditive: 0
   executions:
-  - calculationClass: Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  - calculationClass: Game.Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
     calculationModifiers: []

@@ -2,7 +2,7 @@ using System;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
 
-namespace Character
+namespace Game.Character
 {
     public sealed class SpeedBoostExecution : GameplayEffectExecution
     {
