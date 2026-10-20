@@ -456,7 +456,7 @@ namespace Core.AbilitySystem.Effect
                 }
 
                 GameplayModifierEvaluatedData evaluatedData = new GameplayModifierEvaluatedData(modDef.ToResolvedAttribute(), spec.Modifiers[i].EvaluatedMagnitude, modDef.Operation);
-                ApplyModToAttribute(evaluatedData.Handle, evaluatedData.Operation, evaluatedData.Magnitude, new GameplayEffectModCallbackData(spec, evaluatedData, _owner));
+                InternalExecuteMod(spec, evaluatedData);
             }
 
             RunExecutions(spec);
@@ -505,19 +505,46 @@ namespace Core.AbilitySystem.Effect
 
                 foreach (GameplayModifierEvaluatedData evaluatedData in execOutput.OutputModifiers)
                 {
-                    ApplyModToAttribute(evaluatedData.Handle, evaluatedData.Operation, evaluatedData.Magnitude, new GameplayEffectModCallbackData(spec, evaluatedData, _owner));
+                    InternalExecuteMod(spec, evaluatedData);
                 }
             }
         }
 
         /// <summary>
-        /// 평가 끝난 modifier 1건을 대상 BaseValue에 적용한다. Execute 경로의 유일한 쓰기 지점 —
-        /// Modifier와 Execution 출력이 같은 경로를 타야 연산 지원 범위가 어긋나지 않는다.
+        /// 평가 끝난 modifier 1건을 실행한다 — 대상 Set의 <see cref="AttributeSet.PreGameplayEffectExecute"/>가 수치를 고치거나 버릴 기회를 갖고,
+        /// 적용 뒤 <see cref="AttributeSet.PostGameplayEffectExecute"/>가 후처리한다. Execute 경로의 유일한 쓰기 지점 —
+        /// Modifier와 Execution 출력이 같은 경로를 타야 연산 지원 범위·훅 호출이 어긋나지 않는다.
         /// </summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::InternalExecuteMod</remarks>
+        private void InternalExecuteMod(GameplayEffectSpec spec, GameplayModifierEvaluatedData evaluatedData)
+        {
+            // 존재하지 않는 어트리뷰트(무효 핸들 등)면 미러가 없으므로 건너뛴다.
+            GameplayAttributeHandle handle = evaluatedData.Handle;
+            if (!handle.IsValid || !_owner.TryGetAttributeData(handle, out _))
+            {
+                return;
+            }
+
+            AttributeSet attributeSet = _owner.GetAttributeSet(handle);
+            GameplayEffectModCallbackData executeData = new GameplayEffectModCallbackData(spec, evaluatedData, _owner);
+
+            if (!attributeSet.PreGameplayEffectExecute(executeData))
+            {
+                return;
+            }
+
+            // Pre가 고쳤을 수 있으니 executeData에서 다시 읽는다
+            GameplayModifierEvaluatedData finalData = executeData.EvaluatedData;
+            ApplyModToAttribute(finalData.Handle, finalData.Operation, finalData.Magnitude, executeData);
+
+            attributeSet.PostGameplayEffectExecute(executeData);
+        }
+
+        /// <summary>modifier 1건을 BaseValue에 적용한다. 원인(<paramref name="modData"/>)은 이 변경의 값 변경 이벤트에 실린다.</summary>
         /// <remarks>UE: FActiveGameplayEffectsContainer::ApplyModToAttribute</remarks>
         private void ApplyModToAttribute(GameplayAttributeHandle gameplayAttributeHandle, GameplayModifierOperation modifierOperation, float modifierMagnitude, GameplayEffectModCallbackData modData)
         {
-            // 존재하지 않는 어트리뷰트(무효 핸들 등)면 미러가 없으므로 건너뛴다.
+            // Pre가 대상을 바꿨을 수 있어 다시 거른다
             if (!gameplayAttributeHandle.IsValid || !_owner.TryGetAttributeData(gameplayAttributeHandle, out _))
             {
                 return;
@@ -556,12 +583,17 @@ namespace Core.AbilitySystem.Effect
             InternalUpdateNumericalAttribute(gameplayAttributeHandle, attributeSet, newValue);
         }
 
-        /// <summary>어트리뷰트의 CurrentValue를 쓰고 값 변경 이벤트를 부른다. 값이 그대로여도 부른다 — 구독자가 "적용됐지만 안 바뀜"(0 데미지 등)도 받는다.</summary>
+        /// <summary>
+        /// 어트리뷰트의 CurrentValue를 쓰고 값 변경 이벤트를 부른다. 값이 그대로여도 부른다 — 구독자가 "적용됐지만 안 바뀜"(0 데미지 등)도 받는다.
+        /// 쓰기 앞뒤로 <see cref="AttributeSet.PreAttributeChange"/>·<see cref="AttributeSet.PostAttributeChange"/>를 부르고, Pre가 고친 값을 쓰고 알린다.
+        /// </summary>
         /// <remarks>UE: FActiveGameplayEffectsContainer::InternalUpdateNumericalAttribute</remarks>
         private void InternalUpdateNumericalAttribute(GameplayAttributeHandle gameplayAttributeHandle, AttributeSet attributeSet, float newValue)
         {
             float oldValue = gameplayAttributeHandle.GetCurrentValue(attributeSet);
+            attributeSet.PreAttributeChange(gameplayAttributeHandle, ref newValue);
             gameplayAttributeHandle.SetCurrentValueRaw(attributeSet, newValue);
+            attributeSet.PostAttributeChange(gameplayAttributeHandle, oldValue, newValue);
 
             // 비우기 전에 지역 변수로 받는다 — 구독자가 GE를 적용해 원인 필드를 다시 채워도 이번 이벤트의 원인은 그대로다
             GameplayEffectModCallbackData modData = _currentModCallbackData;
@@ -734,16 +766,12 @@ namespace Core.AbilitySystem.Effect
         }
 
         /// <summary>
-        /// 어트리뷰트의 CurrentValue를 반환 — aggregator가 있으면 <see cref="AttributeAggregator.Evaluate"/>로만 계산해 낸다(외부는 Evaluate 외 경로 없음).
-        /// aggregator가 없으면 mod가 없어 current == base이므로 미러를 읽는다.
+        /// 어트리뷰트의 CurrentValue를 반환 — 저장값(AttributeData)을 읽는다. aggregator 계산값이 아닌 이유: 저장 직전 <see cref="AttributeSet.PreAttributeChange"/>가
+        /// 고친 값(클램프 등)이 조회에도 보여야 한다. 저장값은 aggregator가 바뀔 때마다 <see cref="InternalUpdateNumericalAttribute"/>가 동기로 갱신한다.
         /// </summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetNumericAttribute</remarks>
         public float GetAttributeCurrentValue(GameplayAttributeHandle handle)
         {
-            if (_attributeAggregatorMap.TryGetValue(handle, out AttributeAggregator aggregator))
-            {
-                return aggregator.Evaluate(default);
-            }
-
             return handle.GetCurrentValue(_owner.GetAttributeSet(handle));
         }
 
