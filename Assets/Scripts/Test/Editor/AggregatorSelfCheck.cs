@@ -17,6 +17,7 @@ namespace Test.Editor
     // G: 라이브 재평가가 같은 aggregator의 다른 GE mod를 건드리지 않음 / H: 주기 실행마다 magnitude 재계산.
     // I: 어트리뷰트 값 변경 이벤트(구독·해제, Old/New, 값이 같아도 울림, 원인 GEModData 유무).
     // J: PreAttributeBaseChange에서 고친 Base 값이 Base·Current·Post·값 변경 이벤트에 그대로 쓰임.
+    // K: AttributeSet 훅(TestAtrributeSet) — Pre/PostGameplayEffectExecute(수치 변경·버림·meta Damage), Pre/PostAttributeChange(Current 클램프).
     public static class AggregatorSelfCheck
     {
         private const float Eps = 0.001f;
@@ -60,6 +61,7 @@ namespace Test.Editor
                 RunPeriodicRecalculationChecks(asc, Check);
                 RunAttributeValueChangeEventChecks(asc, Check);
                 RunPreAttributeBaseChangeClampChecks(asc, Check);
+                RunAttributeSetHookChecks(asc, Check);
             }
             catch (Exception e)
             {
@@ -543,6 +545,65 @@ namespace Test.Editor
             asc.RemoveAttributeSet(set);
             UnityEngine.Object.DestroyImmediate(damageGe);
             UnityEngine.Object.DestroyImmediate(bonusGe);
+        }
+
+        // ── K. AttributeSet 훅 (TestAtrributeSet) ──
+        private static void RunAttributeSetHookChecks(AbilitySystemComponent asc, Action<string, bool> check)
+        {
+            TestAtrributeSet set = new TestAtrributeSet();
+            set.health = new AttributeData(100f, 100f);
+            set.damage = new AttributeData(0f, 0f);
+            asc.AddSpawnedAttribute(set);
+            GameplayAttributeHandle health = TestAtrributeSet.Health;
+            GameplayAttributeHandle damage = TestAtrributeSet.Damage;
+
+            List<OnAttributeChangeData> healthEvents = new List<OnAttributeChangeData>();
+            void OnHealthChanged(OnAttributeChangeData data)
+            {
+                healthEvents.Add(data);
+            }
+
+            asc.GetGameplayAttributeValueChangeDelegate(health).OnValueChange += OnHealthChanged;
+
+            // meta Damage → Post가 Health에 반영
+            GameplayEffectAsset damage30 = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(damage, GameplayModifierOperation.AddBase, 30f));
+            asc.ApplyGameplayEffectToSelf(damage30);
+            check("meta Damage 30 → Post가 Health 100 → 70, Damage는 0으로", Approx(asc.GetAttributeBaseValue(health), 70f) && Approx(asc.GetAttributeBaseValue(damage), 0f));
+            check("Pre가 1번 불림, Post가 받은 데미지 30", set.PreExecuteCount == 1 && Approx(set.LastExecutedDamage, 30f));
+            check("Health 값 변경 이벤트 100 → 70", healthEvents.Count == 1 && Approx(healthEvents[0].OldValue, 100f) && Approx(healthEvents[0].NewValue, 70f));
+
+            // Pre가 수치를 고침
+            set.DamageScale = 0.5f;
+            GameplayEffectAsset damage40 = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(damage, GameplayModifierOperation.AddBase, 40f));
+            asc.ApplyGameplayEffectToSelf(damage40);
+            check("Pre가 배율 0.5 → Damage 20만 적용, Health 70 → 50", Approx(set.LastExecutedDamage, 20f) && Approx(asc.GetAttributeBaseValue(health), 50f));
+            set.DamageScale = 1f;
+
+            // Pre가 버림
+            set.RejectExecute = true;
+            healthEvents.Clear();
+            int preCountBeforeReject = set.PreExecuteCount;
+            asc.ApplyGameplayEffectToSelf(damage40);
+            check("Pre가 false → Pre는 불렸지만 Health 50·Damage 0 그대로, 이벤트 없음", set.PreExecuteCount == preCountBeforeReject + 1 && Approx(asc.GetAttributeBaseValue(health), 50f) && Approx(asc.GetAttributeBaseValue(damage), 0f) && healthEvents.Count == 0);
+            set.RejectExecute = false;
+
+            // Current 클램프 (mod 등록 — 실행이 아니라 Pre/PostGameplayEffectExecute는 안 불림)
+            int preCountBeforeBuff = set.PreExecuteCount;
+            healthEvents.Clear();
+            GameplayEffectAsset healthBuff = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 100f));
+            ActiveGameplayEffectHandle buffHandle = asc.ApplyGameplayEffectToSelf(healthBuff);
+            check("Infinite +100 (Base 50) → PreAttributeChange가 Current 150을 100으로, Base는 50 그대로", Approx(asc.GetAttributeCurrentValue(health), 100f) && Approx(asc.GetAttributeBaseValue(health), 50f));
+            check("PostAttributeChange가 50 → 100을 받음, 값 변경 이벤트도 100", Approx(set.LastChangeOldValue, 50f) && Approx(set.LastChangeNewValue, 100f) && healthEvents.Count == 1 && Approx(healthEvents[0].NewValue, 100f));
+            check("mod 등록엔 PreGameplayEffectExecute가 안 불림", set.PreExecuteCount == preCountBeforeBuff);
+
+            asc.RemoveActiveGameplayEffect(buffHandle);
+            check("버프 제거 → Current 50, PostAttributeChange 100 → 50", Approx(asc.GetAttributeCurrentValue(health), 50f) && Approx(set.LastChangeOldValue, 100f) && Approx(set.LastChangeNewValue, 50f));
+
+            asc.GetGameplayAttributeValueChangeDelegate(health).OnValueChange -= OnHealthChanged;
+            asc.RemoveAttributeSet(set);
+            UnityEngine.Object.DestroyImmediate(damage30);
+            UnityEngine.Object.DestroyImmediate(damage40);
+            UnityEngine.Object.DestroyImmediate(healthBuff);
         }
 
         private class ClampedAttributeSet : AttributeSet
