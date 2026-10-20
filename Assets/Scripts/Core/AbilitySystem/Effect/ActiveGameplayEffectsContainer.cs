@@ -18,9 +18,11 @@ namespace Core.AbilitySystem.Effect
         // 지연 생성 — 처음 mod를 받거나 base가 바뀔 때 AttributeData.BaseValue로 시드해 만든다.
         private readonly Dictionary<GameplayAttributeHandle, AttributeAggregator> _attributeAggregatorMap = new();
 
-        private readonly Dictionary<GameplayAttributeHandle, OnGameplayAttributeValueChange> _attributeValueChangeDelegates = new();
+        private readonly Dictionary<GameplayAttributeHandle, GameplayAttributeValueChangeEvent> _attributeValueChangeDelegates = new();
 
-        private delegate void OnGameplayAttributeValueChange(GameplayAttributeHandle attributeHandle, float oldValue, float newValue);
+        // ApplyModToAttribute가 Base를 바꾸기 직전에 넣고, 그 변경이 dirty를 거쳐 닿는 InternalUpdateNumericalAttribute가 값 변경 이벤트에 실어 보낸 뒤 비운다.
+        // Base 변경 API에 원인 인자가 없어 그 사이를 필드로 건넌다(dirty 전파가 동기라 성립).
+        private GameplayEffectModCallbackData _currentModCallbackData;
 
         // Tick에서 만료 핸들을 모으는 스크래치(순회 중 제거 방지).
         private readonly List<ActiveGameplayEffectHandle> _expiredEffects = new();
@@ -453,7 +455,8 @@ namespace Core.AbilitySystem.Effect
                     continue;
                 }
 
-                ApplyModToAttribute(modDef.ToResolvedAttribute(), modDef.Operation, spec.Modifiers[i].EvaluatedMagnitude);
+                GameplayModifierEvaluatedData evaluatedData = new GameplayModifierEvaluatedData(modDef.ToResolvedAttribute(), spec.Modifiers[i].EvaluatedMagnitude, modDef.Operation);
+                ApplyModToAttribute(evaluatedData.Handle, evaluatedData.Operation, evaluatedData.Magnitude, new GameplayEffectModCallbackData(spec, evaluatedData, _owner));
             }
 
             RunExecutions(spec);
@@ -502,7 +505,7 @@ namespace Core.AbilitySystem.Effect
 
                 foreach (GameplayModifierEvaluatedData evaluatedData in execOutput.OutputModifiers)
                 {
-                    ApplyModToAttribute(evaluatedData.Handle, evaluatedData.Operation, evaluatedData.Magnitude);;
+                    ApplyModToAttribute(evaluatedData.Handle, evaluatedData.Operation, evaluatedData.Magnitude, new GameplayEffectModCallbackData(spec, evaluatedData, _owner));
                 }
             }
         }
@@ -511,7 +514,8 @@ namespace Core.AbilitySystem.Effect
         /// 평가 끝난 modifier 1건을 대상 BaseValue에 적용한다. Execute 경로의 유일한 쓰기 지점 —
         /// Modifier와 Execution 출력이 같은 경로를 타야 연산 지원 범위가 어긋나지 않는다.
         /// </summary>
-        private void ApplyModToAttribute(GameplayAttributeHandle gameplayAttributeHandle, GameplayModifierOperation modifierOperation, float modifierMagnitude)
+        /// <remarks>UE: FActiveGameplayEffectsContainer::ApplyModToAttribute</remarks>
+        private void ApplyModToAttribute(GameplayAttributeHandle gameplayAttributeHandle, GameplayModifierOperation modifierOperation, float modifierMagnitude, GameplayEffectModCallbackData modData)
         {
             // 존재하지 않는 어트리뷰트(무효 핸들 등)면 미러가 없으므로 건너뛴다.
             if (!gameplayAttributeHandle.IsValid || !_owner.TryGetAttributeData(gameplayAttributeHandle, out _))
@@ -519,10 +523,19 @@ namespace Core.AbilitySystem.Effect
                 return;
             }
 
+            _currentModCallbackData = modData;
+
             float baseValue = GetAttributeBaseValue(gameplayAttributeHandle);
             float newBaseValue = AttributeAggregator.ExecModOnBaseValue(baseValue, modifierOperation, modifierMagnitude);
 
             SetAttributeBaseValue(gameplayAttributeHandle, newBaseValue);
+
+            // 남아 있으면 이 변경이 InternalUpdateNumericalAttribute까지 닿지 않은 것 — 다음 변경에 엉뚱한 원인이 실리지 않게 비운다
+            if (_currentModCallbackData != null)
+            {
+                Debug.LogWarning($"ActiveGameplayEffectsContainer.ApplyModToAttribute: 원인 정보가 값 변경 이벤트에 실리지 않았습니다 — {gameplayAttributeHandle}");
+                _currentModCallbackData = null;
+            }
         }
 
         // ── 재계산 (aggregator OnDirty 구독) ──────────────────────────────────────
@@ -540,27 +553,38 @@ namespace Core.AbilitySystem.Effect
                 return;
             }
 
-            float oldValue = gameplayAttributeHandle.GetCurrentValue(attributeSet);
-
-            if (Mathf.Approximately(newValue, oldValue))
-            {
-                return;
-            }
-
             InternalUpdateNumericalAttribute(gameplayAttributeHandle, attributeSet, newValue);
         }
 
-        /// <summary>어트리뷰트의 CurrentValue를 쓰고 값 변경 델리게이트를 부른다.</summary>
+        /// <summary>어트리뷰트의 CurrentValue를 쓰고 값 변경 이벤트를 부른다. 값이 그대로여도 부른다 — 구독자가 "적용됐지만 안 바뀜"(0 데미지 등)도 받는다.</summary>
         /// <remarks>UE: FActiveGameplayEffectsContainer::InternalUpdateNumericalAttribute</remarks>
         private void InternalUpdateNumericalAttribute(GameplayAttributeHandle gameplayAttributeHandle, AttributeSet attributeSet, float newValue)
         {
             float oldValue = gameplayAttributeHandle.GetCurrentValue(attributeSet);
             gameplayAttributeHandle.SetCurrentValueRaw(attributeSet, newValue);
 
-            if (_attributeValueChangeDelegates.TryGetValue(gameplayAttributeHandle, out OnGameplayAttributeValueChange attributeChanged))
+            // 비우기 전에 지역 변수로 받는다 — 구독자가 GE를 적용해 원인 필드를 다시 채워도 이번 이벤트의 원인은 그대로다
+            GameplayEffectModCallbackData modData = _currentModCallbackData;
+
+            if (_attributeValueChangeDelegates.TryGetValue(gameplayAttributeHandle, out GameplayAttributeValueChangeEvent attributeChanged))
             {
-                attributeChanged?.Invoke(gameplayAttributeHandle, oldValue, newValue);
+                attributeChanged.Broadcast(new OnAttributeChangeData(gameplayAttributeHandle, newValue, oldValue, modData));
             }
+
+            _currentModCallbackData = null;
+        }
+
+        /// <summary>어트리뷰트의 값 변경 이벤트를 찾거나 없으면 만들어 반환한다 — 구독자는 반환값에 핸들러를 건다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetGameplayAttributeValueChangeDelegate</remarks>
+        public GameplayAttributeValueChangeEvent GetGameplayAttributeValueChangeDelegate(GameplayAttributeHandle attributeHandle)
+        {
+            if (!_attributeValueChangeDelegates.TryGetValue(attributeHandle, out GameplayAttributeValueChangeEvent attributeChanged))
+            {
+                attributeChanged = new GameplayAttributeValueChangeEvent();
+                _attributeValueChangeDelegates.Add(attributeHandle, attributeChanged);
+            }
+
+            return attributeChanged;
         }
 
         /// <summary>
