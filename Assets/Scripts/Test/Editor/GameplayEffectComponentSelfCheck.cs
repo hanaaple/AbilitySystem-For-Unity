@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Character;
+using Game.Character;
 using Core.AbilitySystem;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;

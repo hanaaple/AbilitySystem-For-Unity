@@ -4,7 +4,7 @@ using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
 
-namespace Character
+namespace Game.Character
 {
     /// <summary>
     /// 트리거 방(Room) 디버그 도구 — 방에 들어온 액터에게 Room 자신의 ASC를 source(instigator)로 GE를 적용하고, 나가면 해제한다. Source=Room / Target=액터 구도라 AttributeBased 캡처·snapshot·주기 실행을 씬에서 손쉽게 재현·관찰하는 용도.

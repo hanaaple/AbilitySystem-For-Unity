@@ -1,6 +1,6 @@
 using Core.AbilitySystem.Attribute;
 
-namespace Character
+namespace Game.Character
 {
     public class CharacterAttributeSet : AttributeSet
     {

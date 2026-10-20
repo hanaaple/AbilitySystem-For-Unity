@@ -1,6 +1,6 @@
 # AbilitySystem — Attribute
 
-> **최종 갱신:** 2026-09-10 (KST)
+> **최종 갱신:** 2026-10-20 (KST)
 
 캐릭터 수치(체력·스태미나·이동속도 등)를 담고 읽고/쓰는 계층. 상위 개요는 [overview](overview.md).
 
@@ -83,7 +83,7 @@ C#엔 그런 코드 생성 매크로가 없다. 그래서 그 정적 접근자�
 AttributeDefinitionAsset (SO)
 └ attributeSets: [
     AttributeSetDefinition
-      ├ attributeSetTypeName : "Character.CharacterAttributeSet, Assembly-CSharp"   ← 어느 Set (AQN)
+      ├ attributeSetTypeName : "Game.Character.CharacterAttributeSet, Assembly-CSharp"   ← 어느 Set (AQN)
       └ attributes: [
           AttributeFieldDefinition { fieldName: "health",    baseValue: 100 }        ← 어느 필드에 · 얼마
           AttributeFieldDefinition { fieldName: "maxHealth", baseValue: 100 }

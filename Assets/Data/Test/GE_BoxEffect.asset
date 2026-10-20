@@ -18,6 +18,6 @@ MonoBehaviour:
   executePeriodicEffectOnApplication: 1
   modifiers: []
   executions:
-  - calculationClass: Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  - calculationClass: Game.Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
     calculationModifiers: []

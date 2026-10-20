@@ -18,7 +18,7 @@ MonoBehaviour:
   executePeriodicEffectOnApplication: 1
   modifiers:
   - attribute:
-      attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: speed
     operation: 0
@@ -29,7 +29,7 @@ MonoBehaviour:
         backingAttribute:
           captureSource: 0
           attribute:
-            attributeSetTypeName: Character.CombatAttributeSet, Assembly-CSharp,
+            attributeSetTypeName: Game.Character.CombatAttributeSet, Assembly-CSharp,
               Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
             fieldName: damage
           snapshot: 0
@@ -60,7 +60,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: speed
     operation: 0
@@ -101,13 +101,13 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   executions:
-  - calculationClass: Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0,
+  - calculationClass: Game.Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     calculationModifiers:
     - capturedAttribute:
         captureSource: 1
         attribute:
-          attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp,
+          attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
             Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
           fieldName: health
         snapshot: 1

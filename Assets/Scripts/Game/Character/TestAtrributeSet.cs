@@ -2,7 +2,7 @@ using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
 
-namespace Character
+namespace Game.Character
 {
     /// <summary>
     /// AttributeSet 훅 검증용 Set. <c>damage</c>는 meta attribute — GE가 여기에 데미지를 넣으면 <see cref="PostGameplayEffectExecute"/>가 Health에서 빼고 0으로 되돌린다.
