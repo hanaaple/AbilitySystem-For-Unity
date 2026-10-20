@@ -3,6 +3,16 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
 
+### 2026-10-20 — `PreAttributeBaseChange`가 새 Base 값을 고칠 수 있게 (`ref`)
+
+**요청.** 유저: "AttributeSet.PreAttributeBaseChange로 값을 고칠 수 없음 이거 정확히 뭘 고칠수 없다는거야" → 설명 뒤 "고쳐".
+
+**원인.** `newValue`를 값으로 받아 override 안에서 클램프해도 사본만 바뀌고, 컨테이너 `SetAttributeBaseValue`는 원래 값을 썼다. UE는 `float& NewValue`(`AttributeSet.h:229`, 주석 "This function should enforce clamping")이고 `SetAttributeBaseValue`가 훅이 고친 값으로 Base·Current·`PostAttributeBaseChange`까지 쓴다(`GameplayEffect.cpp:3817`~`:3856`).
+
+**고침.** 선언을 `ref float newValue`로, 호출을 `ref newBaseValue`로. override한 클래스는 없었다(`Assets` 검색). `PostAttributeBaseChange`는 UE도 값 전달(알림 전용)이라 그대로 — 이제 클램프된 값이 넘어간다.
+
+**확인.** 유저 "테스트하고 커밋해". 컴파일(Unity 없이) 런타임·에디터 통과. Aggregator 셀프체크 J(5건) — 셀프체크 안에 Base를 [0, 100]으로 막는 테스트용 Set을 두고: aggregator 없는 경로 SetBase -50 → Base·Current 0, Post가 0을 받음 / Instant -30(10에서) → 0, 값 변경 이벤트도 0 / aggregator 있는 경로 SetBase 200 → Base 100·Current 105(+5 mod), Post가 100을 받음. 결과 74/0, 회귀 Modifier Tag 65/0·GE Component 89/0·Calculation Modifier 19/0(Unity MCP로 메뉴 실행).
+
 ### 2026-08-22 — AttributeSet owner back-ref 추가 (미완) (→D6(Set owner back-ref))
 
 **요청.** UE `ATTRIBUTE_ACCESSORS`의 `SetHealth`류를 이 프로젝트에도 — "각 attribute에 일괄 적용되는 접근자". 논의 결론: UE의 `SetX`도 owning ASC로 위임하므로 "Set에 두기 vs ASC로만"은 양자택일이 아니라 *얼굴은 Set, 쓰기는 ASC 위임*. → `AttributeSet`에 owning ASC back-ref 필요(→D6(Set owner back-ref)).
