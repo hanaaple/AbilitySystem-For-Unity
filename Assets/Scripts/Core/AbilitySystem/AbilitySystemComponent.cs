@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;
 using Core.AbilitySystem.Tag;
+using Core.Common;
 using UnityEngine;
 
 namespace Core.AbilitySystem
@@ -20,9 +22,24 @@ namespace Core.AbilitySystem
         // 소유 태그. Loose 태그(코드가 직접 넣는 태그)와 활성 GE의 부여 태그가 들어온다.
         private readonly GameplayTagCountContainer _gameplayTagCountContainer = new();
 
+        private readonly GameplayAbilitySpecContainer _activatableAbilities = new();
+
+        // 어빌리티 목록 스코프 락. 잠긴 동안의 부여·해제·전체 해제는 아래에 보류했다가 마지막 락이 풀릴 때 처리한다.
+        private int _abilityScopeLockCount;
+        private readonly List<GameplayAbilitySpec> _abilityPendingAdds = new();
+        private readonly List<GameplayAbilitySpecHandle> _abilityPendingRemoves = new();
+        private bool _abilityPendingClearAll;
+
+        /// <summary>어빌리티가 동작하는 액터 정보. 기본값은 Owner = Avatar = 이 GameObject.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilityActorInfo</remarks>
+        public GameplayAbilityActorInfo AbilityActorInfo { get; } = new();
+
         private void Awake()
         {
             _activeGameplayEffectsContainer = new ActiveGameplayEffectsContainer(this);
+            _activatableAbilities.RegisterWithOwner(this);
+
+            InitAbilityActorInfo(gameObject, gameObject);
 
             // AddSet은 AttributeSet 필드에 값을 직접 세팅할 뿐 CurrentValue 갱신 경로를 거치지 않아
             // 초기화 중 AttributeChanged가 발화하지 않는다(불필요한 재평가 없음).
@@ -445,6 +462,277 @@ namespace Core.AbilitySystem
         public bool HasAttributeSetForAttribute(GameplayAttributeHandle attributeHandle)
         {
             return attributeHandle.IsValid && GetAttributeSet(attributeHandle) != null;
+        }
+
+        // ── 어빌리티 ──────────────────────────────────────────────────────────────
+
+        /// <summary>액터 정보를 초기화한다. Avatar가 바뀌면 부여된 어빌리티들에 <see cref="GameplayAbility.OnAvatarSet"/>을 알린다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::InitAbilityActorInfo</remarks>
+        public void InitAbilityActorInfo(GameObject ownerActor, GameObject avatarActor)
+        {
+            if (ownerActor == null)
+            {
+                Debug.LogError("[ASC] InitAbilityActorInfo: ownerActor가 null.");
+                return;
+            }
+
+            bool avatarChanged = avatarActor != AbilityActorInfo.AvatarActor;
+
+            AbilityActorInfo.InitFromActor(ownerActor, avatarActor, this);
+
+            if (!avatarChanged)
+            {
+                return;
+            }
+
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    // 인스턴스가 없으면 이미 해제됐거나, 만들어질 때 OnGiveAbility에서 알린다.
+                    GameplayAbility abilityInstance = spec.GetPrimaryInstance();
+                    abilityInstance?.OnAvatarSet(AbilityActorInfo, spec);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 어빌리티를 부여한다. 정의의 원형을 복제해 이 ASC 전용 인스턴스를 만든다. 같은 정의라도 Spec마다 따로 부여된다.
+        /// 정의가 null이거나 원형이 비었으면 Invalid. 스코프 락 중이면 보류하고 Spec의 핸들을 돌려준다(락이 풀릴 때 부여).
+        /// </summary>
+        /// <remarks>UE: UAbilitySystemComponent::GiveAbility</remarks>
+        public GameplayAbilitySpecHandle GiveAbility(GameplayAbilitySpec spec)
+        {
+            if (spec == null || spec.Ability == null)
+            {
+                Debug.LogError("[ASC] GiveAbility: Spec 또는 어빌리티 정의가 null.");
+                return GameplayAbilitySpecHandle.Invalid;
+            }
+
+            if (spec.Ability.AbilityTemplate == null)
+            {
+                Debug.LogError($"[ASC] GiveAbility: '{spec.Ability.name}'의 어빌리티 클래스가 비었거나 찾을 수 없음.");
+                return GameplayAbilitySpecHandle.Invalid;
+            }
+
+            if (_abilityScopeLockCount > 0)
+            {
+                _abilityPendingAdds.Add(spec);
+                return spec.Handle;
+            }
+
+            using (new ScopedAbilityListLock(this))
+            {
+                _activatableAbilities.Items.Add(spec);
+                CreateNewInstanceOfAbility(spec);
+                OnGiveAbility(spec);
+            }
+
+            return spec.Handle;
+        }
+
+        /// <summary>부여된 어빌리티를 제거한다. 없는 핸들이면 아무것도 하지 않는다. 스코프 락 중이면 보류한다(락이 풀릴 때 제거).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::ClearAbility</remarks>
+        public void ClearAbility(GameplayAbilitySpecHandle handle)
+        {
+            for (int i = 0; i < _abilityPendingAdds.Count; i++)
+            {
+                if (_abilityPendingAdds[i].Handle.Equals(handle))
+                {
+                    RemoveAtSwap(_abilityPendingAdds, i);
+                    return;
+                }
+            }
+
+            List<GameplayAbilitySpec> items = _activatableAbilities.Items;
+            for (int i = 0; i < items.Count; i++)
+            {
+                GameplayAbilitySpec spec = items[i];
+                if (!spec.Handle.Equals(handle))
+                {
+                    continue;
+                }
+
+                if (_abilityScopeLockCount > 0)
+                {
+                    if (!spec.PendingRemove)
+                    {
+                        spec.PendingRemove = true;
+                        _abilityPendingRemoves.Add(handle);
+                    }
+                }
+                else
+                {
+                    // OnRemoveAbility가 다시 부여·해제를 부를 수 있어 잠근 채 알리고 지운다.
+                    using (new ScopedAbilityListLock(this))
+                    {
+                        OnRemoveAbility(spec);
+                        RemoveAtSwap(items, i);
+                    }
+                }
+
+                return;
+            }
+        }
+
+        // UE TArray::RemoveAtSwap — 마지막 요소를 빈 자리로 옮겨 지운다(순서 보존 안 함).
+        private static void RemoveAtSwap<T>(List<T> list, int index)
+        {
+            int last = list.Count - 1;
+            list[index] = list[last];
+            list.RemoveAt(last);
+        }
+
+        /// <summary>부여된 어빌리티를 모두 제거한다. 스코프 락 중이면 락이 풀릴 때 처리한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::ClearAllAbilities</remarks>
+        public void ClearAllAbilities()
+        {
+            if (_abilityScopeLockCount > 0)
+            {
+                _abilityPendingClearAll = true;
+                return;
+            }
+
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    OnRemoveAbility(spec);
+                }
+
+                _activatableAbilities.Items.Clear();
+                _abilityPendingClearAll = false;
+            }
+        }
+
+        /// <summary>핸들의 Spec. 없으면 null. 기본은 해제가 보류된 Spec까지 찾는다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::FindAbilitySpecFromHandle</remarks>
+        public GameplayAbilitySpec FindAbilitySpecFromHandle(GameplayAbilitySpecHandle handle, ConsiderPending considerPending = ConsiderPending.PendingRemove)
+        {
+            bool considerPendingRemove = (considerPending & ConsiderPending.PendingRemove) != 0;
+
+            foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+            {
+                if (spec.Handle.Equals(handle) && (!spec.PendingRemove || considerPendingRemove))
+                {
+                    return spec;
+                }
+            }
+
+            if ((considerPending & ConsiderPending.PendingAdd) != 0)
+            {
+                foreach (GameplayAbilitySpec spec in _abilityPendingAdds)
+                {
+                    if (spec.Handle.Equals(handle) && (!spec.PendingRemove || considerPendingRemove))
+                    {
+                        return spec;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>정의로 부여된 첫 Spec. 없으면 null.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::FindAbilitySpecFromClass</remarks>
+        public GameplayAbilitySpec FindAbilitySpecFromAsset(GameplayAbilityAsset ability)
+        {
+            foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+            {
+                if (spec.Ability != null && spec.Ability == ability)
+                {
+                    return spec;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>부여된 어빌리티 전체(읽기 전용).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActivatableAbilities</remarks>
+        public IReadOnlyList<GameplayAbilitySpec> GetActivatableAbilities()
+        {
+            return _activatableAbilities.Items;
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::IncrementAbilityListLock</remarks>
+        public void IncrementAbilityListLock()
+        {
+            _abilityScopeLockCount++;
+        }
+
+        /// <summary>락을 하나 푼다. 마지막 락이 풀리면 보류된 전체 해제, 또는 부여·해제를 처리한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::DecrementAbilityListLock</remarks>
+        public void DecrementAbilityListLock()
+        {
+            if (--_abilityScopeLockCount != 0)
+            {
+                return;
+            }
+
+            if (_abilityPendingClearAll)
+            {
+                ClearAllAbilities();
+
+                // 전체 해제는 수명 끝 정리일 가능성이 커서 같은 락 안의 부여보다 우선한다.
+                if (_abilityPendingAdds.Count > 0)
+                {
+                    Debug.LogWarning("[ASC] 같은 스코프 락 안에서 GiveAbility와 ClearAllAbilities가 함께 호출돼 보류된 부여를 버리고 전체 해제를 우선한다.");
+                    _abilityPendingAdds.Clear();
+                }
+
+                _abilityPendingRemoves.Clear();
+            }
+            else if (_abilityPendingAdds.Count > 0 || _abilityPendingRemoves.Count > 0)
+            {
+                // 처리 중 다시 보류될 수 있어 먼저 비운 사본을 돈다.
+                var adds = new List<GameplayAbilitySpec>(_abilityPendingAdds);
+                var removes = new List<GameplayAbilitySpecHandle>(_abilityPendingRemoves);
+                _abilityPendingAdds.Clear();
+                _abilityPendingRemoves.Clear();
+
+                foreach (GameplayAbilitySpec spec in adds)
+                {
+                    GiveAbility(spec);
+                }
+
+                foreach (GameplayAbilitySpecHandle handle in removes)
+                {
+                    ClearAbility(handle);
+                }
+            }
+        }
+
+        /// <summary>부여 직후 런타임 인스턴스에 알린다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::OnGiveAbility</remarks>
+        protected virtual void OnGiveAbility(GameplayAbilitySpec spec)
+        {
+            GameplayAbility abilityInstance = spec.GetPrimaryInstance();
+            abilityInstance?.OnGiveAbility(AbilityActorInfo, spec);
+        }
+
+        /// <summary>제거 직전 런타임 인스턴스에 알리고 Spec에서 떼어낸다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::OnRemoveAbility</remarks>
+        protected virtual void OnRemoveAbility(GameplayAbilitySpec spec)
+        {
+            GameplayAbility abilityInstance = spec.GetPrimaryInstance();
+            if (abilityInstance == null)
+            {
+                return;
+            }
+
+            // TODO 활성 중이면 EndAbility 먼저(UE OnRemoveAbility) — 생명주기 구현 때.
+            abilityInstance.OnRemoveAbility(AbilityActorInfo, spec);
+            spec.SetPrimaryInstance(null);
+        }
+
+        /// <summary>정의의 원형을 복제해 이 ASC 전용 인스턴스를 만들어 Spec에 둔다. 원형의 저장된 필드 값으로 시작한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::CreateNewInstanceOfAbility</remarks>
+        protected virtual GameplayAbility CreateNewInstanceOfAbility(GameplayAbilitySpec spec)
+        {
+            GameplayAbility abilityInstance = SerializedDeepCopy.Clone(spec.Ability.AbilityTemplate);
+            spec.SetPrimaryInstance(abilityInstance);
+            return abilityInstance;
         }
     }
 }
