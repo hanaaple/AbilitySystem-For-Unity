@@ -79,6 +79,13 @@ namespace Core.AbilitySystem
             _activeGameplayEffectsContainer.SetAttributeBaseValue(handle, newValue);
         }
 
+        /// <summary>어트리뷰트 CurrentValue가 다시 계산될 때(값이 그대로여도) 울리는 이벤트. 반환값의 <see cref="GameplayAttributeValueChangeEvent.OnValueChange"/>에 구독·해제한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetGameplayAttributeValueChangeDelegate</remarks>
+        public GameplayAttributeValueChangeEvent GetGameplayAttributeValueChangeDelegate(GameplayAttributeHandle handle)
+        {
+            return _activeGameplayEffectsContainer.GetGameplayAttributeValueChangeDelegate(handle);
+        }
+
         // ── Gameplay Tag ──────────────────────────────────────────────────────────
 
         /// <summary>소유 태그를 <paramref name="tagContainer"/>에 채운다. 기존 내용은 비운다.</summary>

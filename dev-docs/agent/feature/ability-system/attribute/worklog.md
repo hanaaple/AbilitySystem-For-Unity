@@ -3,6 +3,31 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
 
+### 2026-10-20 — AttributeSet 훅 4개 (`Pre/PostGameplayEffectExecute`·`Pre/PostAttributeChange`) + Current 조회를 저장값으로
+
+**요청.** 유저: "(code) AttributeSet Hook (신규)는 뭐야" → "그러니까 이벤트 함수를 구현하라는거지?" → "구현해", "Test로 상속하는 AttributeSet에서 테스트도 하고"(질문 답: 기존 `TestAtrributeSet` 사용).
+
+**UE 확인(5.6).** `AttributeSet.h:198-221`. `InternalExecuteMod`(`GameplayEffect.cpp:3924-3946`): `FGameplayEffectModCallbackData` 생성 → `PreGameplayEffectExecute`(false면 버림, `EvaluatedData`가 non-const 참조라 수치를 고칠 수 있음) → `ApplyModToAttribute` → `PostGameplayEffectExecute`. Current 훅은 값 쓰기 앞뒤(`FGameplayAttribute::SetNumericValueChecked`, `AttributeSet.cpp:86-89`)이고, `SetNumericAttribute_Internal(…, float&)`라 Pre가 고친 값을 `InternalUpdateNumericalAttribute`가 그대로 알린다. meta attribute 예: UE 테스트 Set `PostGameplayEffectExecute`(`AbilitySystemTestAttributeSet.cpp:92-115`, Damage → Health, 사망은 "여기서 또는 액터 쪽" 주석).
+
+**구현.**
+- `AttributeSet`에 가상 함수 4개. `GameplayEffectModCallbackData.EvaluatedData`에 setter(UE non-const 참조 대응).
+- 컨테이너 `InternalExecuteMod(spec, evaluatedData)` 신설 — Modifier 실행·Execution 출력 두 호출처가 이리로. Pre → `ApplyModToAttribute`(Pre가 고친 수치) → Post. `ApplyModToAttribute`의 유효성 검사는 Pre가 대상을 바꿀 수 있어 그대로 둠.
+- `InternalUpdateNumericalAttribute`가 쓰기 앞뒤로 `PreAttributeChange(ref)`·`PostAttributeChange`.
+- **`GetAttributeCurrentValue`를 저장값 읽기로**(유저 "그래 해"). 셀프체크 K에서 Pre 클램프(150 → 100)가 저장·이벤트엔 반영됐는데 조회는 aggregator 재계산값 150을 내 발견. UE `GetNumericAttribute`는 저장값을 읽는다(`AbilitySystemComponent.cpp:409-422` → `AttributeSet.cpp:124-139`). 기존 주석 "aggregator가 있으면 Evaluate로만"을 뒤집음 — 값 비교 건너뛰기를 지운 뒤라 저장값은 aggregator가 바뀔 때마다 동기로 갱신된다. 클램프하는 훅이 없으면 결과는 전과 같다(회귀 셀프체크로 확인).
+- `TestAtrributeSet`: 쓰이지 않던 Set. `Damage` 핸들이 `typeof(CombatAttributeSet)`이던 버그를 고치고 `health` 추가, 훅 override(meta Damage → Post가 Health에 반영·0으로, Pre가 `RejectExecute`·`DamageScale`로 버림·수치 변경, Health Current [0, 100] 클램프, 관측용 카운터·마지막 값).
+
+**확인.** 컴파일(Unity 없이) 런타임·에디터 통과. Aggregator 셀프체크 K(9건) — meta Damage 30 → Health 70·Damage 0, Pre 배율 0.5 → 20만, Pre false → 변경·이벤트 없음, Infinite +100 → Current 100(클램프)·Base 50, Post·이벤트 100, mod 등록엔 Pre/PostGameplayEffectExecute 안 불림, 제거 → 50. 결과 83/0, 회귀 Modifier Tag 65/0·GE Component 89/0·Calculation Modifier 19/0(Unity MCP 메뉴 실행). PlayMode 테스트(`AggregatorPlayModeTest`·`TagRequirementsPlayModeTest`)는 안 돌림. Execution 출력 경로의 훅 호출은 셀프체크 없음(같은 `InternalExecuteMod`).
+
+### 2026-10-20 — `PreAttributeBaseChange`가 새 Base 값을 고칠 수 있게 (`ref`)
+
+**요청.** 유저: "AttributeSet.PreAttributeBaseChange로 값을 고칠 수 없음 이거 정확히 뭘 고칠수 없다는거야" → 설명 뒤 "고쳐".
+
+**원인.** `newValue`를 값으로 받아 override 안에서 클램프해도 사본만 바뀌고, 컨테이너 `SetAttributeBaseValue`는 원래 값을 썼다. UE는 `float& NewValue`(`AttributeSet.h:229`, 주석 "This function should enforce clamping")이고 `SetAttributeBaseValue`가 훅이 고친 값으로 Base·Current·`PostAttributeBaseChange`까지 쓴다(`GameplayEffect.cpp:3817`~`:3856`).
+
+**고침.** 선언을 `ref float newValue`로, 호출을 `ref newBaseValue`로. override한 클래스는 없었다(`Assets` 검색). `PostAttributeBaseChange`는 UE도 값 전달(알림 전용)이라 그대로 — 이제 클램프된 값이 넘어간다.
+
+**확인.** 유저 "테스트하고 커밋해". 컴파일(Unity 없이) 런타임·에디터 통과. Aggregator 셀프체크 J(5건) — 셀프체크 안에 Base를 [0, 100]으로 막는 테스트용 Set을 두고: aggregator 없는 경로 SetBase -50 → Base·Current 0, Post가 0을 받음 / Instant -30(10에서) → 0, 값 변경 이벤트도 0 / aggregator 있는 경로 SetBase 200 → Base 100·Current 105(+5 mod), Post가 100을 받음. 결과 74/0, 회귀 Modifier Tag 65/0·GE Component 89/0·Calculation Modifier 19/0(Unity MCP로 메뉴 실행).
+
 ### 2026-08-22 — AttributeSet owner back-ref 추가 (미완) (→D6(Set owner back-ref))
 
 **요청.** UE `ATTRIBUTE_ACCESSORS`의 `SetHealth`류를 이 프로젝트에도 — "각 attribute에 일괄 적용되는 접근자". 논의 결론: UE의 `SetX`도 owning ASC로 위임하므로 "Set에 두기 vs ASC로만"은 양자택일이 아니라 *얼굴은 Set, 쓰기는 ASC 위임*. → `AttributeSet`에 owning ASC back-ref 필요(→D6(Set owner back-ref)).

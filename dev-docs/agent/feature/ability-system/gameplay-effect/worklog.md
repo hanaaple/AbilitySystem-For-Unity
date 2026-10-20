@@ -3,6 +3,18 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
 
+### 2026-10-20 — 어트리뷰트 값 변경 이벤트 (구독 API + 원인 GEModData + 값이 같아도 발화, →D26)
+> 유저: "어트리뷰트 변경 이벤트 - 구현 안되어있어? 간단하지 않아?" → "UE 구조대로 변경해서 하면 되는거 아냐? 아무튼 잘 구현해봐" → (1차 구현 뒤, effort 상향) "다시 잘 구현해봐". 질문 답: 구독 모양 "클래스 getter 유지", 원인 "지금 넣기", 값이 같을 때 "UE대로 항상 울림".
+- **있던 것.** 컨테이너에 `_attributeValueChangeDelegates`(private 맵·private 델리게이트)와 `InternalUpdateNumericalAttribute`의 호출은 있었으나 맵에 넣는 코드가 없어 항상 비어 있었다.
+- **UE 확인(5.6).** 맵 `AttributeValueChangeDelegates`(`GameplayEffect.h:1942`), 멀티캐스트 `FOnGameplayAttributeValueChange(const FOnAttributeChangeData&)`(`GameplayEffectTypes.h:1017`), 인자 `{Attribute, NewValue, OldValue, GEModData}`(`:1002`), 등록은 `GetGameplayAttributeValueChangeDelegate`가 `FindOrAdd`한 델리게이트를 참조로 반환(`GameplayEffect.cpp:5419`, ASC `AbilitySystemComponent.cpp:732`). 원인은 `InternalExecuteMod`가 `FGameplayEffectModCallbackData{Spec, EvaluatedData, Target}`(`GameplayEffectExtension.h:17`)를 만들어 `ApplyModToAttribute`에 넘기고, 거기서 `CurrentModcallbackData`에 넣은 뒤 `SetAttributeBaseValue` → dirty → `InternalUpdateNumericalAttribute`가 실어 보내고 비운다(`GameplayEffect.cpp:3973-3987`, `:3779-3800`, 못 쓰였으면 경고 후 비움). `OnAttributeAggregatorDirty`는 재계산 뒤 값 비교 없이 `InternalUpdateNumericalAttribute`를 부른다(`:3307-3364`).
+- **구현.**
+  - 구독: `GameplayAttributeValueChangeEvent`를 맵 값으로, 컨테이너·ASC `GetGameplayAttributeValueChangeDelegate`(→D26). 인자 `OnAttributeChangeData`.
+  - 원인: `GameplayEffectModCallbackData`(새 타입) + 컨테이너 `_currentModCallbackData`. `ApplyModToAttribute`에 인자 추가 — 두 호출처(Modifier 실행·Execution 출력)가 Spec과 `GameplayModifierEvaluatedData`로 만들어 넘긴다. UE처럼 이벤트에 싣고 비우며, 남으면 경고 후 비운다. Duration/Infinite mod 등록·해제와 직접 Base 설정은 null(UE와 같음).
+  - 값이 같아도 발화: `OnAttributeAggregatorDirty`의 `Mathf.Approximately` 건너뛰기를 지움(커밋 `4171dbc`에서 들어왔고 결정 기록 없었음). 0 데미지·클램프된 피격도 이벤트가 온다.
+  - 같이 고침: Execution 출력 호출 줄 끝 `;;`.
+- **AttributeSet Hook과의 관계.** `PreGameplayEffectExecute`·`PostGameplayEffectExecute`가 받을 데이터가 이 `GameplayEffectModCallbackData`다(UE `InternalExecuteMod`). 훅은 아직 없음 — 보드 'AttributeSet Hook'.
+- **확인.** 컴파일(Unity 없이) 런타임·에디터 통과. Aggregator 셀프체크 I(14건) 추가 → 69/0: 같은 객체 반환, Infinite 등록·해제(원인 null), Instant(원인 Spec·수치·Target), +0도 발화, SetBase 뒤 원인 안 남음, aggregator 없는 어트리뷰트, 구독자 안에서 다른 GE 적용 시 원인 안 섞임, 해제. 회귀: Modifier Tag 65/0·GE Component 89/0·Calculation Modifier 19/0(Unity MCP로 메뉴 실행). Execution 출력 경로의 원인은 셀프체크 없음(같은 `ApplyModToAttribute`를 탄다).
+
 ### 2026-10-20 — Calculation Modifier 런타임 적용 (Transient 제외, →D23)
 > 유저: "실제 계산 구현해둬 Transient만 미루고. 이미 있는거로 하면 금방 되는거 아냐?" (런타임 적용이 Transient만 빠진 줄 알았다가 전체가 없음을 확인한 뒤)
 - **UE 확인(5.6).** `FGameplayEffectCustomExecutionParameters` 생성자(`GameplayEffectExecutionCalculation.cpp:16-59`): Calculation Modifier마다 대상 캡처 정의로 `ScopedModifierAggregators`를 찾고, 없으면 캡처 Spec의 `AttemptGetAttributeAggregatorSnapshot`(`GameplayEffect.cpp:2352`)으로 사본을 만들어 `AddAggregatorMod`. 계산 못 하면 경고. 조회(`AttemptCalculateCapturedAttributeMagnitude`·`…BaseValue`, `:111-171`)는 사본이 있으면 사본을 읽는다. 캡처 정의 수집(`FGameplayEffectExecutionDefinition::GetAttributeCaptureDefinitions`, `:1402-1422`)은 Calculation Modifier magnitude의 캡처도 포함.

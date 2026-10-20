@@ -108,6 +108,14 @@
 - 대가: UE 컨테이너의 남은 시간은 끝없는 GE에 `-1 - 경과`를 내지만 우리는 -1(UE `FActiveGameplayEffect::GetTimeRemaining`과 같은 값). 시전자 목록은 액터 대신 ASC.
 - 재검토: GE 스택을 만들 때 `StacksToRemove`·개수를 스택 수로.
 
+## D26 — 어트리뷰트 값 변경 이벤트는 이벤트 객체를 돌려주는 getter로 (UE 참조 반환 대신)
+
+- 날짜: 2026-10-20
+- 결정: 컨테이너가 어트리뷰트별 `GameplayAttributeValueChangeEvent`(안에 `event Action<OnAttributeChangeData>`)를 들고, `GetGameplayAttributeValueChangeDelegate`가 찾거나 만들어 돌려준다. 구독자는 그 객체의 `OnValueChange`에 `+=`/`-=`. 인자는 UE대로 `{Attribute, NewValue, OldValue, GEModData}`.
+- 왜: 유저 선택(질문 답, 근거 미기록). UE는 맵 안 델리게이트를 참조로 돌려준다(`GameplayEffect.cpp:5419`). C# delegate는 불변이라 delegate를 돌려주면 받은 쪽 `+=`가 맵에 닿지 않는다.
+- 대안: ASC 등록·해제 메서드(태그 `RegisterGameplayTagEvent` 모양) / 타입 하나가 덜 들지만 UE 사용 모양과 달라진다.
+- 대가: 어트리뷰트마다 이벤트 객체 하나(타입 하나 추가).
+
 ## 치운 결정
 
 중요하지 않거나, UE를 그대로 옮겨 고를 것이 없었거나, 단계 기록이거나, 코드가 이미 바뀐 결정이라 본문을 치웠다(유저 2026-10-18). 코드는 재사용하지 않는다.
