@@ -16,6 +16,7 @@ namespace Test.Editor
     // E: 런타임 dirty 라이브 재평가 / F: aggregator가 없는 어트리뷰트의 Base 변경.
     // G: 라이브 재평가가 같은 aggregator의 다른 GE mod를 건드리지 않음 / H: 주기 실행마다 magnitude 재계산.
     // I: 어트리뷰트 값 변경 이벤트(구독·해제, Old/New, 값이 같아도 울림, 원인 GEModData 유무).
+    // J: PreAttributeBaseChange에서 고친 Base 값이 Base·Current·Post·값 변경 이벤트에 그대로 쓰임.
     public static class AggregatorSelfCheck
     {
         private const float Eps = 0.001f;
@@ -58,6 +59,7 @@ namespace Test.Editor
                 RunUpdateAggregatorModChecks(asc, Check);
                 RunPeriodicRecalculationChecks(asc, Check);
                 RunAttributeValueChangeEventChecks(asc, Check);
+                RunPreAttributeBaseChangeClampChecks(asc, Check);
             }
             catch (Exception e)
             {
@@ -501,6 +503,65 @@ namespace Test.Editor
             UnityEngine.Object.DestroyImmediate(zeroGe);
             UnityEngine.Object.DestroyImmediate(staminaGe);
             UnityEngine.Object.DestroyImmediate(speedGe);
+        }
+
+        // ── J. PreAttributeBaseChange 클램프 ──
+        // Base를 [0, 100]으로 막는 Set. aggregator 없는 경로(직접 Current)와 있는 경로(aggregator base) 둘 다 본다.
+        private static void RunPreAttributeBaseChangeClampChecks(AbilitySystemComponent asc, Action<string, bool> check)
+        {
+            ClampedAttributeSet set = new ClampedAttributeSet();
+            set.health = new AttributeData(50f, 50f);
+            asc.AddSpawnedAttribute(set);
+            GameplayAttributeHandle health = ClampedAttributeSet.Health;
+
+            SetBase(asc, health, -50f);
+            check("aggregator 없음: SetBase -50 → Pre 클램프로 Base 0, Current 0", Approx(asc.GetAttributeBaseValue(health), 0f) && Approx(asc.GetAttributeCurrentValue(health), 0f));
+            check("Post가 클램프된 값 0을 받음", Approx(set.LastPostNewValue, 0f));
+
+            List<OnAttributeChangeData> events = new List<OnAttributeChangeData>();
+            void OnHealthChanged(OnAttributeChangeData data)
+            {
+                events.Add(data);
+            }
+
+            asc.GetGameplayAttributeValueChangeDelegate(health).OnValueChange += OnHealthChanged;
+
+            SetBase(asc, health, 10f);
+            events.Clear();
+            GameplayEffectAsset damageGe = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(health, GameplayModifierOperation.AddBase, -30f));
+            asc.ApplyGameplayEffectToSelf(damageGe);
+            check("Instant -30 (10에서) → Base 0, 값 변경 이벤트 NewValue 0", Approx(asc.GetAttributeBaseValue(health), 0f) && events.Count == 1 && Approx(events[0].NewValue, 0f));
+
+            GameplayEffectAsset bonusGe = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 5f));
+            ActiveGameplayEffectHandle bonusHandle = asc.ApplyGameplayEffectToSelf(bonusGe);
+            SetBase(asc, health, 200f);
+            check("aggregator 있음: SetBase 200 → Base 100, Current 105(mod +5는 Base 클램프와 별개)", Approx(asc.GetAttributeBaseValue(health), 100f) && Approx(asc.GetAttributeCurrentValue(health), 105f));
+            check("aggregator 있음: Post가 클램프된 값 100을 받음", Approx(set.LastPostNewValue, 100f));
+
+            asc.GetGameplayAttributeValueChangeDelegate(health).OnValueChange -= OnHealthChanged;
+            asc.RemoveActiveGameplayEffect(bonusHandle);
+            asc.RemoveAttributeSet(set);
+            UnityEngine.Object.DestroyImmediate(damageGe);
+            UnityEngine.Object.DestroyImmediate(bonusGe);
+        }
+
+        private class ClampedAttributeSet : AttributeSet
+        {
+            public static readonly GameplayAttributeHandle Health = new(typeof(ClampedAttributeSet), nameof(health));
+
+            public AttributeData health;
+
+            public float LastPostNewValue { get; private set; } = float.NaN;
+
+            public override void PreAttributeBaseChange(GameplayAttributeHandle attributeHandle, ref float newValue)
+            {
+                newValue = Mathf.Clamp(newValue, 0f, 100f);
+            }
+
+            public override void PostAttributeBaseChange(GameplayAttributeHandle attributeHandle, float oldValue, float newValue)
+            {
+                LastPostNewValue = newValue;
+            }
         }
 
         // ── 헬퍼 ──
