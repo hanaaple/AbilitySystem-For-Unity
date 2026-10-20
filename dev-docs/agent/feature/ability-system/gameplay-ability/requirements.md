@@ -61,15 +61,17 @@ Unreal GAS의 **`GameplayAbility`**(스킬·액션의 실행 단위)를 이 Unit
 
 ## 6. 현재 구현 상태 (착수 기준점)
 
-작업 트리에 골격만 있다. `[코드]`
+부여·해제까지 구현됐다(2026-10-20, TODO-BOARD 2-1). 발동·코스트·쿨다운은 아직 없다. 세부는 [progress](progress.md) 설계 개요. `[코드]`
 
 | 요소 | 상태 |
 |---|---|
-| `GameplayAbilityAsset` | 빈 SO(필드 없음) |
-| `GameplayAbilitySpec` | 런타임 레코드(Ability/Handle/Level/Owner/IsActive)+생성자 |
-| `GameplayAbilitySpecHandle` | 완성된 struct(id+owner, IEquatable) |
-| `GameplayAbilitySpecContainer` | `List<GameplayAbilitySpec>` 필드만(로직 없음) |
-| `ASC.GiveAbility` | 스텁(`Invalid` 반환 + TODO) |
+| `GameplayAbilityAsset` | sealed SO(정의). 필드 `abilityTemplate`(`[SerializeReference]` 런타임 클래스 원형) — decisions D1·D3 |
+| `GameplayAbility` | `[Serializable]` abstract 일반 C# 클래스(런타임 부분). 액터 정보·Spec 핸들, 훅 `OnGiveAbility`·`OnRemoveAbility`·`OnAvatarSet`. 발동 함수 없음 |
+| `Test.TestGameplayAbility` | 테스트용 런타임 하위 클래스(`[Serializable]`, 필드 `_testValue`·`_testEffect`, `Assets/Scripts/Test/`) |
+| `GameplayAbilitySpec` | 생성자가 핸들 발급. Handle·Ability·Level·InputID·SourceObject·ActiveCount·PendingRemove·런타임 인스턴스 |
+| `GameplayAbilitySpecHandle` | struct(id만, IEquatable), `GenerateNewHandle()` |
+| `GameplayAbilitySpecContainer` | `Items`·`Owner`·`RegisterWithOwner`(UE 구조, 네트워크 직렬화만 뺌) |
+| ASC 어빌리티 API | `GiveAbility`·`ClearAbility`·`ClearAllAbilities`·조회·스코프 락·`InitAbilityActorInfo`. 발동(`TryActivateAbility`) 없음 |
 
 ---
 

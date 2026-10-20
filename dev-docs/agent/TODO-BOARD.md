@@ -14,19 +14,21 @@
 > 기존 보드 항목은 본문 그대로 옮겼다(원래 칸: 'GE·Tag 남은 것'·'이전 우선순위 낮음'). 새 항목은 2026-10-20 등록. 순서는 위에서부터(에이전트 제안).
 > 2026-10-20 유저 "TODO에서 데모용으로 필요한 부분은 싹 데모쪽으로 빼두고" → 게임 쪽 구현·데이터·연출·데모 결정은 아래 '📋 TODO (데모 제작)'으로 옮겼다. 이 칸엔 GAS 자체만 남는다.
 
-### 0. 착수 전 결정
-
-- [ ] **(decision)** **GA 작업 방식** — gameplay-ability `HARNESS.md`는 "유저 이해가 구현에 선행"·착수는 유저 신호. 데모 일정상 AI가 최소 GA를 바로 구현할지(이번만 그 원칙을 접음), GA 없이 입력→GE 지름길로 갈지. 에이전트 추천: 최소 GA. _(2026-10-20 등록)_
-
 ### 1. Attribute — 값 변화 알림·범위
 
 (없음 — 2026-10-20 값 변경 이벤트·`PreAttributeBaseChange` ref·AttributeSet 훅 완료(✅ Done, PR #8), 사망 처리는 데모 미결로 옮김)
 
 ### 2. GameplayAbility (최소)
 
-- [ ] GameplayAbility (GA) 구현
-  - **2026-10-20 범위(에이전트 제안, 유저 미확정):** ① `GameplayAbilityAsset`(SO: 코스트 GE·쿨다운 GE·태그·효과 GE) ② 데모용 즉발형 `ActivateAbility`→`CommitAbility`→`EndAbility`(UE `GameplayAbility.cpp:424`·`:559`·`:769`) ③ `GameplayAbilitySpec`·`Handle` ④ ASC `GiveAbility`·`TryActivateAbility`·`CancelAbility` ⑤ 쿨다운 판정 = 쿨다운 GE의 Granted Tags를 갖고 있으면 실패(UE `:1050`·`:1197`) + HUD용 남은 쿨다운 조회 ⑥ 코스트 판정 = ASC `CanApplyAttributeModifiers`(새로 필요, UE `:1092`) ⑦ 태그 조건 최소 `ActivationBlockedTags`(스턴 중 막기)·`ActivationOwnedTags`(UE 전체 목록 `GameplayAbility.h:756-791`). ⑧ 입력 바인딩은 '데모 제작'으로 옮김(2026-10-20). 빼는 것: 인스턴싱 정책·네트워크·AbilityTask·몽타주·타겟팅·이벤트 발동.
-  - 문서 정리 필요: gameplay-ability requirements·progress가 "골격 복원함(2026-09-13)"이라 적었지만 작업 트리·stash에 GA 코드가 없다(2026-10-20 확인).
+- [ ] GameplayAbility (GA) 구현 — 2026-10-20 유저 "세분화해" → 아래 2-1~2-8로 나눔(나눈 단위·순서는 에이전트 제안, 유저 미확정). 구조는 gameplay-ability decisions D1·D3(정의 = 단일 SO `GameplayAbilityAsset`, 런타임 = `GameplayAbility` 일반 C# 클래스, 에셋엔 `[SerializeReference]` 원형 → 부여 때 깊은 복사). 이미 된 것: 정의/런타임 분리 + 2-1(`feat/gameplay-ability`). 입력 바인딩은 '데모 제작'으로 옮김. 빼는 것: 인스턴싱 정책 선택·네트워크·AbilityTask·몽타주·타겟팅·이벤트 발동.
+  - [x] **2-1. 부여·해제** (2026-10-20 완료. **셀프체크 `Tools/Ability System/Run Gameplay Ability Self-Check` 58/0**(부여·깊은 복사·여러 번 부여·해제·잘못된 입력·스코프 락·액터 정보·에셋 인스펙터/저장 — 의도된 에러 로그 4줄 정상). 유저 "단순히 구현하지 말고 UE에 맞춰서" → UE 구조로 재작성: ActorInfo·스코프 락·보류 목록·Spec 생성자 핸들 발급·`GiveAbility(spec)`·`ClearAllAbilities` 등, 상세는 gameplay-ability progress) — Spec이 런타임 인스턴스 보유, `GiveAbility`에서 에셋의 `[SerializeReference]` 원형을 `SerializedDeepCopy.Clone`으로 복제(D3) + Container 등록, `ClearAbility`로 제거. 런타임 쪽 훅 `OnGiveAbility`/`OnRemoveAbility`/`OnAvatarSet`. (UE ASC `GiveAbility` `AbilitySystemComponent.h:977`·`ClearAbility` `:1030`, GA `OnGiveAbility` `GameplayAbility.h:459`·`:462`)
+  - [ ] **2-2. 생명주기** — `GameplayAbility`에 virtual `CanActivateAbility`·`ActivateAbility`·`EndAbility`·`CancelAbility`, 런타임 인스턴스가 Owner ASC·Spec·Asset을 참조. ASC `TryActivateAbility(handle)`·`CancelAbility`, Spec `IsActive` 관리. 활성 중 `ClearAbility`면 종료시키기(UE `ASC::OnRemoveAbility`가 활성 인스턴스를 EndAbility — `AbilitySystemComponent_Abilities.cpp:627-638`, 2-1에선 미처리). (UE `GameplayAbility.h:282`·`:598`·`:628`·`:318`, ASC `:1068`·`:1080`)
+  - [ ] **2-3. GA에서 GE 적용** — 런타임 클래스가 자기/대상에 GE를 거는 헬퍼(`ApplyGameplayEffectToOwner`/`ToTarget`, 기존 ASC `MakeOutgoingSpec`·`Apply…` 위에). 효과 GE를 에셋 공통 필드로 둘지 하위 클래스 필드로 둘지 이때 정함(D3 — 클래스별 정의값 가능). (UE `GameplayAbility.h:639`)
+  - [ ] **2-4. 코스트** — 에셋에 코스트 GE, `CheckCost` = ASC `CanApplyAttributeModifiers`(새로 필요), 커밋 시 적용. (UE `GameplayAbility.h:382`·`.cpp:1092`, ASC `.h:824`)
+  - [ ] **2-5. 쿨다운** — 에셋에 쿨다운 GE(Duration), `CheckCooldown` = 쿨다운 GE의 Granted Tags 보유 시 실패, 남은 쿨다운 조회(HUD용). (UE `GameplayAbility.h:376`·`:292`, `.cpp:1050`·`:1197`)
+  - [ ] **2-6. `CommitAbility`** — 코스트·쿨다운 재확인 후 적용. 데모용 즉발형 흐름 `ActivateAbility`→`CommitAbility`→`EndAbility`. (UE `GameplayAbility.h:355`, `.cpp:424`·`:559`·`:769`)
+  - [ ] **2-7. 태그 조건(최소)** — 에셋에 `ActivationBlockedTags`(스턴 중 막기)·`ActivationOwnedTags`(활성 중 부여). (UE 전체 목록 `GameplayAbility.h:756-791`)
+  - [ ] **2-8. 검증** — `TestGameplayAbility`로 부여→발동→커밋→종료·코스트 부족·쿨다운 중·차단 태그 실패를 셀프체크 또는 PlayMode로. 데모 시각화용 GA 이벤트(발동·실패 사유·커밋·종료)는 '데모 제작' 표시 항목과 연결 — 필요하면 여기서 노출.
 
 ### 3. GameplayCue (최소)
 
@@ -113,6 +115,7 @@
 
 ### 정리 작업
 
+- [ ] **(docs)** **architecture 문서를 PR #8에 맞춤** — `architecture/ability-system/attribute.md`(`AttributeSet` "빈 추상 마커"(19행)·"Current는 aggregator가 있으면 `Evaluate()`로만"(114행) — 지금은 저장값 읽기·훅 표에 Base 훅 2개뿐(143·152행)), `aggregator.md`(CurrentValue 산출 서술), `gameplay-effect.md`(쓰기 경로 `ApplyModToAttribute`(122행) → 지금은 `InternalExecuteMod`를 거침, 값 변경 이벤트 없음). feature progress는 PR #9로 맞췄고 architecture는 유저 "feature 쪽만"으로 미룸. _(2026-10-20 등록)_
 - [ ] **(code)** GE 캡처 **params 조회 함정 3종 (5b·Execute 작성 시 주의)** — 캡처를 실제로 읽는 코드를 쓸 때 걸리기 쉬운 지점. ① **false가 조용하다:** `AttemptCalculateCapturedAttribute*`(`GameplayEffectExecutionParameters.cs:47·54`)는 실패 사유(미등록/캡처 무효/Target 미캡처)를 전부 `false`+`0`으로 뭉개고 **경고 로그 없음** — 호출측이 bool을 안 보면 0이 계산식에 샌다. ② **값-동등성 key 취약:** 조회는 `BackingDefinition.Equals`(captureSource+attribute AQN+snapshot)라 **셋 중 하나만 달라도 매치 실패→false**. 조회 정의는 선언 정의와 완전히 같아야 함(SpeedBoost처럼 같은 static 필드 재사용이 안전). ③ **captureValueType 라우팅:** params 메서드가 Magnitude=Current / BaseValue=Base로 고정 분기인데 authoring의 `AttributeBasedMagnitude.captureValueType`(`:33`)가 Base/Current를 데이터로 지정 — 5b/Execute가 이 값에 맞춰 올바른 메서드를 호출해야 authoring 의도와 맞는다. _(2026-08-04 등록 — 캡처 조회 경로 분석 중 발견)_
 - [ ] **(docs)** **attribute 런타임 타입 이름 정렬 + D5(직렬화/런타임 참조 분리) 재작성** — 코드는 `GameplayAttributeHandle`인데 2026-08-21 세션에 내가 적은 문서·주석 일부가 아직 `ResolvedGameplayAttribute`다(그 이름으로 확정했다가 유저가 되돌림). 정정 대상: attribute `decisions.md`(D5(직렬화/런타임 참조 분리))·`progress.md`, architecture `overview`·`attribute`·`gameplay-effect`, 잔재 2건(`AttributeAggregator.cs` 주석 `Dictionary<ResolvedGameplayAttribute,…>`·`GameplayEffectSpec.cs` 경고 문자열). **D5(직렬화/런타임 참조 분리)는 근거 자체 재작성 필요** — "Handle이 부정확"이라 `Resolved-`를 택한 논리가 최종 `GameplayAttributeHandle`(Handle 유지)과 모순. 유저에게 "왜 Handle로 되돌렸나" 받아 그 근거로 다시 쓴다(HARNESS '왜는 지어내지 않는다'). _(2026-08-21 등록)_
   - **2026-10-18:** decisions 정리로 attribute D5는 "치운 결정"으로 내려갔다(이름은 `GameplayAttributeHandle`로 되돌아갔고 분리는 D1·gameplay-effect D15). D5 재작성은 더 필요 없고, 남은 일은 문서·주석의 `ResolvedGameplayAttribute` 잔재 정리뿐.
