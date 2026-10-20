@@ -2,7 +2,7 @@
 
 - 상태: ✅ 임시완료
 - 우선순위: P1
-- 최종 갱신: 2026-10-18 (KST)
+- 최종 갱신: 2026-10-20 (KST)
 
 > `ability-system` 그룹의 하위 feature. 형제: [attribute](../attribute/progress.md) · [gameplay-effect](../gameplay-effect/progress.md) · [gameplay-ability](../gameplay-ability/progress.md).
 > UE `FAggregator`에 준하는 **어트리뷰트별 Aggregator**로 구현됨(→D5(per-attr/channel Aggregator)). base 진실 = `AttributeData`, aggregator는 지연 생성 동기화 사본(→D14(base 진실=AttributeData)). cross-attribute 라이브 재평가는 dependents+OnDirty 전파로 구현(→D12(cross-attr 라이브 재평가)) — 2026-08-26 PlayMode 검증 통과.
@@ -22,7 +22,7 @@ non-snapshot 캡처를 쓰는 AttributeBased 모디파이어가, **캡처 대상
 - **어트리뷰트별 `AttributeAggregator`**: base + flat mod 리스트(채널 없음 →D10(채널 축 제거)) 소유, `Evaluate()`가 CurrentValue 산출 유일 경로(6종 연산 공식). Instant/Periodic의 영구 base 변경은 `ExecModOnBaseValue`.
 - **소유·수명**: 컨테이너(`ActiveGameplayEffectsContainer`)가 어트리뷰트별로 하나씩 **지연 생성**(`FindOrCreateAttributeAggregator`, `AttributeData.BaseValue`로 시드). persistent(period 0) GE의 mod를 apply=`AddAggregatorMod`/remove=`RemoveAggregatorMod`로 등록/해제.
 - **base 동기화(→D14(base 진실=AttributeData))**: base 진실은 `AttributeData`. `SetAttributeBaseValue`가 AttributeData raw write 후 aggregator가 **있을 때만** Find해 동기화(생성 안 함). aggregator는 캡처·persistent mod가 필요할 때만 생성.
-- **반응성(→D11(반응성 재설계(OnDirty)))**: base/mod 변경 → `AttributeAggregator.OnDirty` → 컨테이너 `OnAttributeAggregatorDirty`(handle 캡처)가 `Evaluate`로 그 어트리뷰트만 CurrentValue 재계산·변경 델리게이트 발화.
+- **반응성(→D11(반응성 재설계(OnDirty)))**: base/mod 변경 → `AttributeAggregator.OnDirty` → 컨테이너 `OnAttributeAggregatorDirty`(handle 캡처)가 `Evaluate`로 그 어트리뷰트만 CurrentValue 재계산 → `InternalUpdateNumericalAttribute`가 `PreAttributeChange`(클램프 가능)를 거쳐 저장하고 값 변경 이벤트 발화. 값이 같아도 발화(2026-10-20, UE대로).
 - **cross-attribute 라이브(→D12(cross-attr 라이브 재평가))**: non-snapshot 캡처가 소스 aggregator에 dependent 등록(`RegisterLinkedAggregatorCallbacks`) → 소스 dirty 시 `BroadcastOnDirty`가 dependents 순회 → `OnMagnitudeDependencyChange`가 의존 GE의 modifier magnitude 재평가(`AttemptRecalculateMagnitudeFromDependentAggregatorChange`) → 대상 aggregator에서 그 GE의 mod를 빼고 다시 넣기(`UpdateAggregatorMod`) → 대상 dirty로 연쇄. `MaxBroadcastDirty`로 순환 차단.
 - 태그(R5)는 미도입이되 얹을 seam(자격 판정 경계 + 일반화된 dirty 트리거)만 남긴다.
 ### 제외 (현 시점 — 이후 확장 가능)
@@ -35,7 +35,7 @@ non-snapshot 캡처를 쓰는 AttributeBased 모디파이어가, **캡처 대상
 > UE 참고: `FAggregator` 개념·구조·평가흐름은 [ue-reference.md](ue-reference.md)(유저 제공 분석). 포팅 Q&A는 [porting-notes.md](porting-notes.md).
 
 - **소유 구도**: ASC는 얇은 위임 래퍼, 활성 GE 소유·수명·집계·반응성은 전부 `ActiveGameplayEffectsContainer`가 맡는다(→ [gameplay-effect](../gameplay-effect/progress.md) D18(ActiveEffect가 Owner 보유)). 어트리뷰트별 aggregator 맵을 컨테이너가 지연 생성으로 관리.
-- **값 경로**: `GetAttributeCurrentValue`는 aggregator가 있으면 `Evaluate()`로만 계산, 없으면(=mod 없어 current==base) `AttributeData` 미러를 읽는다. `GetAttributeBaseValue`도 aggregator 있으면 그 base, 없으면 미러.
+- **값 경로**: `GetAttributeCurrentValue`는 저장값(`AttributeData` Current)을 읽는다(UE `GetNumericAttribute`) — aggregator 계산값은 dirty마다 동기로 저장되고, 저장 직전 `PreAttributeChange`가 고친 값이 조회에도 보인다. (2026-10-20 전엔 aggregator가 있으면 `Evaluate()`로 다시 계산했다 — 클램프가 조회에 안 보여 바꿈, 아래 다음 작업 3의 기록.) `GetAttributeBaseValue`는 aggregator 있으면 그 base, 없으면 미러.
 - **왜 지연 생성(→D14(base 진실=AttributeData))**: base 진실을 `AttributeData`에 두고 aggregator를 캡처/persistent가 필요할 때만 만들어, 모든 어트리뷰트에 aggregator를 강제 생성하던 이전(force-create) 대비 UE lazy 모델에 맞춘다. base write는 AttributeData가 항상 진실, aggregator는 있을 때만 동기화.
 - **dirty 전파 = UE 원문식(→D12(cross-attr 라이브 재평가))**: 위상정렬 대안 대신 UE처럼 dependent 핸들 리스트 + `OnDirty` cascade + 깊이 상한(`MaxBroadcastDirty`). 재평가는 의존 mod magnitude를 소스 새 값으로 갱신 후 대상 `Evaluate` 재실행.
 - **코드 위치**: `Assets/Scripts/Core/AbilitySystem/Effect/AttributeAggregator.cs`(값/mod/전파 본체) · `ActiveGameplayEffectsContainer.cs`(소유·재계산·dirty 진입) · `AbilitySystemComponent.cs`(dependency change 진입 래퍼). _(폴더는 `Aggregator/`→`Effect/`로 이동됨.)_
@@ -80,6 +80,10 @@ non-snapshot 캡처를 쓰는 AttributeBased 모디파이어가, **캡처 대상
      - 2026-10-17 수정(유저 "단순 오류나 버그는 하고"): 아래 `UpdateAggregatorMod` 문제 — UE `FAggregator::UpdateAggregatorMod`처럼 그 핸들의 mod를 빼고 이 어트리뷰트를 겨냥한 modifier를 조건·GE Source 액터 태그와 함께 다시 넣은 뒤 dirty 1회(다시 넣은 mod는 목록 끝으로 가며 UE도 같다). Aggregator 셀프체크 G 6개 → 55/0. `Evaluate` 요약 주석 "마지막 Override 우선"도 "먼저 만난(조건 맞는) Override"로 고침.
      - 2026-10-18 (유저 "Source/Target Tag를 Qualifies를 Update하고 Check하는걸 만들어 UE처럼"): 자격 판정을 UE처럼 두 단계로 나눴다 — `Mod.UpdateQualifies`가 판정해 `_isQualified`에 담고, `Mod.Qualifies()`는 읽기만 한다. `Evaluate`·`EvaluateCurrentValue`가 private `EvaluateQualificationForAllMods`로 모든 mod를 먼저 갱신한 뒤 `EvaluateWithBase()`(인자 없음)가 `Qualifies()`만 본다. `Mod`는 `readonly struct` → `struct`(자격만 바뀜, 나머지 필드는 readonly 그대로). 계산 결과는 전과 같다(gameplay-tag D27).
      - 2026-10-18 (gameplay-tag D28 CurrentValue=UE처럼 빈 문맥): `EvaluateCurrentValue`·mod의 `EffectSourceTags`·`AddAggregatorMod`의 `effectSourceTags` 인자를 지우고 `BroadcastOnDirty`를 다시 private로. 위 2026-10-16 `EvaluateCurrentValue` 추가와 2026-10-17 internal 변경을 되돌린 것이다. 유저 "UE에 따라 … Ongoing Tag Requirements 담당으로 넘기고 … 기존에 선택 치우고".
+     - 2026-10-20 [gameplay-effect](../gameplay-effect/progress.md)(값 변경 이벤트)·[attribute](../attribute/progress.md)(훅) 작업으로 이 feature 영역 코드를 고쳤다(PR #8). 사유: 값 변경 이벤트·훅을 UE대로 두려면 재계산·조회 경로가 바뀌어야 해서다.
+       - `ActiveGameplayEffectsContainer.OnAttributeAggregatorDirty`: "값이 같으면 건너뜀"(`Mathf.Approximately`, 위 2026-10-17 기록에서 그대로 둔 것)을 지웠다 — UE `OnAttributeAggregatorDirty`(`GameplayEffect.cpp:3307-3364`)는 값 비교 없이 `InternalUpdateNumericalAttribute`를 부른다. 유저 질문 답 "UE대로 항상 울림".
+       - `InternalUpdateNumericalAttribute`: 쓰기 앞뒤 `PreAttributeChange(ref)`·`PostAttributeChange`, 값 변경 이벤트에 원인(`GEModData`).
+       - `GetAttributeCurrentValue`: aggregator `Evaluate` 대신 저장값(위 '값 경로'). 유저 "그래 해". 회귀: Aggregator 셀프체크 83/0(I·J·K 추가분 포함)·Modifier Tag 65/0·GE Component 89/0·Calculation Modifier 19/0.
      - (이전 기록) 발견: `UpdateAggregatorMod`가 Spec의 modifier 인덱스를 aggregator `_mods` 인덱스로 쓴다. 이 aggregator에 다른 GE의 mod가 함께 있으면 엉뚱한 칸을 덮어쓸 수 있다. 2026-10-16 유저 요청으로 [TODO-BOARD](../../../TODO-BOARD.md) (bug) 항목에 원인·증상·UE 방식·수정안·검증안을 적었다.
 
 > 프로젝트 방향(2026-08-09): 메인 포트폴리오 = GAS 온전 작동 데모(→ [design.md](../../../../project/design.md)). aggregator 확장은 데모가 요구할 때 이어간다 — 다음 액션 우선순위는 [NOW.md](../../../NOW.md) 참조.
