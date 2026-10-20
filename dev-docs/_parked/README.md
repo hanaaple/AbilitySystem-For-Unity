@@ -18,6 +18,7 @@ GAS(Ability System) 데모에 집중하기 위해 **잠시 치워둔 비-GAS 인
 | `project/design.md` | 전체 게임 기획(컨셉·핵심기획·씬·입력) — 활성 GAS 데모 방향에서 분리 |
 | `agent/feature/feature-list.md` | item-system feature 대시보드 행 |
 | `agent/feature/item-system/` | 아이템·인벤토리·장비 feature 문서(폴더 통째, 내부는 이미 archive) |
+| `agent/TODO-BOARD.md` | TODO-BOARD의 게임 쪽(아이템·캐릭터·아트) 항목 — 2026-10-20 보드에서 분리. 되돌릴 땐 파일째가 아니라 항목을 원래 칸에 다시 붙인다 |
 
 ## 되돌리기
 1. 해당 파일/폴더를 `git mv`로 원 경로로 이동.
