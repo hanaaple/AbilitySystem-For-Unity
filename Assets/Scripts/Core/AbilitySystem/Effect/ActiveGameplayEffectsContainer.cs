@@ -758,7 +758,7 @@ namespace Core.AbilitySystem.Effect
 
             float oldBaseValue = 0f;
 
-            attributeSet.PreAttributeBaseChange(attributeHandle, newBaseValue);
+            attributeSet.PreAttributeBaseChange(attributeHandle, ref newBaseValue);
 
             oldBaseValue = attributeHandle.GetBaseValue(attributeSet);
             attributeHandle.SetBaseValueRaw(attributeSet, newBaseValue);
