@@ -18,7 +18,7 @@ MonoBehaviour:
   executePeriodicEffectOnApplication: 1
   modifiers:
   - attribute:
-      attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      attributeSetTypeName: Game.BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
       fieldName: a
     operation: 0
@@ -29,7 +29,7 @@ MonoBehaviour:
         backingAttribute:
           captureSource: 0
           attribute:
-            attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+            attributeSetTypeName: Game.BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
               Culture=neutral, PublicKeyToken=null
             fieldName: a
           snapshot: 0
@@ -38,7 +38,7 @@ MonoBehaviour:
         preMultiplyAdditive: 0
         postMultiplyAdditive: 0
   - attribute:
-      attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      attributeSetTypeName: Game.BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
       fieldName: b
     operation: 0
@@ -49,7 +49,7 @@ MonoBehaviour:
         backingAttribute:
           captureSource: 0
           attribute:
-            attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+            attributeSetTypeName: Game.BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
               Culture=neutral, PublicKeyToken=null
             fieldName: b
           snapshot: 1
@@ -58,7 +58,7 @@ MonoBehaviour:
         preMultiplyAdditive: 0
         postMultiplyAdditive: 0
   - attribute:
-      attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      attributeSetTypeName: Game.BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
       fieldName: c
     operation: 0
@@ -69,7 +69,7 @@ MonoBehaviour:
         backingAttribute:
           captureSource: 1
           attribute:
-            attributeSetTypeName: BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+            attributeSetTypeName: Game.BoxAttributeSet, Assembly-CSharp, Version=0.0.0.0,
               Culture=neutral, PublicKeyToken=null
             fieldName: c
           snapshot: 1
@@ -78,6 +78,6 @@ MonoBehaviour:
         preMultiplyAdditive: 0
         postMultiplyAdditive: 0
   executions:
-  - calculationClass: Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  - calculationClass: Game.Character.SpeedBoostExecution, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
     calculationModifiers: []

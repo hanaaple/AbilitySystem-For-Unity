@@ -81,7 +81,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a9f2b7c1d8e4f5a6b0c9d2e3f4a5b6c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Character.BoxRoom
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Character.BoxRoom
   otherEffect: {fileID: 11400000, guid: e79ad3f1ef38fd14dbaba22fae9b6e54, type: 2}
   selfEffect: {fileID: 11400000, guid: c7b535387d8cc6e4e9d0fb130651aa12, type: 2}
   sourceAttributes: {fileID: 11400000, guid: aa99b618cdda74d4f97695494abc1134, type: 2}

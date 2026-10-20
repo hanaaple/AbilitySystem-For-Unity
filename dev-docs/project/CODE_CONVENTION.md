@@ -45,7 +45,9 @@ public class PlayerController : MonoBehaviour
 ## 네임스페이스 · 폴더 구조
 
 - namespace = 폴더 경로(`Assets/Scripts/` 기준). 폴더 이동 시 namespace도 맞춘다.
-- `Core/` = 재사용 가능한 시스템 구조만(장착·인벤토리·어빌리티). 게임플레이 구현부(공격 드라이버·픽업)는 Core 밖(`Item/`·`Character/`)에 둔다.
+- `Core/` = 재사용 가능한 시스템 구조만(장착·인벤토리·어빌리티). 게임플레이 구현부(데모용 캐릭터·AttributeSet·픽업 등)는 Core 밖 `Game/`에 둔다.
+- `_Parked/` = 비활성 보관한 비-GAS 코드(아이템·캐릭터 계층 등). 원 경로를 미러링한다 → [`dev-docs/_parked/README.md`](../_parked/README.md).
+  - **namespace 규칙의 예외** — `_Parked/` 코드는 원래 namespace를 유지한다(원위치로 되돌리면 폴더 경로와 다시 맞는다).
 - 에디터 스크립트는 feature-local `Editor/` 폴더에 둔다. 상단에 `Editor/` 트리를 따로 두지 않는다.
 
 ---

@@ -18,7 +18,7 @@ MonoBehaviour:
   executePeriodicEffectOnApplication: 1
   modifiers:
   - attribute:
-      attributeSetTypeName: Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: health
     operation: 0

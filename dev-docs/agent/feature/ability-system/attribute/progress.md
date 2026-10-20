@@ -33,7 +33,7 @@
 - **owner 위임(→D6(Set owner back-ref))**: `AttributeSet`이 ASC back-ref를 `SetOwner`(등록 시)로 받고 `SetBaseValue`를 ASC로 위임.
 - **훅(2026-10-20, UE 구조 그대로)**: 호출은 gameplay-effect 컨테이너가 한다. `PreAttributeBaseChange(ref)`·`PostAttributeBaseChange` = `SetAttributeBaseValue` 앞뒤. `PreGameplayEffectExecute`(수치 변경·false로 버림)·`PostGameplayEffectExecute` = GE 실행(Instant·Periodic·Execution 출력)마다 `InternalExecuteMod`에서, 받는 데이터는 `GameplayEffectModCallbackData`. `PreAttributeChange(ref)`·`PostAttributeChange` = Current 쓰기 앞뒤(`InternalUpdateNumericalAttribute`) — 이유를 가리지 않음. Current 조회(`GetAttributeCurrentValue`)는 저장값이라 Pre 클램프가 보인다. 경위 → worklog 2026-10-20.
 - **초기화(→D3(초기값 SO+Reflection))**: SO → Reflection(`Activator.CreateInstance`+`FieldInfo.SetValue`)으로 초기값 세팅.
-- 코드: `Assets/Scripts/Core/AbilitySystem/Attribute/`, 구체 Set은 `Assets/Scripts/Character/`·`BoxAttributeSet.cs`
+- 코드: `Assets/Scripts/Core/AbilitySystem/Attribute/`, 구체 Set은 `Assets/Scripts/Game/Character/`·`Game/BoxAttributeSet.cs`
 
 ## 세부 TODO (구현 체크리스트)
 - [x] 1. `AttributeData`/`AttributeSet` + 참조 2분할 자료구조
