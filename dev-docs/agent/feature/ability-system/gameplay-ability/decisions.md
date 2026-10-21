@@ -42,6 +42,7 @@
 - 결정: `MakeEffectContext`·`MakeOutgoingGameplayEffectSpec`·`ApplyGameplayEffect(Spec)ToOwner`·`ApplyGameplayEffect(Spec)ToTarget`·`GetAbilityLevel`을 UE대로 둔다. UE와 다른 점: 대상은 `AbilitySystemComponent` 하나(UE는 `FGameplayAbilityTargetDataHandle` — 타겟팅은 GA 범위에서 뺌), `Stacks` 인자 없음(GE 스택 미구현), 반환은 핸들 하나. 컨텍스트는 Instigator = ASC, EffectCauser = Avatar(UE `AddInstigator(OwnerActor, AvatarActor)`에 대응). 효과 GE 필드는 base에 두지 않고 하위 클래스가 든다(UE base의 GE 필드는 코스트·쿨다운뿐 — `GameplayAbility.h:743`·`:751`).
 - 왜: 유저 "일단 UE에 맞춰서 구현하고 있어봐". 대상 축소·스택 제외는 근거 미기록(유저 확정 전). 에이전트 판단(유저 미확정): 둘 다 TODO에서 뺀 기능(타겟팅·GE 스택)에 딸린 것.
 - 보류(유저 답 대기): ① UE `MakeEffectContext`의 `Context.SetAbility(this)`(어빌리티·레벨을 컨텍스트에 넣음)는 안 넣었다 — 유저가 고치는 중인 `GameplayEffectContext.cs`에 필드를 더해야 해서. ② Spec `SourceObject`(Object)와 컨텍스트 `SourceObject`(GameObject, 유저 변경)가 달라 GameObject 출처만 넘긴다. ③ `ApplyAbilityTagsToGameplayEffectSpec`(어빌리티 태그 → Spec)·SetByCaller 복사는 해당 기능이 없어 안 함.
+- 2026-10-21: 컨텍스트 `SourceObject`를 GameObject로 바꾼 유저 변경을 PR #11에 커밋(유저 "알아서 GA 관련으로 해") — ②의 전제가 코드에 들어감. Spec 쪽 타입(Object)을 맞출지는 여전히 보류. > 근거 미기록(유저 확정 전).
 - 대가: 여러 대상에 한 번에 거는 건 호출측이 반복한다. GE 쪽에서 "어느 어빌리티가 걸었나"를 알 수 없다(①).
 - 재검토: 타겟팅·GE 스택을 넣을 때, 컨텍스트 수정이 끝났을 때(①②).
 
