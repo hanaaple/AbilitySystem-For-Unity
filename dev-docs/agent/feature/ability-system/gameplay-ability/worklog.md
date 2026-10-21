@@ -3,6 +3,14 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
 
+### 2026-10-21 — 이름 변경: Actor → GameObject (GA 쪽)
+
+**요청.** 유저: "Actor라는 이름을 바꾸자 안맞아. GameObject라던가 아님 아예 붙이지 말던가" → 범위 "GA 쪽만", 방식 "GameObject로 바꾸기", "열린 PR #11에 추가".
+
+**구현.** `GameplayAbilityActorInfo` → `GameplayAbilityGameObjectInfo`(파일·meta 이름도), `AbilityActorInfo`/`CurrentActorInfo`/`InitAbilityActorInfo`/`SetCurrentActorInfo` → `…GameObjectInfo`, `OwnerActor`/`AvatarActor` → `OwnerGameObject`/`AvatarGameObject`, `Get(Owning|Avatar)ActorFromActorInfo` → `Get(Owner|Avatar)GameObjectFromInfo`, `GetAbilitySystemComponentFromActorInfo` → `GetAbilitySystemComponentFromInfo`, `InitFromActor` → `InitFromGameObject`, `InstancedPerActor` → `InstancedPerGameObject`, 매개변수 `actorInfo` → `gameObjectInfo`, 같은 파일의 주석 "액터 정보"·"Per Actor"도. 대응표에 없던 `GetAbilitySystemComponentFromInfo`·`SetCurrentGameObjectInfo`·`InitFromGameObject`는 같은 규칙으로 에이전트가 맞춤. `<remarks>UE: …</remarks>`의 UE 이름, GE의 `ActorTags` 계열(gameplay-effect), `Game/`의 일반 주석, 테스트 안 로그 문자열은 그대로. 인스턴싱 정책은 enum 정수로 저장돼 에셋은 안 바뀜. progress 설계 개요만 새 이름으로(decisions·worklog·TODO는 당시 기록이라 둠).
+
+**확인.** 컴파일(Unity 없이, rsp의 파일 경로 갱신) 통과, cref 경고 없음. 첫 실행 도중 에디터가 종료돼(Editor.log 끝이 정상 종료 순서) 유저가 다시 켠 뒤 실행 — 셀프체크 GA 160/0·Aggregator 83/0·Calculation Modifier 19/0·GE Component 89/0·Modifier Tag 65/0, PlayMode GA 6/0·수명 13/0·Tag 9/0·Aggregator 14/0, 에러 0. PR #11에 refactor 커밋으로 추가.
+
 ### 2026-10-21 — GA 마무리 테스트: 셀프체크 Q(기능 조합·재진입·경계)
 
 **요청.** 유저: "마지막으로 확실하게 GA 테스트하자. 다양한 경우에 따라 Test Case 해서 해".

@@ -10,7 +10,7 @@ namespace Core.AbilitySystem.Abilities
         /// <remarks>UE: INDEX_NONE</remarks>
         public const int NoInputID = -1;
 
-        // Per Actor면 부여 때 만든 하나, Per Execution이면 지금 활성인 발동들의 인스턴스.
+        // Per GameObject면 부여 때 만든 하나, Per Execution이면 지금 활성인 발동들의 인스턴스.
         private readonly List<GameplayAbility> _instances = new();
 
         public GameplayAbilitySpec(GameplayAbilityAsset ability, int level = 1, int inputID = NoInputID, UnityEngine.Object sourceObject = null)
@@ -43,12 +43,12 @@ namespace Core.AbilitySystem.Abilities
         /// <remarks>UE: FGameplayAbilitySpec::IsActive</remarks>
         public bool IsActive => Ability != null && ActiveCount > 0;
 
-        /// <summary>Per Actor 어빌리티가 부여될 때 만든 이 ASC 전용 인스턴스. Per Execution이거나 부여 전·해제 후엔 null.</summary>
+        /// <summary>Per GameObject 어빌리티가 부여될 때 만든 이 ASC 전용 인스턴스. Per Execution이거나 부여 전·해제 후엔 null.</summary>
         /// <remarks>UE: FGameplayAbilitySpec::GetPrimaryInstance</remarks>
         public GameplayAbility GetPrimaryInstance()
         {
             GameplayAbility template = Ability != null ? Ability.AbilityTemplate : null;
-            if (template != null && template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerActor && _instances.Count > 0)
+            if (template != null && template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerGameObject && _instances.Count > 0)
             {
                 return _instances[0];
             }
@@ -56,7 +56,7 @@ namespace Core.AbilitySystem.Abilities
             return null;
         }
 
-        /// <summary>이 Spec의 런타임 인스턴스 전부(Per Actor면 하나, Per Execution이면 활성 발동 수만큼).</summary>
+        /// <summary>이 Spec의 런타임 인스턴스 전부(Per GameObject면 하나, Per Execution이면 활성 발동 수만큼).</summary>
         /// <remarks>UE: FGameplayAbilitySpec::GetAbilityInstances</remarks>
         public IReadOnlyList<GameplayAbility> GetAbilityInstances()
         {

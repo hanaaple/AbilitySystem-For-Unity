@@ -56,16 +56,16 @@ namespace Core.AbilitySystem
         /// <remarks>UE: UAbilitySystemComponent::OnAbilityEnded</remarks>
         public event Action<AbilityEndedData> OnAbilityEndedWithData;
 
-        /// <summary>어빌리티가 동작하는 액터 정보. 기본값은 Owner = Avatar = 이 GameObject.</summary>
+        /// <summary>어빌리티가 동작하는 GameObject 정보. 기본값은 Owner = Avatar = 이 GameObject.</summary>
         /// <remarks>UE: UAbilitySystemComponent::AbilityActorInfo</remarks>
-        public GameplayAbilityActorInfo AbilityActorInfo { get; } = new();
+        public GameplayAbilityGameObjectInfo AbilityGameObjectInfo { get; } = new();
 
         private void Awake()
         {
             _activeGameplayEffectsContainer = new ActiveGameplayEffectsContainer(this);
             _activatableAbilities.RegisterWithOwner(this);
 
-            InitAbilityActorInfo(gameObject, gameObject);
+            InitAbilityGameObjectInfo(gameObject, gameObject);
 
             // AddSet은 AttributeSet 필드에 값을 직접 세팅할 뿐 CurrentValue 갱신 경로를 거치지 않아
             // 초기화 중 AttributeChanged가 발화하지 않는다(불필요한 재평가 없음).
@@ -516,19 +516,19 @@ namespace Core.AbilitySystem
 
         // ── 어빌리티 ──────────────────────────────────────────────────────────────
 
-        /// <summary>액터 정보를 초기화한다. Avatar가 바뀌면 부여된 어빌리티들에 <see cref="GameplayAbility.OnAvatarSet"/>을 알린다.</summary>
+        /// <summary>GameObject 정보를 초기화한다. Avatar가 바뀌면 부여된 어빌리티들에 <see cref="GameplayAbility.OnAvatarSet"/>을 알린다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::InitAbilityActorInfo</remarks>
-        public void InitAbilityActorInfo(GameObject ownerActor, GameObject avatarActor)
+        public void InitAbilityGameObjectInfo(GameObject ownerGameObject, GameObject avatarGameObject)
         {
-            if (ownerActor == null)
+            if (ownerGameObject == null)
             {
-                Debug.LogError("[ASC] InitAbilityActorInfo: ownerActor가 null.");
+                Debug.LogError("[ASC] InitAbilityGameObjectInfo: ownerGameObject가 null.");
                 return;
             }
 
-            bool avatarChanged = avatarActor != AbilityActorInfo.AvatarActor;
+            bool avatarChanged = avatarGameObject != AbilityGameObjectInfo.AvatarGameObject;
 
-            AbilityActorInfo.InitFromActor(ownerActor, avatarActor, this);
+            AbilityGameObjectInfo.InitFromGameObject(ownerGameObject, avatarGameObject, this);
 
             if (!avatarChanged)
             {
@@ -540,22 +540,22 @@ namespace Core.AbilitySystem
                 foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
                 {
                     GameplayAbility template = spec.Ability.AbilityTemplate;
-                    if (template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerActor)
+                    if (template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerGameObject)
                     {
                         // 인스턴스가 없으면 이미 해제됐거나, 만들어질 때 OnGiveAbility에서 알린다.
                         GameplayAbility abilityInstance = spec.GetPrimaryInstance();
-                        abilityInstance?.OnAvatarSet(AbilityActorInfo, spec);
+                        abilityInstance?.OnAvatarSet(AbilityGameObjectInfo, spec);
                     }
                     else
                     {
-                        template.OnAvatarSet(AbilityActorInfo, spec);
+                        template.OnAvatarSet(AbilityGameObjectInfo, spec);
                     }
                 }
             }
         }
 
         /// <summary>
-        /// 어빌리티를 부여한다. Per Actor면 정의의 원형을 복제해 이 ASC 전용 인스턴스를 만든다(Per Execution은 발동 때). 같은 정의라도 Spec마다 따로 부여된다.
+        /// 어빌리티를 부여한다. Per GameObject면 정의의 원형을 복제해 이 ASC 전용 인스턴스를 만든다(Per Execution은 발동 때). 같은 정의라도 Spec마다 따로 부여된다.
         /// 정의가 null이거나 원형이 비었으면 Invalid. 스코프 락 중이면 보류하고 Spec의 핸들을 돌려준다(락이 풀릴 때 부여).
         /// </summary>
         /// <remarks>UE: UAbilitySystemComponent::GiveAbility</remarks>
@@ -713,7 +713,7 @@ namespace Core.AbilitySystem
         }
 
         /// <summary>
-        /// 어빌리티 발동을 시도한다. 해제 대기 중이거나, Owner·Avatar가 없거나, <see cref="GameplayAbility.CanActivateAbility"/>가 거부하거나, Per Actor가 이미 활성이면 false.
+        /// 어빌리티 발동을 시도한다. 해제 대기 중이거나, Owner·Avatar가 없거나, <see cref="GameplayAbility.CanActivateAbility"/>가 거부하거나, Per GameObject가 이미 활성이면 false.
         /// 그중 <see cref="GameplayAbility.CanActivateAbility"/> 거부만 <see cref="OnAbilityFailed"/>로 실패 사유와 함께 알린다.
         /// Per Execution은 발동마다 새 인스턴스를 만들어 여러 개가 동시에 활성일 수 있다.
         /// true면 <see cref="GameplayAbility.ActivateAbility"/>까지 불린 것이다(그 안에서 이미 끝났을 수도 있다).
@@ -733,7 +733,7 @@ namespace Core.AbilitySystem
                 return false;
             }
 
-            if (AbilityActorInfo.OwnerActor == null || AbilityActorInfo.AvatarActor == null)
+            if (AbilityGameObjectInfo.OwnerGameObject == null || AbilityGameObjectInfo.AvatarGameObject == null)
             {
                 return false;
             }
@@ -742,13 +742,13 @@ namespace Core.AbilitySystem
             using (new ScopedAbilityListLock(this))
             {
                 GameplayAbility template = spec.Ability.AbilityTemplate;
-                bool instancedPerActor = template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerActor;
+                bool instancedPerGameObject = template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerGameObject;
 
                 // Per Execution은 아직 인스턴스가 없어 원형이 판단한다.
                 GameplayAbility instancedAbility = spec.GetPrimaryInstance();
                 GameplayAbility abilitySource = instancedAbility ?? template;
                 _internalTryActivateAbilityFailureTags.Reset();
-                if (!abilitySource.CanActivateAbility(handle, AbilityActorInfo, _internalTryActivateAbilityFailureTags))
+                if (!abilitySource.CanActivateAbility(handle, AbilityGameObjectInfo, _internalTryActivateAbilityFailureTags))
                 {
                     // 재정의한 조건이 사유 없이 거부해도 거부됐다는 사실은 알린다.
                     if (_internalTryActivateAbilityFailureTags.IsEmpty())
@@ -761,7 +761,7 @@ namespace Core.AbilitySystem
                     return false;
                 }
 
-                if (instancedPerActor)
+                if (instancedPerGameObject)
                 {
                     // 인스턴스가 하나라 활성 중에 다시 발동하면 진행 중인 상태를 덮어쓴다.
                     if (spec.IsActive)
@@ -780,7 +780,7 @@ namespace Core.AbilitySystem
                     instancedAbility = CreateNewInstanceOfAbility(spec);
                 }
 
-                instancedAbility.CallActivateAbility(handle, AbilityActorInfo);
+                instancedAbility.CallActivateAbility(handle, AbilityGameObjectInfo);
             }
 
             return true;
@@ -840,7 +840,7 @@ namespace Core.AbilitySystem
         private void DestroyActiveState()
         {
             // 씬 언로드처럼 함께 파괴되는 중이면 Owner가 먼저 사라졌을 수 있어, 그땐 취소 콜백이 죽은 Owner를 만지지 않게 건너뛴다.
-            if (AbilityActorInfo.OwnerActor != null && AbilityActorInfo.AbilitySystemComponent != null)
+            if (AbilityGameObjectInfo.OwnerGameObject != null && AbilityGameObjectInfo.AbilitySystemComponent != null)
             {
                 CancelAllAbilities();
             }
@@ -932,7 +932,7 @@ namespace Core.AbilitySystem
             {
                 if (instance != ignore)
                 {
-                    instance.CancelAbility(spec.Handle, AbilityActorInfo);
+                    instance.CancelAbility(spec.Handle, AbilityGameObjectInfo);
                 }
             }
         }
@@ -1042,25 +1042,25 @@ namespace Core.AbilitySystem
             }
         }
 
-        /// <summary>부여 직후 Per Actor면 인스턴스를 만들고, 그 인스턴스(Per Execution이면 원형)에 알린다.</summary>
+        /// <summary>부여 직후 Per GameObject면 인스턴스를 만들고, 그 인스턴스(Per Execution이면 원형)에 알린다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::OnGiveAbility</remarks>
         protected virtual void OnGiveAbility(GameplayAbilitySpec spec)
         {
             GameplayAbility template = spec.Ability.AbilityTemplate;
-            bool instancedPerActor = template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerActor;
-            if (instancedPerActor && spec.GetAbilityInstances().Count == 0)
+            bool instancedPerGameObject = template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerGameObject;
+            if (instancedPerGameObject && spec.GetAbilityInstances().Count == 0)
             {
                 CreateNewInstanceOfAbility(spec);
             }
 
-            GameplayAbility primaryInstance = instancedPerActor ? spec.GetPrimaryInstance() : null;
+            GameplayAbility primaryInstance = instancedPerGameObject ? spec.GetPrimaryInstance() : null;
             if (primaryInstance != null)
             {
-                primaryInstance.OnGiveAbility(AbilityActorInfo, spec);
+                primaryInstance.OnGiveAbility(AbilityGameObjectInfo, spec);
             }
             else
             {
-                template.OnGiveAbility(AbilityActorInfo, spec);
+                template.OnGiveAbility(AbilityGameObjectInfo, spec);
             }
         }
 
@@ -1080,19 +1080,19 @@ namespace Core.AbilitySystem
             {
                 if (instance.IsActive)
                 {
-                    instance.EndAbility(instance.CurrentAbilitySpecHandle, instance.CurrentActorInfo, false);
+                    instance.EndAbility(instance.CurrentAbilitySpecHandle, instance.CurrentGameObjectInfo, false);
                 }
             }
 
-            // Per Actor인데 인스턴스가 없으면 이미 해제된 것이라 알리지 않는다.
+            // Per GameObject인데 인스턴스가 없으면 이미 해제된 것이라 알리지 않는다.
             GameplayAbility primaryInstance = spec.GetPrimaryInstance();
             if (primaryInstance != null)
             {
-                primaryInstance.OnRemoveAbility(AbilityActorInfo, spec);
+                primaryInstance.OnRemoveAbility(AbilityGameObjectInfo, spec);
             }
-            else if (template.InstancingPolicy != GameplayAbilityInstancingPolicy.InstancedPerActor)
+            else if (template.InstancingPolicy != GameplayAbilityInstancingPolicy.InstancedPerGameObject)
             {
-                template.OnRemoveAbility(AbilityActorInfo, spec);
+                template.OnRemoveAbility(AbilityGameObjectInfo, spec);
             }
 
             spec.ClearInstances();

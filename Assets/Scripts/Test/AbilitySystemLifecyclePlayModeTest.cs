@@ -76,7 +76,7 @@ namespace Test
 
             Check("C-1 복제본 어트리뷰트는 원본 현재값(33·15)이 아니라 설정 초기값(Stamina 50, Speed 10)", Approx(Stamina(clone), 50f) && Approx(Speed(clone), 10f) && Approx(Stamina(source), 33f) && Approx(Speed(source), 15f));
             Check("C-2 복제본엔 어빌리티·태그·GE가 없음", clone.GetActivatableAbilities().Count == 0 && clone.GetTagCount(looseTag) == 0 && source.GetActivatableAbilities().Count == 1 && source.GetTagCount(looseTag) == 1);
-            Check("C-3 복제본 액터 정보는 자기 자신(Owner·Avatar·ASC)", clone.AbilityActorInfo.OwnerActor == cloneObject && clone.AbilityActorInfo.AvatarActor == cloneObject && clone.AbilityActorInfo.AbilitySystemComponent == clone);
+            Check("C-3 복제본 GameObject 정보는 자기 자신(Owner·Avatar·ASC)", clone.AbilityGameObjectInfo.OwnerGameObject == cloneObject && clone.AbilityGameObjectInfo.AvatarGameObject == cloneObject && clone.AbilityGameObjectInfo.AbilitySystemComponent == clone);
             Check("C-4 설정(attributeInitData)은 같은 에셋을 가리킴", GetPrivateField(clone, "attributeInitData") == (object)initData);
 
             clone.SetAttributeBaseValue(CharacterAttributeSet.Stamina, 1f);
@@ -95,13 +95,13 @@ namespace Test
             LingeringAbility.Log.Clear();
             AbilitySystemComponent asc = MakeAsc("Lifecycle_Destroy", null);
 
-            GameplayAbilitySpecHandle actorHandle = asc.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "Actor" }, GameplayAbilityInstancingPolicy.InstancedPerActor)));
+            GameplayAbilitySpecHandle actorHandle = asc.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "Actor" }, GameplayAbilityInstancingPolicy.InstancedPerGameObject)));
             GameplayAbilitySpecHandle execHandle = asc.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "Exec" })));
-            asc.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "Idle" }, GameplayAbilityInstancingPolicy.InstancedPerActor)));
-            GameplayAbilitySpecHandle reentrantHandle = asc.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "Reentrant", DestroyOwnerOnCancel = true }, GameplayAbilityInstancingPolicy.InstancedPerActor)));
+            asc.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "Idle" }, GameplayAbilityInstancingPolicy.InstancedPerGameObject)));
+            GameplayAbilitySpecHandle reentrantHandle = asc.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "Reentrant", DestroyOwnerOnCancel = true }, GameplayAbilityInstancingPolicy.InstancedPerGameObject)));
 
             bool activated = asc.TryActivateAbility(actorHandle) && asc.TryActivateAbility(execHandle) && asc.TryActivateAbility(execHandle) && asc.TryActivateAbility(reentrantHandle);
-            Check("D-0 Spec 4개 — 활성 발동 4번(Per Actor 1·Per Execution 2·취소 중 Owner를 다시 파괴하는 것 1), 비활성 1개", activated && asc.GetActivatableAbilities().Count == 4);
+            Check("D-0 Spec 4개 — 활성 발동 4번(Per GameObject 1·Per Execution 2·취소 중 Owner를 다시 파괴하는 것 1), 비활성 1개", activated && asc.GetActivatableAbilities().Count == 4);
 
             int errorsBefore = _errorLogs;
             Destroy(asc.gameObject);
@@ -149,21 +149,21 @@ namespace Test
             public string Name;
             public bool DestroyOwnerOnCancel;
 
-            public override void EndAbility(GameplayAbilitySpecHandle handle, GameplayAbilityActorInfo actorInfo, bool wasCancelled)
+            public override void EndAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo, bool wasCancelled)
             {
-                if (IsEndAbilityValid(handle, actorInfo))
+                if (IsEndAbilityValid(handle, gameObjectInfo))
                 {
                     Log.Add(wasCancelled ? $"{Name}.Cancel" : $"{Name}.End");
                     if (wasCancelled && DestroyOwnerOnCancel)
                     {
-                        UnityEngine.Object.Destroy(actorInfo.OwnerActor);
+                        UnityEngine.Object.Destroy(gameObjectInfo.OwnerGameObject);
                     }
                 }
 
-                base.EndAbility(handle, actorInfo, wasCancelled);
+                base.EndAbility(handle, gameObjectInfo, wasCancelled);
             }
 
-            public override void OnRemoveAbility(GameplayAbilityActorInfo actorInfo, GameplayAbilitySpec spec)
+            public override void OnRemoveAbility(GameplayAbilityGameObjectInfo gameObjectInfo, GameplayAbilitySpec spec)
             {
                 Log.Add($"{Name}.OnRemove");
             }

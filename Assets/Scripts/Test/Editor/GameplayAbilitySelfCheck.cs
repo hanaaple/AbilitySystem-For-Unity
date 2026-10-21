@@ -16,7 +16,7 @@ namespace Test.Editor
 {
     // 클릭 한 번으로 GA 부여·해제·생명주기가 UE 5.6처럼 동작하는지 검증하는 에디터 전용 셀프체크(Play 모드 불필요).
     // 호출을 기록하는 테스트 전용 어빌리티(RecordingAbility)를 원형으로 넣은 정의 에셋을 메모리에 만들어 본다.
-    // A: 부여 기본 / B: 원형 깊은 복사 / C: 같은 정의 여러 번 / D: 해제 / E: 잘못된 입력 / F: 스코프 락·보류 / G: 액터 정보 / H: 정의 에셋 인스펙터·저장 / I: 생명주기(발동·종료·취소) / J: GA에서 GE 적용 / K: Per Execution 인스턴싱 / L: 코스트·쿨다운·커밋·태그 조건 / M: TestGameplayAbility 통합(시간 경과 쿨다운 포함) / N: 커밋 경계 / O: 어빌리티 이벤트·실패 사유 / P: 어빌리티 태그·차단·취소 / Q: 기능 조합·재진입·경계
+    // A: 부여 기본 / B: 원형 깊은 복사 / C: 같은 정의 여러 번 / D: 해제 / E: 잘못된 입력 / F: 스코프 락·보류 / G: GameObject 정보 / H: 정의 에셋 인스펙터·저장 / I: 생명주기(발동·종료·취소) / J: GA에서 GE 적용 / K: Per Execution 인스턴싱 / L: 코스트·쿨다운·커밋·태그 조건 / M: TestGameplayAbility 통합(시간 경과 쿨다운 포함) / N: 커밋 경계 / O: 어빌리티 이벤트·실패 사유 / P: 어빌리티 태그·차단·취소 / Q: 기능 조합·재진입·경계
     public static class GameplayAbilitySelfCheck
     {
         private const string TempAssetPath = "Assets/_Test/GA_SelfCheck_Temp.asset";
@@ -64,7 +64,7 @@ namespace Test.Editor
             try
             {
                 AbilitySystemComponent asc = go.AddComponent<AbilitySystemComponent>();
-                asc.InitAbilityActorInfo(go, go);
+                asc.InitAbilityGameObjectInfo(go, go);
 
                 RunGiveChecks(asc, go, created, Check);
                 RunDeepCopyChecks(asc, created, Check);
@@ -72,7 +72,7 @@ namespace Test.Editor
                 RunClearChecks(asc, created, Check);
                 RunInvalidInputChecks(asc, created, Check);
                 RunScopeLockChecks(asc, created, Check);
-                RunActorInfoChecks(asc, go, otherAvatar, created, Check);
+                RunGameObjectInfoChecks(asc, go, otherAvatar, created, Check);
                 RunInspectorChecks(created, Check);
                 RunActivationChecks(asc, go, created, Check);
                 RunEffectChecks(asc, go, created, Check);
@@ -126,56 +126,56 @@ namespace Test.Editor
             // 직렬화되지 않는 런타임 상태 — 복제본은 원형 값이 아니라 초기값으로 시작해야 한다.
             [NonSerialized] public int RuntimeCounter = 7;
 
-            public GameplayAbilityActorInfo AvatarSetInfo;
+            public GameplayAbilityGameObjectInfo AvatarSetInfo;
 
             // 생명주기 검사용 스위치 — 부여 뒤 인스턴스에 직접 켠다.
             [NonSerialized] public bool BlockActivation;
             [NonSerialized] public bool EndOnActivate;
 
-            public override bool CanActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityActorInfo actorInfo, GameplayTagContainer optionalRelevantTags = null)
+            public override bool CanActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo, GameplayTagContainer optionalRelevantTags = null)
             {
-                return !BlockActivation && base.CanActivateAbility(handle, actorInfo, optionalRelevantTags);
+                return !BlockActivation && base.CanActivateAbility(handle, gameObjectInfo, optionalRelevantTags);
             }
 
-            public override void ActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityActorInfo actorInfo)
+            public override void ActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo)
             {
                 Log.Add($"{Name}.Activate");
-                AbilitySystemComponent asc = actorInfo.AbilitySystemComponent;
+                AbilitySystemComponent asc = gameObjectInfo.AbilitySystemComponent;
                 Hook?.Invoke("Activate", this, asc.FindAbilitySpecFromHandle(handle));
 
                 if (EndOnActivate)
                 {
-                    EndAbility(handle, actorInfo, false);
+                    EndAbility(handle, gameObjectInfo, false);
                 }
             }
 
-            public override void EndAbility(GameplayAbilitySpecHandle handle, GameplayAbilityActorInfo actorInfo, bool wasCancelled)
+            public override void EndAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo, bool wasCancelled)
             {
-                if (IsEndAbilityValid(handle, actorInfo))
+                if (IsEndAbilityValid(handle, gameObjectInfo))
                 {
                     Log.Add(wasCancelled ? $"{Name}.Cancel" : $"{Name}.End");
                 }
 
-                base.EndAbility(handle, actorInfo, wasCancelled);
+                base.EndAbility(handle, gameObjectInfo, wasCancelled);
             }
 
-            public override void OnGiveAbility(GameplayAbilityActorInfo actorInfo, GameplayAbilitySpec spec)
+            public override void OnGiveAbility(GameplayAbilityGameObjectInfo gameObjectInfo, GameplayAbilitySpec spec)
             {
                 Log.Add($"{Name}.OnGive");
-                base.OnGiveAbility(actorInfo, spec);
+                base.OnGiveAbility(gameObjectInfo, spec);
                 Hook?.Invoke("OnGive", this, spec);
             }
 
-            public override void OnRemoveAbility(GameplayAbilityActorInfo actorInfo, GameplayAbilitySpec spec)
+            public override void OnRemoveAbility(GameplayAbilityGameObjectInfo gameObjectInfo, GameplayAbilitySpec spec)
             {
                 Log.Add($"{Name}.OnRemove");
                 Hook?.Invoke("OnRemove", this, spec);
             }
 
-            public override void OnAvatarSet(GameplayAbilityActorInfo actorInfo, GameplayAbilitySpec spec)
+            public override void OnAvatarSet(GameplayAbilityGameObjectInfo gameObjectInfo, GameplayAbilitySpec spec)
             {
                 Log.Add($"{Name}.OnAvatarSet");
-                AvatarSetInfo = actorInfo;
+                AvatarSetInfo = gameObjectInfo;
             }
         }
 
@@ -213,13 +213,13 @@ namespace Test.Editor
             var instance = spec.GetPrimaryInstance() as RecordingAbility;
             check("A-8 인스턴스가 만들어짐(RecordingAbility)", instance != null);
             check("A-9 인스턴스는 원형과 다른 객체", instance != null && !ReferenceEquals(instance, asset.AbilityTemplate));
-            check("A-10 OnGiveAbility 뒤 CurrentSpecHandle·CurrentActorInfo", instance != null && instance.CurrentAbilitySpecHandle.Equals(handle) && instance.CurrentActorInfo == asc.AbilityActorInfo);
-            check("A-11 GetAbilitySystemComponent/Owning/AvatarFromActorInfo", instance != null
-                && instance.GetAbilitySystemComponentFromActorInfo() == asc
-                && instance.GetOwningActorFromActorInfo() == go
-                && instance.GetAvatarActorFromActorInfo() == go);
+            check("A-10 OnGiveAbility 뒤 CurrentSpecHandle·CurrentGameObjectInfo", instance != null && instance.CurrentAbilitySpecHandle.Equals(handle) && instance.CurrentGameObjectInfo == asc.AbilityGameObjectInfo);
+            check("A-11 GetAbilitySystemComponent/OwnerGameObject/AvatarGameObjectFromInfo", instance != null
+                && instance.GetAbilitySystemComponentFromInfo() == asc
+                && instance.GetOwnerGameObjectFromInfo() == go
+                && instance.GetAvatarGameObjectFromInfo() == go);
             check("A-12 호출 순서 OnGive → OnAvatarSet(Avatar 있음)", Sequence("A.OnGive", "A.OnAvatarSet"));
-            check("A-13 원형은 실행되지 않음(액터 정보 없음)", asset.AbilityTemplate.CurrentActorInfo == null);
+            check("A-13 원형은 실행되지 않음(GameObject 정보 없음)", asset.AbilityTemplate.CurrentGameObjectInfo == null);
             check("A-14 비활성 상태로 시작", !spec.IsActive && spec.ActiveCount == 0 && !spec.PendingRemove);
         }
 
@@ -435,9 +435,9 @@ namespace Test.Editor
             check("F-10 락 중 ClearAll은 락이 풀릴 때 처리", asc.GetActivatableAbilities().Count == 0);
         }
 
-        // ── G: 액터 정보 ──────────────────────────────────────────────────────────
+        // ── G: GameObject 정보 ──────────────────────────────────────────────────────────
 
-        private static void RunActorInfoChecks(AbilitySystemComponent asc, GameObject go, GameObject otherAvatar, List<UnityEngine.Object> created, Action<string, bool> check)
+        private static void RunGameObjectInfoChecks(AbilitySystemComponent asc, GameObject go, GameObject otherAvatar, List<UnityEngine.Object> created, Action<string, bool> check)
         {
             asc.ClearAllAbilities();
             GameplayAbilityAsset asset = MakeAsset("G", created);
@@ -445,21 +445,21 @@ namespace Test.Editor
             asc.GiveAbility(spec);
             var instance = (RecordingAbility)spec.GetPrimaryInstance();
 
-            check("G-1 기본 액터 정보 Owner = Avatar = ASC GameObject", asc.AbilityActorInfo.OwnerActor == go && asc.AbilityActorInfo.AvatarActor == go && asc.AbilityActorInfo.AbilitySystemComponent == asc);
+            check("G-1 기본 GameObject 정보 Owner = Avatar = ASC GameObject", asc.AbilityGameObjectInfo.OwnerGameObject == go && asc.AbilityGameObjectInfo.AvatarGameObject == go && asc.AbilityGameObjectInfo.AbilitySystemComponent == asc);
 
             RecordingAbility.Log.Clear();
-            asc.InitAbilityActorInfo(go, go);
+            asc.InitAbilityGameObjectInfo(go, go);
             check("G-2 Avatar가 그대로면 OnAvatarSet 없음", !RecordingAbility.Log.Contains("G.OnAvatarSet"));
 
-            asc.InitAbilityActorInfo(go, otherAvatar);
-            check("G-3 Avatar가 바뀌면 부여된 인스턴스에 OnAvatarSet", RecordingAbility.Log.Contains("G.OnAvatarSet") && instance.AvatarSetInfo.AvatarActor == otherAvatar);
-            check("G-4 인스턴스가 보는 Avatar도 바뀜(같은 액터 정보 공유)", instance.GetAvatarActorFromActorInfo() == otherAvatar);
+            asc.InitAbilityGameObjectInfo(go, otherAvatar);
+            check("G-3 Avatar가 바뀌면 부여된 인스턴스에 OnAvatarSet", RecordingAbility.Log.Contains("G.OnAvatarSet") && instance.AvatarSetInfo.AvatarGameObject == otherAvatar);
+            check("G-4 인스턴스가 보는 Avatar도 바뀜(같은 GameObject 정보 공유)", instance.GetAvatarGameObjectFromInfo() == otherAvatar);
 
             Debug.Log("[GA Self-Check] 아래 에러 로그 1줄은 G-5의 정상 출력이다.");
-            asc.InitAbilityActorInfo(null, go);
-            check("G-5 Owner null이면 거부(액터 정보 그대로)", asc.AbilityActorInfo.OwnerActor == go && asc.AbilityActorInfo.AvatarActor == otherAvatar);
+            asc.InitAbilityGameObjectInfo(null, go);
+            check("G-5 Owner null이면 거부(GameObject 정보 그대로)", asc.AbilityGameObjectInfo.OwnerGameObject == go && asc.AbilityGameObjectInfo.AvatarGameObject == otherAvatar);
 
-            asc.InitAbilityActorInfo(go, go);
+            asc.InitAbilityGameObjectInfo(go, go);
         }
 
         // ── H: 정의 에셋 인스펙터·저장 ─────────────────────────────────────────────
@@ -520,10 +520,10 @@ namespace Test.Editor
             check("I-1 발동 성공 — 인스턴스·Spec 활성, ActiveCount 1", asc.TryActivateAbility(handle) && instance.IsActive && spec.IsActive && spec.ActiveCount == 1 && RecordingAbility.Log.Contains("I.Activate"));
             check("I-2 활성 중 다시 발동은 실패(ActivateAbility 한 번)", !asc.TryActivateAbility(handle) && spec.ActiveCount == 1 && Count("I.Activate") == 1);
 
-            instance.EndAbility(handle, asc.AbilityActorInfo, false);
+            instance.EndAbility(handle, asc.AbilityGameObjectInfo, false);
             check("I-3 EndAbility — 비활성, ActiveCount 0", !instance.IsActive && !spec.IsActive && spec.ActiveCount == 0 && RecordingAbility.Log.Contains("I.End"));
 
-            instance.EndAbility(handle, asc.AbilityActorInfo, false);
+            instance.EndAbility(handle, asc.AbilityGameObjectInfo, false);
             check("I-4 끝난 뒤 다시 EndAbility는 무시", spec.ActiveCount == 0 && Count("I.End") == 1);
             check("I-5 끝난 뒤 다시 발동 가능", asc.TryActivateAbility(handle) && spec.ActiveCount == 1);
 
@@ -543,9 +543,9 @@ namespace Test.Editor
             check("I-9 CanActivateAbility가 거부하면 실패(ActivateAbility 안 불림)", !asc.TryActivateAbility(handle) && !spec.IsActive && !RecordingAbility.Log.Contains("I.Activate"));
             instance.BlockActivation = false;
 
-            asc.InitAbilityActorInfo(go, null);
+            asc.InitAbilityGameObjectInfo(go, null);
             check("I-10 Avatar가 없으면 실패", !asc.TryActivateAbility(handle) && !spec.IsActive);
-            asc.InitAbilityActorInfo(go, go);
+            asc.InitAbilityGameObjectInfo(go, go);
 
             Debug.Log("[GA Self-Check] 아래 경고 로그 1줄은 I-11의 정상 출력이다.");
             check("I-11 없는 핸들 발동은 실패", !asc.TryActivateAbility(GameplayAbilitySpecHandle.Invalid));
@@ -623,38 +623,38 @@ namespace Test.Editor
             var spec = new GameplayAbilitySpec(asset, 3, GameplayAbilitySpec.NoInputID, sourceGo);
             GameplayAbilitySpecHandle handle = asc.GiveAbility(spec);
             GameplayAbility instance = spec.GetPrimaryInstance();
-            GameplayAbilityActorInfo actorInfo = asc.AbilityActorInfo;
+            GameplayAbilityGameObjectInfo gameObjectInfo = asc.AbilityGameObjectInfo;
 
-            GameplayEffectContextHandle context = instance.MakeEffectContext(handle, actorInfo);
+            GameplayEffectContextHandle context = instance.MakeEffectContext(handle, gameObjectInfo);
             check("J-1 MakeEffectContext — Instigator = ASC, EffectCauser = Avatar, SourceObject = Spec 출처", context.GetInstigator() == asc && context.EffectCauser == go && context.GetSourceObject() == sourceGo);
 
-            GameplayEffectSpec outgoing = instance.MakeOutgoingGameplayEffectSpec(handle, actorInfo, infinite, 2f);
+            GameplayEffectSpec outgoing = instance.MakeOutgoingGameplayEffectSpec(handle, gameObjectInfo, infinite, 2f);
             check("J-2 MakeOutgoingGameplayEffectSpec — 레벨·GE·Instigator", outgoing != null && Mathf.Approximately(outgoing.Level, 2f) && outgoing.Context.GetInstigator() == asc);
 
             GameplayEffectSpec current = instance.MakeOutgoingGameplayEffectSpec(infinite);
-            check("J-3 현재 Spec·액터 정보 판은 같은 컨텍스트(Instigator·출처)", current != null && current.Context.GetInstigator() == asc && current.Context.GetSourceObject() == sourceGo);
+            check("J-3 현재 Spec·GameObject 정보 판은 같은 컨텍스트(Instigator·출처)", current != null && current.Context.GetInstigator() == asc && current.Context.GetSourceObject() == sourceGo);
 
-            ActiveGameplayEffectHandle ownerHandle = instance.ApplyGameplayEffectToOwner(handle, actorInfo, infinite, 1f);
+            ActiveGameplayEffectHandle ownerHandle = instance.ApplyGameplayEffectToOwner(handle, gameObjectInfo, infinite, 1f);
             ActiveGameplayEffect ownerActive = asc.GetActiveGameplayEffect(ownerHandle);
             check("J-4 ApplyGameplayEffectToOwner — Owner ASC에 활성 GE", ownerHandle.IsValid && ownerActive != null && ownerActive.Spec.Context.GetInstigator() == asc);
 
-            ActiveGameplayEffectHandle targetHandle = instance.ApplyGameplayEffectToTarget(handle, actorInfo, target, infinite, 1f);
+            ActiveGameplayEffectHandle targetHandle = instance.ApplyGameplayEffectToTarget(handle, gameObjectInfo, target, infinite, 1f);
             ActiveGameplayEffect targetActive = target.GetActiveGameplayEffect(targetHandle);
             check("J-5 ApplyGameplayEffectToTarget — 대상 ASC에 활성 GE, Instigator는 어빌리티 쪽 ASC", targetHandle.IsValid && targetActive != null && targetActive.Spec.Context.GetInstigator() == asc && asc.GetActiveGameplayEffect(targetHandle) == null);
 
-            check("J-6 GE null을 Owner에 — Invalid(로그 없음)", !instance.ApplyGameplayEffectToOwner(handle, actorInfo, null, 1f).IsValid);
+            check("J-6 GE null을 Owner에 — Invalid(로그 없음)", !instance.ApplyGameplayEffectToOwner(handle, gameObjectInfo, null, 1f).IsValid);
             Debug.Log("[GA Self-Check] 아래 에러 로그 1줄은 J-7의 정상 출력이다.");
-            check("J-7 GE null을 대상에 — Invalid", !instance.ApplyGameplayEffectToTarget(handle, actorInfo, target, null, 1f).IsValid);
-            check("J-8 대상 null — Invalid", !instance.ApplyGameplayEffectToTarget(handle, actorInfo, null, infinite, 1f).IsValid);
+            check("J-7 GE null을 대상에 — Invalid", !instance.ApplyGameplayEffectToTarget(handle, gameObjectInfo, target, null, 1f).IsValid);
+            check("J-8 대상 null — Invalid", !instance.ApplyGameplayEffectToTarget(handle, gameObjectInfo, null, infinite, 1f).IsValid);
 
             check("J-9 GetAbilityLevel = Spec 레벨(3)", instance.GetAbilityLevel() == 3);
             Debug.Log("[GA Self-Check] 아래 경고 로그 1줄은 J-10의 정상 출력이다.");
-            check("J-10 없는 핸들의 레벨은 1", instance.GetAbilityLevel(GameplayAbilitySpecHandle.Invalid, actorInfo) == 1);
+            check("J-10 없는 핸들의 레벨은 1", instance.GetAbilityLevel(GameplayAbilitySpecHandle.Invalid, gameObjectInfo) == 1);
 
             // J-11: 출처가 GameObject가 아니면(예: 에셋) 컨텍스트에 넘기지 않는다
             var assetSourced = new GameplayAbilitySpec(asset, 1, GameplayAbilitySpec.NoInputID, infinite);
             asc.GiveAbility(assetSourced);
-            GameplayEffectContextHandle assetContext = assetSourced.GetPrimaryInstance().MakeEffectContext(assetSourced.Handle, actorInfo);
+            GameplayEffectContextHandle assetContext = assetSourced.GetPrimaryInstance().MakeEffectContext(assetSourced.Handle, gameObjectInfo);
             check("J-11 GameObject가 아닌 출처는 컨텍스트에 안 들어감", assetContext.GetInstigator() == asc && assetContext.GetSourceObject() == null);
 
             // J-12: 발동 중(ActivateAbility 안)에 대상에게 GE를 거는 실제 흐름
@@ -663,8 +663,8 @@ namespace Test.Editor
             {
                 if (evt == "Activate" && s == spec)
                 {
-                    fromActivate = ability.ApplyGameplayEffectToTarget(s.Handle, ability.CurrentActorInfo, target, infinite, ability.GetAbilityLevel());
-                    ability.EndAbility(s.Handle, ability.CurrentActorInfo, false);
+                    fromActivate = ability.ApplyGameplayEffectToTarget(s.Handle, ability.CurrentGameObjectInfo, target, infinite, ability.GetAbilityLevel());
+                    ability.EndAbility(s.Handle, ability.CurrentGameObjectInfo, false);
                 }
             };
             bool activated = asc.TryActivateAbility(handle);
@@ -688,7 +688,7 @@ namespace Test.Editor
             GameplayAbilitySpecHandle handle = asc.GiveAbility(spec);
 
             check("K-1 부여 — 인스턴스 없음, 원형이 OnGive·OnAvatarSet을 받음", spec.GetPrimaryInstance() == null && spec.GetAbilityInstances().Count == 0 && Sequence("K.OnGive", "K.OnAvatarSet"));
-            check("K-2 원형에는 액터 정보를 쓰지 않음", template.CurrentActorInfo == null && !template.IsInstantiated);
+            check("K-2 원형에는 GameObject 정보를 쓰지 않음", template.CurrentGameObjectInfo == null && !template.IsInstantiated);
 
             GameplayAbility first = null;
             RecordingAbility.Hook = (evt, ability, s) =>
@@ -700,11 +700,11 @@ namespace Test.Editor
             };
             bool firstActivated = asc.TryActivateAbility(handle);
             RecordingAbility.Hook = null;
-            check("K-3 발동 — 새 인스턴스 1개(원형 아님), 활성, 액터 정보 있음", firstActivated && spec.GetAbilityInstances().Count == 1 && first != null && !ReferenceEquals(first, template)
-                && first.IsInstantiated && first.IsActive && first.CurrentActorInfo == asc.AbilityActorInfo && first.CurrentAbilitySpecHandle.Equals(handle));
+            check("K-3 발동 — 새 인스턴스 1개(원형 아님), 활성, GameObject 정보 있음", firstActivated && spec.GetAbilityInstances().Count == 1 && first != null && !ReferenceEquals(first, template)
+                && first.IsInstantiated && first.IsActive && first.CurrentGameObjectInfo == asc.AbilityGameObjectInfo && first.CurrentAbilitySpecHandle.Equals(handle));
             check("K-4 활성 중 다시 발동 — 성공, 인스턴스 2개·ActiveCount 2", asc.TryActivateAbility(handle) && spec.GetAbilityInstances().Count == 2 && spec.ActiveCount == 2 && !ReferenceEquals(spec.GetAbilityInstances()[0], spec.GetAbilityInstances()[1]));
 
-            first.EndAbility(handle, asc.AbilityActorInfo, false);
+            first.EndAbility(handle, asc.AbilityGameObjectInfo, false);
             check("K-5 하나 종료 — 그 인스턴스만 빠짐, ActiveCount 1, Spec은 여전히 활성", spec.GetAbilityInstances().Count == 1 && !ReferenceEquals(spec.GetAbilityInstances()[0], first) && spec.ActiveCount == 1 && spec.IsActive && !first.IsActive);
 
             RecordingAbility.Log.Clear();
@@ -715,7 +715,7 @@ namespace Test.Editor
             {
                 if (evt == "Activate" && s == spec)
                 {
-                    ability.EndAbility(s.Handle, ability.CurrentActorInfo, false);
+                    ability.EndAbility(s.Handle, ability.CurrentGameObjectInfo, false);
                 }
             };
             bool instantActivated = asc.TryActivateAbility(handle);
@@ -729,9 +729,9 @@ namespace Test.Editor
             RecordingAbility.Log.Clear();
             GameObject otherAvatar = new GameObject("GameplayAbilitySelfCheck_KAvatar");
             created.Add(otherAvatar);
-            asc.InitAbilityActorInfo(go, otherAvatar);
-            check("K-9 Avatar가 바뀌면 원형이 OnAvatarSet을 받음", RecordingAbility.Log.Contains("K.OnAvatarSet") && template.CurrentActorInfo == null);
-            asc.InitAbilityActorInfo(go, go);
+            asc.InitAbilityGameObjectInfo(go, otherAvatar);
+            check("K-9 Avatar가 바뀌면 원형이 OnAvatarSet을 받음", RecordingAbility.Log.Contains("K.OnAvatarSet") && template.CurrentGameObjectInfo == null);
+            asc.InitAbilityGameObjectInfo(go, go);
 
             // K-10: 활성 인스턴스가 여럿일 때 해제 — 모두 종료(취소 아님) 뒤 원형이 OnRemove
             asc.TryActivateAbility(handle);
@@ -741,11 +741,11 @@ namespace Test.Editor
             check("K-10 활성 2개 중 ClearAbility — End 2번 → 원형 OnRemove, 목록에서 빠짐", Count("K.End") == 2 && !RecordingAbility.Log.Contains("K.Cancel") && Sequence("K.End", "K.OnRemove")
                 && spec.GetAbilityInstances().Count == 0 && asc.FindAbilitySpecFromHandle(handle) == null);
 
-            // K-11: Per Actor와 섞여 있어도 각자 규칙대로
+            // K-11: Per GameObject와 섞여 있어도 각자 규칙대로
             GameplayAbilityAsset actorAsset = MakeAsset("KActor", created);
             var actorSpec = new GameplayAbilitySpec(actorAsset);
             asc.GiveAbility(actorSpec);
-            check("K-11 Per Actor는 부여 때 인스턴스 1개(대표 인스턴스), 원형과 다름", actorSpec.GetAbilityInstances().Count == 1 && actorSpec.GetPrimaryInstance() != null && actorSpec.GetPrimaryInstance().IsInstantiated);
+            check("K-11 Per GameObject는 부여 때 인스턴스 1개(대표 인스턴스), 원형과 다름", actorSpec.GetAbilityInstances().Count == 1 && actorSpec.GetPrimaryInstance() != null && actorSpec.GetPrimaryInstance().IsInstantiated);
         }
 
         // ── L: 코스트·쿨다운·커밋·태그 조건 ───────────────────────────────────────
@@ -791,8 +791,8 @@ namespace Test.Editor
                 if (evt == "Activate" && ability.Name == "L")
                 {
                     beforeCommit?.Invoke(asc);
-                    committed = ability.CommitAbility(s.Handle, ability.CurrentActorInfo);
-                    ability.EndAbility(s.Handle, ability.CurrentActorInfo, false);
+                    committed = ability.CommitAbility(s.Handle, ability.CurrentGameObjectInfo);
+                    ability.EndAbility(s.Handle, ability.CurrentGameObjectInfo, false);
                 }
             };
 
@@ -800,14 +800,14 @@ namespace Test.Editor
             bool activated = asc.TryActivateAbility(handle);
             check("L-1 커밋 — 코스트 적용(Stamina 50 → 20), 쿨다운 태그 부여", activated && committed && Mathf.Approximately(asc.GetAttributeCurrentValue(stamina), 20f) && asc.HasMatchingGameplayTag(cooldownTag) && !spec.IsActive);
 
-            instance.GetCooldownTimeRemainingAndDuration(handle, asc.AbilityActorInfo, out float remaining, out float duration);
-            check("L-2 남은 쿨다운 = 10, 전체 = 10", Mathf.Approximately(instance.GetCooldownTimeRemaining(asc.AbilityActorInfo), 10f) && Mathf.Approximately(remaining, 10f) && Mathf.Approximately(duration, 10f));
+            instance.GetCooldownTimeRemainingAndDuration(handle, asc.AbilityGameObjectInfo, out float remaining, out float duration);
+            check("L-2 남은 쿨다운 = 10, 전체 = 10", Mathf.Approximately(instance.GetCooldownTimeRemaining(asc.AbilityGameObjectInfo), 10f) && Mathf.Approximately(remaining, 10f) && Mathf.Approximately(duration, 10f));
 
             RecordingAbility.Log.Clear();
-            check("L-3 쿨다운 중엔 발동 실패(ActivateAbility 안 불림)", !instance.CheckCooldown(handle, asc.AbilityActorInfo) && !asc.TryActivateAbility(handle) && !RecordingAbility.Log.Contains("L.Activate"));
+            check("L-3 쿨다운 중엔 발동 실패(ActivateAbility 안 불림)", !instance.CheckCooldown(handle, asc.AbilityGameObjectInfo) && !asc.TryActivateAbility(handle) && !RecordingAbility.Log.Contains("L.Activate"));
 
             asc.RemoveActiveEffectsWithGrantedTags(cooldownTags);
-            check("L-4 쿨다운이 빠지면 쿨다운 0, 코스트 부족(Stamina 20 < 30)이면 발동 실패", Mathf.Approximately(instance.GetCooldownTimeRemaining(asc.AbilityActorInfo), 0f) && !instance.CheckCost(handle, asc.AbilityActorInfo) && !asc.TryActivateAbility(handle));
+            check("L-4 쿨다운이 빠지면 쿨다운 0, 코스트 부족(Stamina 20 < 30)이면 발동 실패", Mathf.Approximately(instance.GetCooldownTimeRemaining(asc.AbilityGameObjectInfo), 0f) && !instance.CheckCost(handle, asc.AbilityGameObjectInfo) && !asc.TryActivateAbility(handle));
 
             // 발동 뒤 커밋 전에 자원이 줄면 커밋 실패 — 아무것도 적용하지 않는다
             asc.SetAttributeBaseValue(stamina, 40f);
@@ -846,7 +846,7 @@ namespace Test.Editor
             RecordingAbility.Hook = null;
             check("L-8 필요 태그가 있으면 발동, 활성 중 Owner에 ActivationOwnedTags", tagActivated && ownedDuringActivation && asc.HasMatchingGameplayTag(ownedTag));
 
-            tagSpec.GetPrimaryInstance().EndAbility(tagHandle, asc.AbilityActorInfo, false);
+            tagSpec.GetPrimaryInstance().EndAbility(tagHandle, asc.AbilityGameObjectInfo, false);
             check("L-9 종료하면 ActivationOwnedTags가 빠짐", !asc.HasMatchingGameplayTag(ownedTag));
 
             asc.AddLooseGameplayTag(blockedChildTag);
@@ -903,10 +903,10 @@ namespace Test.Editor
             check("M-3 쿨다운 중엔 발동 실패 — Stamina·Speed 그대로", !asc.TryActivateAbility(handle) && Mathf.Approximately(asc.GetAttributeCurrentValue(stamina), 20f) && Mathf.Approximately(asc.GetAttributeCurrentValue(speed), 5f));
 
             Tick(asc, 4f);
-            check("M-4 4초 흐름 — 남은 쿨다운 10 → 6, 여전히 발동 실패", Mathf.Approximately(template.GetCooldownTimeRemaining(asc.AbilityActorInfo), 6f) && asc.HasMatchingGameplayTag(cooldownTag) && !asc.TryActivateAbility(handle));
+            check("M-4 4초 흐름 — 남은 쿨다운 10 → 6, 여전히 발동 실패", Mathf.Approximately(template.GetCooldownTimeRemaining(asc.AbilityGameObjectInfo), 6f) && asc.HasMatchingGameplayTag(cooldownTag) && !asc.TryActivateAbility(handle));
 
             Tick(asc, 6.5f);
-            check("M-5 쿨다운 Duration(10초)이 지나면(4 + 6.5초) 쿨다운 태그가 빠지고 남은 쿨다운 0", !asc.HasMatchingGameplayTag(cooldownTag) && Mathf.Approximately(template.GetCooldownTimeRemaining(asc.AbilityActorInfo), 0f));
+            check("M-5 쿨다운 Duration(10초)이 지나면(4 + 6.5초) 쿨다운 태그가 빠지고 남은 쿨다운 0", !asc.HasMatchingGameplayTag(cooldownTag) && Mathf.Approximately(template.GetCooldownTimeRemaining(asc.AbilityGameObjectInfo), 0f));
 
             check("M-6 쿨다운이 끝나도 코스트 부족(Stamina 20 < 30)이면 실패 — 쿨다운·효과 안 걸림", !asc.TryActivateAbility(handle) && !asc.HasMatchingGameplayTag(cooldownTag) && Mathf.Approximately(asc.GetAttributeCurrentValue(speed), 5f));
 
@@ -925,7 +925,7 @@ namespace Test.Editor
             ActiveGameplayEffectsContainer container = AdvanceClock(asc, 0.5f);
             bool midFrameActivated = asc.TryActivateAbility(handle);
             container.Tick();
-            check("M-9 시간이 흐른 뒤 같은 프레임에 걸린 쿨다운은 그 프레임 Tick에서 줄지 않음(남은 10, 적용 전 0.5초는 안 셈)", midFrameActivated && Mathf.Approximately(template.GetCooldownTimeRemaining(asc.AbilityActorInfo), 10f));
+            check("M-9 시간이 흐른 뒤 같은 프레임에 걸린 쿨다운은 그 프레임 Tick에서 줄지 않음(남은 10, 적용 전 0.5초는 안 셈)", midFrameActivated && Mathf.Approximately(template.GetCooldownTimeRemaining(asc.AbilityGameObjectInfo), 10f));
 
             Tick(asc, 11f);
             asc.ClearAllAbilities();
@@ -957,9 +957,9 @@ namespace Test.Editor
             {
                 if (evt == "Activate" && ability.Name == "N")
                 {
-                    ability.ApplyGameplayEffectToOwner(s.Handle, ability.CurrentActorInfo, cooldownEffect, 1f);
-                    committed = ability.CommitAbility(s.Handle, ability.CurrentActorInfo);
-                    ability.EndAbility(s.Handle, ability.CurrentActorInfo, false);
+                    ability.ApplyGameplayEffectToOwner(s.Handle, ability.CurrentGameObjectInfo, cooldownEffect, 1f);
+                    committed = ability.CommitAbility(s.Handle, ability.CurrentGameObjectInfo);
+                    ability.EndAbility(s.Handle, ability.CurrentGameObjectInfo, false);
                 }
             };
 
@@ -971,10 +971,10 @@ namespace Test.Editor
 
             // 커밋 대상이 무효면 아무것도 적용하지 않는다
             Debug.Log("[GA Self-Check] 아래 경고 로그 3줄은 N-2의 정상 출력이다.");
-            bool invalidHandle = instance.CommitAbility(GameplayAbilitySpecHandle.Invalid, asc.AbilityActorInfo);
-            bool missingSpec = instance.CommitAbility(GameplayAbilitySpecHandle.GenerateNewHandle(), asc.AbilityActorInfo);
-            bool missingActorInfo = instance.CommitAbility(handle, null);
-            check("N-2 무효 핸들·없는 Spec·액터 정보 null이면 CommitAbility 실패 — Stamina 50 그대로, 쿨다운 없음", !invalidHandle && !missingSpec && !missingActorInfo && Mathf.Approximately(asc.GetAttributeCurrentValue(stamina), 50f) && !asc.HasMatchingGameplayTag(cooldownTag));
+            bool invalidHandle = instance.CommitAbility(GameplayAbilitySpecHandle.Invalid, asc.AbilityGameObjectInfo);
+            bool missingSpec = instance.CommitAbility(GameplayAbilitySpecHandle.GenerateNewHandle(), asc.AbilityGameObjectInfo);
+            bool missingGameObjectInfo = instance.CommitAbility(handle, null);
+            check("N-2 무효 핸들·없는 Spec·GameObject 정보 null이면 CommitAbility 실패 — Stamina 50 그대로, 쿨다운 없음", !invalidHandle && !missingSpec && !missingGameObjectInfo && Mathf.Approximately(asc.GetAttributeCurrentValue(stamina), 50f) && !asc.HasMatchingGameplayTag(cooldownTag));
 
             // Per Execution 인스턴스에서 커밋해도 코스트·쿨다운이 Owner에 적용된다
             GameplayAbilityAsset execAsset = MakeAsset("NExec", created, GameplayAbilityInstancingPolicy.InstancedPerExecution);
@@ -989,8 +989,8 @@ namespace Test.Editor
                 if (evt == "Activate" && ability.Name == "NExec")
                 {
                     committedOnInstance = ability.IsInstantiated;
-                    execCommitted = ability.CommitAbility(s.Handle, ability.CurrentActorInfo);
-                    ability.EndAbility(s.Handle, ability.CurrentActorInfo, false);
+                    execCommitted = ability.CommitAbility(s.Handle, ability.CurrentGameObjectInfo);
+                    ability.EndAbility(s.Handle, ability.CurrentGameObjectInfo, false);
                 }
             };
 
@@ -1091,8 +1091,8 @@ namespace Test.Editor
                         events.Add("Activate");
                         beforeCommit?.Invoke(asc);
                         commitFailureTags.Reset();
-                        committed = ability.CommitAbility(s.Handle, ability.CurrentActorInfo, commitFailureTags);
-                        ability.EndAbility(s.Handle, ability.CurrentActorInfo, false);
+                        committed = ability.CommitAbility(s.Handle, ability.CurrentGameObjectInfo, commitFailureTags);
+                        ability.EndAbility(s.Handle, ability.CurrentGameObjectInfo, false);
                     }
                 };
 
@@ -1138,7 +1138,7 @@ namespace Test.Editor
                 asc.TryActivateAbility(cancelHandle);
                 events.Clear();
                 bool reactivated = asc.TryActivateAbility(cancelHandle);
-                check("O-7 Per Actor 활성 중 재발동은 false지만 실패 이벤트는 없음", !reactivated && events.Count == 0);
+                check("O-7 Per GameObject 활성 중 재발동은 false지만 실패 이벤트는 없음", !reactivated && events.Count == 0);
 
                 endedData.Clear();
                 asc.CancelAbilityHandle(cancelHandle);
@@ -1171,7 +1171,7 @@ namespace Test.Editor
                     asc.ClearAbility(data.AbilitySpecHandle);
                 };
                 events.Clear();
-                execInstance?.EndAbility(execHandle, asc.AbilityActorInfo, false);
+                execInstance?.EndAbility(execHandle, asc.AbilityGameObjectInfo, false);
                 afterEnded = null;
                 check("O-10 종료 구독자가 해제 — Spec이 빠지고 인스턴스도 정리", execInstance != null && events.Contains("Ended") && asc.FindAbilitySpecFromHandle(execHandle) == null && execSpec.GetAbilityInstances().Count == 0);
             }
@@ -1210,7 +1210,7 @@ namespace Test.Editor
             var meleeTags = new GameplayTagContainer(meleeTag);
             var moveTags = new GameplayTagContainer(moveTag);
 
-            GameplayAbilitySpecHandle Give(string name, GameplayTagContainer assetTags, GameplayTagContainer blockTags, GameplayTagContainer cancelTags, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerActor)
+            GameplayAbilitySpecHandle Give(string name, GameplayTagContainer assetTags, GameplayTagContainer blockTags, GameplayTagContainer cancelTags, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerGameObject)
             {
                 return GiveTaggedAbility(asc, created, name, assetTags, blockTags, cancelTags, policy);
             }
@@ -1250,7 +1250,7 @@ namespace Test.Editor
                 asc.TryActivateAbility(execBlockHandle);
                 asc.TryActivateAbility(execBlockHandle);
                 GameplayAbility firstBlocker = execBlockSpec.GetAbilityInstances()[0];
-                firstBlocker.EndAbility(execBlockHandle, asc.AbilityActorInfo, false);
+                firstBlocker.EndAbility(execBlockHandle, asc.AbilityGameObjectInfo, false);
                 bool stillBlocked = asc.AreAbilityTagsBlocked(meleeTags);
                 asc.CancelAbilityHandle(execBlockHandle);
                 check("P-4 같은 태그를 두 인스턴스가 막으면 하나 끝나도 막혀 있고, 둘 다 끝나면 풀림", stillBlocked && !asc.AreAbilityTagsBlocked(meleeTags));
@@ -1321,7 +1321,7 @@ namespace Test.Editor
             GameplayTag failMissingTag = settings.ActivateFailTagsMissingTag;
             GameplayTag failCanActivateTag = settings.ActivateFailCanActivateAbilityTag;
 
-            GameplayAbilitySpecHandle Give(string name, GameplayTagContainer assetTags = null, GameplayTagContainer blockTags = null, GameplayTagContainer cancelTags = null, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerActor, Action<RecordingAbility> configure = null)
+            GameplayAbilitySpecHandle Give(string name, GameplayTagContainer assetTags = null, GameplayTagContainer blockTags = null, GameplayTagContainer cancelTags = null, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerGameObject, Action<RecordingAbility> configure = null)
             {
                 return GiveTaggedAbility(asc, created, name, assetTags, blockTags, cancelTags, policy, configure);
             }
@@ -1455,8 +1455,8 @@ namespace Test.Editor
                 asc.TryActivateAbility(twiceHandle);
                 GameplayAbility twiceInstance = SpecOf(twiceHandle).GetPrimaryInstance();
                 ClearRecords();
-                twiceInstance.EndAbility(twiceHandle, asc.AbilityActorInfo, false);
-                twiceInstance.EndAbility(twiceHandle, asc.AbilityActorInfo, false);
+                twiceInstance.EndAbility(twiceHandle, asc.AbilityGameObjectInfo, false);
+                twiceInstance.EndAbility(twiceHandle, asc.AbilityGameObjectInfo, false);
                 check("Q-8 두 번 종료 — 종료 이벤트 한 번, Spec 활성 횟수 0", events.Count == 1 && SpecOf(twiceHandle).ActiveCount == 0);
 
                 // 한 발동에서 두 번 커밋 — 두 번째는 쿨다운이 막는다
@@ -1474,9 +1474,9 @@ namespace Test.Editor
                 {
                     if (evt == "Activate" && ability.Name == "QCommit")
                     {
-                        firstCommit = ability.CommitAbility(s.Handle, ability.CurrentActorInfo);
-                        secondCommit = ability.CommitAbility(s.Handle, ability.CurrentActorInfo, secondCommitTags);
-                        ability.EndAbility(s.Handle, ability.CurrentActorInfo, false);
+                        firstCommit = ability.CommitAbility(s.Handle, ability.CurrentGameObjectInfo);
+                        secondCommit = ability.CommitAbility(s.Handle, ability.CurrentGameObjectInfo, secondCommitTags);
+                        ability.EndAbility(s.Handle, ability.CurrentGameObjectInfo, false);
                     }
                 };
                 asc.SetAttributeBaseValue(stamina, 100f);
@@ -1499,9 +1499,9 @@ namespace Test.Editor
                 ActiveGameplayEffectHandle buffEffectHandle = asc.ApplyGameplayEffectToSelf(staminaBuff);
                 float staminaWithBuff = asc.GetAttributeCurrentValue(stamina);
                 GameplayAbility commitInstance = SpecOf(commitHandle).GetPrimaryInstance();
-                bool costPassesWithBuff = commitInstance.CheckCost(commitHandle, asc.AbilityActorInfo);
+                bool costPassesWithBuff = commitInstance.CheckCost(commitHandle, asc.AbilityGameObjectInfo);
                 asc.RemoveActiveGameplayEffect(buffEffectHandle);
-                bool costFailsWithoutBuff = !commitInstance.CheckCost(commitHandle, asc.AbilityActorInfo);
+                bool costFailsWithoutBuff = !commitInstance.CheckCost(commitHandle, asc.AbilityGameObjectInfo);
                 check($"Q-11 코스트 확인은 Current 기준 — Base 20 + Infinite 버프 20 = {staminaWithBuff}이면 30 감당, 버프 빠지면 못 함", Mathf.Approximately(staminaWithBuff, 40f) && costPassesWithBuff && costFailsWithoutBuff);
 
                 // 발동 안에서 다른 어빌리티 발동 — 바깥이 먼저 알린다
@@ -1719,8 +1719,8 @@ namespace Test.Editor
         }
 
         // 인스펙터와 같은 경로(SerializedObject)로 원형을 넣은 정의 에셋을 메모리에 만든다.
-        // A~J는 부여 때 인스턴스가 생기는 Per Actor를 전제로 한다.
-        private static GameplayAbilityAsset MakeAsset(string name, List<UnityEngine.Object> created, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerActor)
+        // A~J는 부여 때 인스턴스가 생기는 Per GameObject를 전제로 한다.
+        private static GameplayAbilityAsset MakeAsset(string name, List<UnityEngine.Object> created, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerGameObject)
         {
             GameplayAbilityAsset asset = ScriptableObject.CreateInstance<GameplayAbilityAsset>();
             asset.name = $"GA_SelfCheck_{name}";
@@ -1736,8 +1736,8 @@ namespace Test.Editor
         }
 
         // 어빌리티 태그·차단·취소 태그를 채운 Recording 어빌리티를 부여한다. null인 태그 묶음은 비워 둔다.
-        // Per Actor는 부여 때 원형을 복제하므로 원형 설정(configure)은 부여 전에 한다.
-        private static GameplayAbilitySpecHandle GiveTaggedAbility(AbilitySystemComponent asc, List<UnityEngine.Object> created, string name, GameplayTagContainer assetTags = null, GameplayTagContainer blockTags = null, GameplayTagContainer cancelTags = null, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerActor, Action<RecordingAbility> configure = null)
+        // Per GameObject는 부여 때 원형을 복제하므로 원형 설정(configure)은 부여 전에 한다.
+        private static GameplayAbilitySpecHandle GiveTaggedAbility(AbilitySystemComponent asc, List<UnityEngine.Object> created, string name, GameplayTagContainer assetTags = null, GameplayTagContainer blockTags = null, GameplayTagContainer cancelTags = null, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerGameObject, Action<RecordingAbility> configure = null)
         {
             GameplayAbilityAsset asset = MakeAsset(name, created, policy);
             var template = (RecordingAbility)asset.AbilityTemplate;

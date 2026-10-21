@@ -66,16 +66,16 @@ namespace Test
             yield return new WaitForEndOfFrame();
             if (Time.frameCount == commitFrame)
             {
-                remainingAtCommitFrameEnd = template.GetCooldownTimeRemaining(_asc.AbilityActorInfo);
+                remainingAtCommitFrameEnd = template.GetCooldownTimeRemaining(_asc.AbilityGameObjectInfo);
             }
 
             yield return new WaitForSeconds(PartialWait);
-            float remaining = template.GetCooldownTimeRemaining(_asc.AbilityActorInfo);
+            float remaining = template.GetCooldownTimeRemaining(_asc.AbilityGameObjectInfo);
             float elapsed = Time.time - committedAt;
             Check($"P-3 {elapsed:0.00}초 흐름 — 남은 쿨다운 {remaining:0.00}(= {CooldownDuration} - 흐른 시간), 여전히 쿨다운 태그 [커밋 프레임 deltaTime {commitFrameDelta:0.000}, 그 프레임 끝 남은 쿨다운 {remainingAtCommitFrameEnd:0.000}]", remaining > 0f && Mathf.Abs(remaining - (CooldownDuration - elapsed)) < 0.05f && (remainingAtCommitFrameEnd < 0f || Approx(remainingAtCommitFrameEnd, CooldownDuration)) && _asc.HasMatchingGameplayTag(cooldownTag));
 
             yield return new WaitForSeconds(CooldownDuration);
-            Check("P-4 쿨다운 Duration이 지나면 프레임 Tick으로 쿨다운 태그가 빠지고 남은 쿨다운 0", !_asc.HasMatchingGameplayTag(cooldownTag) && Approx(template.GetCooldownTimeRemaining(_asc.AbilityActorInfo), 0f));
+            Check("P-4 쿨다운 Duration이 지나면 프레임 Tick으로 쿨다운 태그가 빠지고 남은 쿨다운 0", !_asc.HasMatchingGameplayTag(cooldownTag) && Approx(template.GetCooldownTimeRemaining(_asc.AbilityGameObjectInfo), 0f));
 
             _asc.SetAttributeBaseValue(CharacterAttributeSet.Stamina, 50f);
             bool reactivated = _asc.TryActivateAbility(handle);

@@ -15,16 +15,16 @@ namespace Test
         [SerializeField] private float _testValue;
         [SerializeField] private GameplayEffectAsset _testEffect;
 
-        public override void ActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityActorInfo actorInfo)
+        public override void ActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo)
         {
-            if (!CommitAbility(handle, actorInfo))
+            if (!CommitAbility(handle, gameObjectInfo))
             {
-                EndAbility(handle, actorInfo, true);
+                EndAbility(handle, gameObjectInfo, true);
                 return;
             }
 
-            ApplyGameplayEffectToOwner(handle, actorInfo, _testEffect, GetAbilityLevel(handle, actorInfo));
-            EndAbility(handle, actorInfo, false);
+            ApplyGameplayEffectToOwner(handle, gameObjectInfo, _testEffect, GetAbilityLevel(handle, gameObjectInfo));
+            EndAbility(handle, gameObjectInfo, false);
         }
     }
 }
