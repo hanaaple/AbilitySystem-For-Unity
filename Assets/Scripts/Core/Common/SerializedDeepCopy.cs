@@ -11,6 +11,7 @@ namespace Core.Common
     /// Unity 직렬화 규칙대로 관리 객체(일반 C# 클래스)를 깊은 복사한다. 직렬화되는 필드만 복사하고, 나머지 필드는 새 인스턴스의 초기값으로 둔다.
     /// 값·문자열·enum은 값으로, List·배열·[Serializable] 중첩 객체는 새로 만들고, UnityEngine.Object(에셋·씬 참조)는 참조를 그대로 둔다.
     /// [SerializeReference] 필드는 같은 객체를 가리키던 참조끼리 복사본에서도 같은 객체를 가리킨다.
+    /// 복사본이 <see cref="ISerializationCallbackReceiver"/>면 필드를 다 채운 뒤 OnAfterDeserialize를 부른다(안쪽 객체가 먼저).
     /// </summary>
     public static class SerializedDeepCopy
     {
@@ -39,6 +40,7 @@ namespace Core.Common
             object copy = Activator.CreateInstance(type, nonPublic: true);
             copies[source] = copy;
             CopyFields(source, copy, type, copies);
+            NotifyAfterDeserialize(copy);
             return copy;
         }
 
@@ -121,7 +123,18 @@ namespace Core.Common
             // [Serializable] 중첩 객체는 Unity가 값처럼 인라인 저장하므로 공유하지 않고 새로 만든다.
             object inlineCopy = Activator.CreateInstance(type, nonPublic: true);
             CopyFields(value, inlineCopy, type, copies);
+            NotifyAfterDeserialize(inlineCopy);
             return inlineCopy;
+        }
+
+        // 복사는 역직렬화를 대신하므로, [NonSerialized] 캐시(해시·부모 태그 등)를 OnAfterDeserialize로 채우는 타입이 복사본에서도 같은 상태가 되게 한다.
+        // 구조체는 박싱된 복사본에 부르므로 그 결과가 그대로 필드에 들어간다.
+        private static void NotifyAfterDeserialize(object copy)
+        {
+            if (copy is ISerializationCallbackReceiver receiver)
+            {
+                receiver.OnAfterDeserialize();
+            }
         }
 
         private static bool IsEngineType(Type type)
