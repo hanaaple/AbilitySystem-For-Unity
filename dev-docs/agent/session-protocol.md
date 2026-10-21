@@ -9,7 +9,7 @@
   - 세션 회고 — 잘못한 것 스스로 보고
   - 하네스 자체 점검 — 규약이 틀렸/안 걸린 곳
 
-> 세션 중간에 켜지는 규약은 각자 문서에 있다 — 답변 방식 → [conversation.md](conversation.md) / 착수·범위 → [work-scope.md](work-scope.md) / 진전 즉시 기록·블로커 → [feature/HARNESS.md](feature/HARNESS.md) '작업 중 기록' / 문서 write·참조 갱신 → [docs.harness.md](docs.harness.md) / 커밋 스테이징 → [git-convention.md](../project/git-convention.md) / 코드 → [code-guide/HARNESS.md](code-guide/HARNESS.md).
+> 세션 중간에 켜지는 규약은 각자 문서에 있다 — 답변 방식 → [conversation.md](conversation.md) / 착수·범위 → [work-scope.md](work-scope.md) / 진전 즉시 기록·블로커 → [feature/HARNESS.md](feature/HARNESS.md) '작업 중 기록' / 문서 write·참조 갱신 → [docs-harness.md](docs-harness.md) / 커밋 스테이징 → [git-convention.md](../project/git-convention.md) / 코드 → [code-guide/HARNESS.md](code-guide/HARNESS.md).
 
 ---
 
@@ -27,7 +27,7 @@
 ## 세션 종료 시 (필수)
 
 1. **`NOW.md`를 다음 재개 지점으로 갱신한다 (최우선).** 이번 세션 종료 시점 기준으로 `## ▶ 지금 할 일`(feature + 다음 액션)과 `## ⚙ 선행조건`을 다시 쓴다. — **다음 세션이 NOW.md만 읽고 즉시 재개할 수 있어야 한다.** 액션이 외부 선행조건(Unity MCP 켜짐·에디터 열림·세션 재시작·특정 에셋 등)을 요구하면 반드시 여기 명시(다음 세션이 재발견하지 않게). NOW.md는 휘발성 재개 메모이므로 **지금 할 일·멈춘 지점·선행조건·미정만 짧게** 담고, 설계 논의·결정 근거는 여기 쓰지 말고 해당 문서로 보낸다.
-2. feature 폴더의 `worklog.md`에 오늘 날짜로 수행한 작업을 요약 기록한다. (로그는 아카이브라 progress.md에서 분리 — feature/progress.harness.md 'progress 작성 규칙')
+2. feature 폴더의 `worklog.md`에 오늘 날짜로 수행한 작업을 요약 기록한다. (로그는 아카이브라 progress.md에서 분리 — feature/progress-harness.md 'progress 작성 규칙')
 3. 해당 feature progress의 `## 다음 작업`을 갱신한다. (NOW.md는 "지금 하나", progress `## 다음 작업`은 그 feature의 이후 순서 — 둘이 어긋나지 않게)
 4. feature 상태가 변했으면 progress 상단의 상태와 `feature-list.md`의 상태를 **둘 다** 갱신한다. (단일 갱신 금지 — 항상 동기화)
 5. **`TODO-BOARD.md`를 갱신한다** (작업 보드 규약의 '유지 규약'). 이번 세션에 착수/완료한 항목을 해당 칸으로 옮기고, 대화 중 새로 나온 할 일을 `📋 TODO`에 포착한 뒤 상단 `최종 갱신`을 고친다.
@@ -47,15 +47,15 @@
 
 ### 하네스 자체 점검 — 규약이 틀렸거나 안 걸린 곳
 
-**규약을 따랐는데도 문제가 생겼다면 규약이 부족한 것이다.** 세션 종료 시 아래를 확인하고, 해당하면 개정안을 유저에게 제안한다(문서를 임의로 고치지 않는다 — docs.harness.md '각색은 쓰기 전에 묻는다').
+**규약을 따랐는데도 문제가 생겼다면 규약이 부족한 것이다.** 세션 종료 시 아래를 확인하고, 해당하면 개정안을 유저에게 제안한다(문서를 임의로 고치지 않는다 — docs-harness.md '각색은 쓰기 전에 묻는다').
 
 점검 항목:
 - **트리거가 안 걸린 규칙이 있었나** — 조건이 좁아서 발동하지 않은 규약. (예: "구현 착수 전 HARNESS를 읽는다"가 *설명 → 논의 → 편집*으로 미끄러진 세션에선 한 번도 안 걸림 → CLAUDE.md 트리거를 "feature 관련 내용을 다루기 시작하면"으로 확장)
 - **규칙끼리 충돌했나** — 어느 쪽이 우선인지 문서에 없어 임의 판단한 지점.
 - **실제와 안 맞는 절차가 있었나** — 문서엔 있는데 현실적으로 수행 불가·불필요한 단계.
 - **반복된 실수 — '부재'인지 '미준수'인지부터 가른다.** 같은 지적을 두 번 이상 받아도 규칙 추가로 반사하지 않는다.
-  - ① **이미 있는 규약인지 grep으로 먼저 확인.** 있으면 빠진 게 아니라 **미준수** — 추가 금지(중복 = docs.harness 원칙2). 대신 **범위 오각인을 바로잡거나**(예: 문서용으로만 좁혀 읽은 규칙을 대화에도 적용) 자세로 내면화한다.
+  - ① **이미 있는 규약인지 grep으로 먼저 확인.** 있으면 빠진 게 아니라 **미준수** — 추가 금지(중복 = docs-harness 원칙2). 대신 **범위 오각인을 바로잡거나**(예: 문서용으로만 좁혀 읽은 규칙을 대화에도 적용) 자세로 내면화한다.
   - ② **정말 부재일 때만** 추가하되, **게이트형**(놓치는 순간이 이산적·포착 가능 → 점검/트리거 슬롯 값어치)과 **자세형**(산출물을 생성하는 방식 자체 → 내면화, 슬롯 안 씀)을 구분해 **게이트형만** 트리거로 건다.
   - 점검·트리거는 **희소 예산**이다 — 많아지면 리스트 자체를 안 돌리게 된다. 하나 늘리면 기존 항목 병합·삭제를 함께 본다.
-- **기록 규약이 지켜졌나** — decisions 즉시 기록(feature/HARNESS.md '작업 중 기록')·`D#` 재번호 금지(feature/progress.harness.md 'progress 작성 규칙')·`최종 갱신` 날짜 형식(각 문서 규약: progress.harness·TODO-BOARD.harness·architecture/HARNESS)처럼 **놓치기 쉬운 형식 규칙**을 실제로 지켰는지 대조한다.
+- **기록 규약이 지켜졌나** — decisions 즉시 기록(feature/HARNESS.md '작업 중 기록')·`D#` 재번호 금지(feature/progress-harness.md 'progress 작성 규칙')·`최종 갱신` 날짜 형식(각 문서 규약: progress-harness·TODO-BOARD.harness·architecture/HARNESS)처럼 **놓치기 쉬운 형식 규칙**을 실제로 지켰는지 대조한다.
 

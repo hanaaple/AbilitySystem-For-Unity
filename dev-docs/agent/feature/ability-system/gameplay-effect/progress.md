@@ -1,5 +1,7 @@
 # gameplay-effect — 게임플레이 이펙트 (GE·Spec·Active·Modifier)
 
+> 작성 규약 → [progress-harness.md](../../progress-harness.md)
+
 - 상태: ✅ 임시완료
 - 우선순위: P0
 - 최종 갱신: 2026-10-21 (KST)

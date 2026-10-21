@@ -1,5 +1,7 @@
 # attribute — 어트리뷰트 (수치·Set·핸들·SO 초기화)
 
+> 작성 규약 → [progress-harness.md](../../progress-harness.md)
+
 - 상태: ✅ 임시완료
 - 우선순위: P0
 - 최종 갱신: 2026-10-20 (KST)

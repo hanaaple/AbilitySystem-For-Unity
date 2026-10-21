@@ -1,5 +1,7 @@
 # gameplay-ability — 게임플레이 어빌리티 (GA·스킬 실행)
 
+> 작성 규약 → [progress-harness.md](../../progress-harness.md)
+
 - 상태: 🔧 IN-PROGRESS
 - 우선순위: P1
 - 최종 갱신: 2026-10-21 (KST)

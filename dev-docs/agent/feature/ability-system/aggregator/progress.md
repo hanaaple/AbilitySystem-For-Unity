@@ -1,5 +1,7 @@
 # aggregator — 어트리뷰트 반응성 / Aggregator (라이브 재평가)
 
+> 작성 규약 → [progress-harness.md](../../progress-harness.md)
+
 - 상태: ✅ 임시완료
 - 우선순위: P1
 - 최종 갱신: 2026-10-20 (KST)
