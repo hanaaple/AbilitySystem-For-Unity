@@ -53,7 +53,7 @@ GAS의 `GameplayAbility`를 이 프로젝트에 **SO 기반·UE 유사 구조·�
 - 없음. 선행 수치/이펙트 계층 준비됨(attribute·gameplay-effect·aggregator 임시완료). 유저가 GA 착수를 지시(2026-09-13)해 이전 "데모 씬 확정 전 폴더 신설 금지" 제약은 해제됨.
 
 ## 다음 작업
-1. TODO-BOARD '2. GameplayAbility' 2-1~2-10 완료(2026-10-21 — GA 셀프체크 142/0). **데모 전 GA 필수 끝 — 다음은 데모 제작.** UE 대비 나머지는 TODO-BOARD '뒤로 미룸 > GA — UE 대비 미구현'. 그다음 데모 제작. 남은 GA 보류: 해제된 GA 인스턴스 무효 표시(TODO-BOARD "뒤로 미룸" 칸으로 뺌).
+1. TODO-BOARD '2. GameplayAbility' 2-1~2-10 완료(2026-10-21 — GA 셀프체크 160/0). **데모 전 GA 필수 끝 — 다음은 데모 제작.** UE 대비 나머지는 TODO-BOARD '뒤로 미룸 > GA — UE 대비 미구현'. 그다음 데모 제작. 남은 GA 보류: 해제된 GA 인스턴스 무효 표시(TODO-BOARD "뒤로 미룸" 칸으로 뺌).
 
 ## 검증
 - 2026-10-20 에디터 셀프체크 `Tools/Ability System/Run Gameplay Ability Self-Check`(`Assets/Scripts/Test/Editor/GameplayAbilitySelfCheck.cs`) — **98/0**(2026-10-21 인스턴싱 뒤; 2-3 뒤 86/0, 2-2 뒤 74/0, 2-1 뒤 58/0). A 부여 기본 / B 원형 깊은 복사 / C 같은 정의 여러 번 / D 해제(OnRemove 시점·순서) / E 잘못된 입력(의도된 에러 로그 3줄) / F 스코프 락·보류(부여·해제·취소·ClearAll 재진입·락 중 ClearAll) / G 액터 정보(OnAvatarSet, Owner null 거부 — 의도된 에러 로그 1줄) / H 정의 에셋 인스펙터(드로어 높이)·저장(임시 `Assets/_Test/GA_SelfCheck_Temp.asset` 만들고 지움) / I 생명주기(발동·재발동 거부·종료·중복 종료 무시·취소·즉발형·CanActivate 거부·Avatar 없음·없는 핸들(의도된 경고 1줄)·정의로 취소·활성 중 해제/ClearAll은 End→OnRemove·발동 중 자기 해제·해제 대기 발동 거부) / J GA에서 GE 적용(컨텍스트 Instigator·Causer·출처, Spec 레벨, Owner·대상 적용, null GE·대상(의도된 에러 1줄), 레벨·없는 핸들(의도된 경고 1줄), GameObject 아닌 출처, ActivateAbility 안에서 대상에 적용) / K Per Execution(기본값, 부여 때 인스턴스 없음·원형이 OnGive/OnAvatarSet/CanActivate/OnRemove, 원형에 액터 정보 안 씀, 발동마다 새 인스턴스·동시 활성 2개, 종료·취소·즉발형 뒤 인스턴스 정리, 활성 여럿일 때 해제, Per Actor와 혼재).
@@ -66,4 +66,5 @@ GAS의 `GameplayAbility`를 이 프로젝트에 **SO 기반·UE 유사 구조·�
 - 2026-10-21 전체 실행(유저 "테스트 한번 전부 하자") — 셀프체크 5종 GA 123/0·Aggregator 83/0·Calculation Modifier 19/0·GE Component 89/0·Modifier Tag 65/0, PlayMode 4종 GA 6/0·수명 13/0·Tag 9/0·Aggregator 14/0(셋업 메뉴 없이 기존 에셋을 런타임에 꽂아 실행). 에러 0.
 - 2026-10-21 어빌리티 이벤트·실패 사유(D9) — 셀프체크 O 11개 → GA **134/0**(의도된 에러 5·경고 5). 사유 태그를 채운 뒤 전체 실행 — 셀프체크 5종 GA 134/0·Aggregator 83/0·Calculation Modifier 19/0·GE Component 89/0·Modifier Tag 65/0, PlayMode 4종 GA 6/0·수명 13/0·Tag 9/0·Aggregator 14/0. 에러 0.
 - 2026-10-21 어빌리티 태그·차단·취소(D10) — 셀프체크 P 8개 → GA **142/0**. 회귀 Aggregator 83/0·Calculation Modifier 19/0·GE Component 89/0·Modifier Tag **64/1**(E-12 — Play 모드 뒤 에디터 `Time.time`이 0이 아니면 1초 경계 Tick이 빗나감, 이번 변경과 무관, TODO-BOARD), PlayMode 4종 GA 6/0·수명 13/0·Tag 9/0·Aggregator 14/0.
+- 2026-10-21 GA 마무리 테스트 — 셀프체크 Q(기능 조합·재진입·경계) 18개 → GA **160/0**.
 - 미확인: 선언 클래스별 상자 화면(밝은·어두운 스킨, 좁은 창). Play 모드는 위 PlayMode 테스트 2개 범위만.

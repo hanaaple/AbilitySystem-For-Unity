@@ -16,7 +16,7 @@ namespace Test.Editor
 {
     // 클릭 한 번으로 GA 부여·해제·생명주기가 UE 5.6처럼 동작하는지 검증하는 에디터 전용 셀프체크(Play 모드 불필요).
     // 호출을 기록하는 테스트 전용 어빌리티(RecordingAbility)를 원형으로 넣은 정의 에셋을 메모리에 만들어 본다.
-    // A: 부여 기본 / B: 원형 깊은 복사 / C: 같은 정의 여러 번 / D: 해제 / E: 잘못된 입력 / F: 스코프 락·보류 / G: 액터 정보 / H: 정의 에셋 인스펙터·저장 / I: 생명주기(발동·종료·취소) / J: GA에서 GE 적용 / K: Per Execution 인스턴싱 / L: 코스트·쿨다운·커밋·태그 조건 / M: TestGameplayAbility 통합(시간 경과 쿨다운 포함) / N: 커밋 경계 / O: 어빌리티 이벤트·실패 사유 / P: 어빌리티 태그·차단·취소
+    // A: 부여 기본 / B: 원형 깊은 복사 / C: 같은 정의 여러 번 / D: 해제 / E: 잘못된 입력 / F: 스코프 락·보류 / G: 액터 정보 / H: 정의 에셋 인스펙터·저장 / I: 생명주기(발동·종료·취소) / J: GA에서 GE 적용 / K: Per Execution 인스턴싱 / L: 코스트·쿨다운·커밋·태그 조건 / M: TestGameplayAbility 통합(시간 경과 쿨다운 포함) / N: 커밋 경계 / O: 어빌리티 이벤트·실패 사유 / P: 어빌리티 태그·차단·취소 / Q: 기능 조합·재진입·경계
     public static class GameplayAbilitySelfCheck
     {
         private const string TempAssetPath = "Assets/_Test/GA_SelfCheck_Temp.asset";
@@ -82,6 +82,7 @@ namespace Test.Editor
                 RunCommitEdgeChecks(asc, created, Check);
                 RunEventChecks(asc, created, Check);
                 RunBlockCancelChecks(asc, created, Check);
+                RunCombinationChecks(asc, created, Check);
             }
             catch (Exception e)
             {
@@ -1211,12 +1212,7 @@ namespace Test.Editor
 
             GameplayAbilitySpecHandle Give(string name, GameplayTagContainer assetTags, GameplayTagContainer blockTags, GameplayTagContainer cancelTags, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerActor)
             {
-                GameplayAbilityAsset asset = MakeAsset(name, created, policy);
-                GameplayAbility template = asset.AbilityTemplate;
-                template.AssetTags.AppendTags(assetTags);
-                template.BlockAbilitiesWithTag.AppendTags(blockTags);
-                template.CancelAbilitiesWithTag.AppendTags(cancelTags);
-                return asc.GiveAbility(new GameplayAbilitySpec(asset));
+                return GiveTaggedAbility(asc, created, name, assetTags, blockTags, cancelTags, policy);
             }
 
             var none = new GameplayTagContainer();
@@ -1293,6 +1289,318 @@ namespace Test.Editor
             finally
             {
                 asc.OnAbilityFailed -= onFailed;
+                asc.ClearAllAbilities();
+            }
+        }
+
+        // ── Q: 기능 조합·재진입·경계 ──────────────────────────────────────────────
+
+        private static void RunCombinationChecks(AbilitySystemComponent asc, List<UnityEngine.Object> created, Action<string, bool> check)
+        {
+            asc.ClearAllAbilities();
+            EnsureInitialized(asc);
+
+            GameplayTag ownedTag = OwnedTag.GetTag();
+            GameplayTag requiredTag = RequiredTag.GetTag();
+            GameplayTag blockedTag = BlockedTag.GetTag();
+            GameplayTag cooldownTag = CooldownTag.GetTag();
+            GameplayTag attackTag = AttackAbilityTag.GetTag();
+            GameplayTag meleeTag = MeleeAbilityTag.GetTag();
+            bool tagsValid = ownedTag.IsValid() && requiredTag.IsValid() && blockedTag.IsValid() && cooldownTag.IsValid() && attackTag.IsValid() && meleeTag.IsValid();
+            check("Q-0 native 태그 유효", tagsValid);
+            if (!tagsValid)
+            {
+                return;
+            }
+
+            var attackTags = new GameplayTagContainer(attackTag);
+            var meleeTags = new GameplayTagContainer(meleeTag);
+            var cooldownTags = new GameplayTagContainer(cooldownTag);
+            GameplayAbilitiesSettings settings = GameplayAbilitiesSettings.Get();
+            GameplayTag failBlockedTag = settings.ActivateFailTagsBlockedTag;
+            GameplayTag failMissingTag = settings.ActivateFailTagsMissingTag;
+            GameplayTag failCanActivateTag = settings.ActivateFailCanActivateAbilityTag;
+
+            GameplayAbilitySpecHandle Give(string name, GameplayTagContainer assetTags = null, GameplayTagContainer blockTags = null, GameplayTagContainer cancelTags = null, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerActor, Action<RecordingAbility> configure = null)
+            {
+                return GiveTaggedAbility(asc, created, name, assetTags, blockTags, cancelTags, policy, configure);
+            }
+
+            GameplayAbilitySpec SpecOf(GameplayAbilitySpecHandle handle)
+            {
+                return asc.FindAbilitySpecFromHandle(handle);
+            }
+
+            // 실패 사유 태그는 설정 칸이 비어 있으면 붙지 않으므로 설정된 때만 따진다.
+            bool HasFailTag(GameplayTagContainer tags, GameplayTag failTag)
+            {
+                return !failTag.IsValid() || tags.HasTagExact(failTag);
+            }
+
+            string NameOf(GameplayAbility ability)
+            {
+                return ability is RecordingAbility recording ? recording.Name : ability?.GetType().Name;
+            }
+
+            var events = new List<string>();
+            var endedData = new List<AbilityEndedData>();
+            var failures = new List<(string Name, GameplayTagContainer Tags)>();
+            Action<AbilityEndedData> afterEnded = null;
+            Action<GameplayAbility, GameplayTagContainer> afterFailed = null;
+            Action<GameplayAbility> onActivated = ability => events.Add($"Act:{NameOf(ability)}");
+            Action<GameplayAbility> onCommitted = ability => events.Add($"Commit:{NameOf(ability)}");
+            Action<GameplayAbility, GameplayTagContainer> onFailed = (ability, tags) =>
+            {
+                events.Add($"Fail:{NameOf(ability)}");
+                failures.Add((NameOf(ability), new GameplayTagContainer(tags)));
+                afterFailed?.Invoke(ability, tags);
+            };
+            Action<GameplayAbility> onEnded = ability => events.Add($"End:{NameOf(ability)}");
+            Action<AbilityEndedData> onEndedWithData = data =>
+            {
+                endedData.Add(data);
+                afterEnded?.Invoke(data);
+            };
+
+            void ClearRecords()
+            {
+                events.Clear();
+                endedData.Clear();
+                failures.Clear();
+            }
+
+            asc.OnAbilityActivated += onActivated;
+            asc.OnAbilityCommitted += onCommitted;
+            asc.OnAbilityFailed += onFailed;
+            asc.OnAbilityEnded += onEnded;
+            asc.OnAbilityEndedWithData += onEndedWithData;
+            try
+            {
+                // 다른 어빌리티의 활성 중 태그가 발동 조건이 된다 — 스턴(차단)·버프(필요)
+                GameplayAbilitySpecHandle stunHandle = Give("QStun", configure: a => a.ActivationOwnedTags.AddTag(blockedTag));
+                GameplayAbilitySpecHandle victimHandle = Give("QVictim", configure: a => a.ActivationBlockedTags.AddTag(blockedTag));
+                asc.TryActivateAbility(stunHandle);
+                ClearRecords();
+                bool victimDuringStun = asc.TryActivateAbility(victimHandle);
+                bool stunReason = failures.Count == 1 && failures[0].Tags.HasTagExact(blockedTag) && HasFailTag(failures[0].Tags, failBlockedTag);
+                asc.CancelAbilityHandle(stunHandle);
+                bool victimAfterStun = asc.TryActivateAbility(victimHandle);
+                asc.CancelAbilityHandle(victimHandle);
+                check("Q-1 다른 어빌리티의 ActivationOwnedTags(스턴) 동안 차단 — 사유에 그 태그, 끝나면 발동", !victimDuringStun && stunReason && victimAfterStun);
+
+                GameplayAbilitySpecHandle buffHandle = Give("QBuff", configure: a => a.ActivationOwnedTags.AddTag(requiredTag));
+                GameplayAbilitySpecHandle needyHandle = Give("QNeedy", configure: a => a.ActivationRequiredTags.AddTag(requiredTag));
+                ClearRecords();
+                bool needyBefore = asc.TryActivateAbility(needyHandle);
+                bool missingReason = failures.Count == 1 && failures[0].Tags.HasTagExact(requiredTag) && HasFailTag(failures[0].Tags, failMissingTag);
+                asc.TryActivateAbility(buffHandle);
+                bool needyDuringBuff = asc.TryActivateAbility(needyHandle);
+                asc.CancelAbilityHandle(buffHandle);
+                bool needyStillActive = SpecOf(needyHandle).IsActive;
+                asc.CancelAbilityHandle(needyHandle);
+                check("Q-2 다른 어빌리티가 붙인 필요 태그로 발동, 그 태그가 빠져도 이미 활성인 건 유지(조건은 발동 때만)", !needyBefore && missingReason && needyDuringBuff && needyStillActive);
+
+                // 자기 태그를 막는 Per Execution — 활성 중 두 번째 발동이 막힌다
+                GameplayAbilitySpecHandle selfHandle = Give("QSelf", attackTags, attackTags, null, GameplayAbilityInstancingPolicy.InstancedPerExecution);
+                bool selfFirst = asc.TryActivateAbility(selfHandle);
+                bool selfSecond = asc.TryActivateAbility(selfHandle);
+                asc.CancelAbilityHandle(selfHandle);
+                bool selfAgain = asc.GetBlockedAbilityTags().IsEmpty() && asc.TryActivateAbility(selfHandle);
+                asc.CancelAbilityHandle(selfHandle);
+                check("Q-3 자기 태그를 막는 Per Execution — 활성 중 재발동 차단, 끝나면 다시 발동", selfFirst && !selfSecond && selfAgain);
+
+                // 발동 안에서 바로 끝나는 어빌리티 — 붙였던 태그·차단이 남지 않는다
+                GameplayAbilitySpecHandle instantHandle = Give("QInstant", null, attackTags, null, configure: a => a.ActivationOwnedTags.AddTag(ownedTag));
+                ((RecordingAbility)SpecOf(instantHandle).GetPrimaryInstance()).EndOnActivate = true;
+                ClearRecords();
+                bool instantActivated = asc.TryActivateAbility(instantHandle);
+                bool nothingLeft = !SpecOf(instantHandle).IsActive && asc.GetTagCount(ownedTag) == 0 && asc.GetBlockedAbilityTags().IsEmpty();
+                bool instantEvents = events.Count == 2 && events[0] == "Act:QInstant" && events[1] == "End:QInstant";
+                check("Q-4 즉발형 — 발동·종료 이벤트 한 번씩, 활성 중 태그·차단이 남지 않음", instantActivated && nothingLeft && instantEvents);
+
+                // 활성·차단 중 해제 — 종료(취소 아님)로 정리된다
+                GameplayAbilitySpecHandle clearHandle = Give("QClear", null, attackTags, null, configure: a => a.ActivationOwnedTags.AddTag(ownedTag));
+                asc.TryActivateAbility(clearHandle);
+                ClearRecords();
+                asc.ClearAbility(clearHandle);
+                bool clearedClean = asc.FindAbilitySpecFromHandle(clearHandle) == null && asc.GetBlockedAbilityTags().IsEmpty() && asc.GetTagCount(ownedTag) == 0;
+                check("Q-5 활성·차단 중 해제 — 차단·태그가 풀리고 종료 이벤트(취소 아님)", clearedClean && events.Contains("End:QClear") && endedData.Count == 1 && !endedData[0].WasCancelled);
+
+                // ASC 차단 + 차단 태그가 함께 막으면 차단 실패 태그는 한 번, 원인은 둘 다
+                GameplayAbilitySpecHandle blockerHandle = Give("QBlocker", null, attackTags);
+                GameplayAbilitySpecHandle bothHandle = Give("QBoth", meleeTags, configure: a => a.ActivationBlockedTags.AddTag(blockedTag));
+                asc.TryActivateAbility(stunHandle);
+                asc.TryActivateAbility(blockerHandle);
+                ClearRecords();
+                bool bothActivated = asc.TryActivateAbility(bothHandle);
+                GameplayTagContainer bothTags = failures.Count == 1 ? failures[0].Tags : new GameplayTagContainer();
+                int expectedCount = failBlockedTag.IsValid() ? 3 : 2;
+                check("Q-6 ASC 차단 + 차단 태그 동시 — 원인 태그 둘(막힌 어빌리티 태그·Owner 차단 태그), 차단 실패 태그는 한 번", !bothActivated && bothTags.HasTagExact(meleeTag) && bothTags.HasTagExact(blockedTag) && bothTags.Num() == expectedCount);
+                asc.CancelAbilityHandle(stunHandle);
+                asc.CancelAbilityHandle(blockerHandle);
+
+                // Per Execution 동시 활성 — 이벤트도 발동 수만큼
+                GameplayAbilitySpecHandle execHandle = Give("QExec", policy: GameplayAbilityInstancingPolicy.InstancedPerExecution);
+                ClearRecords();
+                asc.TryActivateAbility(execHandle);
+                asc.TryActivateAbility(execHandle);
+                int activatedCount = events.FindAll(e => e == "Act:QExec").Count;
+                asc.CancelAbilityHandle(execHandle);
+                int endedCount = events.FindAll(e => e == "End:QExec").Count;
+                bool allCancelled = endedData.Count == 2 && endedData.TrueForAll(d => d.WasCancelled && d.AbilitySpecHandle.Equals(execHandle)) && endedData[0].AbilityThatEnded != endedData[1].AbilityThatEnded;
+                check("Q-7 Per Execution 2개 — 발동 이벤트 2번, 취소하면 서로 다른 인스턴스로 종료(취소) 2번", activatedCount == 2 && endedCount == 2 && allCancelled);
+
+                // 같은 인스턴스를 두 번 끝내도 종료는 한 번
+                GameplayAbilitySpecHandle twiceHandle = Give("QTwice");
+                asc.TryActivateAbility(twiceHandle);
+                GameplayAbility twiceInstance = SpecOf(twiceHandle).GetPrimaryInstance();
+                ClearRecords();
+                twiceInstance.EndAbility(twiceHandle, asc.AbilityActorInfo, false);
+                twiceInstance.EndAbility(twiceHandle, asc.AbilityActorInfo, false);
+                check("Q-8 두 번 종료 — 종료 이벤트 한 번, Spec 활성 횟수 0", events.Count == 1 && SpecOf(twiceHandle).ActiveCount == 0);
+
+                // 한 발동에서 두 번 커밋 — 두 번째는 쿨다운이 막는다
+                GameplayAttributeHandle stamina = CharacterAttributeSet.Stamina;
+                asc.AddSpawnedAttribute(new CharacterAttributeSet());
+                GameplayEffectAsset costEffect = MakeInstantAddBaseEffect(stamina, -30f, created);
+                GameplayEffectAsset cooldownEffect = MakeCooldownEffect(cooldownTag, 10f, created);
+                GameplayAbilityAsset commitAsset = MakeAsset("QCommit", created);
+                AssignCostAndCooldown(commitAsset, costEffect, cooldownEffect);
+                GameplayAbilitySpecHandle commitHandle = asc.GiveAbility(new GameplayAbilitySpec(commitAsset, 3));
+                bool firstCommit = false;
+                bool secondCommit = true;
+                var secondCommitTags = new GameplayTagContainer();
+                RecordingAbility.Hook = (evt, ability, s) =>
+                {
+                    if (evt == "Activate" && ability.Name == "QCommit")
+                    {
+                        firstCommit = ability.CommitAbility(s.Handle, ability.CurrentActorInfo);
+                        secondCommit = ability.CommitAbility(s.Handle, ability.CurrentActorInfo, secondCommitTags);
+                        ability.EndAbility(s.Handle, ability.CurrentActorInfo, false);
+                    }
+                };
+                asc.SetAttributeBaseValue(stamina, 100f);
+                ClearRecords();
+                asc.TryActivateAbility(commitHandle);
+                RecordingAbility.Hook = null;
+                int commitEvents = events.FindAll(e => e == "Commit:QCommit").Count;
+                check("Q-9 한 발동에서 두 번 커밋 — 첫 번째만 성공(코스트 한 번 70), 두 번째는 쿨다운 사유, 커밋 이벤트 한 번", firstCommit && !secondCommit && Mathf.Approximately(asc.GetAttributeCurrentValue(stamina), 70f) && secondCommitTags.HasTagExact(cooldownTag) && commitEvents == 1);
+
+                // 쿨다운·코스트 GE는 Spec 레벨로 적용된다
+                List<ActiveGameplayEffectHandle> cooldownHandles = asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(cooldownTags));
+                ActiveGameplayEffect cooldownActive = cooldownHandles.Count == 1 ? asc.GetActiveGameplayEffect(cooldownHandles[0]) : null;
+                check("Q-10 쿨다운 GE가 Spec 레벨(3)로 적용", cooldownActive != null && Mathf.Approximately(cooldownActive.Spec.Level, 3f));
+                asc.RemoveActiveEffectsWithGrantedTags(cooldownTags);
+
+                // 코스트 확인은 Current 값 기준 — Infinite 버프로 늘어난 값으로 감당한다
+                GameplayEffectAsset staminaBuff = MakeEffect(GameplayEffectType.Infinite, created);
+                SetPrivateField(staminaBuff, "modifiers", new List<GameplayModifier> { MakeAddBaseModifier(stamina, 20f) });
+                asc.SetAttributeBaseValue(stamina, 20f);
+                ActiveGameplayEffectHandle buffEffectHandle = asc.ApplyGameplayEffectToSelf(staminaBuff);
+                float staminaWithBuff = asc.GetAttributeCurrentValue(stamina);
+                GameplayAbility commitInstance = SpecOf(commitHandle).GetPrimaryInstance();
+                bool costPassesWithBuff = commitInstance.CheckCost(commitHandle, asc.AbilityActorInfo);
+                asc.RemoveActiveGameplayEffect(buffEffectHandle);
+                bool costFailsWithoutBuff = !commitInstance.CheckCost(commitHandle, asc.AbilityActorInfo);
+                check($"Q-11 코스트 확인은 Current 기준 — Base 20 + Infinite 버프 20 = {staminaWithBuff}이면 30 감당, 버프 빠지면 못 함", Mathf.Approximately(staminaWithBuff, 40f) && costPassesWithBuff && costFailsWithoutBuff);
+
+                // 발동 안에서 다른 어빌리티 발동 — 바깥이 먼저 알린다
+                GameplayAbilitySpecHandle innerHandle = Give("QInner");
+                GameplayAbilitySpecHandle outerHandle = Give("QOuter");
+                bool innerActivated = false;
+                RecordingAbility.Hook = (evt, ability, s) =>
+                {
+                    if (evt == "Activate" && ability.Name == "QOuter")
+                    {
+                        innerActivated = asc.TryActivateAbility(innerHandle);
+                    }
+                };
+                ClearRecords();
+                asc.TryActivateAbility(outerHandle);
+                RecordingAbility.Hook = null;
+                bool nestedOrder = events.Count == 2 && events[0] == "Act:QOuter" && events[1] == "Act:QInner";
+                check("Q-12 발동 안에서 다른 어빌리티 발동 — 둘 다 활성, 발동 이벤트는 바깥 → 안쪽", innerActivated && nestedOrder && SpecOf(outerHandle).IsActive && SpecOf(innerHandle).IsActive);
+                asc.CancelAbilities();
+
+                // 취소로 끝난 어빌리티의 종료 구독자가 다른 어빌리티를 발동 — 취소하는 쪽의 발동 도중(락 안)
+                GameplayAbilitySpecHandle cancellerHandle = Give("QCanceller", cancelTags: attackTags);
+                GameplayAbilitySpecHandle meleeHandle = Give("QMelee", meleeTags);
+                GameplayAbilitySpecHandle backupHandle = Give("QBackup");
+                bool backupActivated = false;
+                afterEnded = data =>
+                {
+                    if (NameOf(data.AbilityThatEnded) == "QMelee" && data.WasCancelled)
+                    {
+                        backupActivated = asc.TryActivateAbility(backupHandle);
+                    }
+                };
+                asc.TryActivateAbility(meleeHandle);
+                asc.TryActivateAbility(cancellerHandle);
+                afterEnded = null;
+                check("Q-13 취소 연쇄 — 취소된 어빌리티의 종료 구독자가 다른 어빌리티 발동, 취소한 쪽도 활성", backupActivated && !SpecOf(meleeHandle).IsActive && SpecOf(backupHandle).IsActive && SpecOf(cancellerHandle).IsActive);
+                asc.CancelAbilities();
+
+                // 락 안의 종료 구독자가 해제 — 락이 풀릴 때 처리된다
+                GameplayAbilitySpecHandle lockedHandle = Give("QLocked");
+                asc.TryActivateAbility(lockedHandle);
+                bool pendingDuringLock = false;
+                afterEnded = data =>
+                {
+                    if (NameOf(data.AbilityThatEnded) == "QLocked")
+                    {
+                        asc.ClearAbility(data.AbilitySpecHandle);
+                        GameplayAbilitySpec pending = asc.FindAbilitySpecFromHandle(data.AbilitySpecHandle);
+                        pendingDuringLock = pending != null && pending.PendingRemove;
+                    }
+                };
+                asc.CancelAbilityHandle(lockedHandle);
+                afterEnded = null;
+                check("Q-14 락 안에서 종료 구독자가 해제 — 그동안은 해제 대기, 락이 풀리면 Spec이 빠짐", pendingDuringLock && asc.FindAbilitySpecFromHandle(lockedHandle) == null);
+
+                // 실패 구독자가 다른 발동을 시도해도 먼저 받은 사유는 그대로(복사했다면)
+                GameplayAbilitySpecHandle failAHandle = Give("QFailA", configure: a => a.ActivationRequiredTags.AddTag(requiredTag));
+                GameplayAbilitySpecHandle failBHandle = Give("QFailB");
+                ((RecordingAbility)SpecOf(failBHandle).GetPrimaryInstance()).BlockActivation = true;
+                GameplayTagContainer outerTagsAfterNested = null;
+                afterFailed = (ability, tags) =>
+                {
+                    if (NameOf(ability) == "QFailA")
+                    {
+                        afterFailed = null;
+                        asc.TryActivateAbility(failBHandle);
+                        outerTagsAfterNested = new GameplayTagContainer(tags);
+                    }
+                };
+                ClearRecords();
+                bool failAActivated = asc.TryActivateAbility(failAHandle);
+                afterFailed = null;
+                bool nestedFailures = failures.Count == 2 && failures[0].Name == "QFailA" && failures[0].Tags.HasTagExact(requiredTag) && failures[1].Name == "QFailB" && HasFailTag(failures[1].Tags, failCanActivateTag);
+                check("Q-15 실패 구독자 안에서 다른 실패 — 실패 이벤트 둘, 각자 자기 사유(복사본 기준)", !failAActivated && nestedFailures);
+                bool sharedContainerOverwritten = outerTagsAfterNested != null && !outerTagsAfterNested.HasTagExact(requiredTag);
+                Debug.Log($"[GA Self-Check] Q-15 관찰: 안쪽 시도 뒤 바깥 실패 이벤트의 사유 컨테이너 = {outerTagsAfterNested} (덮어써짐: {sharedContainerOverwritten}) — UE도 시도마다 같은 멤버 컨테이너를 비워 쓴다");
+
+                // 비활성에서 차단 켜기·빈 태그로 취소는 아무것도 하지 않는다
+                GameplayAbilitySpecHandle idleHandle = Give("QIdle", null, attackTags);
+                GameplayAbility idleInstance = SpecOf(idleHandle).GetPrimaryInstance();
+                idleInstance.SetShouldBlockOtherAbilities(true);
+                check("Q-16 비활성에서 SetShouldBlockOtherAbilities(true) — 막지 않음", asc.GetBlockedAbilityTags().IsEmpty() && !idleInstance.IsBlockingOtherAbilities());
+
+                GameplayAbilitySpecHandle keepHandle = Give("QKeep", meleeTags);
+                asc.TryActivateAbility(keepHandle);
+                asc.CancelAbilities(new GameplayTagContainer());
+                bool keptWithEmpty = SpecOf(keepHandle).IsActive;
+                asc.CancelAbilities();
+                check("Q-17 CancelAbilities(빈 태그)는 아무것도 취소 안 함, CancelAbilities()(null)는 모두 취소", keptWithEmpty && !SpecOf(keepHandle).IsActive);
+            }
+            finally
+            {
+                RecordingAbility.Hook = null;
+                asc.OnAbilityActivated -= onActivated;
+                asc.OnAbilityCommitted -= onCommitted;
+                asc.OnAbilityFailed -= onFailed;
+                asc.OnAbilityEnded -= onEnded;
+                asc.OnAbilityEndedWithData -= onEndedWithData;
+                asc.RemoveActiveEffectsWithGrantedTags(cooldownTags);
                 asc.ClearAllAbilities();
             }
         }
@@ -1425,6 +1733,31 @@ namespace Test.Editor
             serializedObject.FindProperty("abilityTemplate.instancingPolicy").enumValueIndex = (int)policy;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             return asset;
+        }
+
+        // 어빌리티 태그·차단·취소 태그를 채운 Recording 어빌리티를 부여한다. null인 태그 묶음은 비워 둔다.
+        // Per Actor는 부여 때 원형을 복제하므로 원형 설정(configure)은 부여 전에 한다.
+        private static GameplayAbilitySpecHandle GiveTaggedAbility(AbilitySystemComponent asc, List<UnityEngine.Object> created, string name, GameplayTagContainer assetTags = null, GameplayTagContainer blockTags = null, GameplayTagContainer cancelTags = null, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerActor, Action<RecordingAbility> configure = null)
+        {
+            GameplayAbilityAsset asset = MakeAsset(name, created, policy);
+            var template = (RecordingAbility)asset.AbilityTemplate;
+            configure?.Invoke(template);
+            if (assetTags != null)
+            {
+                template.AssetTags.AppendTags(assetTags);
+            }
+
+            if (blockTags != null)
+            {
+                template.BlockAbilitiesWithTag.AppendTags(blockTags);
+            }
+
+            if (cancelTags != null)
+            {
+                template.CancelAbilitiesWithTag.AppendTags(cancelTags);
+            }
+
+            return asc.GiveAbility(new GameplayAbilitySpec(asset));
         }
 
         private static bool Sequence(string first, string second)
