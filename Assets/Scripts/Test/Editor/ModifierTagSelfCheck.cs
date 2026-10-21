@@ -491,10 +491,10 @@ namespace Test.Editor
                 ActiveGameplayEffectHandle handle = asc.ApplyGameplayEffectToSelf(targetRequire);
                 bool skippedOnApply = IsBaseAndCurrent(asc, health, 100f);
                 asc.AddLooseGameplayTag(tags.Enraged);
-                container.Tick(1f);
+                AdvanceTime(container, 1f);
                 bool appliedWithTag = IsBaseAndCurrent(asc, health, 110f);
                 asc.RemoveLooseGameplayTag(tags.Enraged);
-                container.Tick(1f);
+                AdvanceTime(container, 1f);
                 bool skippedAfterRemove = IsBaseAndCurrent(asc, health, 110f);
                 asc.RemoveActiveGameplayEffect(handle);
                 check($"E-11 {type} Period 1 +10 Target Require Enraged: 적용 실행(태그 없음) 100 → Enraged 추가 후 주기 110 → 제거 후 주기 110 (Base·Current)", skippedOnApply && appliedWithTag && skippedAfterRemove);
@@ -506,10 +506,10 @@ namespace Test.Editor
             ActiveGameplayEffectHandle ignoreHandle = asc.ApplyGameplayEffectToSelf(targetIgnore);
             bool ignoreOnApply = IsBaseAndCurrent(asc, health, 110f);
             asc.AddLooseGameplayTag(tags.Stunned);
-            container.Tick(1f);
+            AdvanceTime(container, 1f);
             bool ignoreBlocked = IsBaseAndCurrent(asc, health, 110f);
             asc.RemoveLooseGameplayTag(tags.Stunned);
-            container.Tick(1f);
+            AdvanceTime(container, 1f);
             bool ignoreAgain = IsBaseAndCurrent(asc, health, 120f);
             asc.RemoveActiveGameplayEffect(ignoreHandle);
             check("E-12 Infinite Period 1 +10 Target Ignore Stunned: 적용 실행 110 → Stunned 추가 후 주기 110 → 제거 후 주기 120", ignoreOnApply && ignoreBlocked && ignoreAgain);
@@ -518,7 +518,7 @@ namespace Test.Editor
 
             SetBase(asc, health, 100f);
             ActiveGameplayEffectHandle withSource = asc.ApplyGameplayEffectSpecToSelf(MakeSpecWithSourceTag(asc, sourceRequire, tags.Enraged));
-            container.Tick(1f);
+            AdvanceTime(container, 1f);
             bool sourceOn = IsBaseAndCurrent(asc, health, 120f);
             asc.RemoveActiveGameplayEffect(withSource);
             check("E-13 Infinite Period 1 +10 Source Require Enraged, Spec Source에 Enraged → 적용 실행 + 주기 1회 = 120", sourceOn);
@@ -527,7 +527,7 @@ namespace Test.Editor
             GameplayEffectSpec specBeforeTag = asc.MakeOutgoingSpec(sourceRequire);
             asc.AddLooseGameplayTag(tags.Enraged);
             ActiveGameplayEffectHandle withoutSource = asc.ApplyGameplayEffectSpecToSelf(specBeforeTag);
-            container.Tick(1f);
+            AdvanceTime(container, 1f);
             bool sourceOff = IsBaseAndCurrent(asc, health, 100f);
             asc.RemoveActiveGameplayEffect(withoutSource);
             asc.RemoveLooseGameplayTag(tags.Enraged);
@@ -566,6 +566,15 @@ namespace Test.Editor
         {
             FieldInfo containerField = typeof(AbilitySystemComponent).GetField("_activeGameplayEffectsContainer", NonPublicInstance);
             return (ActiveGameplayEffectsContainer)containerField.GetValue(asc);
+        }
+
+        // 에디터에선 Time.time이 흐르지 않아, 컨테이너 시계를 지금 시각 + seconds로 바꿔 끼우고 Tick한다.
+        private static void AdvanceTime(ActiveGameplayEffectsContainer container, float seconds)
+        {
+            float worldTime = container.GetWorldTime() + seconds;
+            Func<float> worldTimeSource = () => worldTime;
+            typeof(ActiveGameplayEffectsContainer).GetMethod("SetWorldTimeSource", NonPublicInstance).Invoke(container, new object[] { worldTimeSource });
+            container.Tick();
         }
 
         // GetAttributeCurrentValue는 조회 때마다 다시 계산하므로, 저장된 CurrentValue는 AttributeSet의 값을 직접 본다

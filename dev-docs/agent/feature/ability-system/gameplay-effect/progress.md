@@ -2,7 +2,7 @@
 
 - 상태: ✅ 임시완료
 - 우선순위: P0
-- 최종 갱신: 2026-10-20 (KST)
+- 최종 갱신: 2026-10-21 (KST)
 
 > `ability-system` 그룹의 하위 feature. 형제: [attribute](../attribute/progress.md) · [gameplay-ability](../gameplay-ability/progress.md) · [aggregator](../aggregator/progress.md).
 > 핵심 배관(정의·Spec·Modifier·Execution·Capture·AttributeBased)은 구현·검증됨. 라이브 재평가(non-snapshot 추종)는 [aggregator](../aggregator/progress.md)가 얹었다.
@@ -46,6 +46,7 @@
 - **Execution(→D7(Execution=순수 클래스)·D11(입출력 타입 분리)·D17(Execution Defs 등록))**: SO 아닌 순수 클래스, AQN으로 저장·1회 resolve. 입력/출력 struct 분리, `Defs()`로 캡처 대상 선언. Instant·Period>0에서만 실행(Duration/Infinite+Period0은 실행 안 됨 — UE 동일).
 - 아키텍처: [architecture/ability-system/gameplay-effect.md](../../../../project/architecture/ability-system/gameplay-effect.md) (동기화 최신 아닐 수 있음)
 - 코드: `Assets/Scripts/Core/AbilitySystem/Effect/`, 적용·수명은 `ActiveGameplayEffectsContainer` / 공개 API는 `AbilitySystemComponent`
+- **코스트 확인(2026-10-21, gameplay-ability에서 추가 — 사유: GA 코스트(TODO-BOARD 2-4)가 UE처럼 GE 컨테이너 질의를 씀)**: `ActiveGameplayEffectsContainer.CanApplyAttributeModifiers(effect, level, context)` + ASC 위임 — 임시 Spec의 magnitude를 계산해 AddBase 모디파이어만 현재값 + 크기 ≥ 0인지 본다(UE `GameplayEffect.cpp:5177`). 어트리뷰트 세트가 없는 어트리뷰트는 건너뜀. ASC `HasAnyMatchingGameplayTags`도 같이 추가. 근거는 gameplay-ability decisions D7.
 
 ## 세부 TODO (구현 체크리스트)
 - [x] 1. GE/Modifier 정의 + Spec resolve 캐싱 + Active 상태
@@ -76,6 +77,7 @@
 | D24 | Remove Other=모든 질의에서 자기 제외 | 2026-10-20 | UE는 `MoveTemp`로 둘째 질의부터 자기 제외가 빠짐(버그로 판단) — 우리는 모든 질의에 건다. |
 | D25 | GE 질의 API=UE 목록 | 2026-10-20 | `GameplayEffectQuery`·ASC 찾기·시간·레벨·제거 UE대로. `StacksToRemove` 자리만, 시간은 `RemainingDuration` 기준, 끝없음 -1. |
 | D26 | 값 변경 이벤트=이벤트 객체 getter | 2026-10-20 | UE는 델리게이트 참조 반환 — C# delegate가 불변이라 어트리뷰트별 이벤트 객체를 돌려준다. 인자는 UE대로(`GEModData` 포함). |
+| D27 | GE 수명=적용 시각 기록 + Tick 한 루프 | 2026-10-21 | `StartWorldTime`·컨테이너 시계 도입, Tick은 적용 뒤 흐른 시간만, 남은 시간은 UE 공식으로 재계산. UE 타이머는 안 씀. Tick 순서 영향 → [tick-order-improvements.md](tick-order-improvements.md)·[tick-order-user-notes.md](tick-order-user-notes.md). |
 
 ### 결정 대기
 - **Execution 직렬화 형태(구 D8, 2026-07-19 미결)** — AQN 타입 참조(지금 코드, UE `TSubclassOf`와 같음 / GE별 튜닝 값 불가) vs `[SerializeReference]` 인스턴스(GE별 튜닝 값 / 이름 변경 시 참조 깨짐, 드로어 따로). 판단 축: Execution이 GE별 튜닝 값을 갖게 될까.
@@ -93,6 +95,7 @@
 2. **호출처 배선** — 공격 컴포넌트가 `MakeEffectContext()`(Instigator=공격자) 기반으로 target에 GE 적용. (실행 계층은 [gameplay-ability](../gameplay-ability/progress.md)와 함께.)
 3. **`SetByCaller`**(→D20(spec API+clone 유지)) — 런타임 계산값을 spec에 꽂아 적용. spec 직접생성 API+clone의 실사용 소비처. 별도 작업([TODO-BOARD](../../../TODO-BOARD.md)).
 4. (확장 시) GE 스택 / Cue / Tag / ScalableFloat 커브는 데모 요구가 생기면.
+   - GA(수명): 2026-10-21 [gameplay-ability](../gameplay-ability/progress.md) 작업(2-8 PlayMode 검증)으로 이 feature 코드를 고쳤다 — `ActiveGameplayEffect.StartWorldTime`·`LastTickWorldTime`, 생성자에 적용 시각, `GetEndTime` = 적용 시각 + 지속시간, 컨테이너 `GetWorldTime`·`SetWorldTimeSource`(internal), `Tick()` 인자 없음(→D27). 사유: 프레임 도중 적용된 GE가 그 프레임 시간까지 깎이던 버그를 유저가 "B로 해". 셀프체크 4종의 시간 흘리기를 시계 주입으로 바꿈(H-15 기대값은 컨테이너 시계 기준). Tick 순서 영향 정리 → [tick-order-improvements.md](tick-order-improvements.md)·[tick-order-user-notes.md](tick-order-user-notes.md)(구현·보완할 것 / 사용자가 알아야 할 것, 두 문서).
    - Tag: 2026-10-17 [gameplay-tag](../gameplay-tag/progress.md) 에디터 확인 중 `GameplayEffectAssetDrawer.GetModifierElementHeight`를 고쳤다 — Modifier Op 줄을 두 번 세어(`LineGap + lineH` 뒤 다시 `spacing`) 펼친 요소마다 빈 줄 하나만큼 남던 것을 그리기 위치와 같게 맞춤(태그 접기 추가 전부터 있던 계산). 사유: gameplay-tag tests.md §3-4 "요소 높이가 맞는지", 유저 "결정 없이 고쳐야 되는 건 고치고".
    - Tag: 2026-10-16 [gameplay-tag](../gameplay-tag/progress.md) 작업으로 이 feature 코드를 고쳤다 — `GameplayModifier`에 `sourceTags`·`targetTags`(`GameplayTagRequirements`) 필드, `GameplayEffectAssetDrawer`에 표시, `Effect/GameplayTagRequirements.cs` 신설. 사유: Modifier 태그 조건이 gameplay-tag의 GE 연동 범위라서다. 판정은 아직 연결하지 않았다(gameplay-tag D13 Modifier Source/Target Tags=UE Requirements 전체·판정 미연결, D14 지속형 판정=UE 그대로).
    - Tag(판정 연결): 2026-10-16 같은 작업으로 이 feature 코드를 또 고쳤다. 사유: Modifier Source/Target 태그 조건을 UE 호출 위치대로 판정하려면 Spec·컨테이너·캡처 조회가 태그를 들고 다녀야 해서다(gameplay-tag D18 판정 태그 출처=ASC 조회 함수만·빈 값, D19 Execution 캡처 조회=UE처럼 평가 파라미터 인자, D20 Spec 캡처 태그=UE `FTagContainerAggregator` 구조, D21 지속형 태그 조건을 CurrentValue에도 적용).

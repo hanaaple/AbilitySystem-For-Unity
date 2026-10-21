@@ -13,10 +13,7 @@ namespace Core.AbilitySystem.Effect
         public GameObject EffectCauser { get; private set; }
 
         /// <summary>이 GE의 출처 오브젝트(무기·아이템·능력 등). Instigator(주체 ASC)와 별개로 전달한다.</summary>
-        public Object SourceObject { get; private set; }
-
-        // TODO: RaycastHit? HitResult
-        // TODO: Vector3? WorldOrigin
+        public GameObject SourceObject { get; private set; }
 
         public void AddInstigator(AbilitySystemComponent instigator, GameObject effectCauser = null)
         {
@@ -24,7 +21,7 @@ namespace Core.AbilitySystem.Effect
             EffectCauser = effectCauser;
         }
 
-        public void AddSourceObject(Object sourceObject)
+        public void AddSourceObject(GameObject sourceObject)
         {
             SourceObject = sourceObject;
         }

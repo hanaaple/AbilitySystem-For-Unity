@@ -3,7 +3,7 @@
 > feature 단위 추적은 `feature-list.md`가 담당한다. **이 보드는 그보다 잘게 쪼개진 잡다한 작업·개인 TODO·이슈**를 모은다 — 문서 정비, 인프라(GitHub 설정 등), 실험, 리팩터, 아이디어 등 feature로 묶기 애매한 것들.
 > 관리 규약은 `TODO-BOARD.harness.md`. 항목은 상태가 바뀌면 아래 칸 사이를 이동한다.
 
-- 최종 갱신: 2026-10-20 (KST)
+- 최종 갱신: 2026-10-21 (KST)
 
 ---
 
@@ -14,23 +14,19 @@
 > 기존 보드 항목은 본문 그대로 옮겼다(원래 칸: 'GE·Tag 남은 것'·'이전 우선순위 낮음'). 새 항목은 2026-10-20 등록. 순서는 위에서부터(에이전트 제안).
 > 2026-10-20 유저 "TODO에서 데모용으로 필요한 부분은 싹 데모쪽으로 빼두고" → 게임 쪽 구현·데이터·연출·데모 결정은 아래 '📋 TODO (데모 제작)'으로 옮겼다. 이 칸엔 GAS 자체만 남는다.
 
-### 0. 착수 전 결정
-
-- [ ] **(decision)** **GA 작업 방식** — gameplay-ability `HARNESS.md`는 "유저 이해가 구현에 선행"·착수는 유저 신호. 데모 일정상 AI가 최소 GA를 바로 구현할지(이번만 그 원칙을 접음), GA 없이 입력→GE 지름길로 갈지. 에이전트 추천: 최소 GA. _(2026-10-20 등록)_
-
 ### 1. Attribute — 값 변화 알림·범위
 
 (없음 — 2026-10-20 값 변경 이벤트·`PreAttributeBaseChange` ref·AttributeSet 훅 완료(✅ Done, PR #8), 사망 처리는 데모 미결로 옮김)
 
 ### 2. GameplayAbility (최소)
 
-- [ ] GameplayAbility (GA) 구현
-  - **2026-10-20 범위(에이전트 제안, 유저 미확정):** ① `GameplayAbilityAsset`(SO: 코스트 GE·쿨다운 GE·태그·효과 GE) ② 데모용 즉발형 `ActivateAbility`→`CommitAbility`→`EndAbility`(UE `GameplayAbility.cpp:424`·`:559`·`:769`) ③ `GameplayAbilitySpec`·`Handle` ④ ASC `GiveAbility`·`TryActivateAbility`·`CancelAbility` ⑤ 쿨다운 판정 = 쿨다운 GE의 Granted Tags를 갖고 있으면 실패(UE `:1050`·`:1197`) + HUD용 남은 쿨다운 조회 ⑥ 코스트 판정 = ASC `CanApplyAttributeModifiers`(새로 필요, UE `:1092`) ⑦ 태그 조건 최소 `ActivationBlockedTags`(스턴 중 막기)·`ActivationOwnedTags`(UE 전체 목록 `GameplayAbility.h:756-791`). ⑧ 입력 바인딩은 '데모 제작'으로 옮김(2026-10-20). 빼는 것: 인스턴싱 정책·네트워크·AbilityTask·몽타주·타겟팅·이벤트 발동.
-  - 문서 정리 필요: gameplay-ability requirements·progress가 "골격 복원함(2026-09-13)"이라 적었지만 작업 트리·stash에 GA 코드가 없다(2026-10-20 확인).
+(없음 — 2026-10-21 모두 완료, TODO-DONE. 남은 GA 일은 '뒤로 미룸')
 
 ### 3. GameplayCue (최소)
 
-- [ ] Gameplay Cue 구현
+> **2026-10-21 유저: "아무래도 GameplayCue까지는 못하고 GameplayAbility까지 한 다음에 바로 데모 구현해야겠어"** → 데모 전 GAS 구현에서 뺌. GA(2.) 끝나면 바로 '데모 제작'으로. 아래 항목은 지우지 않고 둔다(범위 기록용).
+
+- [ ] Gameplay Cue 구현 — **데모 전 범위에서 뺌(2026-10-21 유저)**
   - **2026-10-20 범위(에이전트 제안, 유저 미확정):** ① `GameplayCueEvent`(`OnActive`·`WhileActive`·`Executed`·`Removed`, UE `GameplayEffectTypes.h:958`) ② GE 에셋 Cue 태그 목록(UE `GameplayEffect.h:2299`, 레벨 범위·MagnitudeAttribute 뺌) ③ 발생 지점: Executed=`ExecuteActiveEffectsFrom` 끝(UE `GameplayEffect.cpp:3059`), OnActive·WhileActive=`AddActiveGameplayEffectGrantedTagsAndModifiers`(`:4434-4435`), Removed=`RemoveActiveGameplayEffectGrantedTagsAndModifiers`(`:4734`) ④ Cue 매니저 + 태그→프리팹 표(SO) ⑤ 프리팹 쪽 기본 컴포넌트(DOTween 연출 자리) ⑥ GE 인스펙터 Cue 칸. 빼는 것: 노티파이 클래스 계층·태그 계층 상속 조회·풀링·네트워크. 시간이 모자라면 태그 이벤트로 연출을 직접 붙이는 쪽으로 내려간다.
 
 ### 데모에 안 쓰는 것 (참고)
@@ -87,6 +83,13 @@
 - [ ] **(code)** **GE 태그 부가 기능** — UE GE Component 중 Immunity·Chance to Apply·Additional Effects·Custom Can Apply, Spec 동적 태그(`DynamicGrantedTags`·`DynamicAssetTags`, 세부 TODO 11), AttributeBased 태그 필터(세부 TODO 9), Execution `PassedInTags`·scoped modifier 태그(세부 TODO 12). Block Ability Tags·Abilities Component는 gameplay-ability 때. _(2026-10-18 등록 — 목표 범위 정리 중 제외)_
 - [ ] **(code)** **GE 데이터 검증(UE `IsDataValid`)** — 에디터에서 잘못된 GE 조합을 오류로 알리는 체계가 없다. 알려진 경우: Instant GE에 Granted Tags(UE `TargetTagsGameplayEffectComponent`), Instant GE에 Ongoing 태그 조건(UE `TargetTagRequirementsGameplayEffectComponent`). 할지 유저 결정 대기(gameplay-tag progress 세부 TODO 6). _(2026-10-20 등록)_
 
+### GE 버그
+
+> Tick 순서가 결과에 영향을 주는 곳 — 구현·보완할 것은 [tick-order-improvements.md](feature/ability-system/gameplay-effect/tick-order-improvements.md), 사용자가 알아야 할 것은 [tick-order-user-notes.md](feature/ability-system/gameplay-effect/tick-order-user-notes.md). 아래는 improvements의 할 일. ('적용 프레임 deltaTime 차감' 버그는 2026-10-21 해결 → TODO-DONE)
+
+- [ ] **(bug)** **Tick 도중 같은 ASC에 GE를 걸거나 지우면 예외 가능(미검증)** — 주기 GE 실행 → AttributeSet 훅·값 변경 이벤트 구독자가 같은 ASC에 Duration/Infinite GE를 걸거나 활성 GE를 지우면, `Tick`의 `foreach (… _activeGameplayEffects.Values)` 도중 사전이 바뀌어 `InvalidOperationException`이 날 수 있다(코드에서 추론, 실행 안 함). UE는 스코프 락 동안의 추가를 보류 목록에(`GameplayEffect.h:1978`). 먼저 재현 테스트 → 사본 순회 또는 보류 목록. tick-order-improvements.md 항목 2. _(2026-10-21 등록)_
+- [ ] **(code)** **남은 시간 조회를 조회 시점 시각으로** — `GetTimeRemaining`이 Tick 때 갱신한 값이라 같은 프레임에 ASC.Update보다 먼저 읽으면 지난 프레임 값. UE처럼 `Duration - (GetWorldTime() - StartWorldTime)`으로(`GameplayEffect.h:1336`). tick-order-improvements.md 항목 3. _(2026-10-21 등록)_
+
 ### Tag
 
 - [ ] **(code)** **gameplay-tag D3 대소문자 무시 비교 + 표기 보존** — 결정은 됐고 구현이 없다(`InternedName`은 대소문자 구분). progress 다음 작업 5. _(2026-10-18 보드 등록)_
@@ -97,6 +100,7 @@
   - **2026-10-20 확인:** 원래 있던 "레지스트리 편집 시 에디터 매니저 재구성"은 이미 됨 — 관리 창의 추가·이름 변경·삭제가 `GameplayTagRegistryEditing`에서 `EditorRefreshGameplayTagTree`를 부른다(tests.md §4-1·4-2에서 바로 반영 확인).
 
 ### 검증
+- [ ] **(bug)** **Modifier Tag 셀프체크 E-12가 Play 모드 뒤에 실패** (2026-10-21 발견, 미수정) — 에디터 `Time.time`이 0이 아니면(직전 Play 모드로 10.50373) 주기 1초 GE의 경계 Tick(시계를 딱 +1초)에서 주기 실행이 빠져 64/1. 시계를 0으로 맞추면 65/0 — 부동소수 경계로 보임. 테스트 경계를 넉넉히 할지(GA 테스트는 D27 때 그렇게 함), GE 주기 판정 쪽을 볼지 유저 판단. GE 쪽이 원인인지는 확인 안 함. _(2026-10-21 등록)_
 
 - [ ] **(verify)** GE 캡처 **end-to-end 유저 검증** — 5b evaluate로 소비처가 생겼다(`GameplayModifier.EvaluateMagnitude` → `AttributeBasedMagnitude.Evaluate`가 캡처값 조회). 이제 **유저가 에디터에서 Source·snapshot·evaluate 경로가 실제로 맞게 캡처·계산하는지 처음 확인**한다 — `GE_EquipSpeedDown`이 Source `CombatAttributeSet.damage` 기반으로 speed를 깎는지. ⚠ 선행: `Player_AttributeInitData`에 `CombatAttributeSet` 존재(없으면 캡처 무효→경고+0). (`SpeedBoostExecution.Execute`는 여전히 +10 고정 — Execute 경로의 캡처 소비는 별도.) **검증 절차·항목 = [gameplay-effect/tests.md](feature/ability-system/gameplay-effect/tests.md).** _(2026-08-04 갱신 — 5b로 소비처 배선됨, 검증만 남음)_
 - [ ] **(verify/setup)** **BoxRoom 검증 세팅 완성** — 디버그 도구는 만들어짐(2026-08-05, `BoxRoom.cs`+`.prefab`, ASC Inspector 창). 남은 세팅: ① 프리팹의 BoxRoom이 **Missing Script면** `m_Script` guid를 실제 값으로 교체(에이전트가 `.cs.meta` GUID `3a9f2b7c…` 발급). ② 3모드 GE 슬롯 꽂기 — 특히 **Buff에 `GE_EquipSpeedDown`**(Source damage 기반 speed 감소) → 5b evaluate end-to-end 검증과 직결. ③ **Room ASC `attributeInitData`**(Source 캡처 테스트 시) + **Player ASC에 `CombatAttributeSet`**(없으면 캡처 무효→경고+0). ④ 씬 배치·시각화(선택). 검증 항목 = [gameplay-effect/tests.md](feature/ability-system/gameplay-effect/tests.md). _(2026-08-05 등록)_
@@ -113,6 +117,7 @@
 
 ### 정리 작업
 
+- [ ] **(docs)** **architecture 문서를 PR #8에 맞춤** — `architecture/ability-system/attribute.md`(`AttributeSet` "빈 추상 마커"(19행)·"Current는 aggregator가 있으면 `Evaluate()`로만"(114행) — 지금은 저장값 읽기·훅 표에 Base 훅 2개뿐(143·152행)), `aggregator.md`(CurrentValue 산출 서술), `gameplay-effect.md`(쓰기 경로 `ApplyModToAttribute`(122행) → 지금은 `InternalExecuteMod`를 거침, 값 변경 이벤트 없음). feature progress는 PR #9로 맞췄고 architecture는 유저 "feature 쪽만"으로 미룸. _(2026-10-20 등록)_
 - [ ] **(code)** GE 캡처 **params 조회 함정 3종 (5b·Execute 작성 시 주의)** — 캡처를 실제로 읽는 코드를 쓸 때 걸리기 쉬운 지점. ① **false가 조용하다:** `AttemptCalculateCapturedAttribute*`(`GameplayEffectExecutionParameters.cs:47·54`)는 실패 사유(미등록/캡처 무효/Target 미캡처)를 전부 `false`+`0`으로 뭉개고 **경고 로그 없음** — 호출측이 bool을 안 보면 0이 계산식에 샌다. ② **값-동등성 key 취약:** 조회는 `BackingDefinition.Equals`(captureSource+attribute AQN+snapshot)라 **셋 중 하나만 달라도 매치 실패→false**. 조회 정의는 선언 정의와 완전히 같아야 함(SpeedBoost처럼 같은 static 필드 재사용이 안전). ③ **captureValueType 라우팅:** params 메서드가 Magnitude=Current / BaseValue=Base로 고정 분기인데 authoring의 `AttributeBasedMagnitude.captureValueType`(`:33`)가 Base/Current를 데이터로 지정 — 5b/Execute가 이 값에 맞춰 올바른 메서드를 호출해야 authoring 의도와 맞는다. _(2026-08-04 등록 — 캡처 조회 경로 분석 중 발견)_
 - [ ] **(docs)** **attribute 런타임 타입 이름 정렬 + D5(직렬화/런타임 참조 분리) 재작성** — 코드는 `GameplayAttributeHandle`인데 2026-08-21 세션에 내가 적은 문서·주석 일부가 아직 `ResolvedGameplayAttribute`다(그 이름으로 확정했다가 유저가 되돌림). 정정 대상: attribute `decisions.md`(D5(직렬화/런타임 참조 분리))·`progress.md`, architecture `overview`·`attribute`·`gameplay-effect`, 잔재 2건(`AttributeAggregator.cs` 주석 `Dictionary<ResolvedGameplayAttribute,…>`·`GameplayEffectSpec.cs` 경고 문자열). **D5(직렬화/런타임 참조 분리)는 근거 자체 재작성 필요** — "Handle이 부정확"이라 `Resolved-`를 택한 논리가 최종 `GameplayAttributeHandle`(Handle 유지)과 모순. 유저에게 "왜 Handle로 되돌렸나" 받아 그 근거로 다시 쓴다(HARNESS '왜는 지어내지 않는다'). _(2026-08-21 등록)_
   - **2026-10-18:** decisions 정리로 attribute D5는 "치운 결정"으로 내려갔다(이름은 `GameplayAttributeHandle`로 되돌아갔고 분리는 D1·gameplay-effect D15). D5 재작성은 더 필요 없고, 남은 일은 문서·주석의 `ResolvedGameplayAttribute` 잔재 정리뿐.
@@ -125,6 +130,25 @@
 > 2026-10-20 유저 "TODO 쪽에 이전에 GAS 제외한 TODO인 부분들 다 치우자. 아카이빙은 해두고", "_parked로 옮겨" — 게임 쪽(아이템·캐릭터·아트) 항목은 [`_parked/agent/TODO-BOARD.md`](../_parked/agent/TODO-BOARD.md)로 보관. 그 때문에 '2026-10-18 목표에서 미룬 것'(GE·Tag는 이미 'GE·Tag 남은 것'으로 옮김)·'이전 당장 목표·진행 중이던 것' 소제목은 비어 지웠다. 남은 건 GAS·문서 인프라 항목.
 
 > **이전 우선순위 낮음** (아래 GAS 대분류·기술은 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../project/design.md))의 목표 기능이다. 데모 씬 확정 후 필요분만 착수·feature 등록한다. 각 기능은 UE-complete가 아니라 "최소한 진짜 도는 버전".)
+
+- [ ] **(code)** **GA — UE 대비 미구현(데모 뒤로 미룸)** — 2026-10-21 유저 "GameplayAbility 남은거 있어? UE 기능과 비교해서 확실하게 확인해" → "싹 정리하고 그 중에서 현재 데모를 목표로 하는데 필수로 필요한 건 현재 TODO로 넣어두고 나머지는 미루는 TODO로 해". UE 5.6 `GameplayAbility.h`·`AbilitySystemComponent.h` 선언을 우리 GA·ASC·Spec과 대조(헤더 grep). 데모 필수는 '데모 전 GAS 구현' 2-9로, 나머지가 아래. 필수/미룸 구분은 에이전트 판단(유저 미확정). D# = gameplay-ability decisions에 뺀 이유가 있는 것. _(2026-10-21 등록)_
+  - **입력** — GA `InputPressed`/`InputReleased`, ASC `AbilityLocalInputPressed/Released`·`PressInputID/ReleaseInputID`·`FindAbilitySpecFromInputID`·`ClearAllAbilitiesWithInputID`·`Block/UnBlockAbilityByInputID`·`IsAbilityInputBlocked`(`AbilitySystemComponent.h:1117-1410`). 우리 Spec엔 `InputID` 값만 있다. 데모 입력은 게임 쪽에서 `TryActivateAbility(handle)`로('데모 제작 > 입력 바인딩').
+  - **발동 방식** — `TryActivateAbilityByClass`(우리 쪽이면 에셋으로)·`TryActivateAbilitiesByTag`·`GetActivatableGameplayAbilitySpecsByAllMatchingTags`(`:1044-1060`). 태그 쪽은 아래 어빌리티 태그가 먼저.
+  - **커밋 세부** (D7) — `CommitAbilityCooldown`·`CommitAbilityCost`(+`ForceCooldown`). 실패 태그 out 인자는 2-9에서.
+  - **생명주기 세부** (D4) — `CanBeCanceled`/`SetCanBeCanceled`(+ ASC `HandleChangeAbilityCanBeCanceled` — 2-10 때도 D4대로 뺌, 2026-10-21 유저 "그것들 TODO로 해두고"), `bIsAbilityEnding`, GA 자체 스코프 락, 재발동 `bRetriggerInstancedAbility`. 기록 없이 빠진 것: `SetRemoveAbilityOnEnd`, `GiveAbilityAndActivateOnce`(progress엔 뺀 것으로 있음), `Get/SetUserAbilityActivationInhibited`, `ClearActorInfo`·`RefreshAbilityActorInfo`, `NotifyAvatarDestroyed`.
+  - **이벤트 발동** — `AbilityTriggers`, `ShouldAbilityRespondToEvent`, `TriggerAbilityFromGameplayEvent`, `HandleGameplayEvent`, `SendGameplayEvent`, `IsTriggered`. 선행: 'GE·Tag 남은 것 > Tag > Gameplay Event'.
+  - **GE 연동 세부** (D5) — 컨텍스트 `SetAbility`·SourceObject 타입(보류), `ApplyAbilityTagsToGameplayEffectSpec`. 기록 없이 빠진 것: `GetCurrentSourceObject`/`GetSourceObject`, GE가 부여한 어빌리티(`RemoveGrantedByEffect`·`GetGrantedByEffectContext`·ASC `FindAbilitySpecFromGEHandle` — progress엔 뺀 것으로 있음), GA의 GE 제거 헬퍼(`BP_RemoveGameplayEffectFromOwnerWith*` — ASC엔 같은 기능 있음).
+  - **Source/Target 태그 조건** — `SourceRequiredTags`·`SourceBlockedTags`·`TargetRequiredTags`·`TargetBlockedTags`(`GameplayAbility.h:779-791`)와 `DoesAbilitySatisfyTagRequirements`의 sourceTags/targetTags 인자. UE에선 이벤트 발동 데이터(TriggerEventData)의 Instigator/Target 태그로만 검사돼 이벤트 발동과 같이 들어온다. 2026-10-21 2-10 착수 때 유저 "빼기" → "해당 나중에 TODO로 해둬".
+  - **취소 Ignore 인자** — ASC `CancelAllAbilities(Ignore)`(`AbilitySystemComponent.h:1089`). D8 때 쓰는 곳이 없어 뺐고 2-10에서도 `CancelAbilitySpec`·`CancelAbilities`에만 넣음. 2026-10-21 유저 "그것들 TODO로 해두고".
+  - **인스턴싱** (D6) — `NonInstanced`.
+  - **편의** — `GetCurrentAbilitySpec`, 인자 없는 `GetCooldownTimeRemaining()`, 데이터 검증 `IsDataValid`(GE 쪽 'GE 데이터 검증'과 같은 종류).
+  - **큰 기능(GA 범위 밖으로 둔 것)** — AbilityTask·GameplayTask(`ActiveTasks`·`*TaskByInstanceName`·`EndAbilityState`), 몽타주(`CurrentMontage`·`Montage*`·ASC `PlayMontage`·`GetAnimatingAbility`), 타겟팅(TargetData·`MakeTargetLocationInfo*`), GA에서 Cue 호출(`K2_*GameplayCue*` — Cue는 데모 전 범위에서 뺌).
+  - **안 함(UE 고유 제약이라 해당 없음)** — 네트워크·복제·예측(Replication/NetExecution/NetSecurity 정책, `HasAuthority`·`IsPredictingClient`·`ConfirmActivateSucceed`·`MarkAbilitySpecDirty` 등), 블루프린트 래퍼(`K2_*`·`BP_*`), 스켈레탈 메시 조회.
+
+- [ ] **(bug)** **GA 타입 선택 목록에 테스트 전용 클래스 노출** (2026-10-21 발견, 미수정) — `EditorTypeUtility.GetConcreteSubclasses(GameplayAbility)` 후보에 `Test.AbilitySystemLifecyclePlayModeTest+LingeringAbility`(이번 세션 PlayMode 테스트, 런타임 어셈블리)·`Test.Editor.GameplayAbilitySelfCheck+RecordingAbility`(기존 셀프체크)가 `TestGameplayAbility`와 함께 뜬다. 중첩 클래스라 스크립트 파일이 없어 고르면 아이콘이 비고 ping/open도 안 된다(유저가 `GA_New`에서 겪음). 고칠지·어떻게(선택 목록에서 숨김 표시 / 테스트 클래스를 따로 파일로) 유저 판단. 2026-10-21 유저 "GA 타입 선택 목록에 테스트 전용 클래스 노출 이거 뒤로 미루고" → '데모 전 GAS 구현 > 2. GameplayAbility'에서 이리로 옮김. _(2026-10-21 등록)_
+- [ ] **(code)** **GA 명시적 해제(인스턴스 무효 표시)** — UE `MarkAsGarbage` 대응(무효 표시·참조 끊기·정리 훅/Dispose). 해제된 GA 인스턴스를 밖에서 들고 있으면 계속 부를 수 있다(ASC를 거치면 Spec이 없어 못 씀). 2026-10-21 유저 "GA를 당장 여기서 Dispose를 두기에는 다른 곳들도 사실 할만한 게 많아서 다음으로 미루자"(제안했던 안: A 무효 표시 / B A+정리 훅 / C 약한 핸들), 같은 날 "GA 명시적 해제는 따로 빼둬" → '데모 전 GAS 구현 > 2. GameplayAbility'에서 이리로 옮김. 원래 'ASC 파괴 시 어빌리티 정리 없음' 항목에 묶여 있었고, 파괴 쪽은 2026-10-21 해결(→ TODO-DONE). _(2026-10-21 등록)_
+- [ ] **(code)** **GA 실패 사유를 태그 + 설정 에셋 대신 실패 정보(종류 enum + 원인 태그)로 바꿀지** — 2026-10-21 유저 "굳이굳이 Tag가 필요해? 그냥 실패했다고 정보에 각각 뭐가 실패했는지 보내면 되는거 아냐?" → 비교(enum: 설정 에셋·레지스트리 불필요·누락 없음 / 하위 어빌리티 자기 사유 추가가 어렵고 UE와 시그니처 다름) 뒤 "일단 내비둬 탐탁친 않네". 지금은 D9(태그 + `GameplayAbilitiesSettings`) 유지. _(2026-10-21 등록)_
+- [ ] **(idea)** **실패 사유 컨테이너를 구독자 사이에서 공유** (2026-10-21 GA 셀프체크 Q-15에서 관찰) — ASC가 시도마다 비워 쓰는 멤버 하나를 `OnAbilityFailed`로 넘겨, 실패 구독자 안에서 다른 발동을 시도하면 바깥 이벤트의 사유가 덮어써진다. UE도 같은 구조(`AbilitySystemComponent_Abilities.cpp:1687`). 구독자가 복사하면 안전(이벤트 설명에 적어 둠). 이벤트마다 복사본을 넘길지 유저 판단. _(2026-10-21 등록)_
 
 - [ ] **(infra)** **Ability System 플러그인화(asmdef/UPM 패키지)** — 유저 의도: "애초에 Ability System은 별개의 플러그인처럼". 2026-10-12 논의 후 **유저가 미룸**. 에이전트 제안(미확정): `Packages/com.<scope>.abilitysystem` embedded package(개발·설치 경로 동일). 정할 것: 패키지 이름(scope), feature-local `Editor/` 폴더 처리(asmdef 아래선 Editor 폴더 규칙이 안 먹힘 → 표준 Runtime/Editor 구조 vs `.asmref`), `Core.Common` 처리(패키지 안으로 vs 별도 common 패키지), 브랜치. 확인한 사실: 에셋에 `Core.AbilitySystem…, Assembly-CSharp` AQN 저장 0건, `Common`→AbilitySystem 코드 의존 없음. 착수 시 gameplay-tag D5(생성 차단=Request 입구+internal 생성 함수)의 `GameplayTag.Create`가 실제로 막히는지 확인. _(2026-10-12 등록)_
 

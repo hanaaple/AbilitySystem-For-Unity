@@ -103,7 +103,7 @@
 ## D25 — `FGameplayEffectQuery`·ASC 질의 API는 UE 목록 그대로, 스택·시간만 우리 구조에 맞춤
 
 - 날짜: 2026-10-20
-- 결정: `GameplayEffectQuery`(조건 7종 + `IgnoreHandles`·코드용 `CustomMatchDelegate`, `MakeQuery_*` 9종)와 ASC 질의 API(찾기·개수·시간·끝나는 시각·레벨·제거)를 UE대로 둔다. `StacksToRemove`는 자리만 두고 늘 통째로 제거, 개수는 GE당 1. 남은 시간·끝나는 시각은 Tick이 줄이는 `RemainingDuration`으로 계산하고(UE `StartWorldTime` 없음), 끝없는 GE는 `GameplayEffectConstants.InfiniteDuration`(-1, UE `INFINITE_DURATION`).
+- 결정: `GameplayEffectQuery`(조건 7종 + `IgnoreHandles`·코드용 `CustomMatchDelegate`, `MakeQuery_*` 9종)와 ASC 질의 API(찾기·개수·시간·끝나는 시각·레벨·제거)를 UE대로 둔다. `StacksToRemove`는 자리만 두고 늘 통째로 제거, 개수는 GE당 1. 남은 시간은 Tick이 갱신하는 `RemainingDuration`, 끝나는 시각은 `StartWorldTime + Duration`(2026-10-21 D27에서 `StartWorldTime` 도입 — 그 전엔 둘 다 `RemainingDuration` 기준), 끝없는 GE는 `GameplayEffectConstants.InfiniteDuration`(-1, UE `INFINITE_DURATION`).
 - 왜: 유저 — 범위 "UE대로", 스택 인자 "자리만 두기". 블루프린트 델리게이트(`CustomMatchDelegate_BP`)와 서버 권한 검사는 우리에게 없는 것이라 뺐다.
 - 대가: UE 컨테이너의 남은 시간은 끝없는 GE에 `-1 - 경과`를 내지만 우리는 -1(UE `FActiveGameplayEffect::GetTimeRemaining`과 같은 값). 시전자 목록은 액터 대신 ASC.
 - 재검토: GE 스택을 만들 때 `StacksToRemove`·개수를 스택 수로.
@@ -115,6 +115,14 @@
 - 왜: 유저 선택(질문 답, 근거 미기록). UE는 맵 안 델리게이트를 참조로 돌려준다(`GameplayEffect.cpp:5419`). C# delegate는 불변이라 delegate를 돌려주면 받은 쪽 `+=`가 맵에 닿지 않는다.
 - 대안: ASC 등록·해제 메서드(태그 `RegisterGameplayTagEvent` 모양) / 타입 하나가 덜 들지만 UE 사용 모양과 달라진다.
 - 대가: 어트리뷰트마다 이벤트 객체 하나(타입 하나 추가).
+
+## D27 — GE 수명은 Tick 한 루프 그대로, 적용 시각(`StartWorldTime`)을 기록해 적용 뒤 흐른 시간만 셈 (UE 타이머 대신)
+
+- 날짜: 2026-10-21
+- 결정: `ActiveGameplayEffect.StartWorldTime`(적용 시각)·컨테이너 시계 `GetWorldTime()`(기본 `Time.time`) 도입. `Tick()`은 인자 없이 시계를 읽어, GE마다 지난 Tick(처음엔 적용 시각) 뒤 흐른 시간만 주기 타이머에 더하고, 남은 시간은 UE 공식 `Duration - (지금 - StartWorldTime)`(`GameplayEffect.h:1336`)으로 다시 계산. 끝나는 시각 = `StartWorldTime + Duration`(UE `GetEndTime`). 시계를 바꾸는 `SetWorldTimeSource`는 internal — Time.time이 흐르지 않는 에디터 셀프체크용.
+- 왜: (유저) 프레임 도중 적용된 GE가 그 프레임 deltaTime까지 깎이던 버그(PlayMode 측정 0.333초)를 두 안 중 "B로 해"(적용 시각 기록). UE도 적용 때 `StartWorldTime = GetWorldTime()`(`GameplayEffect.cpp:4869`).
+- 대안: ASC 실행 순서를 앞당김(`[DefaultExecutionOrder]`) / 한 줄이지만 `Start`·물리 콜백·FixedUpdate에서 건 GE는 그대로 짧음. UE처럼 GE마다 타이머 / 한 루프 구조를 바꿔야 해 범위가 큼.
+- 대가: 컨테이너가 Unity 시계를 직접 읽어, 시간을 흘리는 에디터 셀프체크 4종이 시계 주입으로 바뀜. 만료·주기 실행은 여전히 Tick 때라 최대 한 프레임 늦음, Tick 도중 목록 변경 문제는 그대로 — Tick 순서 영향 전체는 [tick-order-improvements.md](tick-order-improvements.md)·[tick-order-user-notes.md](tick-order-user-notes.md).
 
 ## 치운 결정
 
