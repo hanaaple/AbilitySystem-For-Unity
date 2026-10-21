@@ -20,8 +20,7 @@
 
 ### 2. GameplayAbility (최소)
 
-- [ ] GameplayAbility (GA) 구현 — 2026-10-20 유저 "세분화해" → 아래 2-1~2-8로 나눔(나눈 단위·순서는 에이전트 제안, 유저 미확정). 구조는 gameplay-ability decisions D1·D3(정의 = 단일 SO `GameplayAbilityAsset`, 런타임 = `GameplayAbility` 일반 C# 클래스, 에셋엔 `[SerializeReference]` 원형 → 부여 때 깊은 복사). 이미 된 것: 정의/런타임 분리 + 2-1(`feat/gameplay-ability`). 입력 바인딩은 '데모 제작'으로 옮김. 빼는 것: NonInstanced 정책·네트워크·AbilityTask·몽타주·타겟팅·이벤트 발동(2026-10-21 유저 "GA는 Per Instance, Per Actor(ASC, GameObject)만 구현할거야" → 인스턴싱 정책은 Per Actor·Per Execution 둘 지원, 완료 — 셀프체크 K, gameplay-ability decisions D6).
-  - [x] **2-1~2-8 완료(2026-10-21)** — 부여·해제·생명주기·GE 적용·코스트·쿨다운·커밋·태그 조건·검증(셀프체크 GA 123/0, PlayMode GA 6/0). 본문은 TODO-DONE으로 옮김(2026-10-21 유저 "싹 정리하고 …").
+(없음 — 2026-10-21 모두 완료, TODO-DONE. 남은 GA 일은 '뒤로 미룸')
 
 ### 3. GameplayCue (최소)
 
