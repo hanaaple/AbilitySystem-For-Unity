@@ -48,7 +48,7 @@ namespace Core.AbilitySystem
 
         private void Update()
         {
-            _activeGameplayEffectsContainer.Tick(Time.deltaTime);
+            _activeGameplayEffectsContainer.Tick();
         }
 
         // ── AttributeSet ──────────────────────────────────────────────────────────

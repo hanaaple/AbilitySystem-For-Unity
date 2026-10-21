@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Tag;
@@ -30,6 +31,9 @@ namespace Core.AbilitySystem.Effect
         // 활성 이펙트 핸들 발급기. ASC 간 전역 유일성을 위해 static.
         private static int _handleIdCounter;
 
+        // 적용 시각과 Tick 시각을 같은 시계로 재야, 프레임 도중(이 컨테이너의 Tick보다 먼저) 적용된 이펙트가 그 프레임 시간을 잃지 않는다.
+        private Func<float> _worldTimeSource = () => Time.time;
+
         public ActiveGameplayEffectsContainer(AbilitySystemComponent owner)
         {
             _owner = owner;
@@ -41,6 +45,19 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>읽기 전용 뷰 — 에디터 관측 도구가 활성 목록을 훑는 통로.</summary>
         public IReadOnlyDictionary<ActiveGameplayEffectHandle, ActiveGameplayEffect> ActiveGameplayEffects => _activeGameplayEffects;
+
+        /// <summary>GE 수명(적용 시각·만료·주기)을 재는 현재 시각. 기본은 <see cref="Time.time"/>.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetWorldTime</remarks>
+        public float GetWorldTime()
+        {
+            return _worldTimeSource();
+        }
+
+        /// <summary>시각을 읽는 곳을 바꾼다 — Play 모드가 아니라 <see cref="Time.time"/>이 흐르지 않는 에디터 셀프체크가 시간을 직접 흘릴 때 쓴다.</summary>
+        internal void SetWorldTimeSource(Func<float> worldTimeSource)
+        {
+            _worldTimeSource = worldTimeSource;
+        }
 
         /// <summary>핸들의 활성 GE. 없으면(제거됐거나 Instant) null.</summary>
         /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveGameplayEffect</remarks>
@@ -251,7 +268,7 @@ namespace Core.AbilitySystem.Effect
             }
 
             var handle = new ActiveGameplayEffectHandle(++_handleIdCounter, _owner);
-            var active = new ActiveGameplayEffect(handle, appliedSpec, _owner);
+            var active = new ActiveGameplayEffect(handle, appliedSpec, _owner, GetWorldTime());
             _activeGameplayEffects.Add(active.Handle, active);
 
             InternalOnActiveGameplayEffectAdded(active);
@@ -377,8 +394,11 @@ namespace Core.AbilitySystem.Effect
 
         // ── Tick (수명) ───────────────────────────────────────────────────────────
 
-        /// <summary>활성 이펙트의 주기 실행과 Duration 만료를 처리한다. ASC.Update가 매 프레임 위임한다.</summary>
-        public void Tick(float deltaTime)
+        /// <summary>
+        /// 활성 이펙트의 주기 실행과 Duration 만료를 처리한다. ASC.Update가 매 프레임 위임한다.
+        /// 이펙트마다 적용(또는 지난 Tick) 뒤에 흐른 시간만 센다 — 같은 프레임에 이 Tick보다 먼저 적용된 이펙트는 0초가 흐른 것으로 본다.
+        /// </summary>
+        public void Tick()
         {
             if (_activeGameplayEffects.Count == 0)
             {
@@ -393,7 +413,7 @@ namespace Core.AbilitySystem.Effect
 
                 if (def.Period > 0f)
                 {
-                    active.PeriodTimer += deltaTime;
+                    active.PeriodTimer += elapsed;
                     while (active.PeriodTimer >= def.Period)
                     {
                         active.PeriodTimer -= def.Period;
@@ -403,7 +423,8 @@ namespace Core.AbilitySystem.Effect
 
                 if (def.Type == GameplayEffectType.Duration)
                 {
-                    active.RemainingDuration -= deltaTime;
+                    // 매 Tick 경과를 빼 쌓지 않고 적용 시각에서 다시 계산한다 — 큰 시각 값의 float 오차가 누적되지 않는다.
+                    active.RemainingDuration = def.Duration - (worldTime - active.StartWorldTime);
                     if (active.RemainingDuration <= 0f)
                     {
                         _expiredEffects.Add(active.Handle);
@@ -420,11 +441,14 @@ namespace Core.AbilitySystem.Effect
         // ── GE 실행 (Instant / Periodic) ─────────────────────────────────────────
 
         /// <summary>주기 GE를 한 번 실행한다. 꺼진 GE는 실행하지 않는다.</summary>
+            float worldTime = GetWorldTime();
         /// <remarks>UE: FActiveGameplayEffectsContainer::InternalExecutePeriodicGameplayEffect</remarks>
         private void InternalExecutePeriodicGameplayEffect(ActiveGameplayEffect active)
         {
             if (!active.IsInhibited)
             {
+                float elapsed = Mathf.Max(0f, worldTime - active.LastTickWorldTime);
+                active.LastTickWorldTime = worldTime;
                 ExecuteActiveEffectsFrom(active.Spec);
             }
         }
