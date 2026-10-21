@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Core.AbilitySystem.Abilities
 {
     /// <summary>ASC에 부여된 어빌리티 하나의 런타임 레코드. 만들 때 핸들이 발급되고, <see cref="AbilitySystemComponent.GiveAbility"/>로 ASC에 넣는다.</summary>
@@ -8,7 +10,8 @@ namespace Core.AbilitySystem.Abilities
         /// <remarks>UE: INDEX_NONE</remarks>
         public const int NoInputID = -1;
 
-        private GameplayAbility _primaryInstance;
+        // Per Actor면 부여 때 만든 하나, Per Execution이면 지금 활성인 발동들의 인스턴스.
+        private readonly List<GameplayAbility> _instances = new();
 
         public GameplayAbilitySpec(GameplayAbilityAsset ability, int level = 1, int inputID = NoInputID, UnityEngine.Object sourceObject = null)
         {
@@ -40,16 +43,39 @@ namespace Core.AbilitySystem.Abilities
         /// <remarks>UE: FGameplayAbilitySpec::IsActive</remarks>
         public bool IsActive => Ability != null && ActiveCount > 0;
 
-        /// <summary>부여될 때 만든 이 ASC 전용 런타임 인스턴스. 부여 전·해제 후엔 null.</summary>
+        /// <summary>Per Actor 어빌리티가 부여될 때 만든 이 ASC 전용 인스턴스. Per Execution이거나 부여 전·해제 후엔 null.</summary>
         /// <remarks>UE: FGameplayAbilitySpec::GetPrimaryInstance</remarks>
         public GameplayAbility GetPrimaryInstance()
         {
-            return _primaryInstance;
+            GameplayAbility template = Ability != null ? Ability.AbilityTemplate : null;
+            if (template != null && template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerActor && _instances.Count > 0)
+            {
+                return _instances[0];
+            }
+
+            return null;
         }
 
-        internal void SetPrimaryInstance(GameplayAbility instance)
+        /// <summary>이 Spec의 런타임 인스턴스 전부(Per Actor면 하나, Per Execution이면 활성 발동 수만큼).</summary>
+        /// <remarks>UE: FGameplayAbilitySpec::GetAbilityInstances</remarks>
+        public IReadOnlyList<GameplayAbility> GetAbilityInstances()
         {
-            _primaryInstance = instance;
+            return _instances;
+        }
+
+        internal void AddInstance(GameplayAbility instance)
+        {
+            _instances.Add(instance);
+        }
+
+        internal void RemoveInstance(GameplayAbility instance)
+        {
+            _instances.Remove(instance);
+        }
+
+        internal void ClearInstances()
+        {
+            _instances.Clear();
         }
     }
 }

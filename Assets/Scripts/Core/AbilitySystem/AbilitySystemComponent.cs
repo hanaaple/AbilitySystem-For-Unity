@@ -30,6 +30,32 @@ namespace Core.AbilitySystem
         private readonly List<GameplayAbilitySpecHandle> _abilityPendingRemoves = new();
         private bool _abilityPendingClearAll;
 
+        // 활성 어빌리티들이 막고 있는 어빌리티 태그. 여러 어빌리티가 같은 태그를 막을 수 있어 개수로 센다.
+        private readonly GameplayTagCountContainer _blockedAbilityTags = new();
+
+        // 발동 시도마다 비우고 다시 쓴다. 실패 이벤트 구독자에게 그대로 넘어가므로 구독자는 보관하지 않는다.
+        private readonly GameplayTagContainer _internalTryActivateAbilityFailureTags = new();
+
+        /// <summary>어빌리티가 발동(시작)될 때마다. <see cref="GameplayAbility.ActivateAbility"/> 직전, 활성 중 태그가 붙은 뒤에 온다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilityActivatedCallbacks</remarks>
+        public event Action<GameplayAbility> OnAbilityActivated;
+
+        /// <summary>어빌리티가 커밋(쿨다운·코스트 적용)될 때마다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilityCommittedCallbacks</remarks>
+        public event Action<GameplayAbility> OnAbilityCommitted;
+
+        /// <summary>발동 시도가 발동 조건(<see cref="GameplayAbility.CanActivateAbility"/>)에서 거부될 때마다. 두 번째 인자는 실패 사유 태그 — 다음 시도에서 비워지므로 보관하려면 복사한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilityFailedCallbacks</remarks>
+        public event Action<GameplayAbility, GameplayTagContainer> OnAbilityFailed;
+
+        /// <summary>어빌리티가 끝날 때마다(정상 종료·취소 모두).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilityEndedCallbacks</remarks>
+        public event Action<GameplayAbility> OnAbilityEnded;
+
+        /// <summary>어빌리티가 끝날 때마다, Spec 핸들·취소 여부를 함께. <see cref="OnAbilityEnded"/> 바로 뒤에 온다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::OnAbilityEnded</remarks>
+        public event Action<AbilityEndedData> OnAbilityEndedWithData;
+
         /// <summary>어빌리티가 동작하는 액터 정보. 기본값은 Owner = Avatar = 이 GameObject.</summary>
         /// <remarks>UE: UAbilitySystemComponent::AbilityActorInfo</remarks>
         public GameplayAbilityActorInfo AbilityActorInfo { get; } = new();
@@ -49,6 +75,15 @@ namespace Core.AbilitySystem
         private void Update()
         {
             _activeGameplayEffectsContainer.Tick();
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::OnComponentDestroyed</remarks>
+        private void OnDestroy()
+        {
+            DestroyActiveState();
+
+            // C#엔 강제 무효화(UE MarkAsGarbage)가 없어 ASC가 더는 내주지 않게 목록에서만 뺀다.
+            _spawnedAttributeSets.Clear();
         }
 
         // ── AttributeSet ──────────────────────────────────────────────────────────
@@ -125,6 +160,14 @@ namespace Core.AbilitySystem
         public bool HasMatchingGameplayTag(GameplayTag tagToCheck)
         {
             return _gameplayTagCountContainer.HasMatchingGameplayTag(tagToCheck);
+        }
+
+        /// <summary>주어진 태그 중 하나라도 가졌는지. 자식 태그만 가져도 부모 태그로 매칭된다. 비어 있으면 false.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::HasAnyMatchingGameplayTags</remarks>
+        public bool HasAnyMatchingGameplayTags(GameplayTagContainer tagContainer)
+        {
+            GameplayTagContainer ownedTags = GetOwnedGameplayTags();
+            return ownedTags.HasAny(tagContainer);
         }
 
         /// <summary>태그 개수. 자식 태그 개수를 포함한다(A.B와 A.C가 있으면 A는 2).</summary>
@@ -216,6 +259,13 @@ namespace Core.AbilitySystem
             }
 
             return new GameplayEffectSpec(effect, context, level);
+        }
+
+        /// <summary>GE의 AddBase 모디파이어를 지금 적용해도 어트리뷰트가 음수가 되지 않는지. 어빌리티 코스트 확인에 쓴다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::CanApplyAttributeModifiers</remarks>
+        public bool CanApplyAttributeModifiers(GameplayEffectAsset effect, float level, GameplayEffectContextHandle context)
+        {
+            return _activeGameplayEffectsContainer.CanApplyAttributeModifiers(effect, level, context);
         }
 
         // ── Apply / Remove (컨테이너에 위임) ──────────────────────────────────────
@@ -489,15 +539,23 @@ namespace Core.AbilitySystem
             {
                 foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
                 {
-                    // 인스턴스가 없으면 이미 해제됐거나, 만들어질 때 OnGiveAbility에서 알린다.
-                    GameplayAbility abilityInstance = spec.GetPrimaryInstance();
-                    abilityInstance?.OnAvatarSet(AbilityActorInfo, spec);
+                    GameplayAbility template = spec.Ability.AbilityTemplate;
+                    if (template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerActor)
+                    {
+                        // 인스턴스가 없으면 이미 해제됐거나, 만들어질 때 OnGiveAbility에서 알린다.
+                        GameplayAbility abilityInstance = spec.GetPrimaryInstance();
+                        abilityInstance?.OnAvatarSet(AbilityActorInfo, spec);
+                    }
+                    else
+                    {
+                        template.OnAvatarSet(AbilityActorInfo, spec);
+                    }
                 }
             }
         }
 
         /// <summary>
-        /// 어빌리티를 부여한다. 정의의 원형을 복제해 이 ASC 전용 인스턴스를 만든다. 같은 정의라도 Spec마다 따로 부여된다.
+        /// 어빌리티를 부여한다. Per Actor면 정의의 원형을 복제해 이 ASC 전용 인스턴스를 만든다(Per Execution은 발동 때). 같은 정의라도 Spec마다 따로 부여된다.
         /// 정의가 null이거나 원형이 비었으면 Invalid. 스코프 락 중이면 보류하고 Spec의 핸들을 돌려준다(락이 풀릴 때 부여).
         /// </summary>
         /// <remarks>UE: UAbilitySystemComponent::GiveAbility</remarks>
@@ -524,7 +582,6 @@ namespace Core.AbilitySystem
             using (new ScopedAbilityListLock(this))
             {
                 _activatableAbilities.Items.Add(spec);
-                CreateNewInstanceOfAbility(spec);
                 OnGiveAbility(spec);
             }
 
@@ -655,6 +712,288 @@ namespace Core.AbilitySystem
             return _activatableAbilities.Items;
         }
 
+        /// <summary>
+        /// 어빌리티 발동을 시도한다. 해제 대기 중이거나, Owner·Avatar가 없거나, <see cref="GameplayAbility.CanActivateAbility"/>가 거부하거나, Per Actor가 이미 활성이면 false.
+        /// 그중 <see cref="GameplayAbility.CanActivateAbility"/> 거부만 <see cref="OnAbilityFailed"/>로 실패 사유와 함께 알린다.
+        /// Per Execution은 발동마다 새 인스턴스를 만들어 여러 개가 동시에 활성일 수 있다.
+        /// true면 <see cref="GameplayAbility.ActivateAbility"/>까지 불린 것이다(그 안에서 이미 끝났을 수도 있다).
+        /// </summary>
+        /// <remarks>UE: UAbilitySystemComponent::TryActivateAbility</remarks>
+        public bool TryActivateAbility(GameplayAbilitySpecHandle handle)
+        {
+            GameplayAbilitySpec spec = FindAbilitySpecFromHandle(handle);
+            if (spec == null)
+            {
+                Debug.LogWarning("[ASC] TryActivateAbility: 없는 핸들.");
+                return false;
+            }
+
+            if (spec.PendingRemove)
+            {
+                return false;
+            }
+
+            if (AbilityActorInfo.OwnerActor == null || AbilityActorInfo.AvatarActor == null)
+            {
+                return false;
+            }
+
+            // 발동 중 콜백이 부여·해제를 불러도 이 Spec이 목록에서 빠지지 않게 잠근다.
+            using (new ScopedAbilityListLock(this))
+            {
+                GameplayAbility template = spec.Ability.AbilityTemplate;
+                bool instancedPerActor = template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerActor;
+
+                // Per Execution은 아직 인스턴스가 없어 원형이 판단한다.
+                GameplayAbility instancedAbility = spec.GetPrimaryInstance();
+                GameplayAbility abilitySource = instancedAbility ?? template;
+                _internalTryActivateAbilityFailureTags.Reset();
+                if (!abilitySource.CanActivateAbility(handle, AbilityActorInfo, _internalTryActivateAbilityFailureTags))
+                {
+                    // 재정의한 조건이 사유 없이 거부해도 거부됐다는 사실은 알린다.
+                    if (_internalTryActivateAbilityFailureTags.IsEmpty())
+                    {
+                        GameplayAbilitiesSettings settings = GameplayAbilitiesSettings.Get();
+                        _internalTryActivateAbilityFailureTags.AddTag(settings.ActivateFailCanActivateAbilityTag);
+                    }
+
+                    NotifyAbilityFailed(handle, abilitySource, _internalTryActivateAbilityFailureTags);
+                    return false;
+                }
+
+                if (instancedPerActor)
+                {
+                    // 인스턴스가 하나라 활성 중에 다시 발동하면 진행 중인 상태를 덮어쓴다.
+                    if (spec.IsActive)
+                    {
+                        return false;
+                    }
+
+                    if (instancedAbility == null)
+                    {
+                        Debug.LogWarning($"[ASC] TryActivateAbility: '{spec.Ability.name}'의 인스턴스가 없음.");
+                        return false;
+                    }
+                }
+                else
+                {
+                    instancedAbility = CreateNewInstanceOfAbility(spec);
+                }
+
+                instancedAbility.CallActivateAbility(handle, AbilityActorInfo);
+            }
+
+            return true;
+        }
+
+        /// <summary>정의로 부여된 Spec들을 모두 취소한다(활성 중인 것만 실제로 끝난다).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::CancelAbility</remarks>
+        public void CancelAbility(GameplayAbilityAsset ability)
+        {
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    if (spec.Ability == ability)
+                    {
+                        CancelAbilitySpec(spec);
+                    }
+                }
+            }
+        }
+
+        /// <summary>핸들의 어빌리티를 취소한다. 없는 핸들이거나 비활성이면 아무것도 하지 않는다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::CancelAbilityHandle</remarks>
+        public void CancelAbilityHandle(GameplayAbilitySpecHandle handle)
+        {
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    if (spec.Handle.Equals(handle))
+                    {
+                        CancelAbilitySpec(spec);
+                        return;
+                    }
+                }
+            }
+        }
+
+        /// <summary>활성 중인 어빌리티를 모두 취소한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::CancelAllAbilities</remarks>
+        public void CancelAllAbilities()
+        {
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    if (spec.IsActive)
+                    {
+                        CancelAbilitySpec(spec);
+                    }
+                }
+            }
+        }
+
+        /// <summary>파괴 직전에 활성 어빌리티를 모두 취소하고 부여된 어빌리티를 모두 해제한다 — 어빌리티가 취소·해제 콜백에서 정리할 기회를 준다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::DestroyActiveState</remarks>
+        private void DestroyActiveState()
+        {
+            // 씬 언로드처럼 함께 파괴되는 중이면 Owner가 먼저 사라졌을 수 있어, 그땐 취소 콜백이 죽은 Owner를 만지지 않게 건너뛴다.
+            if (AbilityActorInfo.OwnerActor != null && AbilityActorInfo.AbilitySystemComponent != null)
+            {
+                CancelAllAbilities();
+            }
+
+            // 취소가 건너뛰어졌어도 해제는 남은 활성 인스턴스를 EndAbility로 끝낸다.
+            ClearAllAbilities();
+        }
+
+        /// <summary>
+        /// 어빌리티 태그로 활성 어빌리티를 취소한다. <paramref name="withTags"/> 중 하나라도 가지고 <paramref name="withoutTags"/>는 하나도 없는 것만 취소한다(null이면 그 조건은 통과).
+        /// <paramref name="ignore"/> 인스턴스는 취소하지 않는다.
+        /// </summary>
+        /// <remarks>UE: UAbilitySystemComponent::CancelAbilities</remarks>
+        public void CancelAbilities(GameplayTagContainer withTags = null, GameplayTagContainer withoutTags = null, GameplayAbility ignore = null)
+        {
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    if (!spec.IsActive || spec.Ability == null)
+                    {
+                        continue;
+                    }
+
+                    GameplayAbility template = spec.Ability.AbilityTemplate;
+                    GameplayTagContainer abilityTags = template.AssetTags;
+                    bool withTagPass = withTags == null || abilityTags.HasAny(withTags);
+                    bool withoutTagPass = withoutTags == null || !abilityTags.HasAny(withoutTags);
+                    if (withTagPass && withoutTagPass)
+                    {
+                        CancelAbilitySpec(spec, ignore);
+                    }
+                }
+            }
+        }
+
+        /// <summary>어빌리티가 발동·종료하거나 차단을 켜고 끌 때 부른다 — 차단 태그를 막거나 풀고, 요청하면 취소 태그를 가진 활성 어빌리티를 취소한다(요청한 어빌리티는 빼고).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::ApplyAbilityBlockAndCancelTags</remarks>
+        public virtual void ApplyAbilityBlockAndCancelTags(GameplayTagContainer abilityTags, GameplayAbility requestingAbility, bool enableBlockTags, GameplayTagContainer blockTags, bool executeCancelTags, GameplayTagContainer cancelTags)
+        {
+            if (enableBlockTags)
+            {
+                BlockAbilitiesWithTags(blockTags);
+            }
+            else
+            {
+                UnBlockAbilitiesWithTags(blockTags);
+            }
+
+            if (executeCancelTags)
+            {
+                CancelAbilities(cancelTags, null, requestingAbility);
+            }
+        }
+
+        /// <summary>주어진 어빌리티 태그 중 하나라도 막혀 있는지. 막힌 태그의 자식 태그도 막힌다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AreAbilityTagsBlocked</remarks>
+        public virtual bool AreAbilityTagsBlocked(GameplayTagContainer tags)
+        {
+            return tags.HasAny(_blockedAbilityTags.GetExplicitGameplayTags());
+        }
+
+        /// <summary>어빌리티 태그를 막는다. 막은 만큼 풀어야 풀린다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::BlockAbilitiesWithTags</remarks>
+        public void BlockAbilitiesWithTags(GameplayTagContainer tags)
+        {
+            _blockedAbilityTags.UpdateTagCount(tags, 1);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::UnBlockAbilitiesWithTags</remarks>
+        public void UnBlockAbilitiesWithTags(GameplayTagContainer tags)
+        {
+            _blockedAbilityTags.UpdateTagCount(tags, -1);
+        }
+
+        /// <summary>지금 막혀 있는 어빌리티 태그. 읽기 전용으로 쓴다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetBlockedAbilityTags</remarks>
+        public GameplayTagContainer GetBlockedAbilityTags()
+        {
+            return _blockedAbilityTags.GetExplicitGameplayTags();
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::CancelAbilitySpec</remarks>
+        private void CancelAbilitySpec(GameplayAbilitySpec spec, GameplayAbility ignore = null)
+        {
+            // 취소로 끝난 Per Execution 인스턴스는 Spec에서 빠지므로 사본을 돈다.
+            var instances = new List<GameplayAbility>(spec.GetAbilityInstances());
+            foreach (GameplayAbility instance in instances)
+            {
+                if (instance != ignore)
+                {
+                    instance.CancelAbility(spec.Handle, AbilityActorInfo);
+                }
+            }
+        }
+
+        /// <summary>발동을 알린다(<see cref="OnAbilityActivated"/>). <see cref="GameplayAbility.PreActivate"/>가 부른다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::NotifyAbilityActivated</remarks>
+        public virtual void NotifyAbilityActivated(GameplayAbilitySpecHandle handle, GameplayAbility ability)
+        {
+            OnAbilityActivated?.Invoke(ability);
+        }
+
+        /// <summary>커밋을 알린다(<see cref="OnAbilityCommitted"/>). <see cref="GameplayAbility.CommitAbility"/>가 부른다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::NotifyAbilityCommit</remarks>
+        public virtual void NotifyAbilityCommit(GameplayAbility ability)
+        {
+            OnAbilityCommitted?.Invoke(ability);
+        }
+
+        /// <summary>발동 실패를 사유와 함께 알린다(<see cref="OnAbilityFailed"/>).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::NotifyAbilityFailed</remarks>
+        public virtual void NotifyAbilityFailed(GameplayAbilitySpecHandle handle, GameplayAbility ability, GameplayTagContainer failureReason)
+        {
+            OnAbilityFailed?.Invoke(ability, failureReason);
+        }
+
+        /// <summary>어빌리티가 끝났음을 받아 Spec의 활성 횟수를 줄이고, 종료를 알린 뒤, Per Execution 인스턴스면 Spec에서 뺀다. <see cref="GameplayAbility.EndAbility"/>가 부른다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::NotifyAbilityEnded</remarks>
+        public virtual void NotifyAbilityEnded(GameplayAbilitySpecHandle handle, GameplayAbility ability, bool wasCancelled)
+        {
+            // 끝나는 도중 Spec이 해제됐으면 정리할 것이 없다.
+            GameplayAbilitySpec spec = FindAbilitySpecFromHandle(handle);
+            if (spec == null)
+            {
+                return;
+            }
+
+            if (spec.ActiveCount > 0)
+            {
+                spec.ActiveCount--;
+            }
+            else
+            {
+                Debug.LogError($"[ASC] NotifyAbilityEnded: '{ability.GetType().Name}'의 ActiveCount가 0 이하에서 종료됨.");
+            }
+
+            OnAbilityEnded?.Invoke(ability);
+            OnAbilityEndedWithData?.Invoke(new AbilityEndedData(ability, handle, wasCancelled));
+
+            // 구독자가 해제를 불렀으면 Spec이 이미 빠지며 인스턴스도 정리됐다.
+            spec = FindAbilitySpecFromHandle(handle);
+            if (spec == null)
+            {
+                return;
+            }
+
+            if (ability.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerExecution)
+            {
+                spec.RemoveInstance(ability);
+            }
+        }
+
         /// <remarks>UE: UAbilitySystemComponent::IncrementAbilityListLock</remarks>
         public void IncrementAbilityListLock()
         {
@@ -703,35 +1042,69 @@ namespace Core.AbilitySystem
             }
         }
 
-        /// <summary>부여 직후 런타임 인스턴스에 알린다.</summary>
+        /// <summary>부여 직후 Per Actor면 인스턴스를 만들고, 그 인스턴스(Per Execution이면 원형)에 알린다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::OnGiveAbility</remarks>
         protected virtual void OnGiveAbility(GameplayAbilitySpec spec)
         {
-            GameplayAbility abilityInstance = spec.GetPrimaryInstance();
-            abilityInstance?.OnGiveAbility(AbilityActorInfo, spec);
+            GameplayAbility template = spec.Ability.AbilityTemplate;
+            bool instancedPerActor = template.InstancingPolicy == GameplayAbilityInstancingPolicy.InstancedPerActor;
+            if (instancedPerActor && spec.GetAbilityInstances().Count == 0)
+            {
+                CreateNewInstanceOfAbility(spec);
+            }
+
+            GameplayAbility primaryInstance = instancedPerActor ? spec.GetPrimaryInstance() : null;
+            if (primaryInstance != null)
+            {
+                primaryInstance.OnGiveAbility(AbilityActorInfo, spec);
+            }
+            else
+            {
+                template.OnGiveAbility(AbilityActorInfo, spec);
+            }
         }
 
-        /// <summary>제거 직전 런타임 인스턴스에 알리고 Spec에서 떼어낸다.</summary>
+        /// <summary>제거 직전 활성 인스턴스를 모두 끝내고(취소 아님), 대표 인스턴스(Per Execution이면 원형)에 알린 뒤 인스턴스를 떼어낸다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::OnRemoveAbility</remarks>
         protected virtual void OnRemoveAbility(GameplayAbilitySpec spec)
         {
-            GameplayAbility abilityInstance = spec.GetPrimaryInstance();
-            if (abilityInstance == null)
+            GameplayAbility template = spec.Ability.AbilityTemplate;
+            if (template == null)
             {
                 return;
             }
 
-            // TODO 활성 중이면 EndAbility 먼저(UE OnRemoveAbility) — 생명주기 구현 때.
-            abilityInstance.OnRemoveAbility(AbilityActorInfo, spec);
-            spec.SetPrimaryInstance(null);
+            // 끝날 때 Per Execution 인스턴스는 Spec에서 빠지므로 사본을 돈다.
+            var instances = new List<GameplayAbility>(spec.GetAbilityInstances());
+            foreach (GameplayAbility instance in instances)
+            {
+                if (instance.IsActive)
+                {
+                    instance.EndAbility(instance.CurrentAbilitySpecHandle, instance.CurrentActorInfo, false);
+                }
+            }
+
+            // Per Actor인데 인스턴스가 없으면 이미 해제된 것이라 알리지 않는다.
+            GameplayAbility primaryInstance = spec.GetPrimaryInstance();
+            if (primaryInstance != null)
+            {
+                primaryInstance.OnRemoveAbility(AbilityActorInfo, spec);
+            }
+            else if (template.InstancingPolicy != GameplayAbilityInstancingPolicy.InstancedPerActor)
+            {
+                template.OnRemoveAbility(AbilityActorInfo, spec);
+            }
+
+            spec.ClearInstances();
         }
 
-        /// <summary>정의의 원형을 복제해 이 ASC 전용 인스턴스를 만들어 Spec에 둔다. 원형의 저장된 필드 값으로 시작한다.</summary>
+        /// <summary>정의의 원형을 복제해 이 ASC 전용 인스턴스를 만들어 Spec에 더한다. 원형의 저장된 필드 값으로 시작한다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::CreateNewInstanceOfAbility</remarks>
         protected virtual GameplayAbility CreateNewInstanceOfAbility(GameplayAbilitySpec spec)
         {
             GameplayAbility abilityInstance = SerializedDeepCopy.Clone(spec.Ability.AbilityTemplate);
-            spec.SetPrimaryInstance(abilityInstance);
+            abilityInstance.MarkInstantiated();
+            spec.AddInstance(abilityInstance);
             return abilityInstance;
         }
     }

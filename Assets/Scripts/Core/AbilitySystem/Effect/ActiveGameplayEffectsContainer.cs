@@ -234,6 +234,41 @@ namespace Core.AbilitySystem.Effect
             UpdateAllAggregatorModMagnitudes(effect);
         }
 
+        /// <summary>
+        /// GE의 AddBase 모디파이어를 지금 적용해도 어트리뷰트가 음수가 되지 않는지(코스트 확인용). 다른 연산은 보지 않고, 어트리뷰트 세트가 없는 어트리뷰트는 건너뛴다.
+        /// </summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::CanApplyAttributeModifiers</remarks>
+        public bool CanApplyAttributeModifiers(GameplayEffectAsset effect, float level, GameplayEffectContextHandle context)
+        {
+            var spec = new GameplayEffectSpec(effect, context, level);
+            spec.CalculateModifierMagnitudes();
+
+            IReadOnlyList<GameplayModifier> modifiers = effect.Modifiers;
+            for (int i = 0; i < spec.Modifiers.Length; i++)
+            {
+                GameplayModifier modifier = modifiers[i];
+                if (modifier.Operation != GameplayModifierOperation.AddBase)
+                {
+                    continue;
+                }
+
+                GameplayAttributeHandle attribute = modifier.ToResolvedAttribute();
+                if (!attribute.IsValid || _owner.GetAttributeSet(attribute) == null)
+                {
+                    continue;
+                }
+
+                float currentValue = GetAttributeCurrentValue(attribute);
+                float costValue = spec.Modifiers[i].EvaluatedMagnitude;
+                if (currentValue + costValue < 0f)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         // ── Apply / Remove ────────────────────────────────────────────────────────
 
         /// <summary>
@@ -405,11 +440,14 @@ namespace Core.AbilitySystem.Effect
                 return;
             }
 
+            float worldTime = GetWorldTime();
             _expiredEffects.Clear();
 
             foreach (ActiveGameplayEffect active in _activeGameplayEffects.Values)
             {
                 GameplayEffectAsset def = active.Spec.Definition;
+                float elapsed = Mathf.Max(0f, worldTime - active.LastTickWorldTime);
+                active.LastTickWorldTime = worldTime;
 
                 if (def.Period > 0f)
                 {
@@ -441,14 +479,11 @@ namespace Core.AbilitySystem.Effect
         // ── GE 실행 (Instant / Periodic) ─────────────────────────────────────────
 
         /// <summary>주기 GE를 한 번 실행한다. 꺼진 GE는 실행하지 않는다.</summary>
-            float worldTime = GetWorldTime();
         /// <remarks>UE: FActiveGameplayEffectsContainer::InternalExecutePeriodicGameplayEffect</remarks>
         private void InternalExecutePeriodicGameplayEffect(ActiveGameplayEffect active)
         {
             if (!active.IsInhibited)
             {
-                float elapsed = Mathf.Max(0f, worldTime - active.LastTickWorldTime);
-                active.LastTickWorldTime = worldTime;
                 ExecuteActiveEffectsFrom(active.Spec);
             }
         }

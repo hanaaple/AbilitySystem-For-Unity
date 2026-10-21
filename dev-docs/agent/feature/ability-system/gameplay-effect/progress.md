@@ -46,6 +46,7 @@
 - **Execution(→D7(Execution=순수 클래스)·D11(입출력 타입 분리)·D17(Execution Defs 등록))**: SO 아닌 순수 클래스, AQN으로 저장·1회 resolve. 입력/출력 struct 분리, `Defs()`로 캡처 대상 선언. Instant·Period>0에서만 실행(Duration/Infinite+Period0은 실행 안 됨 — UE 동일).
 - 아키텍처: [architecture/ability-system/gameplay-effect.md](../../../../project/architecture/ability-system/gameplay-effect.md) (동기화 최신 아닐 수 있음)
 - 코드: `Assets/Scripts/Core/AbilitySystem/Effect/`, 적용·수명은 `ActiveGameplayEffectsContainer` / 공개 API는 `AbilitySystemComponent`
+- **코스트 확인(2026-10-21, gameplay-ability에서 추가 — 사유: GA 코스트(TODO-BOARD 2-4)가 UE처럼 GE 컨테이너 질의를 씀)**: `ActiveGameplayEffectsContainer.CanApplyAttributeModifiers(effect, level, context)` + ASC 위임 — 임시 Spec의 magnitude를 계산해 AddBase 모디파이어만 현재값 + 크기 ≥ 0인지 본다(UE `GameplayEffect.cpp:5177`). 어트리뷰트 세트가 없는 어트리뷰트는 건너뜀. ASC `HasAnyMatchingGameplayTags`도 같이 추가. 근거는 gameplay-ability decisions D7.
 
 ## 세부 TODO (구현 체크리스트)
 - [x] 1. GE/Modifier 정의 + Spec resolve 캐싱 + Active 상태
