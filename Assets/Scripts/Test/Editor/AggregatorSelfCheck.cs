@@ -390,7 +390,7 @@ namespace Test.Editor
             GameplayEffectAsset healthBoost = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 100f));
             ActiveGameplayEffectHandle boostHandle = asc.ApplyGameplayEffectToSelf(healthBoost);
 
-            container.Tick(1f);
+            AdvanceTime(container, 1f);
             check("Health 200 뒤 다음 주기 실행 → +200, Speed Base 300", Approx(asc.GetAttributeBaseValue(speed), 300f));
 
             asc.RemoveActiveGameplayEffect(periodicHandle);
@@ -702,6 +702,15 @@ namespace Test.Editor
         {
             FieldInfo containerField = typeof(AbilitySystemComponent).GetField("_activeGameplayEffectsContainer", NonPublicInstance);
             return containerField?.GetValue(asc) as ActiveGameplayEffectsContainer;
+        }
+
+        // 에디터에선 Time.time이 흐르지 않아, 컨테이너 시계를 지금 시각 + seconds로 바꿔 끼우고 Tick한다.
+        private static void AdvanceTime(ActiveGameplayEffectsContainer container, float seconds)
+        {
+            float worldTime = container.GetWorldTime() + seconds;
+            Func<float> worldTimeSource = () => worldTime;
+            typeof(ActiveGameplayEffectsContainer).GetMethod("SetWorldTimeSource", NonPublicInstance).Invoke(container, new object[] { worldTimeSource });
+            container.Tick();
         }
 
         private static AttributeAggregator FindOrCreateAggregator(AbilitySystemComponent asc, GameplayAttributeHandle handle)

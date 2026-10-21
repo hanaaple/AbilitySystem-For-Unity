@@ -12,4 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8f80d45646d2cd4db87ba0f2a4c33ad, type: 3}
   m_Name: GameplayTagRegistry
   m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Tag.GameplayTagRegistryAsset
-  _tags: []
+  _tags:
+  - Ability.ActivateFail.CanActivateAbility
+  - Ability.ActivateFail.Cooldown
+  - Ability.ActivateFail.Cost
+  - Ability.ActivateFail.TagsBlocked
+  - Ability.ActivateFail.TagsMissing

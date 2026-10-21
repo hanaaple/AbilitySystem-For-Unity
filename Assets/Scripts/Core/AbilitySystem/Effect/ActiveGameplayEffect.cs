@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace Core.AbilitySystem.Effect
 {
     public sealed class ActiveGameplayEffect
@@ -9,6 +7,10 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>이 effect가 적용된 대상 ASC. 컨테이너를 아직 두지 않아 effect가 직접 보유한다.</summary>
         public AbilitySystemComponent Owner { get; }
+
+        /// <summary>적용된 시각(컨테이너 시계 <see cref="ActiveGameplayEffectsContainer.GetWorldTime"/> 기준).</summary>
+        /// <remarks>UE: FActiveGameplayEffect::StartWorldTime</remarks>
+        public float StartWorldTime { get; }
 
         /// <summary>Duration 타입일 때만 유효. 남은 지속 시간(초).</summary>
         public float RemainingDuration { get; set; }
@@ -23,11 +25,16 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FActiveGameplayEffect::EventSet</remarks>
         public ActiveGameplayEffectEvents EventSet { get; } = new();
 
-        public ActiveGameplayEffect(ActiveGameplayEffectHandle handle, GameplayEffectSpec spec, AbilitySystemComponent owner)
+        // 수명을 마지막으로 센 시각. 적용 시각에서 시작해 Tick은 그 뒤에 흐른 시간만 센다.
+        internal float LastTickWorldTime { get; set; }
+
+        public ActiveGameplayEffect(ActiveGameplayEffectHandle handle, GameplayEffectSpec spec, AbilitySystemComponent owner, float startWorldTime)
         {
             Handle = handle;
             Spec = spec;
             Owner = owner;
+            StartWorldTime = startWorldTime;
+            LastTickWorldTime = startWorldTime;
             RemainingDuration = spec.Definition.Duration;
             PeriodTimer = 0f;
         }
@@ -46,11 +53,12 @@ namespace Core.AbilitySystem.Effect
             return GetDuration() == GameplayEffectConstants.InfiniteDuration ? GameplayEffectConstants.InfiniteDuration : RemainingDuration;
         }
 
-        /// <summary>끝나는 시각(<see cref="Time.time"/> 기준). 컨테이너가 <see cref="Time.deltaTime"/>으로 남은 시간을 줄이므로 같은 시계다.</summary>
+        /// <summary>끝나는 시각(<see cref="StartWorldTime"/>과 같은 시계).</summary>
         /// <remarks>UE: FActiveGameplayEffect::GetEndTime</remarks>
         public float GetEndTime()
         {
-            return GetDuration() == GameplayEffectConstants.InfiniteDuration ? GameplayEffectConstants.InfiniteDuration : Time.time + RemainingDuration;
+            float duration = GetDuration();
+            return duration == GameplayEffectConstants.InfiniteDuration ? GameplayEffectConstants.InfiniteDuration : StartWorldTime + duration;
         }
     }
 }

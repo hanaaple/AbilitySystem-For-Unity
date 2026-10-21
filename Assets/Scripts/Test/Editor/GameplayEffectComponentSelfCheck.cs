@@ -191,7 +191,7 @@ namespace Test.Editor
             check("A-9 Periodic(적용 시 실행): CanApply → Added → Applied → Executed, Base 110", IsLog(log, "R.CanApply", "R.Added", "R.Applied", "R.Executed") && IsBaseAndCurrent(asc, health, 110f));
 
             log.Clear();
-            container.Tick(1f);
+            AdvanceTime(container, 1f);
             check("A-10 주기 1회: Executed만, Base 120", IsLog(log, "R.Executed") && IsBaseAndCurrent(asc, health, 120f));
 
             asc.RemoveActiveGameplayEffect(periodicHandle);
@@ -324,11 +324,11 @@ namespace Test.Editor
             check("D-1 꺼진 채 시작한 주기 GE: Applied는 부르지만 적용 시 실행은 안 함(Base 100)", IsLog(log, "D1.CanApply", "D1.Added", "D1.Applied") && IsBaseAndCurrent(asc, health, 100f));
 
             log.Clear();
-            container.Tick(1f);
+            AdvanceTime(container, 1f);
             check("D-2 꺼진 동안 주기가 와도 실행 안 함(Executed 없음, Base 100)", log.Count == 0 && IsBaseAndCurrent(asc, health, 100f));
 
             asc.SetActiveGameplayEffectInhibit(handle, false);
-            container.Tick(1f);
+            AdvanceTime(container, 1f);
             check("D-3 켠 뒤 주기: Executed, Base 110", IsLog(log, "D1.Executed") && IsBaseAndCurrent(asc, health, 110f));
 
             asc.RemoveActiveGameplayEffect(handle);
@@ -699,7 +699,7 @@ namespace Test.Editor
             var queryAOrC = new GameplayEffectQuery { CustomMatchDelegate = effect => effect.Handle.Equals(handleA) || effect.Handle.Equals(handleC) };
             bool foundAOrC = asc.GetActiveEffectsEndTimeAndDuration(queryAOrC, out float endTimeAOrC, out float durationAOrC);
             bool foundNone = asc.GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(other), out _, out _);
-            check("H-15 끝나는 시각: C = 지금+100, 끝 없는 A가 섞이면 -1, 맞는 GE가 없으면 false", foundC && Approx(endTimeC, Time.time + 100f) && Approx(durationC, 100f) && foundAOrC && Approx(endTimeAOrC, GameplayEffectConstants.InfiniteDuration) && Approx(durationAOrC, GameplayEffectConstants.InfiniteDuration) && !foundNone);
+            check("H-15 끝나는 시각: C = 지금+100, 끝 없는 A가 섞이면 -1, 맞는 GE가 없으면 false", foundC && Approx(endTimeC, GetContainer(asc).GetWorldTime() + 100f) && Approx(durationC, 100f) && foundAOrC && Approx(endTimeAOrC, GameplayEffectConstants.InfiniteDuration) && Approx(durationAOrC, GameplayEffectConstants.InfiniteDuration) && !foundNone);
 
             asc.SetActiveGameplayEffectLevelUsingQuery(queryA, 3f);
             ActiveGameplayEffect activeA = asc.GetActiveGameplayEffect(handleA);
@@ -1002,6 +1002,15 @@ namespace Test.Editor
         {
             FieldInfo containerField = typeof(AbilitySystemComponent).GetField("_activeGameplayEffectsContainer", NonPublicInstance);
             return (ActiveGameplayEffectsContainer)containerField.GetValue(asc);
+        }
+
+        // 에디터에선 Time.time이 흐르지 않아, 컨테이너 시계를 지금 시각 + seconds로 바꿔 끼우고 Tick한다.
+        private static void AdvanceTime(ActiveGameplayEffectsContainer container, float seconds)
+        {
+            float worldTime = container.GetWorldTime() + seconds;
+            Func<float> worldTimeSource = () => worldTime;
+            typeof(ActiveGameplayEffectsContainer).GetMethod("SetWorldTimeSource", NonPublicInstance).Invoke(container, new object[] { worldTimeSource });
+            container.Tick();
         }
 
         private static void SetPrivateField(object target, string name, object value)

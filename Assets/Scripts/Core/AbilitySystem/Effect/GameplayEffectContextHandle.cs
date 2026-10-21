@@ -27,7 +27,7 @@ namespace Core.AbilitySystem.Effect
             _context?.AddInstigator(instigator, effectCauser);
         }
 
-        public void AddSourceObject(Object sourceObject)
+        public void AddSourceObject(GameObject sourceObject)
         {
             _context?.AddSourceObject(sourceObject);
         }

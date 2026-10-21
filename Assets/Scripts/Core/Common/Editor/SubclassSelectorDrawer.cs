@@ -10,6 +10,7 @@ namespace Core.Common.Editor
 {
     /// <summary>
     /// [SubclassSelector(typeof(Base))]가 붙은 AQN 문자열 필드를 Base의 구체 서브클래스 드롭다운으로 그린다. None=빈 문자열, 해결 실패="Missing". useForChildren로 상속한 별칭 속성도 처리하며, 베이스 타입은 속성 인스턴스가 들어 타입별 드로어 서브클래스가 필요 없다.
+    /// [SerializeReference] 단일 필드에 붙으면 타입 선택기 아래에 고른 인스턴스의 필드를 그린다(타입을 바꾸면 값은 새로 시작).
     /// 오브젝트 참조 필드처럼 보이게 선택된 타입의 소스 스크립트를 왼쪽 필드로 그린다 — 단일 클릭→Project ping, 더블 클릭→스크립트 열기. 타입 선택은 오른쪽 드롭다운 버튼.
     /// </summary>
     [CustomPropertyDrawer(typeof(SubclassSelectorAttribute), useForChildren: true)]
@@ -18,12 +19,66 @@ namespace Core.Common.Editor
         private const float DropdownWidth = 18f;
         private const float Gap = 2f;
 
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            float height = EditorGUIUtility.singleLineHeight;
+            if (property.propertyType != SerializedPropertyType.ManagedReference)
+            {
+                return height;
+            }
+
+            foreach (SerializedProperty child in GetVisibleChildren(property))
+            {
+                height += EditorGUIUtility.standardVerticalSpacing + EditorGUI.GetPropertyHeight(child, true);
+            }
+
+            return height;
+        }
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             // 범용 드로어는 제외 없이 그린다(excluded: null). 특정 스코프 중복 제외가 필요한 커스텀 드로어는
             // 스스로 excluded를 모아 DrawSelector를 직접 호출한다 — 이 드로어는 "무엇을 제외할지"를 알지 않는다.
             var attr = (SubclassSelectorAttribute)attribute;
+            if (property.propertyType == SerializedPropertyType.ManagedReference)
+            {
+                DrawManagedReferenceField(position, property, attr.BaseType, label);
+                return;
+            }
+
             DrawSelector(position, property, attr.BaseType, null, label);
+        }
+
+        // [SerializeReference] 단일 필드 — 첫 줄은 타입 선택기, 그 아래로 고른 하위 클래스의 필드를 들여 그린다.
+        private static void DrawManagedReferenceField(Rect position, SerializedProperty property, Type baseType, GUIContent label)
+        {
+            var line = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
+            DrawManagedReferenceSelector(line, property, baseType, null, label);
+
+            float y = line.yMax;
+            using (new EditorGUI.IndentLevelScope())
+            {
+                foreach (SerializedProperty child in GetVisibleChildren(property))
+                {
+                    y += EditorGUIUtility.standardVerticalSpacing;
+                    float childHeight = EditorGUI.GetPropertyHeight(child, true);
+                    EditorGUI.PropertyField(new Rect(position.x, y, position.width, childHeight), child, true);
+                    y += childHeight;
+                }
+            }
+        }
+
+        // 높이 계산과 그리기가 같은 목록을 쓰도록 한 곳에서 자식을 연다(editor-drawer-guide '높이와 그리기 소스 일치').
+        private static IEnumerable<SerializedProperty> GetVisibleChildren(SerializedProperty property)
+        {
+            SerializedProperty child = property.Copy();
+            SerializedProperty end = property.GetEndProperty();
+            bool enterChildren = true;
+            while (child.NextVisible(enterChildren) && !SerializedProperty.EqualContents(child, end))
+            {
+                enterChildren = false;
+                yield return child;
+            }
         }
 
         /// <summary>
