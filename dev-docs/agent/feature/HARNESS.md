@@ -19,19 +19,22 @@ feature/
 │   ├── progress.md                # 진행 문서 (필수)
 │   ├── worklog.md                 # 작업 로그 (아카이브)
 │   ├── decisions.md               # 결정 기록 상세
-│   └── HARNESS.md                 # feature 전용 하네스/설계 (선택)
+│   ├── HARNESS.md                 # feature 전용 하네스/설계 (선택)
+│   └── <보조 문서>.md              # 보조 문서 (선택) — 검증 절차·참고 정리 (예: `tests.md`·`tick-order-*.md`)
 └── <group-id>/                   # feature 그룹 (대분류)
     ├── HARNESS.md                 # 그룹 공유 하네스/설계 (선택, 하위 전체 지배)
     └── <feature-id>/              # 하위 feature
         ├── progress.md
         ├── worklog.md
-        └── decisions.md
+        ├── decisions.md
+        └── <보조 문서>.md          # (선택)
 ```
 
 - **네이밍:** feature-id·group-id는 **kebab-case 영문 소문자** (예: `combat-core`, `enemy-ai`, `item-system`).
 - **위치:** 각 feature는 폴더를 가지며 진행 문서는 그 안에 `progress.md`로 둔다. 단일 feature는 `feature/<feature-id>/`, 그룹 하위는 `feature/<group-id>/<feature-id>/`.
 - **그룹(대분류):** 한 도메인의 하위 feature가 여럿으로 늘면 `feature/<group-id>/`로 묶는다(예: `item-system` → `item`·`inventory`·`equipment`). 그룹 자체는 progress를 갖지 않으며, 하위 전체를 지배하는 공유 불변조건·설계가 있으면 그룹 폴더에 `HARNESS.md`를 둔다(하위는 참조, 중복 정의 금지).
 - **feature 전용 `HARNESS.md` (선택):** 구현 방향·불변 조건·로드맵/설계가 방대하면 같은 폴더에 둔다. 일반 `HARNESS.md`(agent/)는 **프로세스 규약**, feature/그룹 `HARNESS.md`는 **그 feature의 구현 규약·설계** — 충돌 시 프로세스 규약이 우선하고 충돌을 보고한다.
+- **보조 문서 (선택):** 검증 절차·참고 정리처럼 progress·worklog·decisions 어디에도 맞지 않는 그 feature 전용 자료는 같은 폴더에 따로 둔다(예: `tests.md`·`tick-order-*.md`). 규약·상태 문서가 아니므로 진행 상태·결정은 여기 쓰지 않고 progress·decisions로 보낸다.
 - `feature-list.md`에 없는 feature의 폴더를 만들지 않는다(등록이 먼저 — 'Feature 생성 / 완료 / 폐기 절차').
 
 ---
