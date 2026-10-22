@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game;
 using UnityEngine;
 
 namespace Core.ItemSystem.Inventory
