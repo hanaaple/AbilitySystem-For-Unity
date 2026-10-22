@@ -1,0 +1,124 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbfbc065558b85245af777d65720a126, type: 3}
+  m_Name: GE_Item_Empower
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Effect.GameplayEffectAsset
+  description: "\uAC15\uD654 \uC544\uC774\uD15C. \uBD99\uC5B4 \uC788\uB294 \uB3D9\uC548(8\uCD08)
+    \uACF5\uACA9\uC18D\uB3C4 +1(\uAE30\uBCF8 1 \u2192 2, \uAE30\uBCF8 \uACF5\uACA9
+    \uAC04\uACA9 \uC808\uBC18)\xB7\uACF5\uACA9\uB825 \xD71.3. Status.Buff.Empowered \uD0DC\uADF8."
+  type: 2
+  duration: 8
+  period: 0
+  executePeriodicEffectOnApplication: 1
+  modifiers:
+  - attribute:
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      fieldName: attackSpeed
+    operation: 0
+    modifierMagnitude:
+      magnitudeCalculationType: 0
+      scalableFloatMagnitude: 1
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: 
+            fieldName: 
+          snapshot: 0
+        captureValueType: 0
+        coefficient: 0
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
+    sourceTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+    targetTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+  - attribute:
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      fieldName: attack
+    operation: 1
+    modifierMagnitude:
+      magnitudeCalculationType: 0
+      scalableFloatMagnitude: 1.3
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: 
+            fieldName: 
+          snapshot: 0
+        captureValueType: 0
+        coefficient: 0
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
+    sourceTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+    targetTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+  executions: []
+  gameplayEffectComponents:
+  - rid: 8482666728725676141
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666728725676141
+      type: {class: TargetTagsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Assembly-CSharp}
+      data:
+        inheritableGrantedTagsContainer:
+          _combinedTags:
+            _gameplayTags:
+            - name:
+                name: Status.Buff.Empowered
+          _added:
+            _gameplayTags:
+            - name:
+                name: Status.Buff.Empowered
+          _removed:
+            _gameplayTags: []

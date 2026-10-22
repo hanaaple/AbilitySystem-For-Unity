@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1636849b8700bf418f8f5e548b24470, type: 3}
+  m_Name: GA_Sprint
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Abilities.GameplayAbilityAsset
+  description: "\uB2EC\uB9AC\uAE30(Shift). \uB204\uB974\uB294 \uB3D9\uC548 State.Sprinting
+    \uD0DC\uADF8\uB85C \uB2EC\uB9AC\uAE30 \uC18D\uB3C4\uB85C \uC6C0\uC9C1\uC778\uB2E4.
+    \uC870\uC900\xB7\uAD6C\uB974\uAE30 \uC911\uC5D4 \uCF1C\uC9C0\uC9C0 \uC54A\uACE0,
+    \uB204\uB974\uACE0 \uC788\uC73C\uBA74 \uADF8\uAC8C \uB05D\uB09C \uB4A4 \uB2E4\uC2DC
+    \uCF1C\uC9C4\uB2E4."
+  abilityTemplate:
+    rid: 8482666728725676203
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666728725676203
+      type: {class: HoldInputAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      data:
+        instancingPolicy: 1
+        costGameplayEffect: {fileID: 0}
+        cooldownGameplayEffect: {fileID: 0}
+        assetTags:
+          _gameplayTags:
+          - name:
+              name: Ability.Sprint
+        cancelAbilitiesWithTag:
+          _gameplayTags: []
+        blockAbilitiesWithTag:
+          _gameplayTags: []
+        activationOwnedTags:
+          _gameplayTags:
+          - name:
+              name: State.Sprinting
+        activationRequiredTags:
+          _gameplayTags: []
+        activationBlockedTags:
+          _gameplayTags:
+          - name:
+              name: State.Dashing
+        activationPolicy: 1
+        scalesWithAttackSpeed: 0
+        whileActiveEffects:
+        - {fileID: 11400000, guid: a48099b2990dee548be9003e5f549158, type: 2}

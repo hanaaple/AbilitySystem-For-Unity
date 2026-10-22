@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1636849b8700bf418f8f5e548b24470, type: 3}
+  m_Name: GA_Item_Mana
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Abilities.GameplayAbilityAsset
+  description: "\uB9C8\uB098 \uCDA9\uC804 \uC544\uC774\uD15C. \uBA39\uC73C\uBA74
+    \uB9C8\uB098 \uCDA9\uC804 GE\uB97C \uAC74\uB2E4."
+  abilityTemplate:
+    rid: 8482666747409990265
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666747409990265
+      type: {class: ApplyEffectsAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      data:
+        instancingPolicy: 1
+        costGameplayEffect: {fileID: 0}
+        cooldownGameplayEffect: {fileID: 0}
+        assetTags:
+          _gameplayTags: []
+        cancelAbilitiesWithTag:
+          _gameplayTags: []
+        blockAbilitiesWithTag:
+          _gameplayTags: []
+        activationOwnedTags:
+          _gameplayTags: []
+        activationRequiredTags:
+          _gameplayTags: []
+        activationBlockedTags:
+          _gameplayTags: []
+        activationPolicy: 0
+        scalesWithAttackSpeed: 0
+        effects:
+        - {fileID: 11400000, guid: 2514ac474a393d9458a6c35091ff1b2f, type: 2}
