@@ -3,6 +3,21 @@
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
 
+### 2026-10-21 — 초기값 에셋 경로 삭제, 소유 쪽 Set 생성 + 초기 스탯 GE (→D7)
+
+**요청.** 유저: 기본 스탯 설정 경로를 묻고 "그거 임시 코드니까 빼고 정식적으로 UE에서 하는거처럼 해" → 처음엔 "데모만 전환", 이어 "attributeInitData라는걸 아예 없애"(범위: 초기값 에셋 체계 전부), "BoxRoom 지워", "기존 애들은 지우지 말고 해당 그대로 작동할 수 있게".
+
+**UE 확인(5.6).** Set은 Owner 서브오브젝트를 `InitializeComponent`가 수집(`AbilitySystemComponent_Abilities.cpp:62-83`). 초기값 테이블 `DefaultStartingData`는 `OnRegister`에서 채우지만 `Category="AttributeTest"`(`AbilitySystemComponent.h:196-197`, `AbilitySystemComponent.cpp:196-203`). 초기값 GE는 관행(2차 자료, 원문 아님).
+
+**구현.**
+- 삭제: ASC `attributeInitData`·`AddSet`, `AttributeDefinitionAsset`·`AttributeSetDefinition`·`AttributeFieldDefinition`·드로어 2개, `BoxRoom`(+프리팹, SampleScene 인스턴스).
+- 소유 쪽: `PlayerCharacter`·새 `Game/Character/TrainingDummy`가 `Awake`에 `AddSpawnedAttribute(new CharacterAttributeSet())`, `Start`에 `defaultAttributes` GE 자기 적용(GE 컨테이너가 ASC Awake에서 생겨서).
+- 기존 것 이전: `Player.prefab` → `GE_Player_DefaultAttributes`, 데모 → `GE_Demo_*_DefaultAttributes`, SampleScene `TestEnemy` → `TrainingDummy`(옛 값이 전부 0이라 GE 없이 — GE로 주면 health 하한 1이 걸림), `AggregatorPlayModeTest` → `geDefaultAttributes`(`GE_DefaultAttributes_PlayModeTest`, Setup 메뉴도), Lifecycle 테스트 C(복제)는 `TrainingDummy`+초기 GE로 — 복제본 값은 Start 뒤 확인.
+- Override 순서: health 클램프가 maxHealth를 상한으로 써 maxHealth를 먼저.
+- 옛 초기값 에셋 6개는 처음엔 남겼다가 2026-10-22 유저 "지워"로 삭제.
+
+**확인.** 컴파일 에러 0. 셀프체크 GA 160/0·Aggregator 83/0·Calculation Modifier 19/0·GE Component 89/0·Modifier Tag 65/0, PlayMode Aggregator 14/0·Lifecycle 13/0 — 기준값과 같음. GA 셀프체크는 `Assets/_Test` 폴더가 없으면 임시 에셋 생성에서 예외(이번 변경과 무관, 폴더를 잠깐 만들어 돌리고 지움). 데모 Play에서 Player·허수아비 3개 초기값 확인. SampleScene·`Player.prefab`은 Play 확인 안 함.
+
 ### 2026-10-20 — AttributeSet 훅 4개 (`Pre/PostGameplayEffectExecute`·`Pre/PostAttributeChange`) + Current 조회를 저장값으로
 
 **요청.** 유저: "(code) AttributeSet Hook (신규)는 뭐야" → "그러니까 이벤트 함수를 구현하라는거지?" → "구현해", "Test로 상속하는 AttributeSet에서 테스트도 하고"(질문 답: 기존 `TestAtrributeSet` 사용).

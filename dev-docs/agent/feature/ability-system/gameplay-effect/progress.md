@@ -4,7 +4,7 @@
 
 - 상태: ✅ 임시완료
 - 우선순위: P0
-- 최종 갱신: 2026-10-21 (KST)
+- 최종 갱신: 2026-10-22 (KST)
 
 > `ability-system` 그룹의 하위 feature. 형제: [attribute](../attribute/progress.md) · [gameplay-ability](../gameplay-ability/progress.md) · [aggregator](../aggregator/progress.md).
 > 핵심 배관(정의·Spec·Modifier·Execution·Capture·AttributeBased)은 구현·검증됨. 라이브 재평가(non-snapshot 추종)는 [aggregator](../aggregator/progress.md)가 얹었다.
@@ -30,7 +30,7 @@
 - Magnitude 계산: `ScalableFloat`(고정) · `AttributeBased`(캡처값 기반)
 - 캡처 계층: `GameplayEffectAttributeCaptureDefinition`/`...Spec`/`...SpecContainer` — Source(생성 시)·Target(적용 시) 2단계
 - Execution: `GameplayEffectExecution`(순수 클래스, AQN 저장·1회 인스턴스화) + `...Parameters`/`...Output` — Instant/Periodic에서만 실행
-- Context: `GameplayEffectContext`(+Handle) — Instigator/SourceObject 주입·조회
+- Context: `GameplayEffectContext`(+Handle) — Instigator/SourceObject·피격 정보(→D29(피격 정보=Context `AddHitResult`)) 주입·조회
 - 실행 경계는 `ActiveGameplayEffect`(+Handle)로 표현, 소유·수명·집계는 컨테이너(→ [aggregator](../aggregator/progress.md))
 - 어트리뷰트 값 변경 이벤트: `GetGameplayAttributeValueChangeDelegate`(컨테이너·ASC) → `GameplayAttributeValueChangeEvent`, 인자 `OnAttributeChangeData`, 원인 `GameplayEffectModCallbackData`(→D26(값 변경 이벤트=이벤트 객체 getter))
 ### 제외 (현 시점 — 이후 확장 가능)
@@ -80,9 +80,14 @@
 | D25 | GE 질의 API=UE 목록 | 2026-10-20 | `GameplayEffectQuery`·ASC 찾기·시간·레벨·제거 UE대로. `StacksToRemove` 자리만, 시간은 `RemainingDuration` 기준, 끝없음 -1. |
 | D26 | 값 변경 이벤트=이벤트 객체 getter | 2026-10-20 | UE는 델리게이트 참조 반환 — C# delegate가 불변이라 어트리뷰트별 이벤트 객체를 돌려준다. 인자는 UE대로(`GEModData` 포함). |
 | D27 | GE 수명=적용 시각 기록 + Tick 한 루프 | 2026-10-21 | `StartWorldTime`·컨테이너 시계 도입, Tick은 적용 뒤 흐른 시간만, 남은 시간은 UE 공식으로 재계산. UE 타이머는 안 씀. Tick 순서 영향 → [tick-order-improvements.md](tick-order-improvements.md)·[tick-order-user-notes.md](tick-order-user-notes.md). |
+| D28 | 지속 시간=Spec 값 + `SetDuration` | 2026-10-22 | 데모 쿨다운 비율 감소용. 에셋 Duration Magnitude·지속 시간 캡처·잠금은 안 가져옴. |
+| D29 | 피격 정보=Context `AddHitResult` | 2026-10-22 | 데모 헤드샷(Lyra 방식). `RaycastHit` 하나, Origin은 안 가져옴. |
+| D30 | 디버그 조회 API | 2026-10-23 | ASC `GetSpawnedAttributes`·`GetActiveGameplayEffects`·`OnAnyGameplayEffectRemoved`, `AttributeSet.GetAttributesFromSetClass` — UE와 같은 이름, 리플렉션 대체 |
+| D31 | GE 스택(수 1) | 2026-10-23 | `stackingType`·갱신 정책 — 같은 GE를 합쳐 시간만 갱신, Spec 유지. 스택 수 2+ 미구현 |
 
 ### 결정 대기
 - **Execution 직렬화 형태(구 D8, 2026-07-19 미결)** — AQN 타입 참조(지금 코드, UE `TSubclassOf`와 같음 / GE별 튜닝 값 불가) vs `[SerializeReference]` 인스턴스(GE별 튜닝 값 / 이름 변경 시 참조 깨짐, 드로어 따로). 판단 축: Execution이 GE별 튜닝 값을 갖게 될까.
+  - 2026-10-22: 데모 `Game/Character/DamageExecution`이 무작위 범위·헤드 배율을 클래스 상수로 둠 — GE별로 다르게 하려면 이 결정이 필요해진다.
 
 ## 작업 로그
 → [worklog.md](worklog.md) (시간순 이력·아카이브). 재개 앵커는 아래 `## 다음 작업`.

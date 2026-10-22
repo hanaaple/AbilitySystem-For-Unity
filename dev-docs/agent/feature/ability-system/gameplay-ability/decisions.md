@@ -86,3 +86,11 @@
 - 결정: GA에 `assetTags`(UE `AbilityTags`/`GetAssetTags`)·`cancelAbilitiesWithTag`·`blockAbilitiesWithTag`, `IsBlockingOtherAbilities`·`SetShouldBlockOtherAbilities`. ASC에 막힌 어빌리티 태그 개수 컨테이너 + `BlockAbilitiesWithTags`/`UnBlockAbilitiesWithTags`·`AreAbilityTagsBlocked`·`ApplyAbilityBlockAndCancelTags`·`CancelAbilities(withTags, withoutTags, ignore)`. 발동(`PreActivate`)에서 막기·취소(요청한 인스턴스는 빼고, Spec 활성 횟수보다 먼저), 종료에서 풀기, 발동 조건에 "ASC가 막은 어빌리티 태그" 검사 — UE `GameplayAbility.cpp:985`·`:865-869`·`:374`·`:399`, `AbilitySystemComponent_Abilities.cpp:1305-1440`.
 - 왜: (유저) "어빌리티 태그·차단·취소는 넣어야지"(TODO-BOARD 2-10). Source/Target 태그는 (유저) "빼기" → "해당 나중에 TODO로 해둬"(TODO-BOARD '뒤로 미룸').
 - 대가: Source/Target Required·Blocked 태그가 없다 — UE에선 이벤트 발동 데이터가 있을 때만 쓰여 지금은 들어올 경로가 없다. 에이전트 판단(유저 미확정): 취소 불가 플래그(`CanBeCanceled`·`HandleChangeAbilityCanBeCanceled`)는 D4대로 뺀 채, `CancelAllAbilities`의 Ignore 인자도 D8대로 안 넣음(`CancelAbilitySpec`에만 ignore).
+
+## D11 — 입력은 UE 구조대로: Spec이 눌림 상태, ASC가 InputID로 발동·전달, GA가 InputReleased에서 스스로 끝냄
+
+- 날짜: 2026-10-22
+- 결정: `GameplayAbilitySpec.InputPressed`, ASC `AbilityLocalInputPressed/Released(int)`·`AbilitySpecInputPressed/Released`, GA virtual `InputPressed`/`InputReleased`(UE `AbilitySystemComponent_Abilities.cpp:2764·2817·2885·2908`, `GameplayAbility.h:392-395`). 비활성일 때 누르면 발동 시도, 활성이면 인스턴스에 전달.
+- 왜: (유저) 달리기를 "Tag 기반 GA로", 점프도 GA로 — 누르는 동안 유지하는 어빌리티를 뗄 때 끝낼 통로가 필요. 게임 쪽 취소(`CancelAbilityHandle`)와 비교한 뒤 (유저) "A로 하자".
+- 대안: 게임 쪽에서 뗄 때 `CancelAbilityHandle` / 코어 변경은 없지만 끝내는 판단이 어빌리티 밖에 있고 정상 종료가 취소로 남음.
+- 대가: UE의 Generic Confirm/Cancel 입력, 복제 이벤트(`InvokeReplicatedEvent`·`bReplicateInputDirectly`), 어빌리티 태스크(`WaitInputRelease`)는 안 가져옴.

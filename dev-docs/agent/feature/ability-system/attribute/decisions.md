@@ -20,13 +20,13 @@
 - 왜: 도메인별로 Set을 나누면 필요한 Set만 붙이고(상자엔 Combat만 등), 필드가 컴파일 타임에 있어 오타·타입 오류를 막는다.
 - 대안: 모든 수치를 한 `Dictionary<string, float>`에(유연 / 문자열 키 블랙보드).
 
-## D3 — 초기값은 SO(`AttributeDefinitionAsset`) + 리플렉션으로 채운다 (UE와 다름)
+## D7 — Set은 소유 쪽이 만들어 등록하고, 초기값은 Instant GE(Override)로 준다
 
-- 날짜: 2026-05-26
-- 결정: ASC가 정의 SO를 읽어 `Activator.CreateInstance`로 Set을 만들고 `FieldInfo.SetValue`로 초기값을 넣는다.
-- 왜: 밸런싱 값을 코드 수정 없이 데이터로 바꿀 수 있어야 하고, 같은 초기화 코드가 어떤 Set에도 통해야 한다.
-- 대안: 코드·인스펙터에 초기값 하드코딩(단순 / 값마다 코드 수정).
-- 대가: UE는 GE·CurveTable로 초기값을 주지만 여기선 전용 SO로 줄였다. 초기화 때 리플렉션 1회.
+- 날짜: 2026-10-21
+- 결정: 소유 컴포넌트(`PlayerCharacter`·`TrainingDummy` 등)가 `Awake`에 Set을 생성해 `AddSpawnedAttribute`, `Start`에 초기 스탯 Instant GE(Override)를 자기에게 적용. ASC 초기값 에셋(`attributeInitData`·`AddSet`·`AttributeDefinitionAsset` 계열)은 삭제.
+- 왜: 유저 "임시 코드니까 빼고 정식적으로 UE에서 하는거처럼 해", "UE에서 보통은 어떻게 하는데? 그거에 맞춰서 해". UE: Owner 서브오브젝트를 ASC가 수집(`AbilitySystemComponent_Abilities.cpp:62-83`), ASC `DefaultStartingData`는 `Category="AttributeTest"`(`AbilitySystemComponent.h:196-197`).
+- 대안: ASC 인스펙터에 Set 타입 목록(코드 없이 프리팹에서 고름 / UE에 없는 방식).
+- 대가: Set 종류가 소유 코드에 고정. 초기값이 GE 경로라 Set 훅(클램프)을 거치고 이벤트가 난다 — 모디파이어 순서에 의존(maxHealth를 health보다 먼저).
 
 ## D6 — `AttributeSet`이 소유 ASC를 알고, Set의 쓰기 접근자는 ASC로 위임
 
@@ -42,4 +42,5 @@
 중요하지 않거나 코드가 이미 바뀐 결정이라 본문을 치웠다(유저 2026-10-18). 코드는 재사용하지 않는다.
 
 - **D4** (2026-08-07) — 타입 선택 UI의 "New Script..."(서브클래스 .cs 생성 후 자동 배정). 에디터 편의 도구.
+- **D3** (2026-05-26) — 초기값은 SO(`AttributeDefinitionAsset`) + 리플렉션. 2026-10-21 D7로 대체(코드 삭제).
 - **D5** (2026-08-21) — 런타임 핸들을 `ResolvedGameplayAttribute`로 리네임. 이름은 이후 `GameplayAttributeHandle`로 되돌아갔고, 직렬화/런타임 분리 자체는 D1·gameplay-effect D15에 있다.

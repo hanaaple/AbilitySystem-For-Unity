@@ -46,7 +46,7 @@ GAS의 `GameplayAbility`를 이 프로젝트에 **SO 기반·UE 유사 구조·�
 - [ ] 4. 데미지 GE 배선
 
 ## 결정 기록
-[decisions.md](decisions.md) — D1 정의(단일 SO)·런타임(C# 클래스) 분리, D2 에셋은 타입만(⛔ D3로 번복), D3 SerializeReference 원형 + 부여 때 깊은 복사, D4 생명주기는 UE 흐름 뼈대만(네트워크·GA 자체 락·취소 불가 플래그 뺌 — 근거 미기록), D5 GA의 GE 적용은 UE 헬퍼대로·대상은 ASC 하나(컨텍스트 SetAbility·SourceObject 타입 보류), D6 인스턴싱 Per Actor·Per Execution만·정의 필드는 런타임 base·Per Execution의 CDO 역할은 원형, D7 코스트·쿨다운·커밋은 UE 그대로·태그 조건은 Activation 3종만, D8 ASC 복제는 설정만·파괴는 어빌리티 취소 → 해제(UE 결과와 같게), D9 어빌리티 이벤트·실패 사유는 UE 구조대로(사유 태그는 설정 에셋, 종료 이벤트 둘 — 근거 미기록), D10 어빌리티 태그·차단·취소는 UE 그대로·Source/Target 태그 조건은 뺌.
+[decisions.md](decisions.md) — D1 정의(단일 SO)·런타임(C# 클래스) 분리, D2 에셋은 타입만(⛔ D3로 번복), D3 SerializeReference 원형 + 부여 때 깊은 복사, D4 생명주기는 UE 흐름 뼈대만(네트워크·GA 자체 락·취소 불가 플래그 뺌 — 근거 미기록), D5 GA의 GE 적용은 UE 헬퍼대로·대상은 ASC 하나(컨텍스트 SetAbility·SourceObject 타입 보류), D6 인스턴싱 Per Actor·Per Execution만·정의 필드는 런타임 base·Per Execution의 CDO 역할은 원형, D7 코스트·쿨다운·커밋은 UE 그대로·태그 조건은 Activation 3종만, D8 ASC 복제는 설정만·파괴는 어빌리티 취소 → 해제(UE 결과와 같게), D9 어빌리티 이벤트·실패 사유는 UE 구조대로(사유 태그는 설정 에셋, 종료 이벤트 둘 — 근거 미기록), D10 어빌리티 태그·차단·취소는 UE 그대로·Source/Target 태그 조건은 뺌, D11 입력은 UE 구조대로(Spec 눌림 상태·ASC InputID 발동·전달·GA InputReleased에서 끝냄, Confirm/Cancel·복제·태스크는 뺌).
 
 ## 작업 로그
 → [worklog.md](worklog.md). 재개 앵커는 `## 다음 작업`.

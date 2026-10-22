@@ -124,6 +124,46 @@
 - 대안: ASC 실행 순서를 앞당김(`[DefaultExecutionOrder]`) / 한 줄이지만 `Start`·물리 콜백·FixedUpdate에서 건 GE는 그대로 짧음. UE처럼 GE마다 타이머 / 한 루프 구조를 바꿔야 해 범위가 큼.
 - 대가: 컨테이너가 Unity 시계를 직접 읽어, 시간을 흘리는 에디터 셀프체크 4종이 시계 주입으로 바뀜. 만료·주기 실행은 여전히 Tick 때라 최대 한 프레임 늦음, Tick 도중 목록 변경 문제는 그대로 — Tick 순서 영향 전체는 [tick-order-improvements.md](tick-order-improvements.md)·[tick-order-user-notes.md](tick-order-user-notes.md).
 
+## D28 — 지속 시간을 Spec이 갖고 `SetDuration`으로 바꿈 (에셋 Duration Magnitude 없이)
+
+- 날짜: 2026-10-22
+- 결정: `GameplayEffectSpec.Duration`(정의 값으로 시작)·`SetDuration` 추가, 활성 GE·Tick·인스펙터가 Spec 값을 읽음. UE `FGameplayEffectSpec::SetDuration`(`GameplayEffect.cpp:1834`) 대응.
+- 왜: (유저) 데모 쿨다운 감소 아이템을 "캐릭터 강화 되면서 버프동안 쿨다운 비율 감소로" — 쿨다운 GE를 걸 때 길이를 바꿀 통로가 필요(지금은 에셋 고정값). Spec 쪽을 고른 이유는 에이전트 판단(유저 미확정): 코어 변경이 가장 작음.
+- 대안: 에셋에 Duration Magnitude(UE `DurationMagnitude` — AttributeBased·Custom Calculation) / 데이터 모델 변경이 크고 Custom Calculation은 미구현. 먹을 때 쿨다운 초기화(Remove Other) / 코어 변경 없지만 "비율 감소"가 아님.
+- 대가: UE의 `bLockDuration`·지속 시간 캡처(Outgoing/Incoming Duration)는 안 가져옴. 감소 비율은 쿨다운을 걸 때 한 번만 반영 — 이미 돌고 있는 쿨다운은 버프가 생기거나 끝나도 그대로.
+
+## D29 — 피격 정보를 Context에 담음 (`AddHitResult`·`TryGetHitResult`, Lyra 방식)
+
+- 날짜: 2026-10-22
+- 결정: `GameplayEffectContext`(+Handle)에 `RaycastHit` 하나를 담는 `AddHitResult(hit, reset)`·`TryGetHitResult`. 이미 있으면 `reset`일 때만 덮어씀(UE `FGameplayEffectContext::AddHitResult`의 check — 우리는 에러 로그 후 무시). 데모 헤드샷: Execution이 맞은 콜라이더의 부위 태그를 읽어 배율.
+- 왜: (유저) "GAS Tag 기반으로 헤드 판정" → 전달 방식 두 안 중 "컨텍스트에 피격 정보 (Lyra 방식)". Lyra `LyraDamageExecution`이 Context HitResult → 물리 재질 태그 → 무기의 태그별 배율.
+- 대안: Spec 동적 Asset Tag(UE `AddDynamicAssetTag`, 코어 TODO) / 태그만 실어 단순하지만 위치·거리 같은 피격 정보는 못 씀.
+- 대가: UE Context의 Origin(`AddOrigin`)·HitResult 공유 포인터는 안 가져옴 — 값 하나 복사. Context가 Spec에 묶여, 한 Spec으로 여러 대상을 맞히면 첫 피격만 담김(지금 투사체는 1발 = 1 Spec = 첫 대상).
+
+## D30 — 디버그 표시용 읽기 전용 조회 API를 Core에 둠 (UE `DisplayDebug`가 쓰는 공개 API와 같은 이름)
+
+- 날짜: 2026-10-23
+- 결정: ASC `GetSpawnedAttributes()`·`GetActiveGameplayEffects()`(읽기 전용 열거)·`OnAnyGameplayEffectRemoved` 이벤트(만료·직접 제거 모두 `RemoveActiveGameplayEffect` 한 곳에서), `AttributeSet.GetAttributesFromSetClass(type, list)`(공개·`[SerializeField]` AttributeData 필드, 선언 순). 게임 화면 디버그 오버레이와 에디터 ASC 인스펙터가 이것만 쓴다.
+- 왜: (유저 2026-10-22) "Core API도 해" — 디버그 오버레이(포트폴리오 스크린샷·영상용)용. UE `AbilitySystemComponent.h:206`(`GetSpawnedAttributes`)·`:462`(`GetActiveGameplayEffects`)·`:563`(`OnAnyGameplayEffectRemovedDelegate`), `AttributeSet.h:189`(`GetAttributesFromSetClass`).
+- 대안: Game 쪽 리플렉션으로 private 필드를 읽음 / Core 무수정이지만 필드 이름에 묶여 깨지기 쉬움(실제로 에디터 인스펙터의 활성 GE 리플렉션 필드 이름이 어긋나 있었음).
+- 대가: 활성 GE 열거는 컨테이너 내부 사전의 값 뷰를 그대로 돌려줌 — 열거 중 적용·제거하면 안 됨(UE도 const 참조).
+
+## D31 — GE 스택은 스택 수 1만 (같은 GE를 합쳐 시간만 갱신)
+
+- 날짜: 2026-10-23
+- 결정: GE 에셋 `stackingType`(None/AggregateBySource/AggregateByTarget)·`stackDurationRefreshPolicy`·`stackPeriodResetPolicy`. 합칠 GE가 있으면 새로 만들지 않고 기존 GE의 지속 시간(`RestartActiveGameplayEffectDuration`)·주기 타이머만 갱신, Spec·modifier·부여 태그는 처음 것 그대로. 적용 알림·`OnApplied`는 매번.
+- 왜: (유저) 쏠 때마다 거는 `GE_CombatStance`가 여러 개 쌓임 → "Core에 GE 스택 구현", "상한 1개에". UE `GameplayEffect.cpp:3507`(`FindStackableActiveGameplayEffect`)·`:4009~4100`(갱신 정책).
+- 대가: UE는 합칠 때 기존 Spec을 새 Spec으로 바꾸고 스택 수를 더함(레벨·세기가 새 적용 기준) — 우리는 처음 Spec 유지. `StackLimitCount`·스택 수만큼 modifier 세기·만료 정책·overflow 없음.
+- 재검토: 스택 수가 쌓여야 하는 GE(독 중첩 등)가 필요할 때.
+
+## D32 — 한 Spec을 여러 대상에 걸 땐 대상마다 Spec·컨텍스트를 복제
+
+- 날짜: 2026-10-23
+- 결정: `GameplayEffectContext.Duplicate()`(virtual, 얕은 복사)·`GameplayEffectContextHandle.Duplicate()`·`GameplayEffectSpec.SetContext()` 추가. 데모 투사체는 맞힌 대상마다 `Clone()` + 복제 컨텍스트에 그 대상의 피격 정보를 담아 건다.
+- 왜: 관통 스킬이 발사 때 만든 Spec 하나를 여러 허수아비에 건다. `Clone()`은 컨텍스트를 공유하므로 대상마다 `AddHitResult`가 같은 객체를 덮어써, 늦게 실행되는 GE(2초 뒤 터지는 낙인)가 마지막 대상의 부위로 헤드샷을 판정하게 된다. UE도 같은 이유로 대상마다 복제한다 — `FGameplayAbilityTargetData::ApplyGameplayEffectSpec`(`GameplayAbilityTargetTypes.cpp`, "otherwise the targeting info gets accumulated"), `FGameplayEffectContext::Duplicate`(`GameplayEffectTypes.h:394`).
+- 대가: UE `SetContext`는 기본으로 Source 액터 태그를 새 컨텍스트에서 다시 캡처하지만 우리는 안 한다 — 복제 컨텍스트는 Instigator가 같아 결과가 같고, 생성 시점 태그를 지킨다. 파생 컨텍스트에 참조형 필드가 생기면 얕은 복사가 공유하므로 그때 override.
+- 재검토: 컨텍스트에 리스트·참조형 상태(여러 피격 정보 등)를 담게 될 때.
+
 ## 치운 결정
 
 중요하지 않거나, UE를 그대로 옮겨 고를 것이 없었거나, 단계 기록이거나, 코드가 이미 바뀐 결정이라 본문을 치웠다(유저 2026-10-18). 코드는 재사용하지 않는다.

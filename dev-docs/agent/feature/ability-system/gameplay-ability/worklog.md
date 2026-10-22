@@ -2,6 +2,17 @@
 
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
+### 2026-10-22 — GA 에셋 설명(description) 필드
+> 유저 GE 설명 요청에 이어 "GA쪽도 넣어주고".
+- `GameplayAbilityAsset.description`(`[TextArea]`, 동작에 안 쓰임) — 런타임 클래스(`abilityTemplate`)가 아니라 에셋에 둠. `GameplayAbilityAssetEditor` 맨 위에 그림. GA 에셋 7개에 설명을 넣음(데모 6개·`GA_New`).
+
+### 2026-10-22 — 입력 통로: Spec `InputPressed`·ASC `AbilityLocalInputPressed/Released`·GA `InputPressed`/`InputReleased` (→D11)
+> 데모에서 유저 "달리기도 Tag 기반 GA로"·"점프도 GA 기반으로" — 누르는 동안 유지하는 어빌리티를 뗄 때 끝낼 통로가 없었다. UE 방식을 설명한 뒤 유저 "A로 하자"(코어에 UE식 통로).
+- **UE 확인(5.6).** `AbilityLocalInputPressed`(`AbilitySystemComponent_Abilities.cpp:2764` — 비활성이면 `TryActivateAbility`, 활성이면 전달)·`AbilityLocalInputReleased`(`:2817`)·`AbilitySpecInputPressed/Released`(`:2885`·`:2908` — 인스턴스마다 전달), GA `InputPressed`/`InputReleased`는 빈 virtual(`GameplayAbility.h:392-395`). UE 점프 GA는 `InputReleased`에서 `CancelAbility`(`GameplayAbility_CharacterJump.cpp:36-41`).
+- **구현.** `GameplayAbilitySpec.InputPressed`(internal set), ASC 위 네 함수, GA 두 virtual. 인스턴스 전달은 복사본을 돈다(받은 어빌리티가 그 자리에서 끝나면 Per Execution 인스턴스가 목록에서 빠짐). Generic Confirm/Cancel·복제 이벤트·어빌리티 태스크는 안 가져옴.
+- **사용처(게임 쪽).** `AbilityInputID`, `HoldInputAbility`(달리기·조준 — `InputReleased`에서 End), `JumpAbility`(착지까지 활성), `PlayerController`가 누름·뗌을 ID로 전달. 막혀서 못 켜진 '누르는 동안' 어빌리티는 `PlayerCharacter`가 매 프레임 다시 시도 — Lyra `ULyraAbilitySystemComponent::ProcessAbilityInput`의 `WhileInputActive`(`LyraAbilitySystemComponent.cpp:232-245`)와 같은 방식, 코어가 아니라 게임 쪽.
+- **확인.** Play(가상 장치 키 주입) — Shift 2.00→5.33→2.00m/s, Space 착지까지 `State.Jumping`, 조준 중 Shift 뒤 조준을 떼면 달리기 켜짐. 셀프체크 GA 160/0 외 4종, PlayMode GA 6/0 외 3종 기준값.
+
 
 ### 2026-10-21 — 이름 변경: Actor → GameObject (GA 쪽)
 

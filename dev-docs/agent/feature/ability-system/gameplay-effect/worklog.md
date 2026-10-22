@@ -2,6 +2,39 @@
 
 > 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
+### 2026-10-23 — 대상별 Spec·컨텍스트 복제 (→D32)
+> 데모 관통 파동(맞은 대상마다 피해 + 2초 뒤 터지는 낙인)에서 한 Spec을 여러 대상에 건다.
+- **UE 확인.** `FGameplayAbilityTargetData::ApplyGameplayEffectSpec` — 대상마다 `FGameplayEffectSpec SpecToApply(InSpec)` + `GetContext().Duplicate()` + `SetContext` 뒤 타깃 데이터를 컨텍스트에 더함. `FGameplayEffectContext::Duplicate`는 값 복사 + 피격 정보 깊은 복사.
+- **구현.** 컨텍스트 `Duplicate`(MemberwiseClone), 핸들 `Duplicate`, Spec `Context` private set + `SetContext`. 데모 `Projectile`이 맞힌 대상마다 복제해 건다.
+- **확인.** Play: 파동 한 번에 허수아비 4개 각각 피해 48~52, 2초 뒤 낙인 폭발 119~129(공격력 ×2.5 — Execution 계산 Modifier), 대상마다 따로 터짐. 셀프체크 GA 160/0·Aggregator 83/0·GE Component 100/0·Modifier Tag 65/0. Calc는 원본 `Data/Test/GE_Speed`를 유저가 지워 실패 → `_Test/GE_Speed`로 되살리고 경로 변경 뒤 19/0.
+### 2026-10-23 — GE 스택(스택 수 1, →D31)
+> 데모에서 쏠 때마다 거는 `GE_CombatStance`가 여러 개 쌓임. 유저 "Core에 GE 스택 구현", "상한 1개에".
+- **UE 확인.** `FindStackableActiveGameplayEffect`(`GameplayEffect.cpp:3507` — ByTarget은 정의만, BySource는 시전자 ASC까지), 합칠 때 `NeverRefresh`가 아니면 `RestartActiveGameplayEffectDuration`(`:4865`), `NeverReset`가 아니면 주기 재예약 + 적용 시 실행(`:4241`).
+- **구현.** `GameplayEffectStacking.cs`(enum 3개), 에셋 필드 3개 + 인스펙터 'Stacking' 칸(Instant면 숨김), 컨테이너 `FindStackableActiveGameplayEffect`·`ApplyToExistingStack`·`RestartActiveGameplayEffectDuration`, `ActiveGameplayEffect.StartWorldTime` internal set.
+- **확인.** 셀프체크 GE Component S-1~S-11 → **100/0**(처음 S-4 실패는 테스트가 부여 태그를 컴포넌트로만 넣어 캐시가 비었던 것 — `GrantTag` 헬퍼로 고침). 회귀: GA 160/0·Aggregator 83/0·Calc 19/0·Modifier Tag 65/0. Play: `GE_CombatStance` 0.25초 간격 4번 → 활성 1개, 남은 시간 마지막 적용 기준.
+
+### 2026-10-23 — 디버그 조회 API (→D30)
+- ASC `GetSpawnedAttributes`·`GetActiveGameplayEffects`·`OnAnyGameplayEffectRemoved`, `AttributeSet.GetAttributesFromSetClass`. 에디터 ASC 인스펙터의 활성 GE 리플렉션(필드 이름 어긋남)도 이 API로 교체. 첫 배포 때 `GetActiveGameplayEffects`가 Awake 전 컨테이너 null로 예외 → 빈 목록 반환.
+
+### 2026-10-22 — GE 에셋 설명(description) 필드
+> 데모 작업 중 유저 "각 GE마다 Comment 같은? Description? 같은 걸 넣을 수 있게 해주고 넣어줘".
+- UE `UGameplayEffect`엔 설명 필드가 없다(GAS 소스에 없음 — 확인). `GameplayEffectAsset.description`(`[TextArea]`, 동작에 안 쓰임) + 인스펙터 맨 위에 그림. GE 에셋 26개 전부에 설명을 넣음(내용은 에셋 구성·쓰는 곳에서 확인한 사실만, 값은 적지 않음). 다시 저장되며 옛 에셋에 없던 필드가 기본값으로 채워짐(값 변경 없음).
+
+### 2026-10-22 — Context 피격 정보 (데모 헤드샷, →D29)
+> 데모 작업에서 유저 "GAS Tag 기반으로 헤드 판정을 넣어서 데미지 150%로"(이어서 200%로), 전달 방식 "컨텍스트에 피격 정보 (Lyra 방식)".
+- **UE·Lyra 확인.** `FGameplayEffectContext::AddHitResult(InHitResult, bReset)`(`GameplayEffectTypes.cpp:221` — 있으면 bReset 아니면 check), Lyra `LyraDamageExecution`(Context `GetHitResult` → `GetPhysicalMaterial` → `GetPhysicalMaterialAttenuation`), `LyraRangedWeaponInstance.MaterialDamageMultiplier`(태그→배율).
+- **구현(코어).** `GameplayEffectContext`·`GameplayEffectContextHandle`에 `AddHitResult(RaycastHit, reset)`·`TryGetHitResult`.
+- **사용처(게임 쪽).** `Game/Character/HitZone`(부위 콜라이더에 태그, 몸 콜라이더 안쪽 트리거) / `Projectile`이 몸에 닿으면 같은 방향으로 더 들어가 그 대상의 HitZone을 찾아 Context에 담음 / `Game/Character/DamageExecution`(Source Attack 스냅샷 × 0.95~1.05, 부위가 `Gameplay.Zone.Head`면 ×2) — `GE_Damage_Attack`이 modifier 대신 이 Execution.
+- **확인.** Play — 허수아비 몸 48.6·머리 103(공격력 50), 플레이어 몸 29.8(공격력 30).
+
+### 2026-10-22 — Spec 지속 시간 + `SetDuration` (데모 쿨다운 비율 감소, →D28)
+> 데모 작업(유저 "전투 간단하게 GE로 짜서 만들어봐")에서 쿨다운 감소 아이템 방식을 물었고, 유저 "캐릭터 강화 되면서 버프동안 쿨다운 비율 감소로".
+- **있던 것.** 지속 시간은 에셋 `duration` 고정값이고, 활성 GE 생성·`GetDuration`·Tick 남은 시간·인스펙터가 `Definition.Duration`을 직접 읽었다 — 걸 때 길이를 바꿀 통로가 없음.
+- **UE 확인(5.6).** `FGameplayEffectSpec::SetDuration(NewDuration, bLockDuration)`(`GameplayEffect.cpp:1834`), 활성 GE `GetDuration`은 `Spec.GetDuration()`(`GameplayEffect.h:1342`).
+- **구현.** `GameplayEffectSpec.Duration`(생성 때 정의 값, 복사 생성자가 복사)·`SetDuration`(0 하한). 활성 GE·컨테이너 Tick·`AbilitySystemInspectorGUI`가 Spec 값을 읽는다. 잠금·지속 시간 캡처는 안 가져옴(→D28 대가).
+- **사용처(게임 쪽).** `Game/Abilities/CharacterGameplayAbility.ApplyCooldown`이 쿨다운 Spec 길이에 `(1 − cooldownReduction)`을 곱한다.
+- **확인.** Play — 강화(감소 0.5) 중 쿨다운 1.5→0.75초. 셀프체크 Aggregator 83/0·GE Component 89/0·Modifier Tag 65/0·Calculation Modifier 19/0·GA 160/0, PlayMode 4종 기준값.
+
 
 ### 2026-10-20 — 어트리뷰트 값 변경 이벤트 (구독 API + 원인 GEModData + 값이 같아도 발화, →D26)
 > 유저: "어트리뷰트 변경 이벤트 - 구현 안되어있어? 간단하지 않아?" → "UE 구조대로 변경해서 하면 되는거 아냐? 아무튼 잘 구현해봐" → (1차 구현 뒤, effort 상향) "다시 잘 구현해봐". 질문 답: 구독 모양 "클래스 getter 유지", 원인 "지금 넣기", 값이 같을 때 "UE대로 항상 울림".
