@@ -24,7 +24,7 @@
 ## 문서 구조
 
 - **상위:** [ability-system/overview.md](ability-system/overview.md) — 개요·인덱스. 하위 심화 문서로 진입하는 허브.
-- **하위(개별 심화):** `attribute` · `gameplay-effect` · `aggregator` · `capture` · `gameplay-tag` · `gameplay-ability`(계획). 각 문서는 다이어그램 + 진입점 + UE↔Unity 대응을 갖춘다.
+- **하위(개별 심화):** `attribute` · `gameplay-effect` · `aggregator` · `capture` · `gameplay-tag` · `gameplay-ability`. 각 문서는 다이어그램 + 진입점 + UE↔Unity 대응을 갖춘다.
 - 새 개념이 여러 문서에 흩어지면 **전용 문서로 분리**하고 소비처는 링크로 잇는다(하위 문서에 억지로 끼워넣지 않는다). 예: 캡처 → `capture.md`.
 
 ### 검토 (미착수)

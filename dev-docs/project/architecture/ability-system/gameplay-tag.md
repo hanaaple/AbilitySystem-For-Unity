@@ -1,11 +1,10 @@
 # AbilitySystem — GameplayTag
 
-> **최종 갱신:** 2026-10-14 (KST)
+> **최종 갱신:** 2026-10-23 (KST)
 
-`Assets/Scripts/Core/AbilitySystem/Tag/` — 계층 문자열(`Status.Debuff.Stun`)로 상태를 표현하는 태그 시스템. 태그 정의 → 트리 구성 → 획득 → 매칭(단일·컨테이너·질의)까지를 다룬다. 상위 개요 [overview](overview.md).
+`Assets/Scripts/Core/AbilitySystem/Tag/` — 계층 문자열(`Status.Debuff.Stun`)로 상태를 표현하는 태그 시스템. 태그 정의 → 트리 구성 → 획득 → 매칭(단일·컨테이너·질의) → ASC 소유 태그 → GE 연동까지를 다룬다. 상위 개요 [overview](overview.md).
 
-> UE `GameplayTags` 모듈(`UGameplayTagsManager`·`FGameplayTag`·`FGameplayTagContainer`·`FGameplayTagQuery`)의 런타임 API를 기준으로 재구현. 에디터 툴링(태그 피커·편집 UI)은 이 문서 범위 밖.
-> ⚠ 2026-10-12 기준 **Unity 컴파일·동작 미검증** 상태의 코드를 정리한 문서다.
+> UE `GameplayTags` 모듈(`UGameplayTagsManager`·`FGameplayTag`·`FGameplayTagContainer`·`FGameplayTagQuery`)의 런타임 API와 GAS의 태그 연동(`FGameplayTagCountContainer`·GE Component)을 기준으로 재구현. 에디터 도구는 맨 아래 [에디터](#9-에디터).
 
 범례: ✅ 구현 · 🔜 계획 · ❌ 미채택
 
@@ -67,7 +66,6 @@ flowchart LR
 | 계획 🔜 | 내용 |
 |---|---|
 | 노드 출처·명시/암시 기록 | 노드가 native/레지스트리 중 어디서 왔는지, 직접 등록인지 중간 부모로 생긴 것인지 (UE: `SourceNames`·`bIsExplicitTag`) — 편집 UI 착수 시 |
-| 레지스트리 편집 시 트리 재구성 | 에디터 매니저는 재컴파일·플레이 진입 전까지 이전 트리를 쓴다 (UE: `EditorRefreshGameplayTagTree`) |
 | IL2CPP 코드 제거 대응 | 참조 없는 마커 필드가 빌드에서 빠질 수 있음 |
 
 ## 2. 태그 획득 — 등록된 이름만
@@ -87,7 +85,6 @@ flowchart LR
 | 계획 🔜 | 내용 |
 |---|---|
 | 로드 시 미등록 경고 | 에셋 로드 시점에 미등록 이름을 알림 (UE: `WarnOnInvalidTags`) |
-| 인스펙터 드롭다운 | 등록된 태그만 고르는 드로어 (UE: `SGameplayTagPicker`) |
 | 대소문자 무시 비교 + 표기 보존 | UE `FName`식 — `InternedName` 쪽 작업 |
 
 ## 3. 단일 태그 매칭·계층 조회
@@ -144,7 +141,7 @@ flowchart LR
 
 | 계획 🔜 | 내용 |
 |---|---|
-| 참조 카운트 소유 태그 컨테이너 | ASC가 GE로부터 받은 태그를 카운트로 누적·회수 (UE: `FGameplayTagCountContainer`) |
+| (없음) | 소유 태그 개수 컨테이너는 → [7. ASC 소유 태그](#7-asc-소유-태그) |
 
 ## 5. 질의 (Query)
 
@@ -165,12 +162,12 @@ flowchart LR
 
 - 단축 생성: `MakeQuery_MatchAnyTags` · `MakeQuery_MatchAllTags` · `MakeQuery_MatchNoTags` · `MakeQuery_MatchTag`. 식 트리로 되돌리기: `GetQueryExpr(out expr)`. 태그만 바꾸기: `ReplaceTagsFast` / `ReplaceTagFast`.
 - 빈 질의는 항상 false.
-- **UE와 다른 점:** 스트림 머리의 버전·루트 유무 바이트 생략, `*ExactMatch` 2종 추가(UE 5.6 원본에 없음), 자동 설명 문자열 없음.
+- **직렬화:** 태그 사전·토큰 스트림·형식 버전·자동 설명·사용자 설명을 저장한다. 자동 설명(` ALL( ANY( A ), NONE( B ) )` 꼴)은 `Build` 때 만든다.
+- **UE와 다른 점:** 형식 버전을 스트림 첫 토큰이 아니라 필드로 저장, `*ExactMatch` 2종 추가(UE 5.6 원본에 없음).
 
 | 계획 🔜 | 내용 |
 |---|---|
 | 내부 표현 확정 | 토큰 스트림(현재) vs 경량 식 트리 — 미확정 |
-| 질의 직렬화 | 에셋에 질의를 저장할지 미정 |
 
 ## 6. 매니저 생애주기
 
@@ -178,16 +175,53 @@ flowchart LR
 sequenceDiagram
     participant Any as 호출측(에디터/런타임)
     participant M as GameplayTagsManager
-    Note over M: 에디터: Instance 첫 접근 시 생성
-    Any->>M: Instance
+    Note over M: 에디터: Get() 첫 접근 시 생성
+    Any->>M: Get()
     M->>M: CreateManager → ConstructGameplayTagTree (native → 레지스트리)
     Note over M: 플레이 진입(BeforeSceneLoad)
     M->>M: Bootstrap → 새 인스턴스로 교체
 ```
 
-- `Instance`는 첫 접근 시 생성되어 **에디터에서도 존재**한다(UE: 모듈 시작 시 초기화된 싱글턴을 에디터·게임이 공유).
+- `Get()`은 첫 접근 시 매니저를 만들며 매니저는 **에디터에서도 존재**한다(UE: 모듈 시작 시 초기화된 싱글턴을 에디터·게임이 공유).
 - 플레이 진입 시 `Bootstrap`(`RuntimeInitializeOnLoadMethod`)이 새로 만든다 — 도메인 리로드를 꺼도 낡은 트리를 쓰지 않게.
 - 트리 구성 중 매니저에 다시 접근하면(native 정의 클래스의 static 초기화에서 태그 조회 등) 무한 재귀 대신 예외를 던진다.
+
+## 7. ASC 소유 태그
+
+ASC는 지금 가진 태그를 **개수**로 센다(`GameplayTagCountContainer`, UE `FGameplayTagCountContainer`). 같은 태그를 두 출처가 주면 2가 되고, 하나가 빠져도 남는다.
+
+| 담는 것 | 의미 |
+|---|---|
+| 부모 포함 개수 | `A.B`를 하나 더하면 `A.B`와 `A`가 각각 +1 — 부모 태그 조회가 개수 조회 한 번 |
+| 명시 개수 · 명시 태그 컨테이너 | 실제로 더한 태그만. 매칭(`HasMatchingGameplayTag` 등)은 이 컨테이너로 |
+
+- **출처:** GE 부여 태그(GE가 켜져 있는 동안 +1), 어빌리티의 Activation Owned 태그, 코드의 Loose 태그(`AddLooseGameplayTag`·`RemoveLooseGameplayTag`·`SetLooseGameplayTagCount`).
+- **이벤트:** `RegisterGameplayTagEvent(태그, 콜백, 종류)` — `NewOrRemoved`(0↔1 바뀔 때)·`AnyCountChange`(개수가 바뀔 때마다). 자식 태그 변화가 부모 태그 이벤트도 부른다. 콜백은 개수 갱신이 모두 끝난 뒤 불려 갱신된 상태를 본다.
+- 부모 태그를 명시로 넣지 않았는데 빼려 하면 경고 후 무시한다(UE와 같음).
+
+## 8. GE 연동
+
+| 연동 | 동작 | UE |
+|---|---|---|
+| Asset Tags Component | GE를 나타내는 태그. Spec의 Source 태그에 들어가고, GE 질의(Effect 태그)에 쓰인다. 대상에겐 붙지 않는다 | `UAssetTagsGameplayEffectComponent` |
+| Granted Tags Component | 활성(켜진) 동안 대상 소유 태그에 +1, 끝나면 −1. Instant는 주지 않는다 | `UTargetTagsGameplayEffectComponent` |
+| Target Tag Requirements Component | **Application**: 적용 때 대상 태그 조건(못 맞추면 적용 안 됨) · **Ongoing**: 조건 태그를 구독해 GE를 켜고 끔(억제 — 제거 아님) · **Removal**: 맞으면 제거(이미 맞으면 적용도 안 됨) | 같은 이름 |
+| Modifier Source/Target 태그 | Instant·Periodic은 실행 때 액터 태그로 그 modifier를 건너뜀. 지속형은 aggregator 평가 문맥으로 판정 — CurrentValue는 빈 문맥이라 태그 조건 mod가 안 들어가고, 다른 GE가 캡처해 평가할 때 그 GE의 태그로 켜진다 | `FGameplayModifierInfo::SourceTags/TargetTags` |
+| 태그로 GE 찾기·제거 | `GameplayEffectQuery`(Owning·Effect·Source·Applied 태그 질의), `RemoveActiveEffectsWith…Tags`, Remove Other Component | `FGameplayEffectQuery` |
+
+- 태그 조건은 `GameplayTagRequirements`(Require·Ignore·Query) — 셋 다 비면 늘 통과.
+- Asset Tags·Granted Tags는 UE `FInheritedTagContainer`(Added·Removed·Combined) 구조 그대로이나 **부모 GE가 없다** — UE의 부모는 블루프린트 클래스 계층인데 SO 에셋엔 그 계층이 없어서다.
+- GE·Component·태그 판정 흐름은 → [gameplay-effect](gameplay-effect.md), 평가 문맥 → [aggregator](aggregator.md).
+
+## 9. 에디터
+
+| 도구 | 하는 일 | UE |
+|---|---|---|
+| 태그 드로어 | `GameplayTag`·`GameplayTagContainer` 필드(어느 class·struct·List 요소든)에 칩 + 피커. 다중 선택 편집, 칩 우클릭 Copy/Paste/Clear. `[GameplayTagCategories]`로 하위 트리만 보이게 | `SGameplayTagCombo`·`SGameplayTagContainerCombo` |
+| 태그 피커 | 검색·트리·체크(미정 상태 포함). 열 때 미등록 태그를 알리고 지움 | `SGameplayTagPicker` |
+| 태그 관리 창 | 레지스트리 에셋에 추가·하위 추가·복제·이름 변경·삭제, 편집 뒤 에디터 트리 재구성. native 태그는 바꿀 수 없다. 리다이렉터·삭제 전 참조 검사는 없다 | Project Settings 태그 편집 |
+| Query 편집기 | 인스펙터 줄(설명·Edit·Clear) + 별도 창(식 8종 조립, 즉시 반영, Cancel 복원) | `SGameplayTagQueryWidget` |
+| 레지스트리 인스펙터 | 읽기 전용 목록 + "Manage Gameplay Tags..." | — |
 
 ## UE 대비 — 포함하지 않은 것
 
