@@ -192,6 +192,18 @@ namespace Core.AbilitySystem.Abilities
             EndAbility(handle, gameObjectInfo, true);
         }
 
+        /// <summary>활성 중에 이 Spec의 입력이 다시 눌렸다. 비활성일 때 누르면 이 대신 발동을 시도한다.</summary>
+        /// <remarks>UE: UGameplayAbility::InputPressed</remarks>
+        public virtual void InputPressed(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo)
+        {
+        }
+
+        /// <summary>활성 중에 이 Spec의 입력이 떼졌다. 누르는 동안만 유지하는 어빌리티는 여기서 끝낸다.</summary>
+        /// <remarks>UE: UGameplayAbility::InputReleased</remarks>
+        public virtual void InputReleased(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo)
+        {
+        }
+
         /// <summary>ASC에 부여된 직후 호출된다(Spec은 이미 ASC 목록에 있다). 재정의하면 base를 먼저 불러야 GameObject 정보가 채워진다.</summary>
         /// <remarks>UE: UGameplayAbility::OnGiveAbility</remarks>
         public virtual void OnGiveAbility(GameplayAbilityGameObjectInfo gameObjectInfo, GameplayAbilitySpec spec)
