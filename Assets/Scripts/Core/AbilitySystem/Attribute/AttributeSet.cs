@@ -1,10 +1,42 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Core.AbilitySystem.Effect;
+using UnityEngine;
 
 namespace Core.AbilitySystem.Attribute
 {
     public abstract class AttributeSet
     {
+        private static readonly Dictionary<Type, GameplayAttributeHandle[]> AttributesBySetType = new();
+
         private AbilitySystemComponent owner;
+
+        /// <summary>Set 타입이 가진 어트리뷰트(공개이거나 [SerializeField]인 AttributeData 필드)를 선언 순서대로 attributes에 더한다.</summary>
+        /// <remarks>UE: UAttributeSet::GetAttributesFromSetClass</remarks>
+        public static void GetAttributesFromSetClass(Type attributeSetType, List<GameplayAttributeHandle> attributes)
+        {
+            if (attributeSetType == null)
+            {
+                return;
+            }
+
+            if (!AttributesBySetType.TryGetValue(attributeSetType, out GameplayAttributeHandle[] handles))
+            {
+                // 에디터 AttributeReflectionUtility.GetAttributeDataFields와 같은 필드 규칙 — 한쪽을 바꾸면 다른 쪽도
+                handles = attributeSetType
+                    .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                    .Where(field => typeof(AttributeData).IsAssignableFrom(field.FieldType)
+                                    && (field.IsPublic || field.GetCustomAttribute<SerializeField>() != null))
+                    .OrderBy(field => field.MetadataToken)
+                    .Select(field => new GameplayAttributeHandle(attributeSetType, field.Name))
+                    .ToArray();
+                AttributesBySetType[attributeSetType] = handles;
+            }
+
+            attributes.AddRange(handles);
+        }
 
         internal void SetOwner(AbilitySystemComponent abilitySystemComponent)
         {

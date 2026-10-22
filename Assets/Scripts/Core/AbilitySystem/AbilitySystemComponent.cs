@@ -116,6 +116,13 @@ namespace Core.AbilitySystem
             _spawnedAttributeSets.Remove(set.GetType());
         }
 
+        /// <summary>등록된 AttributeSet 전부(읽기 전용).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetSpawnedAttributes</remarks>
+        public IReadOnlyCollection<AttributeSet> GetSpawnedAttributes()
+        {
+            return _spawnedAttributeSets.Values;
+        }
+
         /// <summary>핸들이 가리키는 AttributeSet 타입(<see cref="GameplayAttributeHandle.SetType"/>)의 인스턴스를 반환한다. 미등록이면 null.</summary>
         internal AttributeSet GetAttributeSet(GameplayAttributeHandle handle)
         {
