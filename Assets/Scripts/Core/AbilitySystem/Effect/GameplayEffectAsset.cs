@@ -10,6 +10,9 @@ namespace Core.AbilitySystem.Effect
     [CreateAssetMenu(menuName = "Ability System/Gameplay Effect", fileName = "GE_New")]
     public sealed class GameplayEffectAsset : ScriptableObject
     {
+        [Tooltip("이 GE가 무엇을 하는지 적는 메모. 동작에는 쓰이지 않는다.")]
+        [TextArea(2, 6)] [SerializeField] private string description;
+
         [SerializeField] private GameplayEffectType type;
         [Min(0f)] [SerializeField] private float duration;
         [Tooltip("0이면 주기 실행 없음. 0 초과면 해당 간격마다 반복 적용.")]
@@ -17,6 +20,11 @@ namespace Core.AbilitySystem.Effect
 
         [Tooltip("true면 적용 즉시 1회 실행 후 주기마다 실행. false면 첫 주기 이후부터 실행.")]
         [SerializeField] private bool executePeriodicEffectOnApplication = true;
+
+        [Tooltip("같은 GE가 다시 걸릴 때 기존 활성 GE에 합칠지. 합치면 새로 만들지 않고 아래 정책대로 갱신한다(스택 수는 1로 고정).")]
+        [SerializeField] private GameplayEffectStackingType stackingType;
+        [SerializeField] private GameplayEffectStackingDurationPolicy stackDurationRefreshPolicy;
+        [SerializeField] private GameplayEffectStackingPeriodPolicy stackPeriodResetPolicy;
 
         [SerializeField] private List<GameplayModifier> modifiers;
 
@@ -29,7 +37,7 @@ namespace Core.AbilitySystem.Effect
         private readonly GameplayTagContainer _cachedAssetTags = new();
         private readonly GameplayTagContainer _cachedGrantedTags = new();
 
-        // TODO GE 스택 구현
+        // TODO GE 스택 수 2 이상 — StackLimitCount, 스택 수만큼 modifier 세기, 만료 정책(UE StackExpirationPolicy)
 
         // TODO Gameplay Cue
 
@@ -37,6 +45,15 @@ namespace Core.AbilitySystem.Effect
         public float Duration => duration;
         public float Period => period;
         public bool ExecutePeriodicEffectOnApplication => executePeriodicEffectOnApplication;
+
+        /// <remarks>UE: UGameplayEffect::StackingType</remarks>
+        public GameplayEffectStackingType StackingType => stackingType;
+
+        /// <remarks>UE: UGameplayEffect::StackDurationRefreshPolicy</remarks>
+        public GameplayEffectStackingDurationPolicy StackDurationRefreshPolicy => stackDurationRefreshPolicy;
+
+        /// <remarks>UE: UGameplayEffect::StackPeriodResetPolicy</remarks>
+        public GameplayEffectStackingPeriodPolicy StackPeriodResetPolicy => stackPeriodResetPolicy;
         public IReadOnlyList<GameplayModifier> Modifiers => modifiers;
         public IReadOnlyList<GameplayEffectExecutionDefinition> Executions => executions;
 
