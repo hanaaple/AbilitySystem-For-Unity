@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Attribute.Editor;
 using Core.AbilitySystem.Effect;
+using Core.AbilitySystem.Tag;
 using UnityEditor;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Editor
 {
-    /// <summary>ASC의 런타임 상태(AttributeSet 값·Active Effect)를 IMGUI로 그리는 공용 로직. 컴포넌트 인스펙터(<see cref="AbilitySystemComponentDrawer"/>)와 독립 창(<see cref="AbilitySystemComponentWindow"/>)이 화면을 중복 구현하지 않게 한곳에 모았다.</summary>
+    /// <summary>ASC의 런타임 상태(AttributeSet 값·Active Effect·부여된 Ability·보유 Tag)를 IMGUI로 그리는 공용 로직. 컴포넌트 인스펙터(<see cref="AbilitySystemComponentDrawer"/>)와 독립 창(<see cref="AbilitySystemComponentWindow"/>)이 화면을 중복 구현하지 않게 한곳에 모았다.</summary>
     public static class AbilitySystemInspectorGUI
     {
-        private const string SpawnedAttributeSetsFieldName = "_spawnedAttributeSets";
-        private const string ActiveEffectsFieldName = "activeGameplayEffects";
         private const string SourceSpecsFieldName = "_sourceSpecs";
         private const string TargetSpecsFieldName = "_targetSpecs";
 
@@ -23,13 +23,7 @@ namespace Core.AbilitySystem.Editor
         private const float CurrentColumnX = 0.72f;
         private const float CurrentColumnWidth = 0.28f;
 
-        private static readonly FieldInfo SpawnedAttributeSetsField = typeof(AbilitySystemComponent)
-            .GetField(SpawnedAttributeSetsFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-
-        private static readonly FieldInfo ActiveEffectsField = typeof(AbilitySystemComponent)
-            .GetField(ActiveEffectsFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-
-        // 캡처 컨테이너의 source/target 캡처 목록은 private이므로, ASC 필드와 같은 리플렉션 패턴으로 읽어
+        // 캡처 컨테이너의 source/target 캡처 목록은 private이므로 리플렉션으로 읽어
         // 프로덕션 API에 디버그 전용 표면을 만들지 않고 인스펙터에만 노출한다.
         private static readonly FieldInfo SourceSpecsField = typeof(GameplayEffectAttributeCaptureSpecContainer)
             .GetField(SourceSpecsFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
@@ -56,25 +50,18 @@ namespace Core.AbilitySystem.Editor
                 return;
             }
 
-            if (SpawnedAttributeSetsField == null)
-            {
-                EditorGUILayout.HelpBox($"Field '{SpawnedAttributeSetsFieldName}' was not found.", MessageType.Error);
-                EditorGUI.indentLevel--;
-                return;
-            }
+            IReadOnlyCollection<AttributeSet> spawnedSets = asc.GetSpawnedAttributes();
 
-            var spawnedSets = SpawnedAttributeSetsField.GetValue(asc) as IReadOnlyDictionary<Type, AttributeSet>;
-
-            if (spawnedSets == null || spawnedSets.Count == 0)
+            if (spawnedSets.Count == 0)
             {
                 EditorGUILayout.HelpBox("No spawned AttributeSets.", MessageType.Info);
                 EditorGUI.indentLevel--;
                 return;
             }
 
-            foreach (KeyValuePair<Type, AttributeSet> pair in spawnedSets)
+            foreach (AttributeSet set in spawnedSets)
             {
-                DrawAttributeSet(pair.Key, pair.Value);
+                DrawAttributeSet(set.GetType(), set);
             }
 
             EditorGUI.indentLevel--;
@@ -134,18 +121,9 @@ namespace Core.AbilitySystem.Editor
                 return;
             }
 
-            if (ActiveEffectsField == null)
-            {
-                EditorGUILayout.HelpBox($"Field '{ActiveEffectsFieldName}' was not found.", MessageType.Error);
-                EditorGUI.indentLevel--;
-                return;
-            }
+            var activeEffects = new List<ActiveGameplayEffect>(asc.GetActiveGameplayEffects());
 
-            // ASC의 활성 이펙트 소유는 ActiveGameplayEffectsContainer(class)다. 리플렉션으로 인스턴스를 꺼내
-            // 읽기 전용 뷰를 얻는다(참조 타입이라 그대로 캐스팅 — 미할당이면 null).
-            var activeEffects = (ActiveEffectsField.GetValue(asc) as ActiveGameplayEffectsContainer)?.ActiveGameplayEffects;
-
-            if (activeEffects == null || activeEffects.Count == 0)
+            if (activeEffects.Count == 0)
             {
                 EditorGUILayout.HelpBox("No active effects.", MessageType.Info);
                 EditorGUI.indentLevel--;
@@ -153,7 +131,7 @@ namespace Core.AbilitySystem.Editor
             }
 
             int index = 0;
-            foreach (ActiveGameplayEffect active in activeEffects.Values)
+            foreach (ActiveGameplayEffect active in activeEffects)
             {
                 if (index > 0)
                 {
@@ -176,7 +154,7 @@ namespace Core.AbilitySystem.Editor
 
             if (def.Type == GameplayEffectType.Duration)
             {
-                EditorGUILayout.LabelField("Remaining", $"{active.RemainingDuration:0.##} / {def.Duration:0.##} s");
+                EditorGUILayout.LabelField("Remaining", $"{active.RemainingDuration:0.##} / {active.GetDuration():0.##} s");
             }
 
             if (def.Period > 0f)
@@ -361,6 +339,75 @@ namespace Core.AbilitySystem.Editor
             }
 
             return origins.Count == 0 ? "?" : string.Join(", ", origins);
+        }
+
+        // ── Abilities ─────────────────────────────────────────────────────────────
+
+        /// <summary>부여된 어빌리티 목록. 발동 중인 것은 [Active]로 표시한다.</summary>
+        public static void DrawAbilities(AbilitySystemComponent asc, ref bool foldout)
+        {
+            foldout = EditorGUILayout.Foldout(foldout, "Abilities", true, EditorStyles.foldoutHeader);
+            if (!foldout)
+            {
+                return;
+            }
+
+            EditorGUI.indentLevel++;
+            if (!Application.isPlaying)
+            {
+                EditorGUILayout.HelpBox("Granted Abilities are available in Play Mode.", MessageType.Info);
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            IReadOnlyList<GameplayAbilitySpec> specs = asc.GetActivatableAbilities();
+            if (specs.Count == 0)
+            {
+                EditorGUILayout.HelpBox("No granted Abilities.", MessageType.Info);
+            }
+
+            foreach (GameplayAbilitySpec spec in specs)
+            {
+                string abilityName = spec.Ability != null ? spec.Ability.name : "(null)";
+                string input = spec.InputID == GameplayAbilitySpec.NoInputID ? "-" : spec.InputID.ToString();
+                string label = $"{abilityName}  (Lv {spec.Level}, Input {input})";
+                EditorGUILayout.LabelField(label, spec.IsActive ? $"[Active] x{spec.ActiveCount}" : "", spec.IsActive ? EditorStyles.boldLabel : EditorStyles.label);
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
+        // ── Owned Tags ────────────────────────────────────────────────────────────
+
+        /// <summary>ASC가 지금 가진 태그(GE 부여·느슨한 태그 합산).</summary>
+        public static void DrawOwnedTags(AbilitySystemComponent asc, ref bool foldout)
+        {
+            foldout = EditorGUILayout.Foldout(foldout, "Owned Tags", true, EditorStyles.foldoutHeader);
+            if (!foldout)
+            {
+                return;
+            }
+
+            EditorGUI.indentLevel++;
+            if (!Application.isPlaying)
+            {
+                EditorGUILayout.HelpBox("Owned Tags are available in Play Mode.", MessageType.Info);
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            IReadOnlyList<GameplayTag> tags = asc.GetOwnedGameplayTags().GetGameplayTagArray();
+            if (tags.Count == 0)
+            {
+                EditorGUILayout.HelpBox("No owned Tags.", MessageType.Info);
+            }
+
+            foreach (GameplayTag tag in tags)
+            {
+                EditorGUILayout.LabelField(tag.ToString());
+            }
+
+            EditorGUI.indentLevel--;
         }
     }
 }
