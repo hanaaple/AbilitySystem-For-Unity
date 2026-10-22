@@ -32,7 +32,7 @@ namespace Game.Abilities
             }
 
             // v = √(h · -2g) 가 높이 h까지 올라가는 초기 속도 — 높이는 소유자의 jumpHeight 어트리뷰트, 중력은 캐릭터 이동 쪽
-            float jumpHeight = gameObjectInfo.AbilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.JumpHeight);
+            float jumpHeight = gameObjectInfo.AbilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.JumpHeight);
             float verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * character.Gravity);
             character.Launch(verticalVelocity, () => EndAbility(handle, gameObjectInfo, false));
         }

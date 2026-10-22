@@ -311,8 +311,8 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
       fieldName: jumpHeight
     operation: 5
     modifierMagnitude:
@@ -352,8 +352,8 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
       fieldName: dashDistance
     operation: 5
     modifierMagnitude:
@@ -393,8 +393,8 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
       fieldName: maxMana
     operation: 5
     modifierMagnitude:
@@ -434,8 +434,8 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
       fieldName: mana
     operation: 5
     modifierMagnitude:

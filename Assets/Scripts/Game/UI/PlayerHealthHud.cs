@@ -251,14 +251,14 @@ namespace Game.UI
         // 최대 마나가 없는 캐릭터면 줄째 숨긴다
         private void UpdateMana()
         {
-            float maxMana = abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.MaxMana);
+            float maxMana = abilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.MaxMana);
             _manaRow.style.display = maxMana > 0f ? DisplayStyle.Flex : DisplayStyle.None;
             if (maxMana <= 0f)
             {
                 return;
             }
 
-            float mana = abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.Mana);
+            float mana = abilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.Mana);
             _manaFill.style.width = Length.Percent(Mathf.Clamp01(mana / maxMana) * 100f);
             // 코스트를 낼 수 있는지 숫자로 바로 보이게 내림한다(29.6이면 30이 아니라 29)
             _manaLabel.text = $"{Mathf.FloorToInt(mana)} / {Mathf.CeilToInt(maxMana)}";

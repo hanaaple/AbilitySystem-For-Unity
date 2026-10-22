@@ -24,8 +24,8 @@ MonoBehaviour:
   stackPeriodResetPolicy: 0
   modifiers:
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
       fieldName: mana
     operation: 0
     modifierMagnitude:
