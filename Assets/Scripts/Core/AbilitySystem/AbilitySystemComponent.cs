@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;
@@ -12,8 +11,6 @@ namespace Core.AbilitySystem
 {
     public class AbilitySystemComponent : MonoBehaviour
     {
-        [SerializeField] private AttributeDefinitionAsset attributeInitData;
-
         private readonly Dictionary<Type, AttributeSet> _spawnedAttributeSets = new();
 
         // 활성 GE의 소유·수명·실행·집계 + 반응성 aggregator를 이 컨테이너가 맡는다. ASC는 공개 API 위임 래퍼와 AttributeSet 저장만 남긴다.
@@ -78,10 +75,6 @@ namespace Core.AbilitySystem
             _activatableAbilities.RegisterWithOwner(this);
 
             InitAbilityGameObjectInfo(gameObject, gameObject);
-
-            // AddSet은 AttributeSet 필드에 값을 직접 세팅할 뿐 CurrentValue 갱신 경로를 거치지 않아
-            // 초기화 중 AttributeChanged가 발화하지 않는다(불필요한 재평가 없음).
-            AddSet(attributeInitData);
         }
 
         private void Update()
@@ -522,41 +515,6 @@ namespace Core.AbilitySystem
 
             data = default;
             return false;
-        }
-
-        // ── 초기화 ────────────────────────────────────────────────────────────────
-
-        /// <summary>정의(SO)로 AttributeSet들을 생성해 등록한다. 같은 타입이 이미 있으면 건너뛴다(TryAdd). Awake 자체 초기화 외에 외부(예: BoxRoom)의 Source 캡처용 어트리뷰트 주입에도 쓴다.</summary>
-        public void AddSet(AttributeDefinitionAsset data)
-        {
-            if (data == null)
-            {
-                return;
-            }
-
-            foreach (AttributeSetDefinition attributeSetData in data.AttributeSets)
-            {
-                Type attributeSetType = attributeSetData.GetAttributeSetType();
-                if (attributeSetType == null || !typeof(AttributeSet).IsAssignableFrom(attributeSetType))
-                {
-                    Debug.LogWarning($"[ASC] '{attributeSetData.GetType().Name}' 에서 유효하지 않은 AttributeSet 타입.");
-                    continue;
-                }
-
-                var set = (AttributeSet)Activator.CreateInstance(attributeSetType);
-                foreach (AttributeFieldDefinition fieldData in attributeSetData.Attributes)
-                {
-                    FieldInfo field = attributeSetType.GetField(fieldData.FieldName, BindingFlags.Public | BindingFlags.Instance);
-                    if (field == null)
-                    {
-                        Debug.LogWarning($"[ASC] 필드 '{fieldData.FieldName}'을 {attributeSetType.Name}에서 찾을 수 없음.");
-                        continue;
-                    }
-                    field.SetValue(set, fieldData.Data);
-                }
-
-                AddSpawnedAttribute(set);
-            }
         }
 
         public bool HasAttributeSetForAttribute(GameplayAttributeHandle attributeHandle)
