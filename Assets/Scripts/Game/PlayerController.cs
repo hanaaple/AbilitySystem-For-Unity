@@ -1,4 +1,5 @@
 using Game.Abilities;
+using Game.Settings;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -32,10 +33,12 @@ namespace Game
         private void OnEnable()
         {
             _playerInputActions.Player.Enable();
+            SettingsMenu.OnOpenChanged += SetInputBlocked;
         }
 
         private void OnDisable()
         {
+            SettingsMenu.OnOpenChanged -= SetInputBlocked;
             _playerInputActions.Player.Disable();
         }
 
@@ -105,6 +108,19 @@ namespace Game
             }
 
             base.UnPossess();
+        }
+
+        // 맵을 끄면 눌려 있던 입력에 canceled가 와서 누르는 동안 유지하는 어빌리티·이동도 함께 풀린다
+        private void SetInputBlocked(bool isBlocked)
+        {
+            if (isBlocked)
+            {
+                _playerInputActions.Player.Disable();
+            }
+            else
+            {
+                _playerInputActions.Player.Enable();
+            }
         }
 
         private void OnMoveInput(InputAction.CallbackContext ctx)

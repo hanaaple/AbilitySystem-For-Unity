@@ -3,6 +3,7 @@
 > [TODO-BOARD.md](TODO-BOARD.md)에서 끝난 항목을 이리로 옮긴다. 최신이 위로. 규약은 [TODO-BOARD.harness.md](TODO-BOARD.harness.md).
 > 2026-10-20 유저 "TODO 완료된 것들은 파일 별개로 빼자" — 보드의 '✅ Done' 칸을 통째로 옮겨 이 파일을 만들었다(본문 그대로).
 
+- [x] **(code)** **설정 창이 열린 동안 플레이어 입력 막기** — 유저 "설정창이 열린 상태에서는 입력을 막아야지". `PlayerController`가 `SettingsMenu.OnOpenChanged`로 `Player` 입력 맵을 끄고 켠다 — 끌 때 눌려 있던 입력에 canceled가 와서 조준·달리기·이동도 풀린다(Input System `InputActionState.ResetActionState`). Play: 창 열림 중 조준 태그 빠짐·좌클릭 발동 없음, 닫은 뒤 공격 정상. _(2026-10-23 등록, 2026-10-23 완료)_
 - [x] **(code)** **`ResolvedGameplayAttribute` 이름 잔재** — `GameplayEffectSpec.cs` 경고 문자열을 `GameplayAttributeHandle`로. _(2026-08-21 등록, 2026-10-23 완료)_
 - [x] **(docs)** **architecture 문서를 코드에 맞춤** — ability-system 7개 문서를 코드 기준으로 갱신(GameplayAbility 구현 문서, 초기 스탯 GE, 훅 6종·저장값 조회, GE 스택·Component·질의·이벤트, 태그 연동·에디터). _(2026-10-20 등록, 2026-10-23 완료)_
 - [x] **(editor)** **ASC 인스펙터에 소유 태그 표시** — `AbilitySystemInspectorGUI`에 Owned Tags·Abilities 섹션(데모 작업 중 추가), 화면은 데모 4단계 확인에서 유저 "특별히 문제될 건 없어". _(2026-10-20 등록, 2026-10-23 완료)_
