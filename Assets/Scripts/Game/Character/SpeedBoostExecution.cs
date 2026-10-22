@@ -8,9 +8,13 @@ namespace Game.Character
     {
         private const float SpeedBonus = 10f;
 
-        private static readonly GameplayEffectAttributeCaptureDefinition A = new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.Health, AttributeCaptureSource.Target, true);
-        private static readonly GameplayEffectAttributeCaptureDefinition B = new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.Stamina, AttributeCaptureSource.Source, false);
-        public static readonly GameplayEffectAttributeCaptureDefinition[] defs = { A, B };
+        public static readonly GameplayEffectAttributeCaptureDefinition[] defs = {
+            new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.Health, AttributeCaptureSource.Target, true),
+            new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.Stamina, AttributeCaptureSource.Source, false)
+        };
+
+        private GameplayEffectAttributeCaptureDefinition A => defs[0];
+        private GameplayEffectAttributeCaptureDefinition B = defs[1];
 
         public override ReadOnlySpan<GameplayEffectAttributeCaptureDefinition> Defs()
         {
@@ -32,7 +36,7 @@ namespace Game.Character
             result = health + stamina;
             result = result * 0.01f + SpeedBonus;
 
-            Debug.Log($"{health} + {stamina} = {result}");
+            Debug.Log($"{health} * {stamina} * 0.01 + {SpeedBonus} = {result}");
 
             output.AddOutputModifier(CharacterAttributeSet.Speed, result, GameplayModifierOperation.AddBase);
         }

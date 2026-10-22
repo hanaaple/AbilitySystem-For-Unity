@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1636849b8700bf418f8f5e548b24470, type: 3}
+  m_Name: GA_FireZone
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Abilities.GameplayAbilityAsset
+  description: "\uBD88 \uAD6C\uAC04. \uC548\uC5D0 \uC788\uB294 \uB3D9\uC548 \uD070
+    \uD654\uC0C1 \uD53C\uD574(GE_FireZone_Inside)\uB97C \uAC78\uC5B4 \uB450\uACE0,
+    \uB098\uAC00\uBA74(\uAD6C\uAC04\uC774 \uCDE8\uC18C) \uC9C0\uC6B4 \uB4A4 3\uCD08\uC9DC\uB9AC
+    \uC595\uC740 \uD654\uC0C1(GE_FireZone_Afterburn)\uC744 \uAC74\uB2E4."
+  abilityTemplate:
+    rid: 8482666747409989895
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666747409989895
+      type: {class: ZoneAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      data:
+        instancingPolicy: 1
+        costGameplayEffect: {fileID: 0}
+        cooldownGameplayEffect: {fileID: 0}
+        assetTags:
+          _gameplayTags: []
+        cancelAbilitiesWithTag:
+          _gameplayTags: []
+        blockAbilitiesWithTag:
+          _gameplayTags: []
+        activationOwnedTags:
+          _gameplayTags: []
+        activationRequiredTags:
+          _gameplayTags: []
+        activationBlockedTags:
+          _gameplayTags: []
+        activationPolicy: 0
+        insideEffects:
+        - {fileID: 11400000, guid: e9cf655469eec9e439767e12bc3352a7, type: 2}
+        exitEffects:
+        - {fileID: 11400000, guid: ef0dcb99e7f8b0a49809caf21485ec80, type: 2}

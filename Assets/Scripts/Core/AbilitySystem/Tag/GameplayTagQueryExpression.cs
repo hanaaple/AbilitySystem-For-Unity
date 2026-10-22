@@ -14,12 +14,11 @@ namespace Core.AbilitySystem.Tag
         public GameplayTagQueryExprType ExprType;
 
         /// <summary>하위 식 목록. <see cref="UsesExprSet"/>인 유형에서만 쓴다.</summary>
-        public List<GameplayTagQueryExpression> ExprSet = new List<GameplayTagQueryExpression>();
+        public readonly List<GameplayTagQueryExpression> ExprSet = new List<GameplayTagQueryExpression>();
 
         /// <summary>태그 목록. <see cref="UsesTagSet"/>인 유형에서만 쓴다.</summary>
-        public List<GameplayTag> TagSet = new List<GameplayTag>();
+        public readonly List<GameplayTag> TagSet = new List<GameplayTag>();
 
-        /// <summary>태그 중 하나라도 대상에 있으면 매칭되는 식으로 설정한다.</summary>
         /// <remarks>UE: FGameplayTagQueryExpression::AnyTagsMatch</remarks>
         public GameplayTagQueryExpression AnyTagsMatch()
         {
@@ -27,7 +26,6 @@ namespace Core.AbilitySystem.Tag
             return this;
         }
 
-        /// <summary>태그를 대상이 모두 가지면 매칭되는 식으로 설정한다.</summary>
         /// <remarks>UE: FGameplayTagQueryExpression::AllTagsMatch</remarks>
         public GameplayTagQueryExpression AllTagsMatch()
         {
@@ -35,7 +33,6 @@ namespace Core.AbilitySystem.Tag
             return this;
         }
 
-        /// <summary>태그가 하나도 대상에 없으면 매칭되는 식으로 설정한다.</summary>
         /// <remarks>UE: FGameplayTagQueryExpression::NoTagsMatch</remarks>
         public GameplayTagQueryExpression NoTagsMatch()
         {

@@ -8,6 +8,8 @@ namespace Core.AbilitySystem.Editor
     {
         private bool _showRuntimeAttributes = true;
         private bool _showActiveEffects = true;
+        private bool _showAbilities = true;
+        private bool _showOwnedTags = true;
 
         public override bool RequiresConstantRepaint()
         {
@@ -30,6 +32,10 @@ namespace Core.AbilitySystem.Editor
             AbilitySystemInspectorGUI.DrawRuntimeAttributes(asc, ref _showRuntimeAttributes);
             EditorGUILayout.Space(4f);
             AbilitySystemInspectorGUI.DrawActiveEffects(asc, ref _showActiveEffects);
+            EditorGUILayout.Space(4f);
+            AbilitySystemInspectorGUI.DrawAbilities(asc, ref _showAbilities);
+            EditorGUILayout.Space(4f);
+            AbilitySystemInspectorGUI.DrawOwnedTags(asc, ref _showOwnedTags);
         }
     }
 }

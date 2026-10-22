@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1636849b8700bf418f8f5e548b24470, type: 3}
+  m_Name: GA_Shield
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Abilities.GameplayAbilityAsset
+  description: "\uC2E4\uB4DC(\uC544\uC774\uD15C\uC73C\uB85C \uBC1C\uB3D9). 10\uCD08
+    \uB3D9\uC548 \uC2E4\uB4DC 100\uC744 \uAC78\uACE0 Status.Buff.Shielded \uD0DC\uADF8\uB97C
+    \uBD99\uC778\uB2E4. \uC2E4\uB4DC\uAC00 \uD53C\uD574\uB85C 0\uC774 \uB418\uBA74
+    \uBC14\uB85C \uAE68\uC9C0\uACE0, \uC2DC\uAC04\uC774 \uB2E4 \uB418\uBA74 \uB0A8\uC740
+    \uC2E4\uB4DC\uB97C \uBE44\uC6B4\uB2E4."
+  abilityTemplate:
+    rid: 8482666741645705639
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666741645705639
+      type: {class: ShieldAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      data:
+        instancingPolicy: 1
+        costGameplayEffect: {fileID: 0}
+        cooldownGameplayEffect: {fileID: 0}
+        assetTags:
+          _gameplayTags: []
+        cancelAbilitiesWithTag:
+          _gameplayTags: []
+        blockAbilitiesWithTag:
+          _gameplayTags: []
+        activationOwnedTags:
+          _gameplayTags:
+          - name:
+              name: Status.Buff.Shielded
+        activationRequiredTags:
+          _gameplayTags: []
+        activationBlockedTags:
+          _gameplayTags: []
+        activationPolicy: 0
+        scalesWithAttackSpeed: 0
+        shieldAmountEffect: {fileID: 11400000, guid: 747b19855dcb20442aff311b3c015998, type: 2}
+        durationEffect: {fileID: 11400000, guid: 8427eb801befbce429fe6d29dadc90bd, type: 2}
+        clearEffect: {fileID: 11400000, guid: aff537604678dc7448701e4eea3f2e1d, type: 2}

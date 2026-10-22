@@ -14,7 +14,7 @@ namespace Test
 {
     /// <summary>
     /// PlayMode에서 ASC가 붙은 GameObject의 복제(Instantiate)·파괴가 UE와 같은 결과를 내는지 본다 — Awake·OnDestroy는 Play 중에만 불려 에디터 셀프체크로는 못 본다.
-    /// C: 복제 — 설정(attributeInitData)은 따라가고, 실행 중 상태(현재 값·어빌리티·GE·태그)는 따라가지 않는다.
+    /// C: 복제 — 설정(소유 컴포넌트의 초기 스탯 GE)은 따라가고, 실행 중 상태(현재 값·어빌리티·GE·태그)는 따라가지 않는다.
     /// D: 파괴 — 활성 어빌리티는 모두 취소되고, 부여된 어빌리티는 모두 해제된다.
     /// X: ASC 간 연결 — 라이브 캡처로 이어진 상대 ASC가 파괴돼도 남은 쪽이 에러 없이 돈다.
     /// 정의는 리플렉션으로 메모리에 만든다(에셋 파일 없음). Play 중인 씬에 이 컴포넌트만 붙이면 → <c>[LifecyclePlayMode Self-Check] passed N / failed N</c>.
@@ -61,9 +61,12 @@ namespace Test
 
         private IEnumerator CloneKeepsConfigOnly(GameplayTag looseTag)
         {
-            AttributeDefinitionAsset initData = MakeInitData(("stamina", 50f), ("speed", 10f));
-            AbilitySystemComponent source = MakeAsc("Lifecycle_Source", initData);
-            Check("C-0 원본은 attributeInitData로 초기화(Stamina 50, Speed 10)", Approx(Stamina(source), 50f) && Approx(Speed(source), 10f));
+            GameplayEffectAsset defaultAttributes = MakeEffect(GameplayEffectType.Instant, MakeModifier(CharacterAttributeSet.Stamina, 50f), MakeModifier(CharacterAttributeSet.Speed, 10f));
+            AbilitySystemComponent source = MakeDummy("Lifecycle_Source", defaultAttributes);
+
+            // 초기 스탯 GE는 Start에서 적용된다
+            yield return null;
+            Check("C-0 원본은 초기 스탯 GE로 초기화(Stamina 50, Speed 10)", Approx(Stamina(source), 50f) && Approx(Speed(source), 10f));
 
             source.SetAttributeBaseValue(CharacterAttributeSet.Stamina, 33f);
             source.AddLooseGameplayTag(looseTag);
@@ -73,11 +76,12 @@ namespace Test
             GameObject cloneObject = Instantiate(source.gameObject);
             cloneObject.name = "Lifecycle_Clone";
             var clone = cloneObject.GetComponent<AbilitySystemComponent>();
+            yield return null;
 
             Check("C-1 복제본 어트리뷰트는 원본 현재값(33·15)이 아니라 설정 초기값(Stamina 50, Speed 10)", Approx(Stamina(clone), 50f) && Approx(Speed(clone), 10f) && Approx(Stamina(source), 33f) && Approx(Speed(source), 15f));
             Check("C-2 복제본엔 어빌리티·태그·GE가 없음", clone.GetActivatableAbilities().Count == 0 && clone.GetTagCount(looseTag) == 0 && source.GetActivatableAbilities().Count == 1 && source.GetTagCount(looseTag) == 1);
             Check("C-3 복제본 GameObject 정보는 자기 자신(Owner·Avatar·ASC)", clone.AbilityGameObjectInfo.OwnerGameObject == cloneObject && clone.AbilityGameObjectInfo.AvatarGameObject == cloneObject && clone.AbilityGameObjectInfo.AbilitySystemComponent == clone);
-            Check("C-4 설정(attributeInitData)은 같은 에셋을 가리킴", GetPrivateField(clone, "attributeInitData") == (object)initData);
+            Check("C-4 설정(초기 스탯 GE)은 같은 에셋을 가리킴", GetPrivateField(cloneObject.GetComponent<TrainingDummy>(), "defaultAttributes") == (object)defaultAttributes);
 
             clone.SetAttributeBaseValue(CharacterAttributeSet.Stamina, 1f);
             clone.ApplyGameplayEffectToSelf(MakeEffect(GameplayEffectType.Infinite, MakeModifier(CharacterAttributeSet.Speed, 100f)));
@@ -93,7 +97,7 @@ namespace Test
         private IEnumerator DestroyCancelsAndClearsAbilities()
         {
             LingeringAbility.Log.Clear();
-            AbilitySystemComponent asc = MakeAsc("Lifecycle_Destroy", null);
+            AbilitySystemComponent asc = MakeAsc("Lifecycle_Destroy");
 
             GameplayAbilitySpecHandle actorHandle = asc.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "Actor" }, GameplayAbilityInstancingPolicy.InstancedPerGameObject)));
             GameplayAbilitySpecHandle execHandle = asc.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "Exec" })));
@@ -117,8 +121,8 @@ namespace Test
 
         private IEnumerator DestroyedPeerIsDroppedFromLiveCapture()
         {
-            AbilitySystemComponent source = MakeAsc("Lifecycle_LiveSource", null);
-            AbilitySystemComponent target = MakeAsc("Lifecycle_LiveTarget", null);
+            AbilitySystemComponent source = MakeAsc("Lifecycle_LiveSource");
+            AbilitySystemComponent target = MakeAsc("Lifecycle_LiveTarget");
             source.SetAttributeBaseValue(CharacterAttributeSet.Health, 100f);
 
             // 대상 Speed += Source Health(라이브) — Source가 바뀌면 대상 GE가 다시 계산된다
@@ -185,43 +189,23 @@ namespace Test
             }
         }
 
+        private static AbilitySystemComponent MakeAsc(string name)
+        {
+            var asc = new GameObject(name).AddComponent<AbilitySystemComponent>();
+            asc.AddSpawnedAttribute(new CharacterAttributeSet());
+            return asc;
+        }
+
         // 비활성으로 만들어 Awake 전에 설정을 넣고 켠다 — 씬에 놓인 오브젝트가 직렬화된 설정으로 깨어나는 것과 같은 순서.
-        private static AbilitySystemComponent MakeAsc(string name, AttributeDefinitionAsset initData)
+        private static AbilitySystemComponent MakeDummy(string name, GameplayEffectAsset defaultAttributes)
         {
             var go = new GameObject(name);
             go.SetActive(false);
             var asc = go.AddComponent<AbilitySystemComponent>();
-            SetPrivateField(asc, "attributeInitData", initData);
+            var dummy = go.AddComponent<TrainingDummy>();
+            SetPrivateField(dummy, "defaultAttributes", defaultAttributes);
             go.SetActive(true);
-
-            if (initData == null)
-            {
-                asc.AddSpawnedAttribute(new CharacterAttributeSet());
-            }
-
             return asc;
-        }
-
-        private AttributeDefinitionAsset MakeInitData(params (string FieldName, float BaseValue)[] fields)
-        {
-            var attributes = new List<AttributeFieldDefinition>();
-            foreach ((string fieldName, float baseValue) in fields)
-            {
-                var field = new AttributeFieldDefinition();
-                SetPrivateField(field, "fieldName", fieldName);
-                SetPrivateField(field, "baseValue", baseValue);
-                attributes.Add(field);
-            }
-
-            var setDefinition = new AttributeSetDefinition();
-            SetPrivateField(setDefinition, "attributeSetTypeName", typeof(CharacterAttributeSet).AssemblyQualifiedName);
-            SetPrivateField(setDefinition, "attributes", attributes);
-
-            var initData = ScriptableObject.CreateInstance<AttributeDefinitionAsset>();
-            SetPrivateField(initData, "attributeSets", new List<AttributeSetDefinition> { setDefinition });
-
-            _created.Add(initData);
-            return initData;
         }
 
         private GameplayAbilityAsset MakeAbilityAsset(GameplayAbility template, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerExecution)
@@ -235,11 +219,11 @@ namespace Test
             return asset;
         }
 
-        private GameplayEffectAsset MakeEffect(GameplayEffectType type, GameplayModifier modifier)
+        private GameplayEffectAsset MakeEffect(GameplayEffectType type, params GameplayModifier[] modifiers)
         {
             var ge = ScriptableObject.CreateInstance<GameplayEffectAsset>();
             SetPrivateField(ge, "type", type);
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier> { modifier });
+            SetPrivateField(ge, "modifiers", new List<GameplayModifier>(modifiers));
             ge.OnGameplayEffectChanged();
 
             _created.Add(ge);

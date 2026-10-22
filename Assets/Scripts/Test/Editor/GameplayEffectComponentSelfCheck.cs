@@ -74,6 +74,7 @@ namespace Test.Editor
                 RunTargetTagRequirementsChecks(asc, assetTags, Check);
                 RunEffectQueryChecks(asc, assetTags, Check);
                 RunRemoveOtherChecks(asc, assetTags, Check);
+                RunStackingChecks(asc, grantedTag, Check);
             }
             catch (Exception e)
             {
@@ -335,6 +336,103 @@ namespace Test.Editor
             SetBase(asc, health, 100f);
 
             UnityEngine.Object.DestroyImmediate(periodic);
+        }
+
+        // ── S. GE 스택(스택 수 1 — 같은 GE를 다시 걸면 새로 만들지 않고 갱신) ──
+        private static void RunStackingChecks(AbilitySystemComponent asc, GameplayTag grantedTag, Action<string, bool> check)
+        {
+            ActiveGameplayEffectsContainer container = GetContainer(asc);
+            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameObject otherGo = new GameObject("GameplayEffectComponentSelfCheck_OtherSource");
+            try
+            {
+                AbilitySystemComponent other = otherGo.AddComponent<AbilitySystemComponent>();
+                EnsureInitialized(other);
+                AddCharacterSet(other, 100f);
+
+                GameplayEffectAsset none = MakeStackingEffect(grantedTag, health, GameplayEffectStackingType.None);
+                ActiveGameplayEffectHandle n1 = asc.ApplyGameplayEffectToSelf(none);
+                ActiveGameplayEffectHandle n2 = asc.ApplyGameplayEffectToSelf(none);
+                check("S-1 스택 None: 두 번 걸면 활성 GE 2개", !n1.Equals(n2) && CountActive(asc, none) == 2);
+                asc.RemoveActiveGameplayEffect(n1);
+                asc.RemoveActiveGameplayEffect(n2);
+
+                GameplayEffectAsset byTarget = MakeStackingEffect(grantedTag, health, GameplayEffectStackingType.AggregateByTarget);
+                ActiveGameplayEffectHandle t1 = asc.ApplyGameplayEffectToSelf(byTarget);
+                AdvanceTime(container, 3f);
+                ActiveGameplayEffectHandle t2 = other.ApplyGameplayEffectToTarget(byTarget, asc);
+                check("S-2 ByTarget: 다른 시전자가 다시 걸어도 같은 핸들·활성 1개", t1.Equals(t2) && CountActive(asc, byTarget) == 1);
+                check("S-3 Refresh: 다시 건 뒤 남은 시간이 처음(4초)으로", Approx(asc.GetActiveGameplayEffect(t1).GetTimeRemaining(), 4f));
+                check("S-4 modifier·부여 태그는 한 번만(Current 110, 태그 1)", Approx(asc.GetAttributeCurrentValue(health), 110f) && asc.GetTagCount(grantedTag) == 1);
+                AdvanceTime(container, 3.5f);
+                check("S-5 처음 적용 기준(6.5초)이 아니라 갱신 기준이라 아직 걸려 있음", asc.GetActiveGameplayEffect(t1) != null);
+                AdvanceTime(container, 1f);
+                check("S-6 갱신 기준 4초가 지나면 끝남 — modifier·태그 거둠", asc.GetActiveGameplayEffect(t1) == null && Approx(asc.GetAttributeCurrentValue(health), 100f) && asc.GetTagCount(grantedTag) == 0);
+
+                GameplayEffectAsset neverRefresh = MakeStackingEffect(grantedTag, health, GameplayEffectStackingType.AggregateByTarget);
+                SetPrivateField(neverRefresh, "stackDurationRefreshPolicy", GameplayEffectStackingDurationPolicy.NeverRefresh);
+                ActiveGameplayEffectHandle r1 = asc.ApplyGameplayEffectToSelf(neverRefresh);
+                AdvanceTime(container, 3f);
+                asc.ApplyGameplayEffectToSelf(neverRefresh);
+                check("S-7 NeverRefresh: 다시 걸어도 남은 시간 그대로(1초)", Approx(asc.GetActiveGameplayEffect(r1).GetTimeRemaining(), 1f) && CountActive(asc, neverRefresh) == 1);
+                asc.RemoveActiveGameplayEffect(r1);
+
+                GameplayEffectAsset bySource = MakeStackingEffect(grantedTag, health, GameplayEffectStackingType.AggregateBySource);
+                ActiveGameplayEffectHandle s1 = asc.ApplyGameplayEffectToSelf(bySource);
+                ActiveGameplayEffectHandle s2 = other.ApplyGameplayEffectToTarget(bySource, asc);
+                ActiveGameplayEffectHandle s3 = other.ApplyGameplayEffectToTarget(bySource, asc);
+                check("S-8 BySource: 시전자가 다르면 따로, 같으면 합침(활성 2개)", !s1.Equals(s2) && s2.Equals(s3) && CountActive(asc, bySource) == 2);
+                asc.RemoveActiveGameplayEffect(s1);
+                asc.RemoveActiveGameplayEffect(s2);
+
+                GameplayEffectAsset periodic = MakePeriodicEffect(GameplayEffectType.Infinite, Array.Empty<GameplayEffectComponent>(), MakeModifier(health, 10f));
+                SetPrivateField(periodic, "stackingType", GameplayEffectStackingType.AggregateByTarget);
+                SetBase(asc, health, 100f);
+                ActiveGameplayEffectHandle p1 = asc.ApplyGameplayEffectToSelf(periodic);
+                AdvanceTime(container, 0.5f);
+                asc.ApplyGameplayEffectToSelf(periodic);
+                check("S-9 주기 리셋: 다시 걸면 적용 시 실행을 또 함(Base 120)", Approx(asc.GetAttributeBaseValue(health), 120f));
+                AdvanceTime(container, 0.6f);
+                check("S-10 리셋한 뒤 1초가 안 지나 주기 실행 없음(Base 120)", Approx(asc.GetAttributeBaseValue(health), 120f));
+                AdvanceTime(container, 0.5f);
+                check("S-11 리셋 기준 1초가 지나 주기 실행(Base 130)", Approx(asc.GetAttributeBaseValue(health), 130f));
+                asc.RemoveActiveGameplayEffect(p1);
+                SetBase(asc, health, 100f);
+
+                UnityEngine.Object.DestroyImmediate(none);
+                UnityEngine.Object.DestroyImmediate(byTarget);
+                UnityEngine.Object.DestroyImmediate(neverRefresh);
+                UnityEngine.Object.DestroyImmediate(bySource);
+                UnityEngine.Object.DestroyImmediate(periodic);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(otherGo);
+            }
+        }
+
+        // 4초짜리 Duration GE — modifier(health +10)와 부여 태그 하나
+        private static GameplayEffectAsset MakeStackingEffect(GameplayTag grantedTag, GameplayAttributeHandle health, GameplayEffectStackingType stackingType)
+        {
+            GameplayEffectAsset ge = MakePersistentEffect(GameplayEffectType.Duration, Array.Empty<GameplayEffectComponent>(), MakeModifier(health, 10f));
+            GrantTag(ge, grantedTag);
+            SetPrivateField(ge, "duration", 4f);
+            SetPrivateField(ge, "stackingType", stackingType);
+            return ge;
+        }
+
+        private static int CountActive(AbilitySystemComponent asc, GameplayEffectAsset definition)
+        {
+            int count = 0;
+            foreach (ActiveGameplayEffect active in asc.GetActiveGameplayEffects())
+            {
+                if (active.Spec.Definition == definition)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private readonly struct AssetTestTags

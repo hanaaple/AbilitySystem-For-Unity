@@ -1,6 +1,6 @@
 # _parked — 보관 (비활성)
 
-GAS(Ability System) 데모에 집중하기 위해 **잠시 치워둔 비-GAS 인게임 문서**. 삭제가 아니라 비활성 보관이며, 필요할 때 원위치로 되돌린다.
+GAS(Ability System) 데모에 집중하기 위해 **잠시 치워둔 비-GAS 인게임 문서**와, 접어 둔 포트폴리오 wiki. 삭제가 아니라 비활성 보관이며, 필요할 때 원위치로 되돌린다.
 
 ## 원칙
 - **현재 작업(GAS 데모)에선 열지 않는다.** 되돌릴 때만 참조.
@@ -15,7 +15,8 @@ GAS(Ability System) 데모에 집중하기 위해 **잠시 치워둔 비-GAS 인
 | `project/architecture/controller-character.md` | 컨트롤러-캐릭터 분리(Possession) |
 | `project/architecture/item-equipment.md` | ItemSystem / EquipmentSystem |
 | `project/architecture/overview.md` | 비-GAS 아키텍처 개요(전체 구조) — 활성 인덱스에서 분리 |
-| `project/design.md` | 전체 게임 기획(컨셉·핵심기획·씬·입력) — 활성 GAS 데모 방향에서 분리 |
+| `project/design.md` | 전체 게임 기획(컨셉·핵심기획·씬·입력) — 활성 GAS 데모 방향에서 분리. 활성 개발 방향은 2026-10-23 `dev/design.md`로 옮김 |
+| `project/wiki/` | 포트폴리오 wiki(정적 HTML) 전체 — 2026-10-23 유저 "가망이 없다 아카이빙하고 빼줘"로 보관. 그 전에 따로 보관해 둔 비-GAS 섹션 규약은 `HARNESS.game-sections.md` |
 | `agent/feature/feature-list.md` | item-system feature 대시보드 행 |
 | `agent/feature/item-system/` | 아이템·인벤토리·장비 feature 문서(폴더 통째, 내부는 이미 archive) |
 | `agent/TODO-BOARD.md` | TODO-BOARD의 게임 쪽(아이템·캐릭터·아트) 항목 — 2026-10-20 보드에서 분리. 되돌릴 땐 파일째가 아니라 항목을 원래 칸에 다시 붙인다 |

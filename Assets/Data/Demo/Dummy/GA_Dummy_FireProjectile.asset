@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1636849b8700bf418f8f5e548b24470, type: 3}
+  m_Name: GA_Dummy_FireProjectile
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Abilities.GameplayAbilityAsset
+  description: "\uD5C8\uC218\uC544\uBE44\uAC00 \uC77C\uC815 \uAC04\uACA9\uC73C\uB85C
+    \uC3D8\uB294 \uD22C\uC0AC\uCCB4. \uB9DE\uC73C\uBA74 GE_Damage_Attack\uC744 \uAC74\uB2E4."
+  abilityTemplate:
+    rid: 8482666728725676146
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666728725676146
+      type: {class: FireProjectileAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      data:
+        instancingPolicy: 1
+        costGameplayEffect: {fileID: 0}
+        cooldownGameplayEffect: {fileID: 11400000, guid: 26aa18a58f7962d48b9229996d37ec2d, type: 2}
+        assetTags:
+          _gameplayTags: []
+        cancelAbilitiesWithTag:
+          _gameplayTags: []
+        blockAbilitiesWithTag:
+          _gameplayTags: []
+        activationOwnedTags:
+          _gameplayTags: []
+        activationRequiredTags:
+          _gameplayTags: []
+        activationBlockedTags:
+          _gameplayTags: []
+        activationPolicy: 0
+        scalesWithAttackSpeed: 1
+        projectilePrefab: {fileID: 814049473957958779, guid: 5eb122fd02493d443a08c5d88863decd, type: 3}
+        hitEffect: {fileID: 11400000, guid: 4617c5e559ea1a3469213a35826bb009, type: 2}
+        launchEffect: {fileID: 0}
+        spreadHalfAngle: 0
+        spreadExponent: 1
+        preciseAimTags:
+          _gameplayTags: []

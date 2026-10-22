@@ -119,7 +119,6 @@ namespace Core.AbilitySystem.Tag
         }
 
         /// <summary>이 태그가 대상 태그이거나 그 자식인지. <c>"A.1".MatchesTag("A")</c>는 true, 반대는 false.</summary>
-        /// O(1)
         /// <remarks>UE: FGameplayTag::MatchesTag</remarks>
         public bool MatchesTag(GameplayTag tagToCheck)
         {

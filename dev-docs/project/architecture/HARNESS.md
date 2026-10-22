@@ -3,7 +3,7 @@
 `dev-docs/project/architecture/`(하위 폴더 포함)에 적용. 인덱스는 [overview.md](overview.md).
 
 ## 작성 규약
-- **문서 상단에 `> **최종 갱신:** YYYY-MM-DD (KST)` 마커**를 둔다 — 이전 업데이트 여부(낡음) 확인용. 형식·갱신 시점·값·git fallback → docs.harness.md '날짜 작성 방법'.
+- **문서 상단에 `> **최종 갱신:** YYYY-MM-DD (KST)` 마커**를 둔다 — 이전 업데이트 여부(낡음) 확인용. 형식·갱신 시점·값·git fallback → docs-harness.md '날짜 작성 방법'.
 - 개념·역할·시스템 간 관계를 쓴다.
 - 원본(UE 등) 대비 **채택/생략·변경점**을 밝힌다 — "무엇이 다른가" 위주. 설계 이유는 사실로 짧게(정당화 수사는 아래 '서술 규율').
 - 흐름·생명주기·재계산은 다이어그램/표로 남긴다.
@@ -24,7 +24,7 @@
 ## 문서 구조
 
 - **상위:** [ability-system/overview.md](ability-system/overview.md) — 개요·인덱스. 하위 심화 문서로 진입하는 허브.
-- **하위(개별 심화):** `attribute` · `gameplay-effect` · `aggregator` · `capture` · `gameplay-ability`(계획). 각 문서는 다이어그램 + 진입점 + UE↔Unity 대응을 갖춘다.
+- **하위(개별 심화):** `attribute` · `gameplay-effect` · `aggregator` · `capture` · `gameplay-tag` · `gameplay-ability`. 각 문서는 다이어그램 + 진입점 + UE↔Unity 대응을 갖춘다.
 - 새 개념이 여러 문서에 흩어지면 **전용 문서로 분리**하고 소비처는 링크로 잇는다(하위 문서에 억지로 끼워넣지 않는다). 예: 캡처 → `capture.md`.
 
 ### 검토 (미착수)

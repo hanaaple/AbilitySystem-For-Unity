@@ -1,9 +1,9 @@
 # ability-system — feature 전용 하네스
 
-`ability-system` 그룹(attribute · gameplay-effect · gameplay-ability) 작업 시 지켜야 할 설계 방향·불변조건.
+`ability-system` 그룹(attribute · gameplay-effect · gameplay-tag · gameplay-ability · aggregator) 작업 시 지켜야 할 설계 방향·불변조건.
 진행 상황은 각 하위 feature의 `progress.md`, 구조 설명은 `dev-docs/project/architecture/ability-system/`에 있다.
 
-> 최종 갱신: 2026-08-04 (KST)
+> 최종 갱신: 2026-10-23 (KST)
 
 ---
 

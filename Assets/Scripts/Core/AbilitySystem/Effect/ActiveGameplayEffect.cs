@@ -10,7 +10,7 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>적용된 시각(컨테이너 시계 <see cref="ActiveGameplayEffectsContainer.GetWorldTime"/> 기준).</summary>
         /// <remarks>UE: FActiveGameplayEffect::StartWorldTime</remarks>
-        public float StartWorldTime { get; }
+        public float StartWorldTime { get; internal set; }
 
         /// <summary>Duration 타입일 때만 유효. 남은 지속 시간(초).</summary>
         public float RemainingDuration { get; set; }
@@ -35,16 +35,16 @@ namespace Core.AbilitySystem.Effect
             Owner = owner;
             StartWorldTime = startWorldTime;
             LastTickWorldTime = startWorldTime;
-            RemainingDuration = spec.Definition.Duration;
+            RemainingDuration = spec.Duration;
             PeriodTimer = 0f;
         }
 
-        /// <summary>정의에 적힌 지속시간. Duration 타입이 아니면 <see cref="GameplayEffectConstants.InfiniteDuration"/>.</summary>
+        /// <summary>Spec의 지속시간. Duration 타입이 아니면 <see cref="GameplayEffectConstants.InfiniteDuration"/>.</summary>
         /// <remarks>UE: FActiveGameplayEffect::GetDuration</remarks>
         public float GetDuration()
         {
             GameplayEffectAsset def = Spec.Definition;
-            return def.Type == GameplayEffectType.Duration ? def.Duration : GameplayEffectConstants.InfiniteDuration;
+            return def.Type == GameplayEffectType.Duration ? Spec.Duration : GameplayEffectConstants.InfiniteDuration;
         }
 
         /// <remarks>UE: FActiveGameplayEffect::GetTimeRemaining</remarks>
