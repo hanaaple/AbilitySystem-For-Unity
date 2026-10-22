@@ -2,7 +2,7 @@
 
 ## 컴파일 확인 — Unity 없이 (에이전트용)
 
-Unity 에디터를 띄우지 않고 C# **컴파일 에러만** 잡는 방법이다. Unity가 마지막으로 컴파일할 때 남긴 컴파일러 응답 파일(`.rsp`)을 복사해 Unity에 들어 있는 Roslyn으로 다시 돌린다. 에디터 동작·런타임 동작은 확인하지 못한다(그건 유저가 에디터에서 확인 — CLAUDE.md '빌드·검증').
+Unity 에디터를 띄우지 않고 C# **컴파일 에러만** 잡는 방법이다. Unity가 마지막으로 컴파일할 때 남긴 컴파일러 응답 파일(`.rsp`)을 복사해 Unity에 들어 있는 Roslyn으로 다시 돌린다. 에디터 동작·런타임 동작은 확인하지 못한다(그건 Unity MCP로 — [agent/test-harness.md](../agent/test-harness.md)).
 
 ### 재료
 
@@ -62,6 +62,11 @@ Claude Code에서 Unity 에디터를 직접 조작하기 위한 연동. 현재�
 
 세션에 도구가 안 보이면 = 에디터 미연결이거나 세션 재시작 전이다.
 
+### MCP에서 막히거나 조용히 틀리는 것
+
+- **씬을 다시 열면 그 전에 불러 둔 에셋 객체가 무효가 된다.** `EditorSceneManager.OpenScene` 앞에서 `LoadAssetAtPath`로 받아 둔 에셋을 그 뒤 직렬화 필드에 넣으면 에러 없이 `{fileID: 0}`으로 저장된다(2026-10-22). 씬을 연 **뒤에** 다시 불러 쓰고, 저장한 씬 파일에서 참조를 확인한다.
+- **사용자 상호작용이 걸린 API는 "User interactions are not supported"로 거부된다.** 확인된 것: `AssetDatabase.DeleteAsset`(2026-10-21), `EditorSceneManager.SaveScene(scene, path, saveAsCopy: true)`(2026-10-22). 지우기는 디스크에서 파일·meta를 지운 뒤 `AssetDatabase.Refresh()`.
+
 ### 에셋 배선 — MCP 한계와 YAML 직접 편집
 
 에셋/씬/프리팹의 **일부 값은 MCP 도구로 안 붙는다**(시도해도 실패하거나 조용히 `fileID: 0`). 아래는 **처음부터 `.asset`/`.prefab`/`.unity` YAML을 직접 Edit**하는 게 낭비가 적다.
@@ -90,3 +95,7 @@ Claude Code에서 Unity 에디터를 직접 조작하기 위한 연동. 현재�
 **조합:** 자산/GameObject **생성은 MCP**(guid·meta 자동), **세부 값 배선은 YAML**. 편집 후 에셋 refresh — 스크립트 추가/삭제는 도메인 리로드로 연결이 끊길 수 있다(정상, 재시도).
 
 > **에셋별 오소링 레시피:** GameplayEffect 에셋은 → [architecture/ability-system/gameplay-effect.md](architecture/ability-system/gameplay-effect.md) "에셋 생성·세팅".
+
+### Play 테스트
+
+Unity MCP로 셀프체크·PlayMode 테스트·Play 확인을 돌리는 방법은 → [agent/test-harness.md](../agent/test-harness.md).
