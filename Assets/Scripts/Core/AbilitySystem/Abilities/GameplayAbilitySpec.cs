@@ -34,6 +34,10 @@ namespace Core.AbilitySystem.Abilities
         /// <summary>이 어빌리티를 부여한 출처(예: 장비 아이템). 없으면 null.</summary>
         public UnityEngine.Object SourceObject { get; }
 
+        /// <summary>이 Spec에 묶인 입력이 지금 눌려 있는지.</summary>
+        /// <remarks>UE: FGameplayAbilitySpec::InputPressed</remarks>
+        public bool InputPressed { get; internal set; }
+
         /// <summary>현재 활성화 횟수.</summary>
         public int ActiveCount { get; internal set; }
 

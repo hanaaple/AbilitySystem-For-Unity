@@ -829,6 +829,88 @@ namespace Core.AbilitySystem
             return true;
         }
 
+        /// <summary>입력이 눌렸다. InputID가 같은 Spec마다 활성이면 어빌리티에 눌림을 전달하고, 비활성이면 발동을 시도한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilityLocalInputPressed</remarks>
+        public void AbilityLocalInputPressed(int inputID)
+        {
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    if (spec.InputID != inputID || spec.Ability == null)
+                    {
+                        continue;
+                    }
+
+                    spec.InputPressed = true;
+                    if (spec.IsActive)
+                    {
+                        AbilitySpecInputPressed(spec);
+                    }
+                    else
+                    {
+                        TryActivateAbility(spec.Handle);
+                    }
+                }
+            }
+        }
+
+        /// <summary>입력이 떼졌다. InputID가 같은 Spec 중 활성인 것의 어빌리티에 뗌을 전달한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilityLocalInputReleased</remarks>
+        public void AbilityLocalInputReleased(int inputID)
+        {
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    if (spec.InputID != inputID)
+                    {
+                        continue;
+                    }
+
+                    spec.InputPressed = false;
+                    if (spec.IsActive)
+                    {
+                        AbilitySpecInputReleased(spec);
+                    }
+                }
+            }
+        }
+
+        /// <summary>Spec의 입력을 눌림으로 바꾸고, 활성이면 인스턴스들에 전달한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilitySpecInputPressed</remarks>
+        public virtual void AbilitySpecInputPressed(GameplayAbilitySpec spec)
+        {
+            spec.InputPressed = true;
+            if (!spec.IsActive)
+            {
+                return;
+            }
+
+            // 전달받은 어빌리티가 그 자리에서 끝나면 Per Execution 인스턴스가 목록에서 빠지므로 복사본을 돈다.
+            foreach (GameplayAbility instance in new List<GameplayAbility>(spec.GetAbilityInstances()))
+            {
+                instance.InputPressed(spec.Handle, AbilityGameObjectInfo);
+            }
+        }
+
+        /// <summary>Spec의 입력을 뗌으로 바꾸고, 활성이면 인스턴스들에 전달한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilitySpecInputReleased</remarks>
+        public virtual void AbilitySpecInputReleased(GameplayAbilitySpec spec)
+        {
+            spec.InputPressed = false;
+            if (!spec.IsActive)
+            {
+                return;
+            }
+
+            // 전달받은 어빌리티가 그 자리에서 끝나면 Per Execution 인스턴스가 목록에서 빠지므로 복사본을 돈다.
+            foreach (GameplayAbility instance in new List<GameplayAbility>(spec.GetAbilityInstances()))
+            {
+                instance.InputReleased(spec.Handle, AbilityGameObjectInfo);
+            }
+        }
+
         /// <summary>정의로 부여된 Spec들을 모두 취소한다(활성 중인 것만 실제로 끝난다).</summary>
         /// <remarks>UE: UAbilitySystemComponent::CancelAbility</remarks>
         public void CancelAbility(GameplayAbilityAsset ability)
