@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1636849b8700bf418f8f5e548b24470, type: 3}
+  m_Name: GA_Item_Heal
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Abilities.GameplayAbilityAsset
+  description: "\uD68C\uBCF5 \uC544\uC774\uD15C. \uBA39\uC73C\uBA74 \uCCB4\uB825
+    \uD68C\uBCF5 GE\uC640 \uD68C\uBCF5 \uC5F0\uCD9C GE(State.Healing)\uB97C \uAC74\uB2E4."
+  abilityTemplate:
+    rid: 8482666747409990265
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666747409990265
+      type: {class: ApplyEffectsAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      data:
+        instancingPolicy: 1
+        costGameplayEffect: {fileID: 0}
+        cooldownGameplayEffect: {fileID: 0}
+        assetTags:
+          _gameplayTags: []
+        cancelAbilitiesWithTag:
+          _gameplayTags: []
+        blockAbilitiesWithTag:
+          _gameplayTags: []
+        activationOwnedTags:
+          _gameplayTags: []
+        activationRequiredTags:
+          _gameplayTags: []
+        activationBlockedTags:
+          _gameplayTags: []
+        activationPolicy: 0
+        scalesWithAttackSpeed: 0
+        effects:
+        - {fileID: 11400000, guid: b3d35fd902f38f942a23388c565f344c, type: 2}
+        - {fileID: 11400000, guid: c29b4a7e9b0df164688a6915628e1641, type: 2}

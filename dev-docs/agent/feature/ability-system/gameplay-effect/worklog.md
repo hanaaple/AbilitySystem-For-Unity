@@ -1,215 +1,83 @@
 # gameplay-effect — 작업 로그
 
-> 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
-> 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
+> 시간순 "무엇을 왜 했나" 기록. progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
+> 결정은 `(→D#)`(decisions.md)로 링크한다. 2026-10-23 정리로 검증 수치·조사 경로·회고를 걷어냈다 — 원문은 git 이력.
 
-### 2026-10-20 — 어트리뷰트 값 변경 이벤트 (구독 API + 원인 GEModData + 값이 같아도 발화, →D26)
-> 유저: "어트리뷰트 변경 이벤트 - 구현 안되어있어? 간단하지 않아?" → "UE 구조대로 변경해서 하면 되는거 아냐? 아무튼 잘 구현해봐" → (1차 구현 뒤, effort 상향) "다시 잘 구현해봐". 질문 답: 구독 모양 "클래스 getter 유지", 원인 "지금 넣기", 값이 같을 때 "UE대로 항상 울림".
-- **있던 것.** 컨테이너에 `_attributeValueChangeDelegates`(private 맵·private 델리게이트)와 `InternalUpdateNumericalAttribute`의 호출은 있었으나 맵에 넣는 코드가 없어 항상 비어 있었다.
-- **UE 확인(5.6).** 맵 `AttributeValueChangeDelegates`(`GameplayEffect.h:1942`), 멀티캐스트 `FOnGameplayAttributeValueChange(const FOnAttributeChangeData&)`(`GameplayEffectTypes.h:1017`), 인자 `{Attribute, NewValue, OldValue, GEModData}`(`:1002`), 등록은 `GetGameplayAttributeValueChangeDelegate`가 `FindOrAdd`한 델리게이트를 참조로 반환(`GameplayEffect.cpp:5419`, ASC `AbilitySystemComponent.cpp:732`). 원인은 `InternalExecuteMod`가 `FGameplayEffectModCallbackData{Spec, EvaluatedData, Target}`(`GameplayEffectExtension.h:17`)를 만들어 `ApplyModToAttribute`에 넘기고, 거기서 `CurrentModcallbackData`에 넣은 뒤 `SetAttributeBaseValue` → dirty → `InternalUpdateNumericalAttribute`가 실어 보내고 비운다(`GameplayEffect.cpp:3973-3987`, `:3779-3800`, 못 쓰였으면 경고 후 비움). `OnAttributeAggregatorDirty`는 재계산 뒤 값 비교 없이 `InternalUpdateNumericalAttribute`를 부른다(`:3307-3364`).
-- **구현.**
-  - 구독: `GameplayAttributeValueChangeEvent`를 맵 값으로, 컨테이너·ASC `GetGameplayAttributeValueChangeDelegate`(→D26). 인자 `OnAttributeChangeData`.
-  - 원인: `GameplayEffectModCallbackData`(새 타입) + 컨테이너 `_currentModCallbackData`. `ApplyModToAttribute`에 인자 추가 — 두 호출처(Modifier 실행·Execution 출력)가 Spec과 `GameplayModifierEvaluatedData`로 만들어 넘긴다. UE처럼 이벤트에 싣고 비우며, 남으면 경고 후 비운다. Duration/Infinite mod 등록·해제와 직접 Base 설정은 null(UE와 같음).
-  - 값이 같아도 발화: `OnAttributeAggregatorDirty`의 `Mathf.Approximately` 건너뛰기를 지움(커밋 `4171dbc`에서 들어왔고 결정 기록 없었음). 0 데미지·클램프된 피격도 이벤트가 온다.
-  - 같이 고침: Execution 출력 호출 줄 끝 `;;`.
-- **AttributeSet Hook과의 관계.** `PreGameplayEffectExecute`·`PostGameplayEffectExecute`가 받을 데이터가 이 `GameplayEffectModCallbackData`다(UE `InternalExecuteMod`). 훅은 아직 없음 — 보드 'AttributeSet Hook'.
-- **확인.** 컴파일(Unity 없이) 런타임·에디터 통과. Aggregator 셀프체크 I(14건) 추가 → 69/0: 같은 객체 반환, Infinite 등록·해제(원인 null), Instant(원인 Spec·수치·Target), +0도 발화, SetBase 뒤 원인 안 남음, aggregator 없는 어트리뷰트, 구독자 안에서 다른 GE 적용 시 원인 안 섞임, 해제. 회귀: Modifier Tag 65/0·GE Component 89/0·Calculation Modifier 19/0(Unity MCP로 메뉴 실행). Execution 출력 경로의 원인은 셀프체크 없음(같은 `ApplyModToAttribute`를 탄다).
+### 2026-10-23 — 경고 문구의 옛 핸들 이름 정리
+- `GameplayEffectSpec`의 modifier 대상 해석 실패 경고가 옛 이름 `ResolvedGameplayAttribute`를 써서 `GameplayAttributeHandle`로(문구만, 유저 지시).
 
-### 2026-10-20 — Calculation Modifier 런타임 적용 (Transient 제외, →D23)
-> 유저: "실제 계산 구현해둬 Transient만 미루고. 이미 있는거로 하면 금방 되는거 아냐?" (런타임 적용이 Transient만 빠진 줄 알았다가 전체가 없음을 확인한 뒤)
-- **UE 확인(5.6).** `FGameplayEffectCustomExecutionParameters` 생성자(`GameplayEffectExecutionCalculation.cpp:16-59`): Calculation Modifier마다 대상 캡처 정의로 `ScopedModifierAggregators`를 찾고, 없으면 캡처 Spec의 `AttemptGetAttributeAggregatorSnapshot`(`GameplayEffect.cpp:2352`)으로 사본을 만들어 `AddAggregatorMod`. 계산 못 하면 경고. 조회(`AttemptCalculateCapturedAttributeMagnitude`·`…BaseValue`, `:111-171`)는 사본이 있으면 사본을 읽는다. 캡처 정의 수집(`FGameplayEffectExecutionDefinition::GetAttributeCaptureDefinitions`, `:1402-1422`)은 Calculation Modifier magnitude의 캡처도 포함.
-- **구현(있는 부품 이음).** 캡처 Spec `AttemptGetAttributeAggregatorSnapshot`(`TakeSnapshotOf` 재사용). `GameplayEffectExecutionParameters`가 Calculation Modifier 목록을 받아 사본 사전을 만들고(없으면 null — 할당 없음), 두 조회가 사본을 먼저 본다. Spec에 `ExecutionDefinitions`(`Executions`와 평행 — resolve 실패로 건너뛴 항목이 있어 인덱스를 맞추려고), 캡처 정의 수집 ③ Calculation Modifier magnitude. 컨테이너 `RunExecutions`가 정의의 Calculation Modifier를 넘긴다. 사본 mod의 핸들은 기본값(UE는 새 핸들을 만들지만 사본은 실행 뒤 버려져 제거할 일이 없다).
-- **확인.** Calculation Modifier 셀프체크 E-2를 "적용됨"으로 바꾸고 E-3(실제 어트리뷰트 그대로) 추가 → 19/0, E-2 Speed 차이 24.07 = 기대값. Aggregator 55/0·GE Component 89/0·Modifier Tag 65/0. PlayMode는 Execution 쓰는 GE가 없어 안 돌림.
-- **UE와 다른 점(유저 질문 "호출 경로나 과정, 파라미터같은건 ue에 맞춰서 했나?"에 답한 것).** 호출 위치·순서·사본 생성·조회 우선순위는 UE 그대로. 다름: Execution 목록을 정의 대신 미리 만든 인스턴스로 돌아 평행 `ExecutionDefinitions`를 둠 / 생성자 `(target, spec, scopedMods)` — UE `(Spec, ScopedMods, Target, PassedInTags, PredictionKey)`와 순서 다르고 뒤 둘 없음 / 사본 mod 핸들 기본값 / 채널·예측 인자 없음 / 출력 뒤처리(스택·Conditional·Cue) 없음. 없는 조회 API는 유저 "빠진것들 TODO로 빈 시그니처로만 만들어둬" → 3개는 `NotImplementedException` 빈 메서드+TODO, `AttemptGatherAttributeMods`·`ForEachQualifiedAttributeMod`는 `AttributeAggregator.Mod`가 private이라 시그니처를 둘 수 없어 TODO 주석만. TODO-BOARD 등록. 생성자 순서를 UE대로 바꿀지는 답 없음.
+### 2026-10-23 — 대상별 Spec·컨텍스트 복제 (→D32)
+- 데모 관통 파동은 발사 때 만든 Spec 하나를 여러 대상에 건다. `Clone()`은 컨텍스트를 공유해 대상마다 `AddHitResult`가 같은 객체를 덮어써, 2초 뒤 터지는 낙인이 마지막 대상의 부위로 헤드샷을 판정하게 된다.
+- UE도 대상마다 Spec 복사 + `Context.Duplicate()` + `SetContext`를 한다 → 컨텍스트 `Duplicate`(얕은 복사), Spec `SetContext`.
 
-### 2026-10-20 — 태그로 활성 GE 찾기·제거 (`GameplayEffectQuery`·ASC 질의 API·Remove Other)
-> 유저: "태그로 활성 GE 찾기·제거 구현하자. 간단해 보이는데?" — 범위 "UE대로", `StacksToRemove` "자리만 두기", Remove Other 자기 제외 "UE의 의도대로 가야될 거 같은데 더 찾아봐"
-- **질의.** `GameplayEffectQuery`(UE `FGameplayEffectQuery`) — 태그 질의 4종·ModifyingAttribute·EffectSource·EffectDefinition + 코드용 `IgnoreHandles`·`CustomMatchDelegate`, `MakeQuery_*` 9종. Owning은 UE처럼 Asset+Granted.
-- **API.** 컨테이너·ASC에 찾기·개수·시간·끝나는 시각·레벨 변경·제거(`RemoveActiveEffects`, `RemoveActiveEffectsWith{Tags,SourceTags,AppliedTags,GrantedTags}`). 제거는 핸들을 먼저 모은 뒤 지운다 — 제거가 태그 변화로 다른 GE 제거(Target Tag Requirements)를 불러도 안전. 시간은 `RemainingDuration` 기준, 끝없는 GE는 `GameplayEffectConstants.InfiniteDuration`(UE `FGameplayEffectConstants::INFINITE_DURATION` — 유저가 대문자를 말했다가 "code convention 있었을텐데"로 규약(상수 PascalCase)을 따름) (→D25). 레벨 변경용 `Spec.SetLevel`·`UpdateAllAggregatorModMagnitudes` 추가. 같은 지적으로 새 코드를 규약에 맞춤: `GameplayEffectQuery` 프로퍼티 setter를 블록 본문으로(한때 public 필드로 바꿨다가 유저 "왜 갑자기 public으로" → private `_필드` + 프로퍼티로 되돌림), Remove Other 직렬화 필드 `_removeGameplayEffectQueries`, 여러 줄 식을 한 줄로.
-- **Remove Other.** UE는 자기 핸들 목록을 첫 질의에 `MoveTemp`로 넘겨 둘째 질의부터 자기 제외가 빠진다 — `TArray` 이동 코드·UE 자신의 2칸 이관(`ConvertRemoveOtherComponent`)까지 보고 버그로 판단, 모든 질의에 건다(→D24).
-- **확인.** 컴파일(Unity 없이) 통과. GE Component 셀프체크 H(21)·I(7) 추가 → 89/0, Aggregator 55/0·Calculation Modifier 18/0·Modifier Tag 65/0. Remove Other 인스펙터 화면은 안 봄.
+### 2026-10-23 — GE 스택(스택 수 1, →D31)
+- 데모에서 쏠 때마다 거는 `GE_CombatStance`가 여러 개 쌓였다. 유저 "Core에 GE 스택 구현", "상한 1개에".
+- UE `FindStackableActiveGameplayEffect`(ByTarget은 정의만, BySource는 시전자까지)와 갱신 정책을 옮기고, 합칠 때 Spec은 처음 것 그대로 시간만 갱신.
+- 막힌 곳: 셀프체크 S-4 실패는 테스트가 부여 태그를 Component로만 넣어 GE 캐시가 비었던 것 — 테스트 쪽 수정.
 
-### 2026-10-19 — Subclass 선택기 좁을 때 잘림 방향
-> 유저: "SubClass Selector에 Inspector width가 부족하니 짤리는데 왼쪽은 유지하고 오른쪽부터 짤리게"
-- **원인.** 스크립트 필드(`SubclassSelectorDrawer.DrawScriptField`, `EditorStyles.objectField` — MiddleLeft·Clip 확인)에 칸보다 긴 이름이 들어가면 IMGUI가 아이콘째 밀어 왼쪽 아이콘이 사라졌다.
-- **고침.** 이름 끝을 "…"로 줄여 칸에 맞춘다(`TruncateToFit`), 전체 이름은 툴팁. 처음엔 아이콘까지 `CalcSize`에 넣어 원본 아이콘 크기로 재는 바람에 "A…"까지 줄었다 → 글자 폭만 재고 아이콘 자리는 줄 높이만큼 뺌. 공용 함수라 Execution Calculation Class·Component Class·AttributeSet 선택기 모두 적용.
-- **확인.** 캡처 — 긴 이름은 아이콘·앞부분 유지 + 끝 "…", 들어가는 이름은 그대로.
+### 2026-10-23 — 디버그 조회 API (→D30)
+- 디버그 오버레이용으로 UE와 같은 이름의 읽기 전용 조회 API. 에디터 ASC 인스펙터의 활성 GE 리플렉션은 필드 이름이 어긋나 표시가 안 되고 있었다 → 이 API로 교체. Awake 전(프리팹 에셋)엔 컨테이너가 없어 빈 목록을 돌려준다.
 
-### 2026-10-19 — 접힌 목록 머리 줄 글자 잘림
-> 유저: "components, modifiers, executions 접을때 살짝 작아서 텍스트가 짤리는데 위아래 padding 적당히"
-- **원인.** 접힌 머리 줄을 26px로 잡고 글자를 4px 내려 그렸는데, ReorderableList 머리 줄 배경 스타일(`defaultBehaviours.headerBackground`)이 `fixedHeight = 20`이라 배경은 20px만 그려져 글자 아래가 테두리에 걸렸다(MCP로 스타일 값 확인).
-- **고침.** 접힌 머리 줄도 그 목록의 `headerHeight`와 ReorderableList의 글자 여백(좌우 6·위아래 1)을 그대로 써서 펼친 머리 줄과 같게. 캡처로 확인 — 글자가 테두리 안, 접힘·펼침 머리 줄 높이·위치 같음.
-- **남은 선택.** 두 상태 모두 Unity 기본 머리 줄 높이(20px)라 여백은 위아래 1px. 더 넉넉히 하려면 배경을 높이 고정 없는 스타일로 직접 그려야 한다(유저에게 물음).
+### 2026-10-22 — GE 에셋 설명(description) 필드
+- 유저 "각 GE마다 Comment 같은? Description? 같은 걸 넣을 수 있게". UE GE엔 설명 필드가 없다. 동작에 안 쓰이는 `[TextArea]` 필드 + 인스펙터 맨 위, GE 에셋마다 설명을 채웠다(구성·쓰는 곳에서 확인한 사실만).
 
-### 2026-10-19 — Modifier 대상 줄 라벨 정렬
-> 유저: "Modifier Editor 부분에서 Attribute Set, Attribute는 오른쪽으로 가있는데 바로 아래 있는 것들은 왼쪽으로 되어있네", "하드코딩으로 고치지 말고 깔끔하게 고쳐"
-- **원인.** `GameplayAttributeDrawer`(attribute 폴더, 범용)가 스스로 `EditorGUI.indentLevel++`로 두 줄을 들여써 라벨만 오른쪽으로 밀렸다(값 열은 그대로).
-- **고침.** 드로어 안 들여쓰기를 지웠다 — 범용 드로어는 묶음 표시 같은 배치 정책을 갖지 않고 쓰는 쪽이 정한다(editor-drawer-guide '범용 드로어는 정책을 모른다'). 위치 숫자 보정 없음. 사용처 둘(GE Modifier 대상, AttributeBased 캡처) 모두 라벨 열이 위아래 줄과 같아짐 — 캡처로 확인.
+### 2026-10-22 — Context 피격 정보 (→D29)
+- 유저 "GAS Tag 기반으로 헤드 판정을 넣어서 데미지 150%로"(이후 200%), 전달 방식 "컨텍스트에 피격 정보 (Lyra 방식)". Lyra는 Context HitResult → 물리 재질 태그 → 무기의 태그별 배율.
+- 게임 쪽: 부위 콜라이더에 태그(`HitZone`), 투사체가 맞은 부위를 Context에 담고 `DamageExecution`이 부위 태그로 배율.
 
-### 2026-10-19 — 런타임 확인 (D22·D23 구조 변경 뒤)
-> 유저: "런타임 체크해봐"
-- **PlayMode 셀프체크** 14/0(저장 안 하는 임시 씬, 씬 생성·배선·Play 진입을 MCP 명령 셋으로 나눔).
-- **실제 GE 적용(Play 중, GE마다 새 ASC).** Player 초기값(`Player_AttributeInitData`: health 1·stamina 100·maxStamina 1000·speed 10)으로 gameplay-tag tests.md §1-3-3 기준값과 같음: `GE_Speed` maxStamina 1001·speed 121.01(Base=Current), `GE_Test` speed 21.01, `GE_BoxEffect` speed 10(주기 없는 Duration이라 Execution 안 돎). Box 초기값으로 `GE_BoxSelfEffect` a·b·c 20.1·201·2010. 활성 GE를 든 ASC 4개로 6788프레임 Tick 동안 에러 0(경고 1줄은 Unity Account API 네트워크 경고, 무관).
-- **안 본 것.** `GE_EquipSpeedDown`(깨진 Tag Query 데이터 그대로 — gameplay-tag D25, Combat 어트리뷰트 필요), `GE_MeleeDamage`(기준값 기록 없음).
+### 2026-10-22 — Spec 지속 시간 + `SetDuration` (→D28)
+- 유저 "캐릭터 강화 되면서 버프동안 쿨다운 비율 감소로". 지속 시간이 에셋 고정값이라 걸 때 길이를 바꿀 통로가 없었다. 활성 GE·Tick·인스펙터가 정의 대신 Spec 값을 읽게 했다. 게임 쪽 `CharacterGameplayAbility.ApplyCooldown`이 감소율을 곱한다.
 
-### 2026-10-19 — Calculation Modifier 셀프체크
-> 유저: "Calculation Modifiers는 잘 작동할지 Test 해봐"
-- **범위.** 런타임 적용은 아직 없어(→D23) 편집기·데이터·현재 런타임 동작만 본다. 새 `Test/Editor/CalculationModifierSelfCheck.cs`, 메뉴 `Tools ▸ Ability System ▸ Run Calculation Modifier Self-Check`. 편집기 함수는 `GameplayEffectAssetDrawer` private static이라 리플렉션. 임시 에셋은 `Assets/_SelfCheckTemp/`(GE_Speed 사본)에 만들고 끝에 지운다.
-- **항목(18).** A Backing Data 후보 = Execution `Defs()`(빈 클래스·비Execution 타입은 없음) / B 추가 기본값(첫 후보·Add (Base)·0·coefficient 1·펼침, 앞 칸 복사 안 됨, 후보 없으면 대상 비움, 새 Execution은 Calculation Modifier 0개) / C 요약 문구·Execution 높이 순서 / D 저장·강제 재임포트 후 값 유지 / E 런타임: Execution 해석 정상, Calculation Modifier를 붙여도 Speed 증가량이 같음(61.5) — **적용을 구현하면 E-2 기대값을 바꾼다**.
-- **결과.** 18/0, 경고·에러 0. 확인용 UI 에셋 `_McpCheck/GE_McpCheck_UI`는 휴지통, 선택을 원래 `GE_EquipSpeedDown`으로 돌림.
+### 2026-10-20 — 어트리뷰트 값 변경 이벤트 (→D26)
+- 유저 "구현 안되어있어? 간단하지 않아?" → "UE 구조대로". 맵·호출은 있었는데 맵에 넣는 코드가 없어 늘 비어 있었다.
+- 구독 모양은 "클래스 getter 유지"(C# delegate가 불변이라 이벤트 객체를 돌려줌), 원인(`GameplayEffectModCallbackData`)은 "지금 넣기", 값이 같을 때는 "UE대로 항상 울림" — 결정 기록 없이 들어와 있던 `Mathf.Approximately` 건너뛰기를 지웠다. 0 데미지·클램프된 피격도 이벤트가 온다.
 
-### 2026-10-19 — GE 인스펙터 Modifiers·Executions UI 규격 통일
-> 유저: "Execution 쪽이랑 Modifiers 쪽이랑 Editor UI 규격이 동일하게 맞춰야 좋은데 UI Design을 잘 해봐. 가독성과 일괄성 있게", 이어서 "Calculation Modifiers 접고 필때 생기는 수직선이 접는 기호랑 너무 붙어있고 … 명확하지 않아. outline을 그려"
-- **규격(`GameplayEffectAssetDrawer` 머리 주석).** 세 목록(Modifiers·Executions·Calculation Modifiers) 요소 = 위아래 여백 6 + 머리 줄(접기 + "대상 — 부가 정보" 요약) + 본문(라벨 열 140, 줄 간격 4, 묶음 간격 8) + 형제 사이 1px 구분선. 값 열은 모든 목록에서 같은 x — 안쪽 목록은 들여쓴 만큼 라벨 폭을 줄인다. Modifier와 Calculation Modifier 본문은 같은 순서(대상 → Modifier Op → Magnitude → Source/Target Tags)를 공통 함수(`LayoutModifierBody`) 하나로 그린다.
-- **바꾼 것.** Executions 머리 줄을 Modifiers처럼 접기 + 개수, 목록 전체 접기도 같은 함수. Execution 요소도 머리 줄 요약(`Speed Boost Execution — Calculation Modifiers 2`)을 접고, 본문에 라벨 붙은 `Calculation Class`. 요약 문구 꼴 통일 — Calculation Modifier는 Modifier와 같은 `Set.field`에 캡처 출처(`(Target, Snapshot)`)를 붙인다. Calculation Modifiers는 테두리(1px, 반투명 회색) 상자 안 목록 + 상자 끝 "+ Calculation Modifier"(가독성 가이드 3.2·3.7). 높이와 그리기는 같은 Layout 함수(draw 플래그)로 계산.
-- **유저 지적 반영.** 처음엔 왼쪽 안내선(2px)이었는데 접기 화살표와 붙고 칠 차이가 흐리다 → 테두리로 바꾸고 안쪽 여백 8 → 14px. 추가 버튼은 마지막 칸과 8px 띄움.
-- **수치(에이전트 판단, 유저 미확정).** 상자 칠 알파 0.06, 테두리 회색 0.5·알파 0.8, 안쪽 여백 좌 14·상하 4, 칸 사이 8, − 버튼 22px, 추가 버튼 150px.
-- **확인.** 에디터 컴파일 통과, 임시 GE(`Assets/_McpCheck/GE_McpCheck_UI.asset`, GE_Speed 사본 + Calculation Modifier 2개)로 캡처: 값 열이 Modifier·Execution·Calculation Modifier 모두 같은 x, 테두리 보임. 남은 점: 좁은 인스펙터에서 Calculation Modifier 머리 줄 요약(`CharacterAttributeSet.health (Target, Snapshot) — Add (Base)`)이 − 버튼 앞에서 잘린다. 밝은 스킨은 안 봄.
+### 2026-10-20 — Calculation Modifier 런타임 적용 (→D23)
+- 유저 "실제 계산 구현해둬 Transient만 미루고. 이미 있는거로 하면 금방 되는거 아냐?" — 확인해 보니 런타임 적용이 통째로 없었다.
+- UE처럼 실행마다 캡처 aggregator 사본을 만들어 Calculation Modifier를 더하고, Execution 조회가 사본을 먼저 읽게 했다. 있던 부품(스냅샷 복사)을 이었다.
+- UE와 다른 점(유저 질문 "호출 경로·파라미터 UE에 맞췄나"에 답한 것): Execution을 정의 대신 미리 만든 인스턴스로 돌아 평행 목록을 둠, 생성자 인자 순서, 사본 mod 핸들 기본값. 없는 조회 API는 유저 "빈 시그니처로만" → TODO-BOARD.
 
-### 2026-10-19 — Execution Calculation Modifiers 편집기 + Magnitude 구조체 (→D22, →D23)
-> 유저: "GE Execution에 Calculation Modifiers Editor 먼저 구현해봐. 내부 구현은 이후에. Defs로 받아와서 읽어오면 어떻게 UE처럼 가능할거야". (gameplay-tag 세션에서 이어 함)
-- **UE 확인(5.6).** `FGameplayEffectExecutionDefinition`(`CalculationClass`·`PassedInTags`·`CalculationModifiers`·`ConditionalGameplayEffects`, `GameplayEffect.h:517-534`), `FGameplayEffectExecutionScopedModifierInfo`(`:420-474`), 편집기 Backing Data 콤보는 계산 클래스 CDO의 `GetValidScopedModifierAttributeCaptureDefinitions`+Transient 식별자(`GameplayEffectExecutionScopedModifierInfoDetails.cpp:285-301`).
-- **물은 것.** ① 기존 에셋 → "자동이관으로 하지 말고 어셋에 직접 넣어" ② Magnitude → "구조체로 뽑아 같이 씀"(D22) ③ Transient → "그게 뭔데?"(설명 후 답 대기, 이번엔 캡처만).
-- **런타임.** 새 `GameplayEffectModifierMagnitude`(계산 함수 4개를 `GameplayModifier`에서 옮김), `GameplayEffectExecutionDefinition`, `GameplayEffectExecutionScopedModifierInfo`(런타임 미사용 TODO). `GameplayEffectAsset.executions`, `GameplayEffectSpec.ResolveExecutions`는 정의의 `CalculationClass`를 읽음. 호출처(Spec·컨테이너·ASC 인스펙터·`GameplayModifierSpec`)는 `ModifierMagnitude`를 거친다.
-- **에디터.** 새 `GameplayEffectModifierMagnitudeDrawer`(박스·접기·요약·Calc Type별 값/구현 예정 안내 — GE 드로어에서 옮김, 접힘 상태는 구조체 프로퍼티 자신의 `isExpanded`). GE 드로어 Executions 요소 = 계산 클래스 + "Calculation Modifiers (N)" 접기 → 칸마다 헤더(캡처 — 연산, −), Backing Data 팝업(`Defs()`; 선언에 없는 값을 들고 있으면 "(선언에 없음)"으로 표시), Modifier Op, Magnitude, Source/Target Tags, 끝에 "+ Calculation Modifier". 새 칸·새 Execution은 `boxedValue`로 빈 값부터(삽입이 앞 칸을 복사하므로). 안쪽 목록은 ReorderableList 대신 직접 그림(인덱스 경로 캐시 안티패턴 회피).
-- **에셋.** 10개 GE를 perl 변환으로 직접 고침(modifier 3필드 → `modifierMagnitude` 아래로 이름 변경, `executionTypeNames` → `executions[].calculationClass`). 백업은 세션 scratchpad. `GE_EquipSpeedDown`은 유저가 에디터에서 바꿔 둔 저장 안 된 상태였는데, Unity가 새 코드를 먼저 리로드해 메모리 사본의 magnitude·Execution이 빠졌다 → 디스크(원래 값)를 변환하고 강제 재임포트해 원래 값으로 돌림. 유저의 저장 안 한 Calc Type 변경(Custom Calculation Class)은 사라졌다.
-- **확인.** 런타임·에디터 컴파일 통과. 재임포트 뒤 10개 에셋 값이 변환 전과 같음, Spec의 Execution 해석 정상(SpeedBoost 3개). 셀프체크 Aggregator 55/0·Modifier Tag 65/0·GE Component 43/0. 화면: Executions 접힌 상태·Magnitude 접힌 요약. 못 본 것: Calculation Modifier 펼친 화면, PlayMode(유저가 Unity를 쓰는 중이라 안 돌림).
+### 2026-10-20 — 태그로 활성 GE 찾기·제거 (→D24·D25)
+- 유저 "태그로 활성 GE 찾기·제거 구현하자", 범위 "UE대로", `StacksToRemove` "자리만".
+- 제거는 핸들을 먼저 모은 뒤 지운다 — 제거가 태그 변화로 다른 GE 제거를 불러도 안전.
+- Remove Other: UE는 자기 핸들 목록을 첫 질의에 `MoveTemp`로 넘겨 둘째 질의부터 자기 제외가 빠진다. UE git 이력까지 보고 회귀로 판단해 모든 질의에 건다(유저 "UE의 의도대로").
+- 유저 지적으로 새 코드를 규약에 맞춤(상수 PascalCase, private 필드 + 프로퍼티).
 
-### 2026-08-07 — GameplayEffectAsset 인스펙터: Executions에 검색형 Add 추가
-- `executionTypeNames`(`List<string>` + `[SubclassSelector(typeof(GameplayEffectExecution))]`)가 Unity 기본 리스트로 그려져 요소 드로어 때문에 "+"가 안 뜨고 Size 필드로만 늘려야 했다(유저 리포트 "Add가 없네"). AttributeSet 리스트와 같은 검색형 `TypeChoiceList`로 교체 — `GameplayEffectAssetDrawer`에 `_executionList` 신설, 후보=GameplayEffectExecution 구체 서브클래스−이미 담긴 것, add 시 요소 stringValue=AQN, 요소는 `[SubclassSelector]` 전용 드로어로 그림.
-- **New Script는 제외**(AttributeSet 리스트엔 있지만): `GameplayEffectExecution.Execute`가 abstract라 빈 서브클래스 템플릿(`: GameplayEffectExecution {}`)이 컴파일되지 않는다. 붙이려면 New Script 템플릿에 abstract override 스텁 생성이 선행돼야 함(현재 미구현). 유저에게 사유 보고.
-- 부수: 기존 executions PropertyField의 툴팁 설명은 리스트 헤더로 바뀌며 빠짐(경미).
-- 검증: 코드 정합성만(에이전트 범위). 컴파일/동작은 유저가 에디터에서.
+### 2026-10-19 — Execution Calculation Modifiers 편집기 + Magnitude 구조체 (→D22·D23)
+- 유저 "Calculation Modifiers Editor 먼저 … Defs로 받아와서 읽어오면 어떻게 UE처럼 가능할거야". UE 편집기도 계산 클래스 CDO의 캡처 정의로 대상 콤보를 채운다.
+- 물은 것: 기존 에셋 → "자동이관 말고 어셋에 직접", Magnitude → "구조체로 뽑아 같이 씀".
+- 막힌 곳: 유저가 에디터에서 바꿔 두고 저장 안 한 에셋을 Unity가 새 코드로 리로드하며 일부 값이 빠졌다 → 디스크 원본을 변환·재임포트해 원래 값으로 돌림(유저의 저장 안 한 변경 하나는 사라짐).
+- 이어서 Modifiers·Executions·Calculation Modifiers 인스펙터 규격 통일(유저 "가독성과 일관성"), 라벨 정렬(범용 드로어가 스스로 들여쓰던 것 제거 — "하드코딩으로 고치지 말고"), 접힌 머리 줄·선택기 잘림 수정. 셀프체크 `CalculationModifierSelfCheck`.
 
-### 2026-08-05 — GE 캡처/Execution 검증 디버그 도구 세트 + UE Execution 실행조건 원문 확정 + coefficient 버그 수정
-- 성격: **5b(2026-08-04)로 "관측 변화 0→유의미" 지점에 왔으나 눈으로 볼 수단이 없던 것**을 이번 세션에 마련. 새 D 없음(유저 지시 이행 + 버그 수정 + 사실 확인).
-- **캡처/Execution 인스펙터 표시:** 그리기 로직을 `AbilitySystemInspectorGUI`(static, 신설)로 **공용화**하고 `AbilitySystemComponentDrawer`는 얇은 래퍼로 축소(드로어+창 2소비처 공유 — session-protocol '작업 중' 공통화). Active Effect마다 **Modifiers/Executions/Captured Attributes**. 캡처 = Source/Target 구분 + Base/Current + snapshot 태그 + **출처 역추적**(«by Modifier[i]/ExecutionName» — `SetupAttributeCaptureDefinitions`의 두 공급원과 값-비교). Execution 줄 **더블클릭→IDE**(`MonoScript.GetClass` 일치 탐색). 컨테이너 private 리스트는 기존 리플렉션 패턴으로 읽어 프로덕션 API 안 건드림.
-- **ASC Inspector 창(`AbilitySystemComponentWindow`, EditorWindow):** 선택된 GameObject의 ASC를 위 GUI로 그림(없으면 null→안내). 진입점 2개(메뉴 `Window ▸ Ability System ▸ ASC Inspector` + ASC 인스펙터 "Open in ASC Window" 버튼)가 `Open()` 공유. `selectionChanged`+`OnInspectorUpdate`로 실시간 갱신. 계기: 인스펙터가 다른 대상으로 바뀌어도 ASC 상태를 따로 띄워두고 적용 전후 캡처값을 관찰하려는 것(유저 지적 "실시간 디버깅 마땅치 않다" → 관측이 아니라 **상황 세팅** 문제로 좁혀짐 → BoxRoom).
-- **coefficient 기본값 1 버그 수정:** `GameplayEffectAssetDrawer.OnAddModifier` — `arraySize++`로 modifier 추가 시 Unity가 C# 필드 이니셜라이저(`AttributeBasedMagnitude.coefficient=1f`)를 **안 돌려 0**이 되던 것(class 전환과 무관 — 직렬화 경로는 `new`가 아님). add 콜백에서 `attributeBased.coefficient=1` 명시 세팅으로 되돌림(struct 시절엔 이렇게 했던 걸 class 전환하며 "이제 필요없다"고 뺀 게 원인). 잘못된 주석 정정. ⚠ 기존 에셋(coefficient 0 저장분)은 수동 교정 필요.
-- **BoxRoom 디버그 도구:** `Character/BoxRoom.cs`(+meta) + `Prefabs/BoxRoom.prefab`(+meta). 방 트리거에 들어온 액터 ASC에 **Room ASC=source**로 GE 적용(`ApplyGameplayEffectToTarget`, context=default라 Room이 instigator=Source 캡처 대상), 나가면 `RemoveActiveGameplayEffect`. **3모드**(Instant 1회성 / Buff=Duration·Infinite&&period0 / TickExecution=Duration·Infinite&&period>0) — Instant는 Invalid 핸들이라 해제 대상서 자동 제외. 로직 완성·GE 슬롯 빈 상태. 프리팹은 기존 pickup/Player 프리팹에서 실제 GUID(ASC `e98a3777…`)·구조 조회해 조립, BoxRoom 스크립트는 신규라 `.cs.meta` GUID 발급(프리팹 참조와 일치). **미검증(유저 에디터): 프리팹 GUID 조율·GE 슬롯·Room ASC 데이터·컴파일.**
-- **UE Execution 실행조건 원문 확정(유저 교정 "기억으로 확인할 문제 아냐"):** ylyking UE 미러 **소스 직접 확인**(그간 HARNESS '해석 규율'에 "포럼 1건으로 단언해 틀림"으로 박혀 있던 지점). 결론: **period 0 Duration/Infinite에선 Execution 안 돎.** 근거 = `UAbilitySystemComponent::ExecuteGameplayEffect`(asc.cpp:820)의 `check(Duration==INSTANT_APPLICATION || Period!=NO_PERIOD)` assert(UE가 코드로 강제) + 주석 "Effects with no period and that aren't instant application should never be executed". Execute 경로 = Instant(asc.cpp:734) / periodic(ge.cpp:2887, `period!=NO_PERIOD`일 때만 타이머). Execution Calculation은 `ExecuteActiveEffectsFrom`(ge.cpp:1882-1894 `for Def->Executions { Execute }`)에서만. period0 지속형 계산은 UE도 MMC(=AttributeBased)로 apply 시 `CalculateModifierMagnitudes`. **architecture/decisions 반영은 유저 판단 대기(TODO-BOARD).** WebFetch 요약이 이 분기 중첩을 오독해서, 원문을 직접 받아 라인 확인해야 했음(HARNESS '해석 규율' — 2차 자료/요약도 단정 금지).
-- **회고('세션 회고'):** ① UE 동작을 **처음에 기억으로 설명**(유저 교정) — HARNESS '판단은 틀릴 수 있다'·'왜의 근거는 유저 의도 → UE 원본'가 있는데 원문 확인을 먼저 안 감(2026-07-19·08-04에도 반복된 유형). ② 에셋 폴더 구조 질문에 **결론 없이 트레이드오프만 나열**해 유저가 "결국 어떻게 하라는거야"(대화 규율 'Grice 협력 원리' — 방식·결론 숨김 위반). ③ `IsValid()` 메서드 호출 실수(프로퍼티인데 괄호)—자체 발견·수정. ④ 디버그 뷰 보강을 관측 축 옵션으로 물었다가 유저 거부—진짜 문제는 "상황 세팅"이라 의도부터 좁혔어야.
+### 2026-08-07 — Executions 목록에 검색형 Add
+- 요소 드로어 때문에 "+"가 안 떠 Size로만 늘려야 했다 → AttributeSet 목록과 같은 검색형 목록. New Script는 제외 — `Execute`가 abstract라 빈 템플릿이 컴파일되지 않는다.
 
-### 2026-08-04 — AttributeBased 런타임 evaluate(5b) + `GameplayModifierSpec` UE 정렬 (→D21(ModifierSpec UE 정렬)) — 첫 관측치 배선
-- 유저 지시: "AttributeBasedMagnitude 마저 구현." NOW.md 재개 지점 = 5b evaluate. 진행 중 유저가 `CalculateModifierMagnitudes`의 이름-내용 불일치를 지적 → UE 원문 대조 후 `GameplayModifierSpec`을 재설계(→D21(ModifierSpec UE 정렬), "UE대로 가자" 확정).
-- **선(先) 블로커 해소 확인:** NOW.md가 경고한 `GameplayEffectSpec.cs`의 `operator =` 스텁은 **이미 제거돼 있었음**(복사 생성자+`Clone()` 정상). 실물 확인 후 진행(HARNESS 핵심 원칙 '추측 금지' — 문서=과거 스냅샷).
-- **계산 2층 신설(UE 동형):**
-  - `AttributeBasedMagnitude.Evaluate(spec)` — `TryGetCapturedValue(backingAttribute, captureValueType, out v)`로 캡처값 읽어 `(v+Pre)*Coef+Post`. 조회 실패 시 0+경고(조용한 false 방지). (UE `FAttributeBasedFloat::CalculateMagnitude`)
-  - `GameplayModifier.GetMagnitude(level)` → **`EvaluateMagnitude(spec, level)`** — AttributeBased면 위 Evaluate, 아니면 고정 `magnitude`(ScalableFloat 불변). (UE `FGameplayEffectModifierMagnitude::AttemptCalculateMagnitude` 분기)
-- **`GameplayModifierSpec` 재설계(→D21(ModifierSpec UE 정렬)):** 유저 지적("이 함수는 magnitude를 계산하지도 않잖아" / "attribute가 modifier의 key면 안 된다")에서 출발. UE 헤더·cpp 확인(ylyking 미러) 결과 UE `FModifierSpec`은 `EvaluatedMagnitude`만 보유, identity는 정의에 있고 `Modifiers`는 정의와 **평행 인덱스 배열(무필터)**. 이에 맞춰:
-  - `GameplayModifierSpec`: readonly 번들 struct → **mutable struct**(magnitude 제자리 갱신용 `CalculateMagnitude` 메서드). identity(핸들·연산)는 슬롯에 **캐시** — 우리 `GameplayAttribute`가 문자열이라 정의에서 매번 읽으면 리플렉션(UE는 포인터라 쌈), 이게 UE 최소형과의 의도적 divergence(→D21(ModifierSpec UE 정렬)).
-  - `GameplayEffectSpec`: `Modifiers`를 `GameplayModifierSpec[]`(정의와 평행)로. `BuildModifierSpecs`(생성 시 1회, identity 해석, **무효도 안 빼고 경고만** — 빼면 인덱스 밀림) + `CalculateModifierMagnitudes`(캡처 후 magnitude만 **제자리** 갱신, 배열이라 `arr[i].CalculateMagnitude()`가 제자리로 먹음). `Initialize` 순서: 캡처 선행→평가 후행(기존 역전이 AttributeBased가 캡처값 못 읽던 버그). `CaptureAttributeDataFromTarget`가 target 캡처 직후 재평가.
-- **ASC 소비처 변경 0** — 슬롯이 `Handle`·`Operation`·`EvaluatedMagnitude`를 그대로 노출해 3개 소비처(ExecuteGameplayEffect·CalculateAttributeCurrentValue·RecalculateAffectedAttributes)·에디터 드로어 전부 무수정.
-- **UE 원문 대조 정확도:** 실패 처리(0+Warning)는 UE `CalculateModifierMagnitudes`와 동일. 계산식·2층 분기 구조도 일치. 유일 divergence = identity를 슬롯에 캐시(문자열 어트리뷰트라).
-- **⚠ 미확정(유저 확인 대기):** Target 기반 AttributeBased는 생성 시점(target 미캡처)에 캡처 실패 경고 가능(그 결과는 소비 안 됨). 현재 검증 대상 `GE_EquipSpeedDown`은 Source 기반이라 무영향. warn-always로 단순하게 둠(억제는 UE `CanCalculateMagnitude` 게이트 필요 — TODO-BOARD 등록).
-- **관측 변화: 여기서 처음 0→유의미.** evaluate가 캡처값을 실제 magnitude로 소비한다. **유저 에디터 검증 대기** — `GE_EquipSpeedDown`이 Source `CombatAttributeSet.damage` 기반 speed 감소하는지. ⚠ 선행: `Player_AttributeInitData`에 `CombatAttributeSet` 존재(없으면 캡처 무효→경고+0).
+### 2026-08-05 — 캡처 디버그 도구 + UE Execution 실행 조건 원문 확인
+- 캡처를 눈으로 볼 수단이 없었다 → ASC 인스펙터 그리기를 공용화하고 활성 GE마다 Modifiers·Executions·캡처(출처 역추적) 표시, 별도 ASC 창.
+- UE 원문: period 0 Duration/Infinite에선 Execution이 돌지 않는다(`ExecuteGameplayEffect`의 check). WebFetch 요약이 분기 중첩을 오독해 원문을 직접 봐야 했다.
+- 버그: 목록에 modifier를 추가하면 Unity가 필드 이니셜라이저를 안 돌려 coefficient가 0 → add 콜백에서 1로.
 
-### 2026-08-04 — spec 복사(Clone) + Target 캡처 적용 경계 배선 (→D18(ActiveEffect가 Owner 보유)/D19(Spec 복사/Clone)/D20(spec API+clone 유지))
-- **ActiveGameplayEffect.Owner 추가(→D18(ActiveEffect가 Owner 보유)):** target ASC를 effect가 직접 보유. `ActiveGameplayEffectsContainer`는 당장 잠정 유보(배제 아님) — UE는 컨테이너.Owner + handle 전역맵으로 owner를 아는데(원문 확인: FActiveGameplayEffect엔 Owner 멤버 없음, `CheckOngoingTagRequirements`가 컨테이너를 인자로 받음), 우리는 컨테이너 없이 effect가 직접 든다.
-- **GameplayEffectSpec 복사 생성자+Clone()(→D19(Spec 복사/Clone)):** 생성자를 멤버세팅+`Initialize()`로 분리한 위에, `Initialize` 재실행 없이 상태를 옮기는 복사 경로 신설. 복사 심도 = Definition·Executions 공유 / Modifiers 리스트 복사 / `CapturedRelevantAttributes` 깊은 복사(컨테이너 `Clone()` 신설). UE `FGameplayEffectSpec` copy 생성자 대응(값 struct라 UE는 자동, 우리는 class라 명시적).
-- **적용 경계 통일 배선:** `ApplyGameplayEffectSpecToSelf` 맨 위에서 `spec.Clone()` + `CaptureAttributeDataFromTarget(this)` 한 번 → `appliedSpec`을 Instant·Duration·Execute·Recalc 전부 관통. **UE 원문 검증(유저가 "Active에만 캡처 아니냐"로 교정 요구):** UE는 Duration은 `ApplyGameplayEffectSpec`(ge.cpp:2799)·Instant는 `StackSpec`(asc.cpp:677)으로 **양쪽 다 복사본에 target 캡처** — "Active만"이 아니었음. 우리 구조에선 이중 복사가 없어 경계 한 곳으로 통일.
-- **설계 논의(길었음, 핵심 판단들):** ① spec을 struct로? → **아니오**(C# struct 복사는 얕은 복사라 UE 값 의미 못 얻고, 내부 참조 멤버 공유로 컨테이너 격리 실패 + mutable struct 함정). class+Clone()이 UE 값struct+copy-ctor의 정확한 대응. ② clone이 "지금 의미없잖아"(유저) → **맞음**, 캡처 소비처(evaluate)·apply-time magnitude 둘 다 없어 관측 변화 0인 선배관. ③ 그럼 asset-only로 좁혀 clone 제거? → **아니오**, SetByCaller 도입 확정이라 spec 직접생성+멀티적용이 실용도가 됨 → clone 유지(→D20(spec API+clone 유지)).
-- **회고:** UE 동작을 두 번 느슨하게 말했다 — "Instant는 copy==ref로 봐도 된다(clone 선택)"이라 했으나 UE는 Instant도 StackSpec 복사; 유저가 "UE 제대로 찾아보라"고 해서 원문 확인 후 정정. 코드만 만지지 말고 UE 원문을 **먼저** 확인했어야(HARNESS '판단은 틀릴 수 있다').
-- **HARNESS 정비(코드 무관):** 그룹 HARNESS 'GAS 모방 의도'(유저 확정 문장) 신설. 일반 HARNESS 핵심 원칙(작업규약·소통방식은 개인 메모리 아닌 하네스에 기록)·대화 규율의 Gloss 규칙(`D#` 등 내부코드 인용 시 한 줄 설명)·대화 규율 '자기 점검'의 체크5·'세션 회고' 문구 수정. 메모리 `gloss-internal-doc-codes.md`는 삭제(하네스로 이동, 유저 지시).
+### 2026-08-04 — AttributeBased 런타임 평가 + ModifierSpec UE 정렬 (치운 D21)
+- 유저가 `CalculateModifierMagnitudes`의 이름-내용 불일치를 지적("이 함수는 magnitude를 계산하지도 않잖아", "attribute가 modifier의 key면 안 된다") → UE 원문 대조: `FModifierSpec`은 `EvaluatedMagnitude`만 갖고 정의와 평행 배열. 그대로 재설계.
+- 캡처 → 평가 순서가 거꾸로라 AttributeBased가 캡처값을 못 읽던 버그도 같이 고침. 여기서 처음 캡처값이 실제 수치를 만들었다.
 
-### 2026-08-04 — 캡처 문서 정합 + 설계 감사 (코드 변경 없음)
-- 유저 요청: "지금까지 한 것(GameplayAttribute·Editor·Capture) 문서화" → 대조 결과 decisions(D12(캡처 정의 struct)~D17(Execution Defs 등록))·worklog는 이미 완결, **상태 포인터만 뒤처져 있어** NOW.md·progress `다음 작업`에 D16(컨테이너 UE 정렬)·D17(Execution `Defs()` 등록)·params 조회를 반영. 코드는 서술과 일치함을 파일별로 확인(GameplayAttribute·Execution.Defs·Spec Setup·SpeedBoost·params).
-- **설계 감사(유저가 "코드 있냐/없냐 말고 의도·사양이 맞냐를 봐라"로 방향 교정):** 캡처 계층은 **모양은 사양에 맞음**(Source@생성=시전 / Target@적용=명중의 2단계는 값의 시간 의미로 정당화 — UE 베낌 아님, snapshot 정책·값-key 조회·읽기 일원화도). **그러나 "사양 만족"은 판정 불가** — 소비처가 0(`GetMagnitude` 고정값·Execute +10 고정)이라 지은 Source/snapshot 경로조차 검증할 수단이 없다("Capture Test 못 해봄"의 근본 원인). 미충족: ②Target 캡처(+spec 복사)·④소비. 잠재 위반: snapshot=false 소스 파괴 NRE·captureValueType 미라우팅·params 조용한 false. 코드로 못 정하는 의도 1건(spec 생성=시전인가) 표면화 → 전부 TODO-BOARD(2026-08-04)로.
-- **회고:** 초반에 "호출이 없다→안 된다"로 **코드 현재 상태를 결론처럼** 말했다(유저 2회 교정). [[justify-from-ue-or-user-intent]] 취지(코드 동작은 근거가 아니다)를 "설계 왜"만이 아니라 **"사양 맞냐" 감사에도** 적용해야 했다.
+### 2026-08-04 — Spec 복사(Clone) + Target 캡처 배선 (→D19·D20)
+- 같은 Spec을 여러 대상에 넘기면 Target 캡처가 서로 덮어쓴다 → 복사 생성자 + `Clone()`, 적용 경계 한 곳에서 복제 후 Target 캡처.
+- 유저 "Active에만 캡처 아니냐" → UE 원문으로 Instant도 복사본에 캡처함을 확인.
+- Spec을 struct로? → 아니오(C# struct는 얕은 복사라 UE 값 의미를 못 얻음). "clone이 지금 의미없잖아" → 맞지만 SetByCaller 도입이 확정이라 유지(D20).
 
-### 2026-08-03 — Execution이 params로 캡처값 조회 (UE 고증 우선)
-- 유저 지시: "`GameplayEffectExecutionParameters`에서 캡처값 가져오게 구현, 현재 코드에 맞추되 UE 고증 우선."
-- `GameplayEffectExecutionParameters`에 **`AttemptCalculateCapturedAttributeMagnitude`(Current)·`AttemptCalculateCapturedAttributeBaseValue`(Base)** 추가 — UE `FGameplayEffectCustomExecutionParameters`의 동명 메서드 그대로. 내부는 `Spec.CapturedRelevantAttributes.TryGetCapturedValue(def, valueType, out)`에 위임(params가 `Spec`을 들고 있음).
-- **UE 대비 유일한 생략:** `FAggregatorEvaluateParameters`(태그 기반 aggregator 평가) — 이 프로젝트엔 aggregator 계층이 없고 컨테이너가 이미 계산된 값을 보관하므로 인자에서 뺐다(D13(캡처 계층+snapshot) 기록된 divergence와 동일 계열).
-- Calculation Modifiers TODO 주석의 미래 API 스케치를 실제 메서드명으로 갱신.
-- **⚠ 지금 동작 범위:** Source 캡처는 spec 생성 시 캡처돼 **조회됨**. Target 캡처는 `CaptureAttributeDataFromTarget`가 적용 경로에 아직 미배선(spec 복사 선행)이라 Target-source 정의 조회는 false — 즉 SpeedBoost의 `B`(Speed/Source)는 읽히고 `A`(Health/Target)는 아직 안 읽힘. **관측 변화 0**(SpeedBoost.Execute는 아직 캡처값을 안 씀, 고정 +10).
+### 2026-08-01~03 — 캡처 계층 신설 (→D14·D15)
+- UE `FGameplayEffectAttributeCaptureDefinition`/`Spec`/`SpecContainer` 3계층. snapshot(고정)·non-snapshot(라이브) 둘 다(유저 확정).
+- 정의 공급원이 0개라 무엇을 먼저 배선할지 물어 "AttributeBased가 캡처 정의를 품게"(D14).
+- 유저 "코드 근거는 진짜 의미 없다. 가장 좋은 건 UE 원본, 그다음이 내 의도" → 컨테이너의 별도 정의 목록이 UE에 없음을 원문으로 확인하고 지움. 이 피드백은 하네스 원칙("왜"의 근거 순서)이 됐다.
+- 어트리뷰트 참조를 `GameplayAttribute` 한 타입 + 전용 드로어로(D15) — 문자열 저장은 못 없애고(FieldInfo 직렬화 불가), 없앨 수 있는 건 팝업 배선 반복.
+- Execution이 `Defs()`로 캡처 대상을 선언하고 Spec이 등록(치운 D17). 파라미터 조회 API는 UE 이름 그대로.
 
-### 2026-08-03 — Execution 캡처 선언 API + Spec 등록 배선 (→D17(Execution Defs 등록))
-- 베이스 `GameplayEffectExecution.Defs()`를 `abstract`→`virtual`(기본 빈 span)로. 하위(SpeedBoostExecution)는 이름 붙은 static 정의 `A`/`B`(=Execute 조회 key) + `defs = {A,B}`를 `ReadOnlySpan`으로 반환.
-- `GameplayEffectSpec.SetupAttributeCaptureDefinitions` ② 배선: `Executions` 순회 → 각 `Defs()` → `AddCaptureDefinition`. modifier 등록(①)과 동형. Executions는 이미 이 호출 전에 resolve됨.
-- **설계 논의 경위(길었음):** 선언식 vs 자가 등록 / static 배열 vs List / span vs IReadOnlyList를 두고 왕복. 결론은 선언식+static 배열+span(→D17(Execution Defs 등록) 근거). **중간 실수:** 유저가 "정의를 Execute의 조회 key로 쓴다"고 이미 말했는데, 에이전트가 `A`/`B`를 익명 인라인 배열로 합쳐 **key 참조를 없앰** → 되돌림. 유저 요청으로 "복사여도 값-key라 무해, 가독성 위해 이름 필드 유지" 주석을 SpeedBoostExecution에 남김.
-- **관측 변화 0** — 캡처 정의가 컨테이너에 등록되고 Source는 생성 시 캡처되나, `Execute`가 아직 캡처값을 읽지 않는다. 다음: Execute가 `params`로 캡처값을 조회(+AttributeBased evaluate 5b).
-
-### 2026-08-03 — `GameplayAttribute(AttributeHandle)` 생성자 (핸들→GameplayAttribute)
-- 배경: `CharacterAttributeSet.Speed`(정적 `AttributeHandle`)로 캡처 정의를 코드에서 만들 편의가 필요(**용도: Execution에서 캡처 등록**). 처음엔 `GameplayEffectAttributeCaptureDefinition.From(handle, source, snapshot)` 팩토리로 넣었으나, 유저가 이름을 싫어했고 **"차라리 `GameplayAttribute`에 `AttributeHandle` 1개짜리 생성자를 추가하라"**로 방향 정정 → From 제거.
-- 근거(유저 의도, HARNESS '왜의 근거는 유저 의도 → UE 원본'): 핸들→`GameplayAttribute` 변환은 캡처 전용이 아니라 **어디서든 쓰는 재사용 프리미티브**(modifier 저작 등)라 `GameplayAttribute`가 소유하는 게 맞다. `From`은 캡처에 국한된 데다 `FromSource`/`FromTarget` 방향 이름과 'from'이 충돌.
-- 구현: `GameplayAttribute(AttributeHandle handle) : this(handle.SetType?.AssemblyQualifiedName, handle.Name)`. 캡처 정의는 기존 생성자 `(source, new GameplayAttribute(handle), snapshot)`로 조립.
-- **여전히 유저 WIP(SpeedBoostExecution.cs):** `CaptureDef` 별칭·`FromSource`·`GameplayEffectExecution.Defs()`·Spec의 Execution 캡처 등록 배선·`AddOutputModifier(AttributeHandle,...)` 오버로드는 미구현(착수 지시 대기). 그 파일의 `.From(...)` 호출은 제거됨에 따라 유저가 생성자 방식으로 바꿔야 함.
-
-### 2026-08-03 — AttributeBased 기본값(class default)·GameplayAttribute indent
-- **coefficient 기본값 = class default:** 유저 지적("coefficient 0이면 잘못될 수도"). 식 `(value+Pre)*coef+Post`에서 coef=0이면 캡처값이 통째로 0. 처음엔 에디터 콜백(onAdd·Calc Type 전환 시 세팅)으로 짰으나 유저가 **"기본값은 class 기본값 말한 것"**이라 정정 → **`AttributeBasedMagnitude`를 struct→class로 바꾸고 `coefficient = 1f` 필드 초기화.** Unity는 struct 초기화값을 무시하지만 class는 새 인스턴스에 반영하므로 이게 정공법(UE도 FAttributeBasedFloat coefficient 기본 1). 에디터 콜백 2곳·미사용 상수 제거. 기존 에셋은 직렬화값 유지, 신규/누락 필드만 1. D# 없음(자명). **⚠ 부작용:** GameplayModifier(struct)가 reference 필드를 품게 돼 struct 복사 시 attributeBased 인스턴스가 공유된다 — 현재 modifier 복사·변형 경로가 없어 무해하나 5b/spec 복사 도입 시 유의.
-- **GameplayAttribute 드로어 indent:** 유저 지적("ui 직관성 별로"). `GameplayAttributeDrawer.OnGUI`에서 Set/Attribute 두 행을 `EditorGUI.indentLevel++`/`--`로 한 단 들여써 부모 필드 아래 묶음으로 보이게(높이 불변, 수평 시프트만). prev 저장 대신 ++/-- 대칭(유저 지적).
-
-### 2026-08-03 — 캡처 컨테이너 `_definitions` 제거, UE 원형에 맞춤 (→D16(캡처 컨테이너 UE 정렬))
-- 대화 흐름: "컨테이너가 definitions를 spec과 따로 둔 이유"에 처음엔 코드 동작(`CaptureAttributes`가 Clear·재캡처)으로 답 → 유저: "코드 근거는 진짜 의미 없다. 가장 좋은 건 UE 원본, 그다음이 내 의도." → HARNESS HARNESS '왜의 근거는 유저 의도 → UE 원본' 신설(근거 순서) + 이 피드백 개인 메모리화.
-- **UE 원문 확인**(`GameplayEffect.h` ylyking 미러 + Epic): `FGameplayEffectAttributeCaptureSpecContainer`는 `SourceAttributes`/`TargetAttributes`(spec 배열)+`bHasNonSnapshottedAttributes`뿐, **definitions 별도 리스트 없음.** `AddCaptureDefinition`이 미캡처 spec을 배열에 넣고 `CaptureAttributes`가 제자리 채움. → 우리 별도 리스트는 divergence였음이 확인됨.
-- 유저 지시 "definition 없애" → **UE 원형으로 정리:** `GameplayEffectAttributeCaptureSpec`에 **선언 전용 생성자**(정의만, `IsValid=false`) 추가 → 값 스냅샷 struct로도 "미캡처 상태" 표현 가능. 컨테이너는 `_definitions` 삭제, `AddCaptureDefinition`이 미캡처 spec을 소스별 배열에 삽입(값 동등성 중복 제외), `CaptureAttributes`가 `specs[i] = new (def, asc)`로 제자리 교체(`List<struct>`라 교체가 곧 in-place). `readonly struct` 유지(class 안 감 — D13(캡처 계층+snapshot)/D11(입출력 타입 분리) 기조).
-- **관측 변화 0** — 캡처 결과 동일, 순수 내부 표현 정리. 공개 API(`AddCaptureDefinition`/`CaptureAttributes`/`TryGetCapturedValue`) 시그니처 불변이라 `GameplayEffectSpec` 호출부 영향 0(grep 확인).
-
-### 2026-08-03 — 어트리뷰트 참조를 `GameplayAttribute` 단일 타입으로 추출 (→D15(GameplayAttribute 타입))
-- 대화 흐름: 유저가 "매번 TypeName+Field를 손으로 박고 드로어에 연결하는 반복, 자동화 방법 없나 — UE `FGameplayAttribute`처럼 따로 만들어봐"라고 지시. 설명 단계에서 "문자열 저장 자체는 못 없앤다(FieldInfo 직렬화 불가, UE도 이름 저장), 없앨 수 있는 건 팝업 배선 반복"을 먼저 짚고, 적용 범위(데이터 모델 변경=에셋 마이그레이션 수반)를 AskUserQuestion으로 확인 → **둘 다 적용**, 이름은 유저가 **`GameplayAttribute`**로 지정.
-- **신설:** `Attribute/GameplayAttribute.cs`(직렬화 struct — AQN 문자열+필드명, `ToAttributeHandle()`·`IsSet`·equality) + `Attribute/Editor/GameplayAttributeDrawer.cs`(`[CustomPropertyDrawer]`, Set/Attribute 2행 팝업). 드로어가 타입의 모든 직렬화 필드에 자동 적용되는 것이 "자동화"의 실체.
-- **compose:** `GameplayModifier`(두 문자열→`attribute`)·`GameplayEffectAttributeCaptureDefinition`(두 문자열→`attribute`, `captureSource`/`snapshot`은 유지). 각 `ToAttributeHandle()`은 `attribute.ToAttributeHandle()`에 위임.
-- **드로어 위임:** `GameplayEffectAssetDrawer`·`AttributeBasedMagnitudeDrawer`가 수기 Set/Attribute 팝업을 `attribute` PropertyField로 교체 + 높이 계산 재작성. 팝업 로직을 갖던 공용 헬퍼 `AttributeReferenceGUI`는 드로어로 흡수·**삭제**(사용처 0 grep 확인 후).
-- **에셋 마이그레이션:** `GE_EquipSpeedDown`(modifier 2개, 하나는 backingAttribute 채움)·`GE_MeleeDamage`(1개)를 중첩 `attribute:` 레이아웃으로 손수 이관 — 기존 YAML 값을 읽어 결정적 이동(추정 없음). 생성자 호출부·옛 private 필드 외부 참조 0(grep 확인)이라 코드 파급 없음. `AttributeSetDefinition` 계열의 동명 문자열 필드는 별개 타입이라 미변경.
-- **관측 변화 0** — 순수 구조 정리라 런타임 동작·5b evaluate와 무관. **⚠ 유저 검증 필요:** Unity 컴파일(신규 파일 인덱싱 후 IDE의 `GameplayAttribute` 미해결 경고 해소) + 두 GE 에셋의 Inspector 값이 이관 후 그대로인지.
-
-### 2026-08-02 — Spec이 캡처 컨테이너 소유 + AttributeBasedMagnitude compose (계획 파일 ~5/9, →D14(Spec이 캡처 소유))
-- 유저 지시: "`GameplayEffectAttributeCaptureSpecContainer`를 GE Spec이 소유하게 하고 값을 넣는 것까지 — UE 최대한 따라가고, 못 따라가는 부분은 말하라."
-- **먼저 막힌 지점을 표면화:** 컨테이너에 넣을 캡처 **정의 공급원이 0개**였다 — `AttributeBasedMagnitude`가 인라인 캡처 필드만 갖고 정의로 compose 안 됨(snapshot 필드도 없음) + `GameplayEffectExecution`에 캡처 선언 API 없음. 둘 중 무엇을 배선할지 유저에게 질문(AskUserQuestion) → **① AttributeBasedMagnitude compose** 확정(옵션 설명에 "GE_EquipSpeedDown 재배선" 명시 = 데이터 모델 변경 승인).
-- **`GameplayEffectSpec` 배선(UE `FGameplayEffectSpec` 흐름):** `CapturedRelevantAttributes` 소유 → 생성자에서 `SetupAttributeCaptureDefinitions()`(AttributeBased modifier의 `BackingAttribute` 등록) → `CaptureDataFromSource()`(생성 시 Source=`Context.GetInstigator()` 캡처). `CaptureAttributeDataFromTarget(target)`는 **메서드만 제공하고 호출 안 함** — `ApplyGameplayEffectSpecToTarget`이 같은 spec을 여러 대상에 넘겨서(spec 복사 미도입) target 캡처가 서로 덮어씀, spec 복사(계획 8/9) 선행.
-- **compose:** `AttributeBasedMagnitude`의 인라인 캡처 3필드를 중첩 `GameplayEffectAttributeCaptureDefinition backingAttribute`로 교체 + `snapshot` 획득(UE `FAttributeBasedFloat::BackingAttribute`와 일치). `captureValueType`(Base/Current 소비 방식)는 정의 밖에 유지(D12(캡처 정의 struct)). `GameplayModifier`에 `MagnitudeCalculationType`·`AttributeBased` 접근자 추가. 드로어 property path 중첩화 + Snapshot 행(7→8행). `GE_EquipSpeedDown.asset` 두 modifier의 `attributeBased` 블록을 중첩 레이아웃으로 손수 이관(기존 값 그대로+`snapshot: 0`).
-- **관측 변화 0(중요):** 캡처값을 magnitude로 읽는 evaluate(5b `AttemptCalculateMagnitude`)가 아직 없어 modifier magnitude는 여전히 고정값. 캡처는 컨테이너에 들어가되 읽는 곳이 없다 — 다음 단계에서 evaluate와 묶어 관측치 확보.
-- **런타임 데이터 주의:** GE_EquipSpeedDown의 AttributeBased가 Source의 `CombatAttributeSet.damage`를 캡처하는데, `Player_AttributeInitData`에 `CombatAttributeSet`가 빠져 있을 수 있음(NOW.md 기록) — evaluate 배선 시 유저가 에디터에서 확인 필요.
-
-### 2026-08-01 — 캡처 결과 계층 신설 + 정의 rename (계획 파일 2·3/9)
-- 유저 지시 2건: ①정의 `AttributeCaptureDefinition` → `GameplayEffectAttributeCaptureDefinition` rename(UE 원형명 일치, `.cs`+`.meta` 함께·GUID 유지, 사용처 0이라 코드 파급 없음). ②`GameplayEffectAttributeCaptureSpec`·`GameplayEffectAttributeCaptureSpecContainer` 신설.
-- **`GameplayEffectAttributeCaptureSpec`** (readonly struct) — 정의 1건의 캡처 결과. `snapshot=true`면 캡처 시점 `AttributeData`(Base·Current) 고정, `false`면 대상 ASC 참조만 보관해 `TryGetCapturedValue(valueType)` 조회 시 라이브 재조회. Base/Current는 조회 시 `AttributeCaptureValueType`로 지정(정의는 값 종류 미고정 — D12(캡처 정의 struct)와 정합).
-- **`GameplayEffectAttributeCaptureSpecContainer`** (class) — `AddCaptureDefinition`(값 동등성 중복 제외)로 정의 등록 → `CaptureAttributes(ascToCapture, captureSource)`를 **캡처 소스별로 호출**해 해당 배열 채움 → `TryGetCapturedValue(def, valueType)`가 정의의 `CaptureSource`로 배열을 골라 조회. UE `FGameplayEffectAttributeCaptureSpecContainer` 대응, 어그리게이터 계층은 없어 ASC 직접 조회로 축소.
-- **UE 원문 대조(2026-08-01, 유저 요청)** — ylyking UE 미러 헤더 + Epic 문서로 3계층 확인. 결과 컨테이너 저장을 **source/target 배열 분리**(`SourceAttributes`/`TargetAttributes`)로, `CaptureAttributes`를 UE와 같은 **per-source 시그니처**로 교체(초기 단일 리스트+`(src,tgt)` 한 번 호출에서). 확인된 의도적 차이 3건은 D13(캡처 계층+snapshot)에 기록(값 캡처 vs aggregator / AQN vs FGameplayAttribute / pull vs 콜백 push).
-- snapshot 완전 구현은 **유저 확정**(AskUserQuestion) — 정의에 snapshot 필드가 이미 있어 두 경로를 다 처리해야 의미가 산다 (→D13(캡처 계층+snapshot)). 트레이드오프: non-snapshot용 ASC 참조를 캡처 기간 보유(UE와 동일 비용).
-- **아직 사용처 0(dead code).** 다음: `GameplayEffectSpec`이 컨테이너 소유 + AttributeBased evaluate(5b) 배선.
-
-### 2026-07-28 — AttributeCapture 착수: `AttributeCaptureDefinition` 신설 (계획 파일 1/9)
-- `Assets/Scripts/Core/AbilitySystem/Effect/AttributeCaptureDefinition.cs` 생성 (→D12(캡처 정의 struct)). UE `FGameplayEffectAttributeCaptureDefinition` 대응 — "무엇을·어디서 캡처할지"만 담는 불변 정의(값은 캡처 컨테이너가 별도 보관 예정).
-- 착수 전 유저에게 2개 확인: ①기존 `AttributeBasedMagnitude`와의 관계 → **독립 struct만 추가(additive)**, 기존 인라인 캡처 필드·`GE_EquipSpeedDown` 에셋은 안 건드림. ②필드 구성 → **UE 원형**(captureSource + attribute AQN + snapshot), `captureValueType`은 정의에서 제외.
-- 필드: `captureSource`(기존 `AttributeCaptureSource` enum 재사용), `attributeSetTypeName`+`fieldName`(AQN — `AttributeHandle`이 직렬화 불가 struct라 프로젝트 공통 패턴), `snapshot`(bool). `ToAttributeHandle()` + `IEquatable`(중복 캡처 방지 키).
-- **아직 사용처 0 (dead code)** — 다음 단계(캡처 컨테이너·AttributeBased evaluate)에서 배선. **`.meta` 미생성** — GUID를 지어내지 않기 위해 Unity 자동 생성에 맡김.
-
-### 2026-07-19 — Execution 프레임워크 완성 (SO→클래스, Params/Output 분리, Execute 경로 UE 정합)
-- **ScalableFloat 루프 검증 통과** — 유저가 에디터에서 확인. 07-19 앞 항목의 미검증 배관(`MakeEffectContext`/`MakeOutgoingSpec`/`GameplayEffectContext` 재구성)이 이 경로로 한꺼번에 검증됨. 검증 중 NRE 1건(`testEffect` 미할당 ASC) → `MakeOutgoingSpec`·`ApplyGameplayEffectSpecToSelf`에 null 가드 추가.
-- **Execution을 SO에서 순수 클래스로 전환** (→D7(Execution=순수 클래스)). `GameplayEffectExecutionAsset` 폐기. 근거는 "SO의 존재 이유는 공유할 **데이터**인데 Execution엔 그게 없다(로직이다)". GE 에셋은 AQN만 저장(`executionTypeNames` + 기존 `SubclassSelector` 인프라), `GameplayEffectSpec`이 생성 시 resolve해 인스턴스화. 직렬화 형태(AQN vs `[SerializeReference]`)는 미결로 남김 (→D8(Execution 직렬화 형태)). 형태가 SO였던 경위 추적: 최초 GE 커밋 `32bd6b5`(에이전트 세션)에서 근거 기록 없이 정해진 것이었음.
-- **Params/Output 분리** (→D11(입출력 타입 분리)). `ExecutionParameters`(입력) / `ExecutionOutput`(출력 컨테이너) / `GameplayModifierEvaluatedData`(결과 1건 — 기존 `GameplayEffectExecutionOutput` struct를 rename). 시그니처 `Execute(parameters, output)`. 둘 다 struct + execution 스코프 지역 변수로, UE의 루프 내부 지역 변수 구조에 맞춤.
-- **Execute 경로를 UE와 정합**하게 수정:
-  - 쓰기 지점을 `ApplyEvaluatedModifier` 하나로 통합 (→D9(쓰기 지점 통합)) — Execution 출력이 `AddBase`/`Override` 2종만 지원하던 결함 해소, 6종 전부 동작.
-  - BaseValue 쓰기마다 CurrentValue 즉시 재계산 (→D10(즉시 재계산)) — Execution이 같은 GE의 modifier 결과를 stale하게 읽던 버그 수정.
-  - Execution별 출력 즉시 반영 → Execution[1]이 Execution[0] 결과를 봄 (UE 소스로 대조 확인: `ExecutionParams`/`ExecutionOutput`이 executions 루프 내부 지역 변수).
-  - `ExecuteModifiers` → `ExecuteGameplayEffect` 개명 (Execution도 수행하므로 이름이 실제보다 좁았음).
-  - Modifier 없이 Execution만 가진 GE가 조용히 무시되던 문제 수정.
-- 에디터: GE 드로어에 `Executions` 노출(누락돼 있었음), Modifiers 리스트·각 요소 foldout + 개수 표시.
-- 문서: architecture `gameplay-effect.md`에 **ASC GE 로직 전체**(적용 분기 / Execute 파이프라인 / persistent 경로 / Tick) 근거와 함께 작성. UE 대비 알려진 한계 5건 명시.
-- ⏸ **캡처 도입은 유저 지시로 중단** — "구현하자"까지 갔다가 계획 단계에서 멈춤. AttributeBased 평가(5b)도 TODO로 유지.
-- **D6(캡처 미도입(폐기)) 폐기·결번 처리** — 에이전트가 승인 없이 작성한 "캡처 미도입" 결정이었고, 유저가 **도입 방향**을 확정해 무효가 됨. 'progress 작성 규칙'의 D# 재번호 금지에 따라 번호를 당기지 않고 결번으로 남김(유저 확정).
-- ⚠️ 미해결로 남긴 것: `AttributeSet` Pre/Post 훅 부재(클램프·사망 판정 자리 없음), persistent 경로 `Override` 비결정성(Dictionary 순회), `ApplyGameplayEffectSpecToTarget`의 Spec 인스턴스 공유.
-- 🧹 정리 필요: `CombatAttributeSet.defense`·ASC Execution 가드는 에이전트가 무단 추가/수정한 것으로 유지 여부 미정. ASC `testEffect`는 검증용 임시 필드라 커밋 전 제거 필요.
-
-### 2026-07-19 — ToTarget 적용 경로 + Context 팩토리·접근자 정비
-- ASC에 **Target 적용 경로** 추가: `ApplyGameplayEffectToTarget(effect, target, context, level)` / `ApplyGameplayEffectSpecToTarget(spec, target)`. 후자는 `target.ApplyGameplayEffectSpecToSelf(spec)`로 위임(target null이면 Invalid). UE `ApplyGameplayEffectToTarget → Target->ApplyGameplayEffectSpecToSelf` 구조.
-- **Context/Spec 팩토리** 도입: `MakeEffectContext()`(self를 Instigator로) · `MakeOutgoingSpec(effect, context, level)`. ToSelf·ToTarget 모두 이 팩토리 경유로 통일 → spec 생성 지점 단일화. context 없으면 ToTarget이 `MakeEffectContext()`로 self 주입.
-- **`GameplayEffectContext` 재구성**: Instigator/EffectCauser/SourceObject를 생성자 대신 mutator로 주입 — `AddInstigator(instigator, effectCauser)`·`AddSourceObject(Object)` (UE `AddInstigator`/`AddSourceObject`). 조회는 `GetInstigator()`/`GetSourceObject()` 메서드로 통일(중복 프로퍼티 제거, 유일 소비처 `GameplayEffectExecutionParameters`도 교체). `MakeEffectContext`는 **Instigator만 기본 주입**, SourceObject는 호출처가 필요 시 별도로.
-- **결정**: `MakeOutgoingSpec`은 `SpecHandle`로 감싸지 않고 `GameplayEffectSpec`(class) 직접 반환 (→D5(Spec 직접 반환)). Spec은 이미 참조 타입이라 UE의 SpecHandle이 주는 이점이 없음. 나머지 handle(Attribute/Active/Context)은 각자 실익이 있어 유지.
-- ⏳ **여전히 미배선(5b)**: `GameplayModifier`가 `spec.Context.GetInstigator()`(source)/target ASC를 읽어 AttributeBased magnitude를 evaluate하는 런타임은 미구현. 이제 context에 source가 실려 오므로 소비만 남음.
-
-### 2026-07-18 — AttributeBased Magnitude (에디터 단계)
-- `MagnitudeCalculationType.AttributeBased` 활성화. `AttributeBasedMagnitude` struct 추가: captureSource(Source/Target) · 캡처 Attribute Set+Field · captureValueType(Current/Base) · coefficient · preMultiplyAdditive · postMultiplyAdditive. 계산식 `(value + PreAdd) * Coefficient + PostAdd`. `GameplayModifier`에 `attributeBased` 필드 추가.
-- 에디터 드로잉: Calc Type별 payload가 스스로 그리는 구조. `AttributeBasedMagnitude` 전용 `[CustomPropertyDrawer]`(AttributeBasedMagnitudeDrawer)가 자기 7행 레이아웃·높이 소유 → 부모 `GameplayEffectAssetDrawer`는 `PropertyField` 위임 + `GetPropertyHeight`로 높이 계산(매직넘버 제거). Set+Field 팝업 로직은 `AttributeReferenceGUI`로 추출해 modifier 대상·캡처가 공유(중복 제거). UE `FGameplayEffectModifierMagnitude` 방식 참고.
-- ⏳ **런타임 미배선**: `GameplayModifier.GetMagnitude`는 아직 고정 `magnitude`만 반환. Spec/ASC 평가·호출처의 Source(Instigator) 전달 배선은 다음 단계 → 현재 AttributeBased는 **에디터 authoring만 가능, 실효과 없음**. 스냅샷 정책은 "apply 시점 1회"로 확정(캐시 불변조건 유지).
-
-### 2026-07-05 — 문서화
-- GAS 문서화 중 **⚠️ `GameplayEffectType` Instant/Duration enum 주석(="미구현") vs ASC 실행 경로(존재) 불일치** 발견 → 블로커·후속 TODO로 등록(유저 확인 대기). (D4(Modifier 6종·두 경로) 관련)
+### 2026-07-18~19 — AttributeBased 편집기, Execution 프레임워크, Target 적용 경로
+- AttributeBased magnitude 데이터·드로어(`(v + Pre) * Coef + Post`).
+- Execution을 SO에서 순수 클래스로(D7) — SO는 공유할 데이터용인데 Execution은 로직이다. 입력·출력 타입 분리, 쓰기 지점을 하나로(Execution 출력이 2종 연산만 지원하던 결함 해소), Execution만 가진 GE가 무시되던 문제 수정.
+- `ApplyGameplayEffectToTarget`·컨텍스트/Spec 팩토리, `MakeOutgoingSpec`은 Spec을 직접 반환(D5).
+- 에이전트가 승인 없이 쓴 "캡처 미도입" 결정은 유저가 도입을 확정해 결번(치운 D6).
 
 ### 2026-06-13 — PR #3 (Ability System - GameplayEffect)
-- GE 계층 구현: `GameplayEffect`(SO)·`GameplayModifier`, `GameplayEffectSpec`(resolve·Magnitude 1회 캐싱), `ActiveGameplayEffect`(+`Handle`), `GameplayEffectContext`(+`Handle`) (→D1(GE 단일 채널)·D2(정의/Spec 분리))
-- `AbilitySystemComponent` 대폭 확장(+392줄): `ApplyGameplayEffectToSelf`/`RemoveActiveGameplayEffect`, Modifier 6종 CurrentValue 누산, Duration 만료·Period 틱, 읽기 캐시 (→D3(dirty-on-write 캐시)·D4(Modifier 6종·두 경로))
-- `GameplayEffectExecution`(+Output/Parameters) — 배관·추상 SO만, concrete 0(껍데기)
-- 초기 `AttributeEffect` 스텁 제거
+- GE(SO)·Modifier·Spec·ActiveGameplayEffect·Context, ASC 적용/제거·Modifier 6종·Duration/Period (→D1·D2·D4).

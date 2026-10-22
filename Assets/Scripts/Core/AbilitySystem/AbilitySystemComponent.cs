@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;
@@ -12,8 +11,6 @@ namespace Core.AbilitySystem
 {
     public class AbilitySystemComponent : MonoBehaviour
     {
-        [SerializeField] private AttributeDefinitionAsset attributeInitData;
-
         private readonly Dictionary<Type, AttributeSet> _spawnedAttributeSets = new();
 
         // 활성 GE의 소유·수명·실행·집계 + 반응성 aggregator를 이 컨테이너가 맡는다. ASC는 공개 API 위임 래퍼와 AttributeSet 저장만 남긴다.
@@ -56,8 +53,20 @@ namespace Core.AbilitySystem
         /// <remarks>UE: UAbilitySystemComponent::OnAbilityEnded</remarks>
         public event Action<AbilityEndedData> OnAbilityEndedWithData;
 
+        /// <summary>이 ASC에 GE가 적용될 때마다(Instant 포함). 인자는 Instigator ASC(없으면 null)·적용된 Spec·활성 핸들(Instant면 Invalid).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::OnGameplayEffectAppliedDelegateToSelf</remarks>
+        public event Action<AbilitySystemComponent, GameplayEffectSpec, ActiveGameplayEffectHandle> OnGameplayEffectAppliedToSelf;
+
+        /// <summary>이 ASC의 주기 GE가 한 번 실행될 때마다. 인자는 <see cref="OnGameplayEffectAppliedToSelf"/>와 같다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::OnPeriodicGameplayEffectExecuteDelegateOnSelf</remarks>
+        public event Action<AbilitySystemComponent, GameplayEffectSpec, ActiveGameplayEffectHandle> OnPeriodicGameplayEffectExecuteOnSelf;
+
         /// <summary>어빌리티가 동작하는 GameObject 정보. 기본값은 Owner = Avatar = 이 GameObject.</summary>
         /// <remarks>UE: UAbilitySystemComponent::AbilityActorInfo</remarks>
+        /// <summary>이 ASC에서 활성 GE가 제거될 때마다(만료·직접 제거) 효과를 거둔 뒤 울린다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::OnAnyGameplayEffectRemovedDelegate</remarks>
+        public event Action<ActiveGameplayEffect> OnAnyGameplayEffectRemoved;
+
         public GameplayAbilityGameObjectInfo AbilityGameObjectInfo { get; } = new();
 
         private void Awake()
@@ -66,10 +75,6 @@ namespace Core.AbilitySystem
             _activatableAbilities.RegisterWithOwner(this);
 
             InitAbilityGameObjectInfo(gameObject, gameObject);
-
-            // AddSet은 AttributeSet 필드에 값을 직접 세팅할 뿐 CurrentValue 갱신 경로를 거치지 않아
-            // 초기화 중 AttributeChanged가 발화하지 않는다(불필요한 재평가 없음).
-            AddSet(attributeInitData);
         }
 
         private void Update()
@@ -102,6 +107,13 @@ namespace Core.AbilitySystem
         public void RemoveAttributeSet(AttributeSet set)
         {
             _spawnedAttributeSets.Remove(set.GetType());
+        }
+
+        /// <summary>등록된 AttributeSet 전부(읽기 전용).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetSpawnedAttributes</remarks>
+        public IReadOnlyCollection<AttributeSet> GetSpawnedAttributes()
+        {
+            return _spawnedAttributeSets.Values;
         }
 
         /// <summary>핸들이 가리키는 AttributeSet 타입(<see cref="GameplayAttributeHandle.SetType"/>)의 인스턴스를 반환한다. 미등록이면 null.</summary>
@@ -446,6 +458,37 @@ namespace Core.AbilitySystem
             }
         }
 
+        /// <summary>지금 걸려 있는 GE 전부(읽기 전용). 디버그 표시·조회용 — 바꾸려면 Apply/Remove를 쓴다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveGameplayEffects</remarks>
+        public IEnumerable<ActiveGameplayEffect> GetActiveGameplayEffects()
+        {
+            // 컨테이너는 Awake에서 만든다 — 에디터 인스펙터는 Awake 전(프리팹 에셋·꺼진 오브젝트)에도 부른다
+            if (_activeGameplayEffectsContainer == null)
+            {
+                return Array.Empty<ActiveGameplayEffect>();
+            }
+
+            return _activeGameplayEffectsContainer.ActiveGameplayEffects.Values;
+        }
+
+        /// <remarks>UE: FActiveGameplayEffectsContainer::InternalOnActiveGameplayEffectRemoved → OnAnyGameplayEffectRemovedDelegate</remarks>
+        internal void NotifyAnyGameplayEffectRemoved(ActiveGameplayEffect removedEffect)
+        {
+            OnAnyGameplayEffectRemoved?.Invoke(removedEffect);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::OnGameplayEffectAppliedToSelf</remarks>
+        internal void NotifyGameplayEffectAppliedToSelf(AbilitySystemComponent source, GameplayEffectSpec specApplied, ActiveGameplayEffectHandle activeHandle)
+        {
+            OnGameplayEffectAppliedToSelf?.Invoke(source, specApplied, activeHandle);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::OnPeriodicGameplayEffectExecuteOnSelf</remarks>
+        internal void NotifyPeriodicGameplayEffectExecuteOnSelf(AbilitySystemComponent source, GameplayEffectSpec specExecuted, ActiveGameplayEffectHandle activeHandle)
+        {
+            OnPeriodicGameplayEffectExecuteOnSelf?.Invoke(source, specExecuted, activeHandle);
+        }
+
         /// <summary>aggregator가 dirty해질 때 그 OnDirty가 호출하는 진입점.</summary>
         internal void OnAttributeAggregatorDirty(AttributeAggregator aggregator, GameplayAttributeHandle gameplayAttributeHandle)
         {
@@ -472,41 +515,6 @@ namespace Core.AbilitySystem
 
             data = default;
             return false;
-        }
-
-        // ── 초기화 ────────────────────────────────────────────────────────────────
-
-        /// <summary>정의(SO)로 AttributeSet들을 생성해 등록한다. 같은 타입이 이미 있으면 건너뛴다(TryAdd). Awake 자체 초기화 외에 외부(예: BoxRoom)의 Source 캡처용 어트리뷰트 주입에도 쓴다.</summary>
-        public void AddSet(AttributeDefinitionAsset data)
-        {
-            if (data == null)
-            {
-                return;
-            }
-
-            foreach (AttributeSetDefinition attributeSetData in data.AttributeSets)
-            {
-                Type attributeSetType = attributeSetData.GetAttributeSetType();
-                if (attributeSetType == null || !typeof(AttributeSet).IsAssignableFrom(attributeSetType))
-                {
-                    Debug.LogWarning($"[ASC] '{attributeSetData.GetType().Name}' 에서 유효하지 않은 AttributeSet 타입.");
-                    continue;
-                }
-
-                var set = (AttributeSet)Activator.CreateInstance(attributeSetType);
-                foreach (AttributeFieldDefinition fieldData in attributeSetData.Attributes)
-                {
-                    FieldInfo field = attributeSetType.GetField(fieldData.FieldName, BindingFlags.Public | BindingFlags.Instance);
-                    if (field == null)
-                    {
-                        Debug.LogWarning($"[ASC] 필드 '{fieldData.FieldName}'을 {attributeSetType.Name}에서 찾을 수 없음.");
-                        continue;
-                    }
-                    field.SetValue(set, fieldData.Data);
-                }
-
-                AddSpawnedAttribute(set);
-            }
         }
 
         public bool HasAttributeSetForAttribute(GameplayAttributeHandle attributeHandle)
@@ -784,6 +792,88 @@ namespace Core.AbilitySystem
             }
 
             return true;
+        }
+
+        /// <summary>입력이 눌렸다. InputID가 같은 Spec마다 활성이면 어빌리티에 눌림을 전달하고, 비활성이면 발동을 시도한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilityLocalInputPressed</remarks>
+        public void AbilityLocalInputPressed(int inputID)
+        {
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    if (spec.InputID != inputID || spec.Ability == null)
+                    {
+                        continue;
+                    }
+
+                    spec.InputPressed = true;
+                    if (spec.IsActive)
+                    {
+                        AbilitySpecInputPressed(spec);
+                    }
+                    else
+                    {
+                        TryActivateAbility(spec.Handle);
+                    }
+                }
+            }
+        }
+
+        /// <summary>입력이 떼졌다. InputID가 같은 Spec 중 활성인 것의 어빌리티에 뗌을 전달한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilityLocalInputReleased</remarks>
+        public void AbilityLocalInputReleased(int inputID)
+        {
+            using (new ScopedAbilityListLock(this))
+            {
+                foreach (GameplayAbilitySpec spec in _activatableAbilities.Items)
+                {
+                    if (spec.InputID != inputID)
+                    {
+                        continue;
+                    }
+
+                    spec.InputPressed = false;
+                    if (spec.IsActive)
+                    {
+                        AbilitySpecInputReleased(spec);
+                    }
+                }
+            }
+        }
+
+        /// <summary>Spec의 입력을 눌림으로 바꾸고, 활성이면 인스턴스들에 전달한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilitySpecInputPressed</remarks>
+        public virtual void AbilitySpecInputPressed(GameplayAbilitySpec spec)
+        {
+            spec.InputPressed = true;
+            if (!spec.IsActive)
+            {
+                return;
+            }
+
+            // 전달받은 어빌리티가 그 자리에서 끝나면 Per Execution 인스턴스가 목록에서 빠지므로 복사본을 돈다.
+            foreach (GameplayAbility instance in new List<GameplayAbility>(spec.GetAbilityInstances()))
+            {
+                instance.InputPressed(spec.Handle, AbilityGameObjectInfo);
+            }
+        }
+
+        /// <summary>Spec의 입력을 뗌으로 바꾸고, 활성이면 인스턴스들에 전달한다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::AbilitySpecInputReleased</remarks>
+        public virtual void AbilitySpecInputReleased(GameplayAbilitySpec spec)
+        {
+            spec.InputPressed = false;
+            if (!spec.IsActive)
+            {
+                return;
+            }
+
+            // 전달받은 어빌리티가 그 자리에서 끝나면 Per Execution 인스턴스가 목록에서 빠지므로 복사본을 돈다.
+            foreach (GameplayAbility instance in new List<GameplayAbility>(spec.GetAbilityInstances()))
+            {
+                instance.InputReleased(spec.Handle, AbilityGameObjectInfo);
+            }
         }
 
         /// <summary>정의로 부여된 Spec들을 모두 취소한다(활성 중인 것만 실제로 끝난다).</summary>

@@ -66,7 +66,7 @@
 ## D8 — ASC 복제·파괴는 UE와 같은 결과로: 복제는 설정만, 파괴는 어빌리티 취소 → 해제
 
 - 날짜: 2026-10-21
-- 결정: 복제(`Instantiate`)는 설정(`attributeInitData`)만 따라가고 실행 중 상태(현재 값·어빌리티·GE·태그)는 새로 시작한다 — 지금 구조(직렬화 필드는 설정뿐, 나머지는 `Awake`에서 생성)가 이미 그래서 테스트로 고정만. 파괴는 `OnDestroy` → `DestroyActiveState`(Owner·ASC가 살아 있으면 `CancelAllAbilities` → `ClearAllAbilities`) → AttributeSet 목록 비움. 죽은 ASC를 의존 목록에서 빼는 건 이미 UE대로였다(`AttributeAggregator.BroadcastOnDirty`의 Unity null 확인) — 테스트로 고정.
+- 결정: 복제(`Instantiate`)는 직렬화 설정만 따라가고 실행 중 상태(현재 값·어빌리티·GE·태그)는 새로 시작한다 — 지금 구조(직렬화 필드는 설정뿐, 나머지는 `Awake`에서 생성)가 이미 그래서 테스트로 고정만. (당시 설정은 ASC `attributeInitData` — 2026-10-21 attribute D7로 소유 컴포넌트의 초기 스탯 GE가 됐다.) 파괴는 `OnDestroy` → `DestroyActiveState`(Owner·ASC가 살아 있으면 `CancelAllAbilities` → `ClearAllAbilities`) → AttributeSet 목록 비움. 죽은 ASC를 의존 목록에서 빼는 건 이미 UE대로였다(`AttributeAggregator.BroadcastOnDirty`의 Unity null 확인) — 테스트로 고정.
 - 왜: (유저) "UE의 결과와 동일하게 되도록 해." — 앞서 "구현 방법말고 결과, 기능으로서". UE 원문 `AbilitySystemComponent_Abilities.cpp:97`·`:1362`, 복제 기준은 `AbilitySystemComponent.h:1695`·`:1957`(`Transient`)·`:196`(설정).
 - 대가: 에이전트 판단(유저 미확정) — UE의 재진입 방지 플래그(`bDestroyActiveStateInitiated`)는 뺐다. UE는 `OnUnregister`·`OnComponentDestroyed` 둘 다 부르고 EndAbility 콜백이 액터를 다시 파괴할 수 있어 필요하지만, Unity `OnDestroy`는 한 번만 불린다(PlayMode D-4로 확인). AttributeSet은 C#에 강제 무효화가 없어 목록에서만 뺀다. 해제된 GA 인스턴스를 무효로 표시하는 것은 여전히 없다(TODO-BOARD 보류 항목) — ASC를 거치는 경로로는 Spec이 없어 못 쓴다. `CancelAllAbilities`의 Ignore 인자는 쓰는 곳이 없어 뺐다.
 - 재검토: 컴포넌트를 껐다 켜는(비활성화 후 재사용) 경로가 생기면 — UE `OnRegister`가 플래그를 되돌리는 경우에 해당.
@@ -86,3 +86,11 @@
 - 결정: GA에 `assetTags`(UE `AbilityTags`/`GetAssetTags`)·`cancelAbilitiesWithTag`·`blockAbilitiesWithTag`, `IsBlockingOtherAbilities`·`SetShouldBlockOtherAbilities`. ASC에 막힌 어빌리티 태그 개수 컨테이너 + `BlockAbilitiesWithTags`/`UnBlockAbilitiesWithTags`·`AreAbilityTagsBlocked`·`ApplyAbilityBlockAndCancelTags`·`CancelAbilities(withTags, withoutTags, ignore)`. 발동(`PreActivate`)에서 막기·취소(요청한 인스턴스는 빼고, Spec 활성 횟수보다 먼저), 종료에서 풀기, 발동 조건에 "ASC가 막은 어빌리티 태그" 검사 — UE `GameplayAbility.cpp:985`·`:865-869`·`:374`·`:399`, `AbilitySystemComponent_Abilities.cpp:1305-1440`.
 - 왜: (유저) "어빌리티 태그·차단·취소는 넣어야지"(TODO-BOARD 2-10). Source/Target 태그는 (유저) "빼기" → "해당 나중에 TODO로 해둬"(TODO-BOARD '뒤로 미룸').
 - 대가: Source/Target Required·Blocked 태그가 없다 — UE에선 이벤트 발동 데이터가 있을 때만 쓰여 지금은 들어올 경로가 없다. 에이전트 판단(유저 미확정): 취소 불가 플래그(`CanBeCanceled`·`HandleChangeAbilityCanBeCanceled`)는 D4대로 뺀 채, `CancelAllAbilities`의 Ignore 인자도 D8대로 안 넣음(`CancelAbilitySpec`에만 ignore).
+
+## D11 — 입력은 UE 구조대로: Spec이 눌림 상태, ASC가 InputID로 발동·전달, GA가 InputReleased에서 스스로 끝냄
+
+- 날짜: 2026-10-22
+- 결정: `GameplayAbilitySpec.InputPressed`, ASC `AbilityLocalInputPressed/Released(int)`·`AbilitySpecInputPressed/Released`, GA virtual `InputPressed`/`InputReleased`(UE `AbilitySystemComponent_Abilities.cpp:2764·2817·2885·2908`, `GameplayAbility.h:392-395`). 비활성일 때 누르면 발동 시도, 활성이면 인스턴스에 전달.
+- 왜: (유저) 달리기를 "Tag 기반 GA로", 점프도 GA로 — 누르는 동안 유지하는 어빌리티를 뗄 때 끝낼 통로가 필요. 게임 쪽 취소(`CancelAbilityHandle`)와 비교한 뒤 (유저) "A로 하자".
+- 대안: 게임 쪽에서 뗄 때 `CancelAbilityHandle` / 코어 변경은 없지만 끝내는 판단이 어빌리티 밖에 있고 정상 종료가 취소로 남음.
+- 대가: UE의 Generic Confirm/Cancel 입력, 복제 이벤트(`InvokeReplicatedEvent`·`bReplicateInputDirectly`), 어빌리티 태스크(`WaitInputRelease`)는 안 가져옴.

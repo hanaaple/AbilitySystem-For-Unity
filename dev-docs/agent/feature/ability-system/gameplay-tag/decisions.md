@@ -104,7 +104,8 @@
 - 결정: GE 에셋에 `[SerializeReference]` `GameplayEffectComponent` 목록을 두고, 베이스에 UE와 같은 가상 함수 다섯 개를 둔다. 첫 Component는 `TargetTagRequirementsGameplayEffectComponent`(Application·Ongoing·Removal). 처음엔 빈 껍데기(필드·호출 지점만)로 넣었다.
 - 왜: 유저 — "UE 처럼 GE Component 도입할거야", 범위 "셋 다", "빈 거로 넣어둬". 이유는 `근거 미기록`.
 - 대안: 평면 필드(GE 에셋에 조건 필드 + 컨테이너 함수 / 작지만 Component로 옮길 때 다시 짜야 함).
-- 대가: ~~UE `GetOwner()`(Outer)가 없다.~~ 2026-10-19 유저 "UE에 따라 당연히 추가해야지"로 `GetOwner()`를 넣었다(직렬화하지 않는 참조, GE가 `OnGameplayEffectChanged` 때 채움). 에셋 안 인스턴스를 모든 적용이 함께 써 Component에 적용별 상태를 둘 수 없다(UE와 같음).
+- 대가: 에셋 안 인스턴스를 모든 적용이 함께 써 Component에 적용별 상태를 둘 수 없다(UE와 같음). 소유 GE 참조 `GetOwner()`는 직렬화하지 않고 GE가 `OnGameplayEffectChanged` 때 채운다(2026-10-19 유저 "UE에 따라 당연히 추가해야지").
+- 이후: 판정·inhibit·인스펙터 목록·구체 Component(Asset Tags·Granted Tags·Remove Other)는 2026-10-19~20에 채웠다.
 
 ## D30 — Asset Tags는 UE `FInheritedTagContainer` 구조 그대로, 부모 GE는 없음
 

@@ -3,9 +3,8 @@
 타입 선택 드롭다운에서 **"New Script..."**로 베이스 타입을 상속한 새 클래스를 바로 만들고, 컴파일 후 그 자리에 자동으로 꽂아 주는 에디터 공용 툴. Unity의 *Add Component → New Script* 흐름을 흉내낸다.
 
 - 코드: `Assets/Scripts/Core/Common/Editor/`
-- 첫 사용처: Attribute Set 셀렉터 (`AttributeDefinitionAsset`). 결정 근거는 feature `ability-system/attribute` [decisions.md](../../agent/feature/ability-system/attribute/decisions.md) **D4(New Script 생성)**.
-- **반영 기준:** feature `ability-system/attribute` @ 2026-08-07 (KST).
-- **최종 갱신:** 2026-08-26 (KST)
+- 사용처: **현재 없음.** 첫 사용처였던 Attribute Set 목록은 초기값을 초기 스탯 GE로 넣게 되면서 없어졌다. 툴은 남아 있어 아래 opt-in 인자로 다시 켤 수 있다.
+- **최종 갱신:** 2026-10-23 (KST)
 
 > 바깥에서 안으로 읽는다. 1·2절만 봐도 "무엇을·어떻게 쓰나"는 끝난다. 3절부터는 내부, 5절이 가장 깊다.
 
@@ -13,7 +12,7 @@
 
 ## 1. 겉에서 본 동작 (에디터 사용자 시점)
 
-`AttributeDefinitionAsset`을 열고 **Attribute Sets 리스트의 "+"**를 누르면 타입을 고르는 검색 드롭다운이 뜬다. 맨 아래 **"New Script..."**를 고르면:
+(예: 예전 Attribute Sets 목록) opt-in한 리스트의 **"+"**를 누르면 타입을 고르는 검색 드롭다운이 뜬다. 맨 아래 **"New Script..."**를 고르면:
 
 ```
 "New Script..." 클릭
@@ -51,10 +50,10 @@ NewSubclassScript.OpenForListAdd(rect, baseType, target, arrayPath, typeRelPath,
 
 `baseType`을 넘기는 대로 그 타입을 상속하는 스크립트가 만들어진다(`AttributeSet`에 묶여 있지 않다). 팝업 열기·컴파일·자동 배정 같은 내부는 **몰라도 된다** — 넘기는 건 "어디에 꽂을지"(target·경로)뿐이다.
 
-실제로 켜는 건 **한 줄**이다. Attribute Sets 리스트는 리스트 빌더에 opt-in 인자만 넘겨 켠다:
+실제로 켜는 건 **한 줄**이다. 리스트 빌더에 opt-in 인자만 넘긴다(예: 예전 Attribute Sets 리스트):
 
 ```csharp
-// AttributeDefinitionAssetDrawer
+// 예전 AttributeDefinitionAssetDrawer(삭제됨)
 TypeChoiceList.Create( … ,
     newScriptBaseType: typeof(AttributeSet),      // 이걸 주면 add 팝업에 "New Script..."가 생김
     newScriptTypeRelPath: "attributeSetTypeName", // 만든 타입을 새 요소의 어디에 쓸지

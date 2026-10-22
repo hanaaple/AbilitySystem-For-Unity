@@ -1,8 +1,8 @@
 # 아키텍처 개요
 
-> **최종 갱신:** 2026-09-10 (KST)
+> **최종 갱신:** 2026-10-23 (KST)
 
-현재 아키텍처 문서는 **AbilitySystem** 하나다. 다른 시스템(예: 데모 게임)은 생기면 추가한다.
+어빌리티 시스템(GAS 재구현)의 구조 문서다.
 
 ## 시스템 문서
 
@@ -11,6 +11,6 @@
 
 ## 관련 문서
 
-- 개발 방향·코딩 규약 — [`CLAUDE.md`](../../../CLAUDE.md)
-- 코드 컨벤션 — [`CODE_CONVENTION.md`](../CODE_CONVENTION.md)
-- 개발 도구(Unity MCP) — [`dev-tools.md`](../dev-tools.md)
+- 개발 방향 — [`design.md`](../../dev/design.md)
+- 코드 컨벤션 — [`CODE_CONVENTION.md`](../../dev/CODE_CONVENTION.md)
+- 개발 도구(Unity MCP) — [`dev-tools.md`](../../dev/dev-tools.md)

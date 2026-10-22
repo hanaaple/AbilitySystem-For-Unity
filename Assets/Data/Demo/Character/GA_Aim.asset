@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1636849b8700bf418f8f5e548b24470, type: 3}
+  m_Name: GA_Aim
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Abilities.GameplayAbilityAsset
+  description: "\uC870\uC900(\uC6B0\uD074\uB9AD). \uB204\uB974\uB294 \uB3D9\uC548
+    State.Aiming \uD0DC\uADF8\uB85C \uCE74\uBA54\uB77C\uAC00 \uD655\uB300\uB418\uACE0
+    \uBAB8\uC774 \uCE74\uBA54\uB77C \uBC29\uD5A5\uC744 \uBCF8\uB2E4. \uB2EC\uB9AC\uAE30\uB97C
+    \uB9C9\uACE0 \uB04A\uB294\uB2E4. \uAD6C\uB974\uAE30\xB7\uC810\uD504 \uC911\uC5D4
+    \uCF1C\uC9C0\uC9C0 \uC54A\uACE0, \uB204\uB974\uACE0 \uC788\uC73C\uBA74 \uADF8\uAC8C
+    \uB05D\uB09C \uB4A4 \uB2E4\uC2DC \uCF1C\uC9C4\uB2E4."
+  abilityTemplate:
+    rid: 8482666728725676300
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666728725676300
+      type: {class: HoldInputAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      data:
+        instancingPolicy: 1
+        costGameplayEffect: {fileID: 0}
+        cooldownGameplayEffect: {fileID: 0}
+        assetTags:
+          _gameplayTags:
+          - name:
+              name: Ability.Aim
+        cancelAbilitiesWithTag:
+          _gameplayTags:
+          - name:
+              name: Ability.Sprint
+        blockAbilitiesWithTag:
+          _gameplayTags:
+          - name:
+              name: Ability.Sprint
+        activationOwnedTags:
+          _gameplayTags:
+          - name:
+              name: State.Aiming
+        activationRequiredTags:
+          _gameplayTags: []
+        activationBlockedTags:
+          _gameplayTags:
+          - name:
+              name: State.Dashing
+          - name:
+              name: State.Jumping
+        activationPolicy: 1
+        scalesWithAttackSpeed: 0
+        whileActiveEffects:
+        - {fileID: 11400000, guid: 347cb18bc1fc69c40bcd542a39569192, type: 2}

@@ -32,10 +32,30 @@ namespace Core.AbilitySystem.Effect
             _context?.AddSourceObject(sourceObject);
         }
 
+        /// <remarks>UE: FGameplayEffectContextHandle::AddHitResult</remarks>
+        public void AddHitResult(RaycastHit hitResult, bool reset = false)
+        {
+            _context?.AddHitResult(hitResult, reset);
+        }
+
+        /// <remarks>UE: FGameplayEffectContextHandle::GetHitResult</remarks>
+        public bool TryGetHitResult(out RaycastHit hitResult)
+        {
+            hitResult = default;
+            return _context != null && _context.TryGetHitResult(out hitResult);
+        }
+
         /// <remarks>UE: FGameplayEffectContextHandle::GetOwnedGameplayTags</remarks>
         public void GetOwnedGameplayTags(GameplayTagContainer actorTagContainer, GameplayTagContainer specTagContainer)
         {
             _context?.GetOwnedGameplayTags(actorTagContainer, specTagContainer);
+        }
+
+        /// <summary>담긴 컨텍스트를 복제한 새 핸들. 비어 있으면 빈 핸들.</summary>
+        /// <remarks>UE: FGameplayEffectContextHandle::Duplicate</remarks>
+        public GameplayEffectContextHandle Duplicate()
+        {
+            return new GameplayEffectContextHandle(_context?.Duplicate());
         }
 
         public bool TryGetContext<T>(out T context) where T : GameplayEffectContext

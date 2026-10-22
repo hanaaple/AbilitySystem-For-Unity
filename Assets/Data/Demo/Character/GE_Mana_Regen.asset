@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbfbc065558b85245af777d65720a126, type: 3}
+  m_Name: GE_Mana_Regen
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Effect.GameplayEffectAsset
+  description: "\uD50C\uB808\uC774\uC5B4 \uB9C8\uB098 \uC7AC\uC0DD(\uD328\uC2DC\uBE0C).
+    Infinite, 1\uCD08\uB9C8\uB2E4 \uB9C8\uB098 +5. PlayerCharacter\uC758 passiveEffects\uB85C
+    \uC2DC\uC791\uD560 \uB54C \uAC74\uB2E4."
+  type: 1
+  duration: 0
+  period: 1
+  executePeriodicEffectOnApplication: 0
+  stackingType: 0
+  stackDurationRefreshPolicy: 0
+  stackPeriodResetPolicy: 0
+  modifiers:
+  - attribute:
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      fieldName: mana
+    operation: 0
+    modifierMagnitude:
+      magnitudeCalculationType: 0
+      scalableFloatMagnitude: 5
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: 
+            fieldName: 
+          snapshot: 0
+        captureValueType: 0
+        coefficient: 0
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
+    sourceTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+    targetTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+  executions: []
+  gameplayEffectComponents: []
+  references:
+    version: 2
+    RefIds: []

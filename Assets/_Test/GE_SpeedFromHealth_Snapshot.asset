@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbfbc065558b85245af777d65720a126, type: 3}
+  m_Name: GE_SpeedFromHealth_Snapshot
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Effect.GameplayEffectAsset
+  description: "Aggregator PlayMode \uD14C\uC2A4\uD2B8\uC6A9. \uC801\uC6A9\uD560
+    \uB54C \uCCB4\uB825\uC744 \uC2A4\uB0C5\uC0F7\uD574 \uC18D\uB3C4\uB97C \uB354\uD558\uB294
+    Infinite GE. \uC774\uD6C4 \uCCB4\uB825\uC774 \uBC14\uB00C\uC5B4\uB3C4 \uADF8\uB300\uB85C\uB2E4."
+  type: 1
+  duration: 0
+  period: 0
+  executePeriodicEffectOnApplication: 1
+  modifiers:
+  - attribute:
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      fieldName: speed
+    operation: 0
+    modifierMagnitude:
+      magnitudeCalculationType: 1
+      scalableFloatMagnitude: 0
+      attributeBasedMagnitude:
+        backingAttribute:
+          captureSource: 0
+          attribute:
+            attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+              Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+            fieldName: health
+          snapshot: 1
+        captureValueType: 0
+        coefficient: 0.5
+        preMultiplyAdditive: 0
+        postMultiplyAdditive: 0
+    sourceTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+    targetTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+  executions: []
+  gameplayEffectComponents: []
+  references:
+    version: 2
+    RefIds: []

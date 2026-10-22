@@ -1,6 +1,6 @@
 # AbilitySystem — Attribute Capture
 
-> **최종 갱신:** 2026-09-10 (KST)
+> **최종 갱신:** 2026-10-23 (KST)
 
 한 GE의 계산이 **다른 어트리뷰트 값을 끌어와 쓰는** 메커니즘 — 값을 **가져오기까지**만 담당한다(가져온 값으로 magnitude를 계산하는 건 소비처 몫). "방어력 = 힘의 10%", "받는 피해 = 공격자 공격력 − 내 방어력" 같은 cross-attribute 계산의 토대다. 상위 개요 [overview](overview.md) · 라이브 재평가 [aggregator](aggregator.md).
 
@@ -35,7 +35,8 @@ sequenceDiagram
     Spec->>Cont: CaptureDataFromSource (Source = Context.Instigator)
     Note over Spec: 적용 시 (대상별 Clone 후)
     Spec->>Cont: CaptureAttributeDataFromTarget(target)
-    Spec->>Spec: CalculateModifierMagnitudes (캡처값으로 magnitude 재계산)
+    Spec->>Spec: CalculateModifierMagnitudes (캡처값으로 magnitude 확정)
+    Note over Spec: 주기 실행마다 다시 계산(non-snapshot은 지금 값)
 ```
 
 ## snapshot vs non-snapshot
@@ -68,3 +69,9 @@ non-snapshot만 소스 aggregator에 "이 GE가 당신에게 의존한다"고 �
 | `FGameplayEffectAttributeCaptureSpec` | `GameplayEffectAttributeCaptureSpec` | 채택 |
 | snapshot / non-snapshot | 동일 개념 | 채택 |
 | `FGameplayEffectContext`의 Source/Target | `AttributeCaptureSource` (Source/Target) | 채택 |
+
+## 캡처값을 읽는 평가 문맥
+
+캡처값(Current)을 읽을 때 평가 파라미터(Source·Target 태그)를 함께 넘긴다 — 캡처한 aggregator 안의 태그 조건 mod가 **캡처하는 GE의 태그**로 켜지고 꺼진다(UE와 같음). AttributeBased는 Spec의 합친 태그(액터 태그 + Spec 태그)를 넘기고, Execution은 조회 때 직접 넘긴다. Base 조회는 태그를 보지 않는다.
+
+Execution의 Calculation Modifier는 실행마다 캡처 aggregator의 **사본**을 만들어 거기에 modifier를 더한다 — 실제 캐릭터 값은 그대로다(`AttemptGetAttributeAggregatorSnapshot`).

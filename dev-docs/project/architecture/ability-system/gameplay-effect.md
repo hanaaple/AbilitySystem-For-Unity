@@ -1,45 +1,44 @@
 # AbilitySystem — GameplayEffect
 
-> **최종 갱신:** 2026-09-10 (KST)
+> **최종 갱신:** 2026-10-23 (KST)
 
-수치 변경을 통과시키는 단일 채널. 상위 개요는 [overview](overview.md), 대상 수치는 [attribute](attribute.md), 라이브 재평가는 [aggregator](aggregator.md).
+수치 변경을 통과시키는 단일 채널. 상위 개요는 [overview](overview.md), 대상 수치는 [attribute](attribute.md), 라이브 재평가는 [aggregator](aggregator.md), 태그 연동은 [gameplay-tag](gameplay-tag.md).
 
 > UE GAS의 GameplayEffect를 참고해 **필요한 축만 직접 구현** — UE 대비 채택/생략은 [overview §UE GAS 대비](overview.md#ue-gas-대비--채택생략).
-> 이 문서는 **개념·방향** 중심이다. 필드·에셋 작성 절차 등 세부는 코드와 각 feature progress를 본다.
+> 이 문서는 **개념·방향** 중심이다. 필드·에셋 작성 절차 등 세부는 코드를 본다.
 
 ## 정의 ↔ 런타임 (Asset ↔ Spec)
 
-- **`GameplayEffectAsset`(SO):** "무엇을·얼마나·어떻게" 바꿀지의 **불변 정의** — 타입, 지속/주기, Modifier 목록, Execution 목록.
-- **`GameplayEffectSpec`(런타임):** 적용 시 Asset으로부터 만들어지는 인스턴스. 적용 경계에서 **대상별로 복제(Clone)**돼 대상 캡처값이 서로 섞이지 않는다.
-- **`ActiveGameplayEffect`:** 지속형 GE의 활성 상태(남은 시간·주기 타이머)를 들고 컨테이너에 등록. 핸들로 식별·해제.
+- **`GameplayEffectAsset`(SO):** "무엇을·얼마나·어떻게" 바꿀지의 **불변 정의** — 타입·지속/주기, 스택 설정, Component 목록, Modifier 목록, Execution 목록, 메모용 설명.
+- **`GameplayEffectSpec`(런타임):** 적용 시 Asset으로부터 만드는 인스턴스 — 레벨·컨텍스트·지속 시간·캡처값·계산된 magnitude·캡처 태그. 적용 경계에서 **대상별로 복제(Clone)**돼 대상 캡처값이 섞이지 않는다.
+- **`ActiveGameplayEffect`:** 지속형 GE의 활성 상태(적용 시각·남은 시간·주기 타이머·억제 여부)를 들고 컨테이너에 등록. 핸들로 식별·해제.
 
-**왜 나누나:** 하나의 Asset을 여러 대상·인스턴스가 공유하므로, 런타임 가변 상태(캡처값·타이머)는 Spec 쪽에 둬야 서로 간섭하지 않는다. Execution도 같은 이유로 '데이터(SO)'가 아니라 '로직(순수 클래스)'이며 무상태다.
+**왜 나누나:** 하나의 Asset을 여러 대상이 공유하므로, 런타임 가변 상태(캡처값·타이머)는 Spec 쪽에 둬야 서로 간섭하지 않는다. Execution도 같은 이유로 '데이터(SO)'가 아니라 '로직(순수 클래스)'이며 무상태다.
 
 ## Modifier
 
-한 Modifier는 **어트리뷰트 하나를 어떻게 바꿀지**의 최소 단위다 — 대상 어트리뷰트 + 연산 + magnitude. GE(Asset)는 Modifier 목록을 든다.
+한 Modifier는 **어트리뷰트 하나를 어떻게 바꿀지**의 최소 단위다 — 대상 어트리뷰트 + 연산 + magnitude + (선택) Source/Target 태그 조건.
 
 ### 정의 ↔ 런타임 슬롯
 
 | | 타입 | 담는 것 |
 |---|---|---|
-| 정의 | `GameplayModifier` (`struct`, Asset의 `Modifiers`) | 대상 `GameplayAttribute` · `operation` · magnitude 계산방식 |
+| 정의 | `GameplayModifier` (Asset의 `Modifiers`) | 대상 `GameplayAttribute` · 연산 · `GameplayEffectModifierMagnitude` · Source/Target 태그 조건 |
 | 런타임 | `GameplayModifierSpec` (`struct` 슬롯) | 평가된 `EvaluatedMagnitude` 하나 |
 
-둘은 **같은 인덱스로 평행한 배열**이다(`Modifiers[i]` ↔ `Definition.Modifiers[i]`). identity(대상·연산)는 불변 정의가 들고, 대상·캡처마다 달라지는 **계산된 수치**만 런타임 슬롯이 든다 — 그래서 하나의 Asset을 여러 대상이 공유해도 평가값이 섞이지 않는다.
+둘은 **같은 인덱스로 평행한 배열**이다(`Modifiers[i]` ↔ `Definition.Modifiers[i]`). 대상·연산은 불변 정의가 들고, 대상·캡처마다 달라지는 **계산된 수치**만 런타임 슬롯이 든다.
 
-### magnitude 계산 (`MagnitudeCalculationType`)
+### magnitude 계산 (`GameplayEffectModifierMagnitude`)
 
-- **`ScalableFloat`** — 고정 float(추후 Level 커브 테이블).
-- **`AttributeBased`** (`AttributeBasedMagnitude`) — 캡처한 어트리뷰트 값에서 magnitude를 유도한다:
+GE Modifier와 Execution의 Calculation Modifier가 같은 구조체를 쓴다.
 
-  ```
-  magnitude = (capturedValue + PreMultiplyAdditive) * Coefficient + PostMultiplyAdditive
-  ```
+| 계산 방식 | 내용 | 상태 |
+|---|---|---|
+| `ScalableFloat` | 고정 float | ✅ (레벨 커브 🔜) |
+| `AttributeBased` | `(capturedValue + PreMultiplyAdditive) * Coefficient + PostMultiplyAdditive` — 값을 어디서·어떻게 가져오는지는 → [capture](capture.md) | ✅ |
+| `CustomCalculationClass` · `SetByCaller` | 인스펙터 자리만, 계산 실패 → 0 + 경고 | 🔜 |
 
-  `Coefficient` 기본값은 1이다(0이면 캡처값이 통째로 사라진다) — 이 기본값을 살리려 `AttributeBasedMagnitude`를 `struct`가 아닌 **`class`로 둔다**(Unity는 struct 필드 초기화값을 새 인스턴스에 반영 못 함). 조회 실패 시 0으로 계산하되 경고를 남긴다. 값을 **어디서·어떻게 가져오는지**(Source/Target·snapshot·Base/Current)는 → [capture](capture.md).
-
-magnitude는 **Spec 생성 시(Source 캡처 후)와 적용 시(Target 캡처 후)** `CalculateModifierMagnitudes`가 각 슬롯에 채운다 — AttributeBased가 캡처값에 의존하기 때문. 적용 시점엔 값이 이미 확정돼, 이후 순차 적용으로 바뀌는 건 *무엇에 더하는가*지 *얼마*가 아니다.
+magnitude는 **적용 시 Target 캡처 직후**와 **주기 실행마다** `CalculateModifierMagnitudes`가 채운다. 지속형에서 캡처 대상이 바뀌면 aggregator가 다시 계산한다 → [aggregator](aggregator.md).
 
 ### 연산 (`GameplayModifierOperation` 6종)
 
@@ -47,61 +46,48 @@ magnitude는 **Spec 생성 시(Source 캡처 후)와 적용 시(Target 캡처 �
 |---|---|
 | `AddBase` | 곱셈 전 합 |
 | `MultiplyAdditive` | 배율 누산 `1 + Σ(m−1)` (1.5x + 1.5x = 2.0x) |
-| `DivideAdditive` | 제수 누산 (분모에 동일 방식) |
+| `DivideAdditive` | 제수 누산 (분모에 같은 방식) |
 | `MultiplyCompound` | 배율 곱산 `Π m` (1.5x · 1.5x = 2.25x) |
 | `AddFinal` | 곱셈 후 합 |
 | `Override` | 최종값 대체 |
 
-여러 Modifier가 이 연산들로 **어떻게 하나의 CurrentValue로 합쳐지는지**(누산·곱산 공식)는 지속형 GE의 mod를 집계하는 aggregator가 소유한다 → [aggregator](aggregator.md). Execution이 직접 뱉는 평가 결과도 `GameplayModifierEvaluatedData`(대상·연산·수치) 형태로 같은 적용 경로를 탄다.
+결합 공식은 aggregator가 소유한다 → [aggregator](aggregator.md).
+
+### 태그 조건
+
+Modifier의 Source/Target 태그 조건(`GameplayTagRequirements` — Require·Ignore·Query)은 경로마다 판정 시점이 다르다(UE와 같음): Instant·Periodic은 실행할 때의 액터 태그로 그 modifier를 건너뛰고, 지속형은 조건째 aggregator에 들어가 평가 문맥으로 판정된다(CurrentValue는 빈 문맥) → [gameplay-tag](gameplay-tag.md).
 
 ## 값 변경의 두 경로 — BaseValue vs CurrentValue
-
-GAS의 핵심 구분. 성격이 다른 두 종류의 수치 변경을 갈라 다룬다.
 
 - **영구 변경(BaseValue):** 데미지·힐 같은 소모. Base에 직접 적용돼 남는다.
 - **일시 보정(CurrentValue):** 장비·버프 같은 지속 효과. Base는 두고 활성 mod를 모아 CurrentValue를 산출 → 해제하면 정확히 원복.
 
-갈림의 축은 **타입이 아니라 `period`** 다 — 주기 실행은 매 틱이 작은 영구 변경이라 영구 경로에 묶인다.
+갈림의 축은 **타입이 아니라 `period`** 다 — 주기 실행은 매 주기가 작은 영구 변경이라 영구 경로에 묶인다.
 
 | 타입 | `period` | 무엇이 바뀌나 | 해제 시 |
 |---|---|---|---|
 | Instant | — | BaseValue (영구) | 활성 목록에 없음 |
-| Duration / Infinite | `> 0` | BaseValue (틱마다 영구) | 반영된 값은 남음 |
-| Duration / Infinite | `0` | CurrentValue만 | 자동/수동 원복 |
+| Duration / Infinite | `> 0` | BaseValue (주기마다 영구) | 반영된 값은 남음 |
+| Duration / Infinite | `0` | CurrentValue만 | 원복 |
 
-적용은 타입과 `period`로 경로를 가른다:
+## 적용 흐름
 
 ```mermaid
 flowchart TD
-    A["ApplyGameplayEffectSpec(spec)"] --> B{"spec null?"}
-    B -->|yes| INV1["Invalid Handle"]
-    B -->|no| C{"Modifier 0 && Execution 0?"}
-    C -->|yes| INV2["Invalid Handle"]
-    C -->|no| D["spec.Clone() + Target 캡처<br/>(대상별 복제 · 캡처 오염 방지)"]
+    A["ApplyGameplayEffectSpec(spec)"] --> CA{"Component.CanApply<br/>(태그 요구 등)"}
+    CA -->|거부| INV["Invalid Handle"]
+    CA -->|통과| D["spec.Clone() → Target 태그 캡처 → Target 어트리뷰트 캡처 → magnitude"]
     D --> E{"GE type?"}
-    E -->|Instant| F["ExecuteGameplayEffect<br/>→ Invalid Handle (활성 목록에 안 남음)"]
-    E -->|"Duration / Infinite"| G["활성 등록 · Handle 발급"]
-    G --> H{"period?"}
-    H -->|"> 0 (+ ExecuteOnApplication)"| I["ExecuteGameplayEffect (주기 1회)"]
-    H -->|"0 (persistent)"| J["aggregator에 mod 등록"]
+    E -->|Instant| F["ExecuteActiveEffectsFrom → OnApplied → 적용 알림<br/>→ Invalid Handle"]
+    E -->|"Duration / Infinite"| S{"합칠 활성 GE?<br/>(스택 설정)"}
+    S -->|있음| ST["기존 GE의 시간·주기 갱신 → 기존 Handle"]
+    S -->|없음| G["활성 등록 · Handle 발급 · Component.OnActiveGameplayEffectAdded<br/>(false면 억제된 채 시작)"]
+    G --> H["켜져 있으면 부여 태그 +1,<br/>period 0이면 aggregator에 mod 등록"]
+    H --> I["OnApplied → 적용 알림 → (period > 0 · 적용 시 실행) 주기 1회"]
 ```
 
-### CurrentValue 집계
-
-persistent(period 0) mod는 대상 어트리뷰트별 **Aggregator**에 등록되고, CurrentValue는 읽을 때 연산별로 누산·곱산돼 나온다. 연산이 종류별로 모여 한 번에 공식에 들어가므로 **modifier 순서가 결과에 영향을 주지 않는다**(Override 제외) — 반대로 영구 경로(아래 Execute)는 Base에 순차 적용이라 순서가 영향을 준다. 결합 공식(`((Base+ΣAddBase)*…)+ΣAddFinal`)·라이브 재평가 상세는 → [aggregator](aggregator.md).
-
-### CurrentValue가 다시 계산되는 시점
-
-CurrentValue는 캐시가 아니라 base·mod로부터 `Evaluate`로 파생된다. 다음에서 재계산(aggregator dirty)이 돈다:
-
-| 시점 | 계기 |
-|---|---|
-| Base 직접 변경 | `SetAttributeBaseValue` |
-| Execute 경로가 Base를 바꿀 때 | Instant/주기형 modifier·Execution 출력 |
-| persistent mod 등록/해제 | 지속형 GE 적용 · 해제 · 만료 |
-| 캡처 소스 변경 | non-snapshot 의존 이펙트 라이브 재평가 → [aggregator](aggregator.md) |
-
-초기화(Awake)는 base·current를 직접 세팅한다(dirty 없음). dirty 전파·연쇄 상세는 [aggregator](aggregator.md).
+- **억제(inhibit):** 켜진 GE만 modifier·부여 태그를 건다. 꺼지면 거두고 주기 실행·magnitude 갱신을 건너뛴다. Target Tag Requirements Component가 소유 태그를 구독해 켜고 끈다.
+- **알림 순서:** UE는 적용 시 주기 실행을 다음 틱으로 미뤄 부여 태그·OnApplied·적용 알림이 먼저다. 바로 실행하는 우리도 그 뒤에 둬 같은 순서를 보게 한다.
 
 ## Execute 경로 (영구 변경)
 
@@ -109,107 +95,138 @@ Instant/주기형이 타는 경로. Modifier와 Execution 출력을 BaseValue에
 
 ```mermaid
 flowchart TD
-    EX["ExecuteGameplayEffect(spec)<br/>(UE: ExecuteActiveEffectsFrom)"] --> M["foreach modifier<br/>→ ApplyModToAttribute (하나씩 즉시)"]
-    EX --> R["RunExecutions(spec)"]
-    R --> RE["foreach execution<br/>Execute(params, output) · 출력만 수집"]
-    RE --> RO["foreach output<br/>→ ApplyModToAttribute (execution 끝나는 즉시 반영)"]
-    M --> AM["ApplyModToAttribute(handle, op, mag)<br/>(UE: InternalExecuteMod)"]
-    RO --> AM
-    AM --> EB["ExecModOnBaseValue(base, op, mag)<br/>(UE: FAggregator::StaticExecModOnBaseValue)"]
-    EB --> SB["SetAttributeBaseValue<br/>Base 쓰기 + aggregator 동기화 → CurrentValue 재계산"]
+    EX["ExecuteActiveEffectsFrom(spec)"] --> T["Target 태그 다시 읽기 → magnitude 다시 계산"]
+    T --> M["foreach modifier (태그 조건 통과한 것)"]
+    T --> R["RunExecutions(spec) — Execution마다 출력 수집"]
+    M --> IM["InternalExecuteMod"]
+    R --> IM
+    IM --> PRE["Set.PreGameplayEffectExecute (수치 변경 · false면 버림)"]
+    PRE --> AM["ApplyModToAttribute → ExecModOnBaseValue → SetAttributeBaseValue"]
+    AM --> POST["Set.PostGameplayEffectExecute"]
 ```
 
-**설계 포인트 — 쓰기 경로 단일화:** Modifier와 Execution 출력이 같은 함수(`ApplyModToAttribute`)로 적용된다 — 경로별 지원 연산이 어긋나지 않고, 클램프·사망 판정 훅 자리도 한 곳으로 모인다. (magnitude는 Spec 시점에 확정 → [Modifier](#modifier), Execution 출력은 단위별 즉시 반영 → [Execution](#execution--복합-계산-훅).)
+**쓰기 경로 단일화:** Modifier와 Execution 출력이 같은 `InternalExecuteMod`를 거친다 — 경로별 지원 연산이 어긋나지 않고, Set 훅(클램프·meta attribute·사망 판정)이 한 곳에서 불린다. 값 변경 이벤트에는 원인(`GameplayEffectModCallbackData` — Spec·수치·대상)이 실린다.
 
 ## 수명 (Tick)
 
-주기형은 타이머로 매 주기 실행하고(프레임 지연 시 누락 틱을 몰아 소화), Duration은 남은 시간을 차감해 만료 시 해제한다. Infinite는 수동 해제까지 유지된다.
+- 적용 시각(`StartWorldTime`)을 기록하고, Tick은 GE마다 **적용(또는 지난 Tick) 뒤 흐른 시간만** 센다 — 프레임 도중에 걸린 GE가 그 프레임 시간까지 깎이지 않는다.
+- 남은 시간은 `Duration − (지금 − StartWorldTime)`으로 매번 다시 계산(float 오차가 쌓이지 않음). 만료는 Tick 때 한꺼번에 제거.
+- 주기형은 주기마다 실행(프레임이 길면 밀린 주기를 몰아 실행). Infinite는 수동 해제까지.
+- 시계는 컨테이너가 읽는 `Time.time`이라 `timeScale`을 따른다.
+
+## 스택 (스택 수 1)
+
+| 설정 | 의미 |
+|---|---|
+| `stackingType` = None | 같은 GE를 다시 걸면 활성 GE가 하나 더 생긴다 |
+| AggregateByTarget | 대상에 같은 GE가 있으면 합친다 |
+| AggregateBySource | 같은 시전자 ASC가 건 같은 GE만 합친다 |
+| `stackDurationRefreshPolicy` | 합칠 때 지속 시간을 처음부터 다시 셀지 |
+| `stackPeriodResetPolicy` | 합칠 때 주기 타이머를 리셋할지(리셋하면 "적용 시 실행"도 다시) |
+
+합칠 때 새 GE를 만들지 않고 **기존 GE의 시간만** 갱신한다 — Spec·modifier·부여 태그는 처음 것 그대로다. UE는 기존 Spec을 새 Spec으로 바꾸고 스택 수를 더한다. 스택 수 2 이상(상한·스택 수만큼 세기·만료 정책)은 🔜.
+
+## Context · Spec 부가 정보
+
+- **Context(`GameplayEffectContext`)** — Instigator(시전자 ASC)·EffectCauser·SourceObject, **피격 정보**(`AddHitResult`/`TryGetHitResult` — `RaycastHit` 하나). Execution이 맞은 위치·콜라이더를 읽을 수 있다.
+- **대상별 복제** — 한 Spec을 여러 대상에 걸 땐 대상마다 `Clone()` + 컨텍스트 `Duplicate()` + `SetContext`로 피격 정보를 따로 담는다(UE TargetData 적용과 같은 이유 — 안 하면 공유 컨텍스트에 마지막 대상 정보가 남는다).
+- **지속 시간** — Spec이 정의 값으로 시작하는 `Duration`을 들고, 적용 전에 `SetDuration`으로 바꿀 수 있다(예: 쿨다운을 공격속도로 나누기). 에셋 쪽 Duration Magnitude·지속 시간 캡처는 없다.
 
 ## Execution — 복합 계산 훅
 
-단순 Modifier로 표현하기 어려운 계산(분기·클램프·다중 어트리뷰트, 예: `받는 피해 = Source 공격력 − Target 방어력`)을 담는 **추상 클래스**. 데이터(SO)가 아니라 무상태 로직이라 Asset은 타입 이름(AQN)만 저장하고 Spec 생성 시 인스턴스화한다. **Instant/주기형에서만 실행** — 지속형(period 0)의 상시 계산은 [Modifier](#modifier)의 AttributeBased가 맡는다.
+단순 Modifier로 표현하기 어려운 계산(분기·클램프·다중 어트리뷰트, 예: `받는 피해 = Source 공격력 × 배율`)을 담는 **추상 클래스**. 무상태 로직이라 Asset은 계산 클래스 이름(AQN)만 저장하고 Spec 생성 시 인스턴스화한다. **Instant/주기형에서만 실행** — 지속형(period 0)의 상시 계산은 AttributeBased Modifier가 맡는다.
 
-### 구조 — 입력/출력 분리
-
-- **`abstract Execute(parameters, output)`** — 계산 본체. **출력에만 쓰고 어트리뷰트를 직접 건드리지 않는다.**
-- **`virtual Defs()`** — 이 Execution이 캡처할 어트리뷰트 정의(기본 빈 목록, 보통 `static` 배열). Spec이 읽어 캡처 컨테이너에 등록한다 → [capture](capture.md).
-- **`GameplayEffectExecutionParameters`** (입력, readonly struct) — `TargetAsc` · `SourceAsc`(= Context.Instigator) · `Spec`. `AttemptCalculateCapturedAttributeMagnitude`(Current) / `...BaseValue`(Base)로 캡처값을 조회한다.
-- **`GameplayEffectExecutionOutput`** (출력, readonly struct) — `AddOutputModifier(handle, magnitude, operation)`로 결과를 쌓는다. 반드시 `Create()`로 만들어야 내부 버퍼가 있다(아니면 출력 무시 + 경고).
-
-입력과 출력을 한 객체에 안 섞는 게 설계 포인트다 — Execution은 "읽고(params) → 계산 → 뱉기(output)"만 하고, 실제 어트리뷰트 반영은 ASC/컨테이너가 한다. 출력은 `GameplayModifierEvaluatedData`(대상·연산·수치)라 일반 Modifier와 같은 적용 경로를 탄다.
-
-### 작성 예시 (형태)
+- **정의(`GameplayEffectExecutionDefinition`)** — 계산 클래스 + **Calculation Modifiers**(캡처 대상·연산·magnitude·태그 조건). Calculation Modifier의 대상은 그 클래스가 `Defs()`로 선언한 캡처 중에서 고르고, 실행 때 캡처 aggregator **사본**에 더해져 Execution이 읽는다(실제 값은 그대로).
+- **`virtual Defs()`** — 캡처할 어트리뷰트 선언. Spec이 읽어 캡처 컨테이너에 등록한다 → [capture](capture.md).
+- **`GameplayEffectExecutionParameters`**(입력) — `TargetAsc` · `SourceAsc` · `Spec`, `AttemptCalculateCapturedAttributeMagnitude(def, 평가 파라미터, out)` / `...BaseValue(def, out)`.
+- **`GameplayEffectExecutionOutput`**(출력) — `AddOutputModifier(handle, magnitude, op)`. 출력은 일반 Modifier와 같은 `InternalExecuteMod` 경로를 탄다. Execution마다 끝나는 즉시 반영돼 뒤 Execution이 앞 결과를 본다.
 
 ```csharp
 public sealed class DamageExecution : GameplayEffectExecution
 {
-    // 캡처 선언 — 보통 static. (Source 공격력, Target 방어력 등)
-    static readonly GameplayEffectAttributeCaptureDefinition[] _defs = { /* ... */ };
-    public override ReadOnlySpan<GameplayEffectAttributeCaptureDefinition> Defs() => _defs;
+    private static readonly GameplayEffectAttributeCaptureDefinition AttackDef =
+        new(CharacterAttributeSet.Attack, AttributeCaptureSource.Source, true);
+    private static readonly GameplayEffectAttributeCaptureDefinition[] CaptureDefs = { AttackDef };
 
-    public override void Execute(GameplayEffectExecutionParameters p, GameplayEffectExecutionOutput output)
+    public override ReadOnlySpan<GameplayEffectAttributeCaptureDefinition> Defs()
     {
-        p.AttemptCalculateCapturedAttributeMagnitude(/* 공격력 def */, out float atk);
-        p.AttemptCalculateCapturedAttributeMagnitude(/* 방어력 def */, out float def);
+        return CaptureDefs;
+    }
 
-        float damage = Mathf.Max(0f, atk - def);
-        output.AddOutputModifier(CharacterAttributeSet.Health, -damage, GameplayModifierOperation.AddBase);
+    public override void Execute(GameplayEffectExecutionParameters parameters, GameplayEffectExecutionOutput output)
+    {
+        if (!parameters.AttemptCalculateCapturedAttributeMagnitude(AttackDef, default, out float attack))
+        {
+            return;
+        }
+
+        output.AddOutputModifier(CharacterAttributeSet.Health, -attack, GameplayModifierOperation.AddBase);
     }
 }
 ```
 
-> 캡처 조회는 실패 시 `false`+`0`으로 **조용히** 흐른다 — 호출측이 반환 bool을 확인하지 않으면 0이 계산에 샌다.
+> 캡처 조회는 실패 시 `false`+`0`이다 — 반환 bool을 확인하지 않으면 0이 계산에 샌다.
 
-실행은 위 [Execute 경로](#execute-경로-영구-변경)의 `RunExecutions`가 담당한다 — Execution마다 새 params/output을 만들어 부르고, 출력을 **그 Execution이 끝나는 즉시** BaseValue에 반영하므로 뒤 Execution이 앞 결과를 본다.
+## GE Component
 
-## 캡처 (Attribute Capture)
+GE의 부가 동작은 `[SerializeReference]` Component 목록으로 붙인다(UE 5.3+ 구조). Component는 GE 적용 흐름의 정해진 지점(`CanGameplayEffectApply`·`OnActiveGameplayEffectAdded`·`OnGameplayEffectExecuted`·`OnGameplayEffectApplied`·`OnGameplayEffectChanged`)에서 불린다(UE와 같은 이름).
 
-GE의 계산이 **다른 어트리뷰트 값을 끌어와** 쓰는 장치. GE 안에서 캡처를 소비하는 곳은 둘이다:
+| Component | 하는 일 | 상태 |
+|---|---|---|
+| Asset Tags | GE를 나타내는 태그(질의·Source 태그에 쓰임) | ✅ |
+| Granted Tags(Target Tags) | 활성인 동안 대상에 붙는 태그 | ✅ |
+| Target Tag Requirements | 적용·유지·제거의 태그 조건 | ✅ |
+| Remove Other | 적용될 때 질의에 맞는 다른 GE 제거(자기는 모든 질의에서 제외) | ✅ |
+| Chance to Apply · Additional Effects · Custom Can Apply | — | 🔜 |
 
-- **[AttributeBased Modifier](#modifier)** — magnitude를 캡처값에서 유도(`(v+Pre)*Coeff+Post`). 예: "방어력 = 힘의 10%".
-- **[Execution](#execution--복합-계산-훅)** — `Defs()`로 캡처를 선언하고 `Execute`에서 조회해 복합 계산. 예: "받는 피해 = Source 공격력 − Target 방어력".
+상세는 → [gameplay-tag](gameplay-tag.md).
 
-GE 관점에선 두 축만 잡으면 된다:
+## 질의·이벤트
 
-- **어디서(`AttributeCaptureSource`):** `Source`(발동 주체 = Context.Instigator, **Spec 생성 시** 캡처) vs `Target`(받는 대상, **적용 시** 캡처). 적용 경계의 대상별 `Clone`이 Target 캡처를 섞이지 않게 한다.
-- **언제까지(`snapshot`):** `snapshot`은 캡처 시점 값으로 **고정**, non-snapshot은 원본 어트리뷰트가 바뀌면 **추종**한다(라이브 재평가 → [aggregator](aggregator.md)).
-
-캡처 구조(`CaptureDefinition` / `CaptureSpec` / `Container`)·계산식·진입점 전체는 → **[capture](capture.md)**.
+- **`GameplayEffectQuery`** — 태그 질의 4종(Owning·Effect·Source·Applied)·ModifyingAttribute·EffectSource·EffectDefinition + 무시 핸들·코드 델리게이트. ASC가 찾기·개수·남은 시간·끝나는 시각·레벨 변경·제거(`RemoveActiveEffectsWith…Tags`) API를 UE 이름으로 연다.
+- **이벤트** — 어트리뷰트 값 변경(`GetGameplayAttributeValueChangeDelegate(handle).OnValueChange` — 값이 같아도), ASC `OnGameplayEffectAppliedToSelf` · `OnPeriodicGameplayEffectExecuteOnSelf` · `OnAnyGameplayEffectRemoved`, 활성 GE별 `OnEffectRemoved`.
+- **조회** — `GetActiveGameplayEffects()`(읽기 전용, 열거 중 적용·제거 금지).
 
 ## 진입점 (Entry Points)
 
 | 목적 | API | 위치 |
 |---|---|---|
 | 컨텍스트·Spec 생성 | `MakeEffectContext()` · `MakeOutgoingSpec(effect, ctx, level)` | `AbilitySystemComponent.cs` |
-| GE 적용(자신/대상) | `ApplyGameplayEffectToSelf` · `ApplyGameplayEffectToTarget` | 〃 |
-| 지속형 GE 해제 | `RemoveActiveGameplayEffect(handle)` | 〃 |
+| GE 적용(자신/대상) | `ApplyGameplayEffectToSelf` · `ApplyGameplayEffectToTarget` · `ApplyGameplayEffectSpecToSelf/ToTarget` | 〃 |
+| 해제 | `RemoveActiveGameplayEffect(handle)` · `RemoveActiveEffects(query)` | 〃 |
+| 질의 | `GetActiveEffects(query)` · `GetActiveEffectsTimeRemaining(query)` 등 | 〃 |
+| 코스트 확인 | `CanApplyAttributeModifiers(effect, level, context)` | 〃 |
+| 억제 | `SetActiveGameplayEffectInhibit(handle, inhibit)` | 〃 |
 
-`SpecHandle`은 **의도적 생략** — Spec이 이미 class라 래퍼 이득이 없다. 실제 소유·수명·집계는 ASC가 아니라 `ActiveGameplayEffectsContainer`가 맡고 ASC는 얇은 위임 래퍼다.
+`SpecHandle`은 두지 않는다 — Spec이 이미 class라 래퍼 이득이 없다. 실제 소유·수명·집계는 ASC가 아니라 `ActiveGameplayEffectsContainer`가 맡고 ASC는 얇은 위임 래퍼다.
 
 ## UE ↔ Unity 대응
 
-UE GAS의 타입을 이 프로젝트에 어떻게 옮겼는지, Unity/C# 제약에서 온 차이는 무엇인지.
-
 | UE GAS | 이 프로젝트 | 대응 시 판단 / Unity 제약 |
 |---|---|---|
-| `UGameplayEffect` (정의) | `GameplayEffectAsset` (ScriptableObject) | 정의를 데이터 에셋으로. 런타임 타입과 구분하려 **`Asset` 접미어** |
-| `FGameplayEffectSpec` | `GameplayEffectSpec` (class) | 정의/런타임 인스턴스 분리 그대로 채택 |
-| `FActiveGameplayEffect` | `ActiveGameplayEffect` | 활성 상태(타이머·남은 시간) |
-| `FGameplayModifierInfo` | `GameplayModifier` (`struct`, `[Serializable]`) | 연산 6종으로 축소. **struct 슬롯 배열**로 둬 라이브 재평가 시 magnitude 제자리 갱신 |
-| `FGameplayEffectExecutionCalculation` (UObject) | `GameplayEffectExecution` (순수 무상태 클래스) | SO가 임의 클래스를 못 담아 **AQN 문자열로 저장**하고 Spec 생성 시 인스턴스화 |
-| Modifier magnitude (ScalableFloat curve / AttributeBased / SetByCaller / Custom) | `ScalableFloat`(현재 고정 float) · `AttributeBased` | Curve·SetByCaller·Custom은 미채택/예정 |
-| 캡처(`FGameplayEffectAttributeCaptureSpec`) | `GameplayEffectAttributeCaptureSpec`(+Container) | snapshot/non-snapshot 캡처 채택 |
-| `FGameplayEffectSpecHandle` | (생략) | Spec이 이미 class라 핸들 래퍼 이득 없음 |
+| `UGameplayEffect` (정의) | `GameplayEffectAsset` (ScriptableObject) | 정의를 데이터 에셋으로. 런타임 타입과 구분하려 `Asset` 접미어 |
+| `FGameplayEffectSpec` | `GameplayEffectSpec` (class) | 정의/런타임 분리 그대로. 대상별 복제는 명시적 `Clone()` |
+| `FActiveGameplayEffect` | `ActiveGameplayEffect` | 적용 시각 기반 수명. UE의 GE별 타이머 대신 컨테이너 Tick 한 루프 |
+| `FGameplayModifierInfo` / `FGameplayEffectModifierMagnitude` | `GameplayModifier` / `GameplayEffectModifierMagnitude` | 연산 6종으로 축소 |
+| `UGameplayEffectExecutionCalculation` + `FGameplayEffectExecutionDefinition` | `GameplayEffectExecution` + `GameplayEffectExecutionDefinition` | SO가 임의 클래스를 못 담아 AQN으로 저장. `PassedInTags`·Conditional GE·Transient 집계기 없음 |
+| `UGameplayEffectComponent` | `GameplayEffectComponent` | 같은 훅 지점 |
+| 스택(`StackingType`·갱신 정책·스택 수) | 스택 수 1 | 합치기·시간 갱신만 |
+| `FGameplayEffectQuery` | `GameplayEffectQuery` | 블루프린트 델리게이트·서버 권한 검사 없음 |
+| `FGameplayEffectContext::AddHitResult` · `Duplicate` | 같음(`RaycastHit` 하나) | Origin·공유 포인터 없음 |
+| `FGameplayEffectSpec::SetDuration` | `SetDuration` | 잠금·지속 시간 캡처 없음 |
+| `FGameplayEffectSpecHandle` | (생략) | Spec이 이미 class |
+| Gameplay Cue | (없음) | 🔜 |
 
 > 원칙은 [overview](overview.md)의 "UE GAS의 선택적 이식" — 개념·방향을 따르되, UE 고유 제약(UObject·네트워크)에서 온 구현은 그 제약이 없으면 Unity 관용에 맞춰 다시 정한다.
 
-## 미구현 / 알려진 한계
+## 미구현
 
 | 항목 | 내용 |
 |---|---|
-| AttributeSet 클램프 훅 | 값 범위 강제(체력이 max 초과·음수)가 없다 — Pre/Post 훅 자리는 있으나 로직 미탑재 |
-| GE 스택 | 같은 GE 중복 적용 시 스택 수·Overflow 정책 |
-| Gameplay Cue | GE 적용/해제 시 VFX·SFX 트리거 |
-| GameplayTag | 태그 기반 자격·면역·조건 |
-| ScalableFloat 커브 | Magnitude를 Level 기반 커브로 (현재 고정 float) |
-| Magnitude 확장 | `SetByCaller`(도입 예정) · `CustomCalculationClass` |
+| GE 스택 수 2 이상 | 상한·스택 수만큼 modifier 세기·만료 정책 |
+| Gameplay Cue | GE 적용/해제 시 연출 트리거 |
+| ScalableFloat 커브 | Magnitude를 Level 커브로 (현재 고정 float) |
+| Magnitude 확장 | `SetByCaller` · `CustomCalculationClass` |
+| Execution 부가 | Transient 집계기 · `PassedInTags` · Conditional GE |
+| 부가 Component | Chance to Apply · Additional Effects |
+| 데이터 검증 | 잘못된 GE 조합을 에디터에서 알리는 체계(UE `IsDataValid`) |

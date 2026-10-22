@@ -8,6 +8,8 @@ namespace Core.AbilitySystem.Editor
     {
         private bool _showRuntimeAttributes = true;
         private bool _showActiveEffects = true;
+        private bool _showAbilities = true;
+        private bool _showOwnedTags = true;
         private Vector2 _scroll;
 
         /// <summary>ASC 인스펙터 창을 연다(없으면 새로 만들고, 있으면 포커스). 메뉴와 컴포넌트 버튼이 공유한다.</summary>
@@ -60,6 +62,10 @@ namespace Core.AbilitySystem.Editor
             AbilitySystemInspectorGUI.DrawRuntimeAttributes(asc, ref _showRuntimeAttributes);
             EditorGUILayout.Space(4f);
             AbilitySystemInspectorGUI.DrawActiveEffects(asc, ref _showActiveEffects);
+            EditorGUILayout.Space(4f);
+            AbilitySystemInspectorGUI.DrawAbilities(asc, ref _showAbilities);
+            EditorGUILayout.Space(4f);
+            AbilitySystemInspectorGUI.DrawOwnedTags(asc, ref _showOwnedTags);
             EditorGUILayout.EndScrollView();
         }
 

@@ -1,71 +1,33 @@
 # attribute — 작업 로그
 
-> 시간순 작업 이력(아카이브). progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
-> 결정을 가리킬 땐 `(→D#)`(decisions.md)로 링크한다.
+> 시간순 "무엇을 왜 했나" 기록. progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
+> 결정은 `(→D#)`(decisions.md)로 링크한다. 2026-10-23 정리로 검증 수치·조사 경로를 걷어냈다 — 원문은 git 이력.
 
-### 2026-10-20 — AttributeSet 훅 4개 (`Pre/PostGameplayEffectExecute`·`Pre/PostAttributeChange`) + Current 조회를 저장값으로
+### 2026-10-21 — 초기값 에셋 경로 삭제, 소유 쪽 Set 생성 + 초기 스탯 GE (→D7)
+- 유저가 기본 스탯 설정 경로를 묻고 "임시 코드니까 빼고 정식적으로 UE에서 하는거처럼 해", 이어 `attributeInitData` 체계 전부와 BoxRoom을 지우되 기존 것은 그대로 동작하게 하라고 했다.
+- UE는 Owner 쪽 Set을 ASC가 모으고, ASC 초기값 테이블은 테스트용 카테고리다(`AbilitySystemComponent.h:196-197`). 그래서 소유 컴포넌트(`PlayerCharacter`·`TrainingDummy`)가 `Awake`에 Set을 등록하고 `Start`에 초기 스탯 GE를 건다(GE 컨테이너가 ASC `Awake`에서 생겨서).
+- 막힌 곳: health 클램프가 maxHealth를 상한으로 써서 Override 모디파이어는 maxHealth를 먼저 둬야 한다. 옛 값이 전부 0인 적은 GE 없이 둔다(GE로 주면 health 하한 1이 걸림).
 
-**요청.** 유저: "(code) AttributeSet Hook (신규)는 뭐야" → "그러니까 이벤트 함수를 구현하라는거지?" → "구현해", "Test로 상속하는 AttributeSet에서 테스트도 하고"(질문 답: 기존 `TestAtrributeSet` 사용).
-
-**UE 확인(5.6).** `AttributeSet.h:198-221`. `InternalExecuteMod`(`GameplayEffect.cpp:3924-3946`): `FGameplayEffectModCallbackData` 생성 → `PreGameplayEffectExecute`(false면 버림, `EvaluatedData`가 non-const 참조라 수치를 고칠 수 있음) → `ApplyModToAttribute` → `PostGameplayEffectExecute`. Current 훅은 값 쓰기 앞뒤(`FGameplayAttribute::SetNumericValueChecked`, `AttributeSet.cpp:86-89`)이고, `SetNumericAttribute_Internal(…, float&)`라 Pre가 고친 값을 `InternalUpdateNumericalAttribute`가 그대로 알린다. meta attribute 예: UE 테스트 Set `PostGameplayEffectExecute`(`AbilitySystemTestAttributeSet.cpp:92-115`, Damage → Health, 사망은 "여기서 또는 액터 쪽" 주석).
-
-**구현.**
-- `AttributeSet`에 가상 함수 4개. `GameplayEffectModCallbackData.EvaluatedData`에 setter(UE non-const 참조 대응).
-- 컨테이너 `InternalExecuteMod(spec, evaluatedData)` 신설 — Modifier 실행·Execution 출력 두 호출처가 이리로. Pre → `ApplyModToAttribute`(Pre가 고친 수치) → Post. `ApplyModToAttribute`의 유효성 검사는 Pre가 대상을 바꿀 수 있어 그대로 둠.
-- `InternalUpdateNumericalAttribute`가 쓰기 앞뒤로 `PreAttributeChange(ref)`·`PostAttributeChange`.
-- **`GetAttributeCurrentValue`를 저장값 읽기로**(유저 "그래 해"). 셀프체크 K에서 Pre 클램프(150 → 100)가 저장·이벤트엔 반영됐는데 조회는 aggregator 재계산값 150을 내 발견. UE `GetNumericAttribute`는 저장값을 읽는다(`AbilitySystemComponent.cpp:409-422` → `AttributeSet.cpp:124-139`). 기존 주석 "aggregator가 있으면 Evaluate로만"을 뒤집음 — 값 비교 건너뛰기를 지운 뒤라 저장값은 aggregator가 바뀔 때마다 동기로 갱신된다. 클램프하는 훅이 없으면 결과는 전과 같다(회귀 셀프체크로 확인).
-- `TestAtrributeSet`: 쓰이지 않던 Set. `Damage` 핸들이 `typeof(CombatAttributeSet)`이던 버그를 고치고 `health` 추가, 훅 override(meta Damage → Post가 Health에 반영·0으로, Pre가 `RejectExecute`·`DamageScale`로 버림·수치 변경, Health Current [0, 100] 클램프, 관측용 카운터·마지막 값).
-
-**확인.** 컴파일(Unity 없이) 런타임·에디터 통과. Aggregator 셀프체크 K(9건) — meta Damage 30 → Health 70·Damage 0, Pre 배율 0.5 → 20만, Pre false → 변경·이벤트 없음, Infinite +100 → Current 100(클램프)·Base 50, Post·이벤트 100, mod 등록엔 Pre/PostGameplayEffectExecute 안 불림, 제거 → 50. 결과 83/0, 회귀 Modifier Tag 65/0·GE Component 89/0·Calculation Modifier 19/0(Unity MCP 메뉴 실행). PlayMode 테스트(`AggregatorPlayModeTest`·`TagRequirementsPlayModeTest`)는 안 돌림. Execution 출력 경로의 훅 호출은 셀프체크 없음(같은 `InternalExecuteMod`).
+### 2026-10-20 — AttributeSet 훅 4개 + Current 조회를 저장값으로
+- 유저 "이벤트 함수를 구현하라는거지?" → "구현해", 테스트는 기존 `TestAtrributeSet`으로.
+- UE `InternalExecuteMod` 흐름대로 컨테이너에 `InternalExecuteMod`를 두고 Modifier 실행·Execution 출력이 이리로 모이게 했다(Pre → 적용 → Post). Current 쓰기 앞뒤엔 `Pre/PostAttributeChange`.
+- 막힌 곳: Pre 클램프(150 → 100)가 저장·이벤트엔 반영되는데 조회는 aggregator 재계산값 150을 냈다. UE `GetNumericAttribute`는 저장값을 읽으므로 `GetAttributeCurrentValue`를 저장값 읽기로 바꿨다(유저 "그래 해"). 클램프 훅이 없으면 결과는 전과 같다.
+- 같이 고침: `TestAtrributeSet`의 `Damage` 핸들이 다른 Set을 가리키던 버그.
 
 ### 2026-10-20 — `PreAttributeBaseChange`가 새 Base 값을 고칠 수 있게 (`ref`)
+- `newValue`를 값으로 받아 override에서 클램프해도 사본만 바뀌었다. UE는 `float&`이고 고친 값으로 Base·Current·Post까지 쓴다 → 선언·호출을 `ref`로.
 
-**요청.** 유저: "AttributeSet.PreAttributeBaseChange로 값을 고칠 수 없음 이거 정확히 뭘 고칠수 없다는거야" → 설명 뒤 "고쳐".
+### 2026-08-22 — AttributeSet owner back-ref (→D6)
+- UE `ATTRIBUTE_ACCESSORS`의 `SetX`도 owning ASC로 위임하므로 "Set에 두기 vs ASC로만"은 양자택일이 아니라 얼굴은 Set, 쓰기는 ASC — 그래서 `AttributeSet`이 owner를 안다.
+- 생성자 주입으로 바꾸던 중 유저가 범위 초과로 중단("멋대로 구현하지 말라"). 이후 `SetOwner`(등록 시 주입)로 확정.
 
-**원인.** `newValue`를 값으로 받아 override 안에서 클램프해도 사본만 바뀌고, 컨테이너 `SetAttributeBaseValue`는 원래 값을 썼다. UE는 `float& NewValue`(`AttributeSet.h:229`, 주석 "This function should enforce clamping")이고 `SetAttributeBaseValue`가 훅이 고친 값으로 Base·Current·`PostAttributeBaseChange`까지 쓴다(`GameplayEffect.cpp:3817`~`:3856`).
+### 2026-08-07 — Attribute Set 선택기 "New Script..."
+- Set 목록 "+"에서 이름만 적으면 `AttributeSet` 상속 템플릿을 만들고 리로드 뒤 자동 배정. 리로드로 팝업·SerializedProperty가 무효화돼 배정 정보를 `SessionState`에 넘긴다.
+- 처음엔 필드 선택기에만 넣었는데 유저가 새 Set을 만드는 곳은 목록 헤더 "+"였다 → 진입점 이동. 배선 반복은 파사드(`NewSubclassScript`)로 흡수하고 UI·저작·배정을 파일별로 나눴다.
 
-**고침.** 선언을 `ref float newValue`로, 호출을 `ref newBaseValue`로. override한 클래스는 없었다(`Assets` 검색). `PostAttributeBaseChange`는 UE도 값 전달(알림 전용)이라 그대로 — 이제 클램프된 값이 넘어간다.
-
-**확인.** 유저 "테스트하고 커밋해". 컴파일(Unity 없이) 런타임·에디터 통과. Aggregator 셀프체크 J(5건) — 셀프체크 안에 Base를 [0, 100]으로 막는 테스트용 Set을 두고: aggregator 없는 경로 SetBase -50 → Base·Current 0, Post가 0을 받음 / Instant -30(10에서) → 0, 값 변경 이벤트도 0 / aggregator 있는 경로 SetBase 200 → Base 100·Current 105(+5 mod), Post가 100을 받음. 결과 74/0, 회귀 Modifier Tag 65/0·GE Component 89/0·Calculation Modifier 19/0(Unity MCP로 메뉴 실행).
-
-### 2026-08-22 — AttributeSet owner back-ref 추가 (미완) (→D6(Set owner back-ref))
-
-**요청.** UE `ATTRIBUTE_ACCESSORS`의 `SetHealth`류를 이 프로젝트에도 — "각 attribute에 일괄 적용되는 접근자". 논의 결론: UE의 `SetX`도 owning ASC로 위임하므로 "Set에 두기 vs ASC로만"은 양자택일이 아니라 *얼굴은 Set, 쓰기는 ASC 위임*. → `AttributeSet`에 owning ASC back-ref 필요(→D6(Set owner back-ref)).
-
-**구현(미완).** `AttributeSet`에 `owner` 필드 추가, `SetBaseValue(handle,value)`가 `owner.SetAttributeBaseValue`로 위임. 처음 `SetOwner`(등록 시 주입)로 넣었다가 유저가 **생성자 주입**으로 전환 지시. 생성자 주입 캐스케이드(서브클래스 4개 전달 생성자 + `Activator.CreateInstance(type, this)`)에 착수했으나 **유저가 스코프 초과로 중단**("멋대로 구현하지 말라"). **현재 `AttributeSet`에 생성자만 있고 서브클래스·Activator 미배선 → 컴파일 불가 상태.** 방식 확정·배선 완성은 다음 세션(progress `## 다음 작업` 1번).
-
-> 이후 세션 대부분은 코드가 아니라 **하네스 문서 재편**(세션 프로토콜·feature 규약·TODO 규약 파일 분리, 디렉토리 트리 축소, §번호 상호참조 제거)에 씀 — 그 이력은 이 feature와 무관하므로 TODO-BOARD Done에 둠.
-
-### 2026-08-07 — 에디터 툴: Attribute Set 셀렉터 "New Script..." (템플릿 생성 + 자동 배정) (→D4(New Script 생성))
-
-**요청.** Attribute Set "+" 드롭다운에서 (Add Component→New Script처럼) 이름을 적어 새 Set을 만들면, 항상 `AttributeSet`을 상속한 템플릿으로 생성되게. 생성 후 그 필드에 자동으로 들어가면 좋겠다(유저가 자동 배정 선택).
-
-**구현.** (→D4(New Script 생성))
-- `NewSubclassScriptPopup`(신규, `Core/Common/Editor`): Add Component 느낌의 인라인 이름 입력 팝업(`ShowAsDropDown`). baseType의 빈 서브클래스 .cs를 템플릿 생성, 네임스페이스는 폴더 경로에서 유도(`Assets/Scripts/X` → `X`). 이름 유효성·중복·파일 존재 검증. "무엇을 어디에 배정할지"는 몰라도 되게 `Action<className, scriptPath> onCreated` 콜백만 받음.
-- `PendingSubclassAssignment`(같은 파일): 리로드로 팝업·SerializedProperty가 무효화 → 재배정 정보 `SessionState`, 대상 `GlobalObjectId` stash. `[DidReloadScripts]`+`delayCall`에서 타입 해석 후 배정. **두 모드**: Field(필드에 AQN) / Add(배열에 요소 삽입 후 AQN·attributes clear). 새 스크립트 ping.
-- `SubclassAdvancedDropdown`: 범용화 — `(title, types, includeNone, onSelected, onNewScript, emptyMessage)`. onNewScript non-null이면 맨 아래 `New Script...`. 검색형 팝업을 필드/리스트가 공유.
-- `SubclassSelectorDrawer`: `allowCreateNew`(기본 false)면 필드 "+"에 New Script(Field 모드). 후보 필터는 드로어가 `excluded`로 적용해 명시 목록으로 넘김.
-- `TypeChoiceList`: 리스트 add 팝업을 `GenericMenu`→검색형 `SubclassAdvancedDropdown`으로 교체. `newScriptBaseType`(opt-in)이면 add "+"에 New Script(Add 모드, `newScriptTypeRelPath`·`newScriptClearArrayRelPath`로 새 요소 세팅). Item 모듈 리스트도 검색 가능해짐(New Script는 미노출).
-- `AttributeDefinitionAssetDrawer`: `newScriptBaseType: typeof(AttributeSet)` 등으로 리스트 "+"에 opt-in. `AttributeSetDefinitionDrawer`: 필드 "+"에 `allowCreateNew: true`.
-
-**과정 메모(수정 이력).** 처음엔 필드 셀렉터 "+"에만 넣었으나, 유저가 새 Set을 만드는 곳은 **리스트 헤더 "Attribute Sets +"**여서 안 보였다 → 리스트 add로 진입점 이동(필드에도 유지). 이어 add 팝업도 검색 가능하게(요청) `AdvancedDropdown`으로 통일. (중간에 존재 불확실한 `GUIUtility.GUIToScreenRect` 대신 `GUIToScreenPoint`로 교체 — HARNESS '판단은 틀릴 수 있다'(API 단정 회피).)
-
-**구조 정리(SoC 리팩터, 유저 요청).** 남아 있던 호출부 배선 반복(`delayCall`+`Show`+`Stash…`)을 파사드로 흡수하고 책임별로 파일 분리. 의존은 한 방향: 드로어 → `NewSubclassScript`(파사드: 진입점, `delayCall` 넘김) → `NewSubclassScriptPopup`(UI 표현부, 입력만) → `SubclassScriptTemplate`(순수 저작: 네임스페이스 유도·소스 조립·검증·파일 생성) / `PendingSubclassAssignment`(리로드 생존·자동 배정). 드로어는 이제 `NewSubclassScript.OpenForField/OpenForListAdd` 한 줄만 부르고 내부(`SessionState`·`GlobalObjectId`·`delayCall`)를 모른다. UI 창은 배정 로직을 모르고, 저작 로직은 UI를 모른다.
-
-**검증.** 코드 정합성만(에이전트 범위 — CLAUDE.md). 컴파일/플레이 확인은 유저가 Unity에서: `AttributeDefinitionAsset` → Attribute Sets "+" → (검색) New Script → 이름 입력 → 생성 → 리로드 후 새 요소로 자동 추가.
-
-### 2026-07-08 — 버그픽스: `AttributeSetInitDataDrawer` Attributes 필드 간헐 미렌더
-
-**증상(유저 리포트).** `AttributeInitData`에서 Attribute Set Add/Remove를 반복하면 가끔 특정 요소의 "Attributes" 라벨 아래 필드가 안 그려짐(빈칸). 지웠다 다시 하면 보이기도 하는 간헐성.
-
-**원인.** `SyncAttributeFieldsIfChanged`가 `_lastSyncedTypeName`(static)에 **배열 인덱스 경로(`...data[i]...`)를 키로** "이미 sync함"을 캐싱 → Add/Remove로 요소가 밀리면 같은 경로가 다른 요소를 가리키는데도 sync를 스킵. `AttributeInitDataDrawer`의 add가 새 요소의 attributes를 `ClearArray()`하므로, "같은 인덱스·같은 타입" 재생성 시 캐시가 일치로 오판 → 빈 attributes가 그대로 렌더. 높이는 리플렉션 필드 수로 계산돼 빈칸만 남음(증상 일치).
-
-**수정.** 인덱스 경로 캐시(`_lastSyncedTypeName`)와 `SyncAttributeFieldsIfChanged` 제거 → OnGUI에서 `SyncAttributeFields` 직접 호출. 이 메서드는 불일치가 있을 때만 배열을 변형하는 self-guard라 이미 맞으면 no-op → 매 프레임 호출해도 안전·저비용(에디터·소형 리스트). 성급한 최적화가 낳은 버그라 단순한 쪽으로 환원. 변경: `Editor/AbilitySystem/AttributeSetInitDataDrawer.cs` 1개.
-
-**검증.** V1 정합성 OK(잔여 참조 0, 미사용 심볼 제거). V2 = 유저: 같은 타입 Add→Remove→같은 인덱스 Add 반복 시 매번 필드 즉시 렌더 확인. (선재 버그 — 같은 세션 다른 작업인 다형 리스트 빌더 리팩터와 무관, item worklog 2026-07-08 참조.)
+### 2026-07-08 — 초기값 드로어 필드 간헐 미렌더 수정
+- 배열 인덱스 경로를 키로 "이미 sync함"을 캐시해, 요소를 추가·삭제하면 같은 경로가 다른 요소를 가리키는데도 sync를 건너뛰었다. 캐시를 없애고 매번 sync(이미 맞으면 no-op)로 — 성급한 최적화가 낳은 버그라 단순한 쪽으로 되돌림.
 
 ### 2026-05-26 — PR #2 (Ability System - Attribute)
-- Attribute 계층 구현: `AttributeSet`(빈 마커)·`AttributeData`(Base/Current)·`AttributeHandle`(FieldInfo 캐싱 struct), `CharacterAttributeSet`·`CombatAttributeSet` (→D1(Handle struct·FieldInfo 캐싱)·D2(Set=마커+구체 Set))
-- SO 초기화 파이프라인(`AttributeInitData`→`AttributeSetInitData`→`AttributeFieldInitData`) + `ASC.Awake` Reflection 세팅 (→D3(초기값 SO+Reflection))
-- Editor 드로어: `AttributeInitDataDrawer`·`AttributeSetInitDataDrawer`·`AttributeReflectionUtility`
-- ASC 최소 API: `AddAttributeSet`/`RemoveAttributeSet`, `GetAttributeBaseValue`, `SetBaseAttributeValue` (초기 109줄)
+- Attribute 계층: `AttributeSet`·`AttributeData`·FieldInfo 캐싱 핸들, `CharacterAttributeSet`·`CombatAttributeSet` (→D1·D2).
+- SO 초기화 파이프라인 + ASC `Awake` 리플렉션 세팅(치운 D3 — 2026-10-21 D7로 대체), 에디터 드로어, ASC 최소 API.
