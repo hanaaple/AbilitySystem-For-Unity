@@ -31,12 +31,13 @@
 
 ## 2. 씬 구성
 
-스폰 지점 앞쪽에 허수아비 4개가 한 줄로 서 있고, 왼쪽에 아이템 4개, 오른쪽에 화염 존이 있다.
+스폰 지점 (0, −12)에서 정면을 보면 허수아비 7개가 부채꼴로 서 있다 — 정면 기준 0°·±15°·±30° 선 위에 뒷줄 5개(약 14m), ±15° 선에 앞줄 2개(8m). 관통 파동 5개(15° 간격)가 이 선을 따라 나간다. 왼쪽에 아이템 4개, 오른쪽에 화염 존이 있다.
 
 | 오브젝트 | 위치 (x, z) | 역할 |
 |---|---|---|
 | `Dummy_Shield` | (−8, 2) | 실드 허수아비 — 실드 250이 체력보다 먼저 피해를 받는다 |
-| `Dummy_A` · `Dummy_B` | (−4, 2) · (0, 3) | 일반 허수아비 |
+| `Dummy_A` · `Dummy_B` · `Dummy_C` | (−4, 2) · (0, 3) · (8, 2) | 일반 허수아비 (뒷줄) |
+| `Dummy_D` · `Dummy_E` | (−2.07, −4.27) · (2.07, −4.27) | 일반 허수아비 (앞줄) |
 | `Dummy_Attacker` | (4, 2) | 반격 허수아비 — 일정 간격으로 플레이어에게 투사체를 쏜다 |
 | `Item_Heal` · `Item_Shield` · `Item_Empower` · `Item_Mana` | (−11, −9 / −6 / −3 / 0) | 회복 · 실드 · 강화 · 마나 충전. 먹으면 숨었다가 10초 뒤 다시 나타난다 |
 | `Fire Zone` | (10, −6) | 화염 구역 — 안에 있는 동안 큰 화상, 나오면 3초 동안 약한 화상 |
@@ -70,7 +71,7 @@ GE 지속 방식: **Instant**(한 번 적용하고 끝) · **Duration**(정해�
 
 | GA | GE | Tag | Attribute |
 |---|---|---|---|
-| `GA_Skill_Wave` — 수평으로 나가는 파동이 지나가는 허수아비를 모두 맞힌다 | `GE_Cost_Wave` (Instant, mana −30) · `GE_Cooldown_Wave` (Duration 4초) · `GE_Wave_Damage` (Instant, 공격력 95~105% 피해) · `GE_Wave_Mark` (Duration 2초, 끝날 때 공격력 ×2.5 피해로 폭발) | `Cooldown.Skill.Wave` (스킬 바가 이 태그로 쿨다운을 그린다), 대상에 `Status.Debuff.Marked` (낙인 이펙트) | mana 100 → 70 후 재생, 대상 health가 두 번 깎인다 |
+| `GA_Skill_Wave` — 수평으로 나가는 파동 5개를 60° 부채꼴로 날려, 지나가는 허수아비를 모두 맞힌다 | `GE_Cost_Wave` (Instant, mana −30) · `GE_Cooldown_Wave` (Duration 4초) · `GE_Wave_Damage` (Instant, 공격력 95~105% 피해) · `GE_Wave_Mark` (Duration 4초, 끝날 때 공격력 ×2.5 피해로 폭발) | `Cooldown.Skill.Wave` (스킬 바가 이 태그로 쿨다운을 그린다), 대상에 `Status.Debuff.Marked` (머리 위 검붉은 구) | mana 100 → 70 후 재생, 대상 health가 두 번 깎인다 |
 
 - 마나가 30보다 적으면 발동이 막힌다(실패 사유 `ActivateFail.Cost`). 쿨다운 중엔 `ActivateFail.Cooldown`. 실패 사유는 디버그 오버레이 이벤트 로그에 나온다.
 - 마나는 패시브 `GE_Mana_Regen`(Infinite, 1초마다 +5)으로 찬다.
@@ -165,7 +166,7 @@ GE 지속 방식: **Instant**(한 번 적용하고 끝) · **Duration**(정해�
 |---|---|---|
 | `GameplayTagAnimatorParameterMap` | 태그 개수를 Animator 파라미터로 옮긴다 | `State.*` 태그 → 구르기·점프 등 애니메이션 |
 | `TagScreenEffect` · `TagScreenOverlay` | 태그가 있는 동안 화면 후처리·화면 가장자리 색 | 조준·회복·강화·화상 |
-| `TagParticleEffect` · `TagVfxEffect` | 태그가 있는 동안 파티클을 켜거나, 태그를 얻고 잃을 때 VFX 이벤트를 보낸다 | 낙인 표식 → 빠질 때 폭발 |
+| `TagParticleEffect` · `TagVfxEffect` | 태그가 있는 동안 파티클을 켜거나, 태그를 얻고 잃을 때 VFX 이벤트를 보낸다 | 낙인이 있는 동안 머리 위 검붉은 구 → 빠질 때 폭발 |
 | `ShieldBubble` | 실드 태그가 있는 동안 몸을 감싸는 막. 진하기가 남은 실드를 따라간다 | 플레이어·실드 허수아비 |
 
 ### 디버그 오버레이 (F1)
@@ -198,7 +199,7 @@ UE의 `showdebug abilitysystem`에 해당하는 게임 화면 안의 패널이�
 
 - **맵:** Sci Fi Arena 3 팩의 바닥·벽 조각으로 단순한 연습장을 깔았다 — 유저 방향: "GAS 기능을 보여 주는 게 주 목표 — 주변 환경이 눈에 띄지 않게". 벽 재질은 팩 원본을 어둡게 복사해 썼다.
 - **캐릭터:** Y Bot + Mixamo 애니메이션(플레이어), 허수아비 모델.
-- **VFX:** UNI VFX(파동·낙인), Vefects 등. 실드 막은 자체 셰이더 `Game/ShieldFresnel`.
+- **VFX:** UNI VFX(파동·낙인 폭발), Vefects 등. 낙인 표시(검붉은 구)는 기본 구 메시 파티클. 실드 막은 자체 셰이더 `Game/ShieldFresnel`.
 - 스토어 에셋(Sci Fi Arena 3 · Opsive · UNI VFX · Vefects · Small Props Pack)은 재배포할 수 없어 저장소에 없다(`Assets/Art/Third Party/`, `.gitignore`). 클론하면 그 참조가 비어 보이지만 어빌리티 시스템과 데모 로직은 그대로 동작한다.
 
 ---
@@ -236,7 +237,7 @@ UE의 `showdebug abilitysystem`에 해당하는 게임 화면 안의 패널이�
 | 0 | 오프닝 전경 (PNG) | F1은 끈 채로 시작 화면 | 허수아비·아이템·화염 존·HUD가 한 화면에 |
 | 1 | 이동·조준 (GIF) | Shift로 달리다가 우클릭 → Space → F | GA가 켜지고 꺼짐, 속도 GE가 붙었다 빠짐, `State.*` 태그, speed의 `base` 표시 (3-1) |
 | 2 | 일반 공격·헤드샷 (GIF) | 허수아비를 겨눠 몸통 쏘기 → 머리 쏘기 | `GE_Damage_Attack`·전투 자세 GE, 쿨다운 태그, TARGET 쪽 health 감소와 헤드샷 피해 차이 (3-1, 5) |
-| 3 | 관통 파동 (GIF) | 허수아비 여럿이 한 줄에 오게 겨눠 E → 2초 뒤 폭발까지 | 코스트·쿨다운·피해·낙인 GE, `Cooldown.Skill.Wave`·`Status.Debuff.Marked`, mana −30 후 재생 (3-2) |
+| 3 | 관통 파동 (GIF) | 스폰 지점에서 정면을 보고 E → 쿨다운 중 E 한 번 더 → 4초 뒤 폭발까지 | 코스트·쿨다운·피해·낙인 GE, `Cooldown.Skill.Wave`·`Status.Debuff.Marked`, mana −30 후 재생 (3-2) |
 | 4 | 아이템 (GIF) | 화염 존에서 체력을 깎은 뒤 회복 → 마나 → 강화(연사가 빨라짐) → 실드. 먹은 자리를 겨누면 재생성 대기가 보인다 | 아이템 GA·GE, 버프 태그, attackSpeed·attack의 `base` 표시, shield 100, 픽업의 `Cooldown.Pickup.Respawn` (3-3) |
 | 5 | 화염 존 (GIF) | 들어가서 서 있다가 걸어 나오기 | `GE_FireZone_Inside` → `Afterburn` 교체, `Status.Debuff.Burning`, health가 1에서 멈춤 (3-4, 4) |
 | 6 | 실드·반격 허수아비 (GIF) | 실드 허수아비의 실드를 깨고 체력 깎기 → 반격 허수아비 앞에서 맞기 | shield가 먼저 깎이고 health는 그다음, 실드 재생 GE, 허수아비 쿨다운 태그 (3-5, 5) |
