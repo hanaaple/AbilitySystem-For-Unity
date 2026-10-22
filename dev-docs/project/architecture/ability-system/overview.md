@@ -1,10 +1,10 @@
 # AbilitySystem (GAS-like) — Overview
 
-> **최종 갱신:** 2026-09-10 (KST)
+> **최종 갱신:** 2026-10-12 (KST)
 
 `Assets/Scripts/Core/AbilitySystem/` — 캐릭터 수치 관리를 위한 경량 Ability System. **UE5 GAS를 참고해 필요한 축만 골라 Unity에 직접 재구현**한 것이다 — 라이브러리 이식이 아니라 개념의 선택적 재구현. 채택/생략은 아래 [UE GAS 대비](#ue-gas-대비--채택생략) 참고.
 
-> **심화 문서:** [Attribute](attribute.md) · [GameplayEffect](gameplay-effect.md) · [Aggregator (라이브 재평가)](aggregator.md) · [Capture (어트리뷰트 캡처)](capture.md) · [GameplayAbility (계획)](gameplay-ability.md)
+> **심화 문서:** [Attribute](attribute.md) · [GameplayEffect](gameplay-effect.md) · [Aggregator (라이브 재평가)](aggregator.md) · [Capture (어트리뷰트 캡처)](capture.md) · [GameplayTag](gameplay-tag.md) · [GameplayAbility (계획)](gameplay-ability.md)
 > 이 문서군은 **개념·방향** 중심이다. 필드·API 세부는 코드와 feature progress를 본다.
 > 네이밍: 클래스명은 UE 용어를 따르되, SO(에셋 정의)에는 `Asset` 접미어로 런타임 타입과 구분한다.
 
@@ -99,7 +99,8 @@ asc.RemoveActiveGameplayEffect(handle);
 | AttributeBased Magnitude / 캡처 | `AttributeBasedMagnitude` · `GameplayEffectAttributeCaptureSpec` | ✅ | 캡처 기반 magnitude(snapshot/live) → [capture](capture.md) |
 | `UGameplayAbility` | (계획) | 🔜 | 실행 계층 — 수치 계층 뒤로 → [gameplay-ability](gameplay-ability.md) |
 | `SetByCaller` / `ScalableFloat`(Curve) | (계획) | 🔜 | Magnitude 확장 |
-| `GameplayTag` / `GameplayCue` / GE Stack | (계획) | 🔜 | 태그·연출·스택 — 로드맵 |
+| `GameplayTag` (코어) | `GameplayTag` · `GameplayTagContainer` · `GameplayTagQuery` · `GameplayTagsManager` | 🔜 | 런타임 API 구현됨·동작 미검증, GE 연동 전 → [gameplay-tag](gameplay-tag.md) |
+| `GameplayCue` / GE Stack | (계획) | 🔜 | 연출·스택 — 로드맵 |
 | Prediction / Replication (네트워크) | (미채택) | ❌ | 네트워크 레이어가 없어 레플리케이션 설계 자체가 성립하지 않음 (로컬 전용) |
 
 ---
