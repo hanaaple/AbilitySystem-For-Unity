@@ -299,7 +299,15 @@ namespace Core.AbilitySystem.Effect
             {
                 ExecuteActiveEffectsFrom(appliedSpec);
                 def.OnApplied(this, appliedSpec);
+                _owner.NotifyGameplayEffectAppliedToSelf(appliedSpec.Context.GetInstigator(), appliedSpec, ActiveGameplayEffectHandle.Invalid);
                 return ActiveGameplayEffectHandle.Invalid;
+            }
+
+            // 같은 GE가 이미 걸려 있으면 새로 만들지 않고 그 GE를 갱신한다(스택 수 1)
+            ActiveGameplayEffect stackable = FindStackableActiveGameplayEffect(appliedSpec);
+            if (stackable != null)
+            {
+                return ApplyToExistingStack(stackable, appliedSpec);
             }
 
             var handle = new ActiveGameplayEffectHandle(++_handleIdCounter, _owner);
@@ -309,14 +317,81 @@ namespace Core.AbilitySystem.Effect
             InternalOnActiveGameplayEffectAdded(active);
 
             def.OnApplied(this, appliedSpec);
+            _owner.NotifyGameplayEffectAppliedToSelf(appliedSpec.Context.GetInstigator(), appliedSpec, handle);
 
-            // UE는 이 실행을 다음 틱으로 미뤄 부여 태그·OnApplied가 먼저다. 바로 실행하는 우리도 그 뒤에 둬 같은 상태를 보게 한다.
+            // UE는 이 실행을 다음 틱으로 미뤄 부여 태그·OnApplied·적용 알림이 먼저다. 바로 실행하는 우리도 그 뒤에 둬 같은 상태·순서를 보게 한다.
             if (def.Period > 0f && def.ExecutePeriodicEffectOnApplication)
             {
                 InternalExecutePeriodicGameplayEffect(active);
             }
 
             return handle;
+        }
+
+        /// <summary>스택 설정상 spec과 합쳐질 활성 GE. 같은 정의이고, AggregateBySource면 시전자 ASC까지 같아야 한다. 없으면 null.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::FindStackableActiveGameplayEffect</remarks>
+        private ActiveGameplayEffect FindStackableActiveGameplayEffect(GameplayEffectSpec spec)
+        {
+            GameplayEffectAsset def = spec.Definition;
+            GameplayEffectStackingType stackingType = def.StackingType;
+            if (stackingType == GameplayEffectStackingType.None || def.Type == GameplayEffectType.Instant)
+            {
+                return null;
+            }
+
+            AbilitySystemComponent source = spec.Context.GetInstigator();
+            foreach (ActiveGameplayEffect active in _activeGameplayEffects.Values)
+            {
+                if (active.Spec.Definition != def)
+                {
+                    continue;
+                }
+
+                if (stackingType == GameplayEffectStackingType.AggregateByTarget || (source != null && source == active.Spec.Context.GetInstigator()))
+                {
+                    return active;
+                }
+            }
+
+            return null;
+        }
+
+        // 스택 수가 1로 고정이라 기존 Spec·modifier는 그대로 두고 시간만 갱신한다(UE는 기존 Spec을 새 Spec으로 바꾸고 스택 수를 더한다)
+        private ActiveGameplayEffectHandle ApplyToExistingStack(ActiveGameplayEffect stackable, GameplayEffectSpec appliedSpec)
+        {
+            GameplayEffectAsset def = stackable.Spec.Definition;
+            if (def.StackDurationRefreshPolicy == GameplayEffectStackingDurationPolicy.RefreshOnSuccessfulApplication)
+            {
+                RestartActiveGameplayEffectDuration(stackable);
+            }
+
+            bool resetPeriod = def.StackPeriodResetPolicy == GameplayEffectStackingPeriodPolicy.ResetOnSuccessfulApplication && def.Period > 0f;
+            if (resetPeriod)
+            {
+                stackable.PeriodTimer = 0f;
+            }
+
+            ActiveGameplayEffectHandle handle = stackable.Handle;
+            def.OnApplied(this, appliedSpec);
+            _owner.NotifyGameplayEffectAppliedToSelf(appliedSpec.Context.GetInstigator(), appliedSpec, handle);
+
+            // UE는 주기를 다시 걸 때 "적용 시 실행"도 다시 예약한다
+            if (resetPeriod && def.ExecutePeriodicEffectOnApplication && _activeGameplayEffects.ContainsKey(handle))
+            {
+                InternalExecutePeriodicGameplayEffect(stackable);
+            }
+
+            return handle;
+        }
+
+        /// <summary>지속 시간을 지금부터 다시 센다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::RestartActiveGameplayEffectDuration</remarks>
+        private void RestartActiveGameplayEffectDuration(ActiveGameplayEffect active)
+        {
+            float now = GetWorldTime();
+            active.StartWorldTime = now;
+            active.LastTickWorldTime = now;
+            active.RemainingDuration = active.Spec.Duration;
         }
 
         /// <summary>핸들의 활성 이펙트를 제거하고 Owner에 건 효과(modifier·부여 태그)를 거둔다.</summary>
@@ -335,6 +410,7 @@ namespace Core.AbilitySystem.Effect
 
             // UE InternalOnActiveGameplayEffectRemoved처럼 효과를 거둔 뒤 알린다
             active.EventSet.BroadcastEffectRemoved(active);
+            _owner.NotifyAnyGameplayEffectRemoved(active);
 
             return true;
         }
@@ -462,7 +538,7 @@ namespace Core.AbilitySystem.Effect
                 if (def.Type == GameplayEffectType.Duration)
                 {
                     // 매 Tick 경과를 빼 쌓지 않고 적용 시각에서 다시 계산한다 — 큰 시각 값의 float 오차가 누적되지 않는다.
-                    active.RemainingDuration = def.Duration - (worldTime - active.StartWorldTime);
+                    active.RemainingDuration = active.Spec.Duration - (worldTime - active.StartWorldTime);
                     if (active.RemainingDuration <= 0f)
                     {
                         _expiredEffects.Add(active.Handle);
@@ -485,6 +561,7 @@ namespace Core.AbilitySystem.Effect
             if (!active.IsInhibited)
             {
                 ExecuteActiveEffectsFrom(active.Spec);
+                _owner.NotifyPeriodicGameplayEffectExecuteOnSelf(active.Spec.Context.GetInstigator(), active.Spec, active.Handle);
             }
         }
 

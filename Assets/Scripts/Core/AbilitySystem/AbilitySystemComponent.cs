@@ -56,8 +56,20 @@ namespace Core.AbilitySystem
         /// <remarks>UE: UAbilitySystemComponent::OnAbilityEnded</remarks>
         public event Action<AbilityEndedData> OnAbilityEndedWithData;
 
+        /// <summary>이 ASC에 GE가 적용될 때마다(Instant 포함). 인자는 Instigator ASC(없으면 null)·적용된 Spec·활성 핸들(Instant면 Invalid).</summary>
+        /// <remarks>UE: UAbilitySystemComponent::OnGameplayEffectAppliedDelegateToSelf</remarks>
+        public event Action<AbilitySystemComponent, GameplayEffectSpec, ActiveGameplayEffectHandle> OnGameplayEffectAppliedToSelf;
+
+        /// <summary>이 ASC의 주기 GE가 한 번 실행될 때마다. 인자는 <see cref="OnGameplayEffectAppliedToSelf"/>와 같다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::OnPeriodicGameplayEffectExecuteDelegateOnSelf</remarks>
+        public event Action<AbilitySystemComponent, GameplayEffectSpec, ActiveGameplayEffectHandle> OnPeriodicGameplayEffectExecuteOnSelf;
+
         /// <summary>어빌리티가 동작하는 GameObject 정보. 기본값은 Owner = Avatar = 이 GameObject.</summary>
         /// <remarks>UE: UAbilitySystemComponent::AbilityActorInfo</remarks>
+        /// <summary>이 ASC에서 활성 GE가 제거될 때마다(만료·직접 제거) 효과를 거둔 뒤 울린다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::OnAnyGameplayEffectRemovedDelegate</remarks>
+        public event Action<ActiveGameplayEffect> OnAnyGameplayEffectRemoved;
+
         public GameplayAbilityGameObjectInfo AbilityGameObjectInfo { get; } = new();
 
         private void Awake()
@@ -444,6 +456,37 @@ namespace Core.AbilitySystem
             {
                 SetActiveGameplayEffectLevel(handle, newLevel);
             }
+        }
+
+        /// <summary>지금 걸려 있는 GE 전부(읽기 전용). 디버그 표시·조회용 — 바꾸려면 Apply/Remove를 쓴다.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetActiveGameplayEffects</remarks>
+        public IEnumerable<ActiveGameplayEffect> GetActiveGameplayEffects()
+        {
+            // 컨테이너는 Awake에서 만든다 — 에디터 인스펙터는 Awake 전(프리팹 에셋·꺼진 오브젝트)에도 부른다
+            if (_activeGameplayEffectsContainer == null)
+            {
+                return Array.Empty<ActiveGameplayEffect>();
+            }
+
+            return _activeGameplayEffectsContainer.ActiveGameplayEffects.Values;
+        }
+
+        /// <remarks>UE: FActiveGameplayEffectsContainer::InternalOnActiveGameplayEffectRemoved → OnAnyGameplayEffectRemovedDelegate</remarks>
+        internal void NotifyAnyGameplayEffectRemoved(ActiveGameplayEffect removedEffect)
+        {
+            OnAnyGameplayEffectRemoved?.Invoke(removedEffect);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::OnGameplayEffectAppliedToSelf</remarks>
+        internal void NotifyGameplayEffectAppliedToSelf(AbilitySystemComponent source, GameplayEffectSpec specApplied, ActiveGameplayEffectHandle activeHandle)
+        {
+            OnGameplayEffectAppliedToSelf?.Invoke(source, specApplied, activeHandle);
+        }
+
+        /// <remarks>UE: UAbilitySystemComponent::OnPeriodicGameplayEffectExecuteOnSelf</remarks>
+        internal void NotifyPeriodicGameplayEffectExecuteOnSelf(AbilitySystemComponent source, GameplayEffectSpec specExecuted, ActiveGameplayEffectHandle activeHandle)
+        {
+            OnPeriodicGameplayEffectExecuteOnSelf?.Invoke(source, specExecuted, activeHandle);
         }
 
         /// <summary>aggregator가 dirty해질 때 그 OnDirty가 호출하는 진입점.</summary>

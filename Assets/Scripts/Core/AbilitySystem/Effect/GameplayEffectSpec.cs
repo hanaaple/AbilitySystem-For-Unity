@@ -11,8 +11,12 @@ namespace Core.AbilitySystem.Effect
     public sealed class GameplayEffectSpec
     {
         public GameplayEffectAsset Definition { get; }
-        public GameplayEffectContextHandle Context { get; }
+        public GameplayEffectContextHandle Context { get; private set; }
         public float Level { get; private set; }
+
+        /// <summary>이 Spec의 지속 시간(초). 정의 값으로 시작하며, 적용 전에 <see cref="SetDuration"/>으로 바꿀 수 있다. Duration 타입에서만 쓰인다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::Duration</remarks>
+        public float Duration { get; private set; }
 
         // 정의(Definition.Modifiers)와 평행한 슬롯 배열(Modifiers[i] ↔ Definition.Modifiers[i]).
         // 배열로 노출 — 라이브 재평가 시 슬롯 magnitude를 제자리 갱신해야 하는데 List·IReadOnlyList 인덱서는 값 타입 복사본을 돌려줘 안 먹는다. 배열 교체는 private set으로 막아 평행 인덱스를 지킨다.
@@ -40,13 +44,14 @@ namespace Core.AbilitySystem.Effect
             Definition = definition;
             Context = context;
             Level = level;
+            Duration = definition.Duration;
 
             Initialize();
         }
 
         /// <summary>
         /// 적용 시점에 대상별로 복제하는 복사 생성자 — <see cref="Initialize"/>를 재실행하지 않고(Source 재캡처·execution 재resolve 없음) 상태만 옮긴다.
-        /// 복사 심도: Definition·Executions는 공유(불변/무상태), Context·Level은 값 복사, Modifiers는 배열 값 복사(struct 슬롯이라 독립),
+        /// 복사 심도: Definition·Executions는 공유(불변/무상태), Context·Level·Duration은 값 복사, Modifiers는 배열 값 복사(struct 슬롯이라 독립),
         /// CapturedRelevantAttributes·CapturedSourceTags·CapturedTargetTags는 깊은 복사 — 대상별 target 캡처가 서로 덮어쓰지 않게.
         /// </summary>
         private GameplayEffectSpec(GameplayEffectSpec other)
@@ -54,6 +59,7 @@ namespace Core.AbilitySystem.Effect
             Definition = other.Definition;
             Context = other.Context;
             Level = other.Level;
+            Duration = other.Duration;
 
             // struct 슬롯 배열이라 Clone()=값 복사=독립. magnitude는 target 캡처 후 CalculateModifierMagnitudes가 다시 채운다.
             Modifiers = (GameplayModifierSpec[])other.Modifiers.Clone();
@@ -68,6 +74,23 @@ namespace Core.AbilitySystem.Effect
         public GameplayEffectSpec Clone()
         {
             return new GameplayEffectSpec(this);
+        }
+
+        /// <summary>지속 시간을 바꾼다. 적용 전에 불러야 활성 GE에 반영된다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::SetDuration</remarks>
+        public void SetDuration(float newDuration)
+        {
+            Duration = Mathf.Max(0f, newDuration);
+        }
+
+        /// <summary>컨텍스트를 바꾼다. 대상마다 <see cref="GameplayEffectContextHandle.Duplicate"/>한 컨텍스트를 끼워 피격 정보를 따로 담을 때 쓴다.</summary>
+        /// <remarks>
+        /// UE: FGameplayEffectSpec::SetContext. UE는 기본으로 Source 액터 태그를 새 컨텍스트에서 다시 캡처하지만,
+        /// 여기선 다시 캡처하지 않는다 — 복제한 컨텍스트는 Instigator가 같아 결과가 같고, 생성 시점의 태그를 지킨다.
+        /// </remarks>
+        public void SetContext(GameplayEffectContextHandle newContext)
+        {
+            Context = newContext;
         }
 
         /// <summary>멤버 세팅 후 초기화 — Modifier·Execution 변환과 어트리뷰트 캡처. 생성자가 확정한 Definition·Context·Level에 의존.</summary>

@@ -19,10 +19,14 @@ namespace Core.AbilitySystem.Effect.Editor
     [CustomEditor(typeof(GameplayEffectAsset))]
     public sealed class GameplayEffectAssetDrawer : UnityEditor.Editor
     {
+        private const string DescriptionPropertyName = "description";
         private const string TypePropertyName = "type";
         private const string DurationPropertyName = "duration";
         private const string PeriodPropertyName = "period";
         private const string ExecuteOnApplicationPropertyName = "executePeriodicEffectOnApplication";
+        private const string StackingTypePropertyName = "stackingType";
+        private const string StackDurationRefreshPolicyPropertyName = "stackDurationRefreshPolicy";
+        private const string StackPeriodResetPolicyPropertyName = "stackPeriodResetPolicy";
         private const string ModifiersPropertyName = "modifiers";
         private const string ExecutionsPropertyName = "executions";
         private const string ComponentsPropertyName = "gameplayEffectComponents";
@@ -90,10 +94,14 @@ namespace Core.AbilitySystem.Effect.Editor
         private static readonly string[] _operationPopupOptions =
             _operationValues.Select(op => _operationDisplayNames[op]).ToArray();
 
+        private SerializedProperty _description;
         private SerializedProperty _type;
         private SerializedProperty _duration;
         private SerializedProperty _period;
         private SerializedProperty _executeOnApplication;
+        private SerializedProperty _stackingType;
+        private SerializedProperty _stackDurationRefreshPolicy;
+        private SerializedProperty _stackPeriodResetPolicy;
         private SerializedProperty _modifiers;
         private SerializedProperty _executions;
         private SerializedProperty _components;
@@ -104,10 +112,14 @@ namespace Core.AbilitySystem.Effect.Editor
 
         private void OnEnable()
         {
+            _description = serializedObject.FindProperty(DescriptionPropertyName);
             _type = serializedObject.FindProperty(TypePropertyName);
             _duration = serializedObject.FindProperty(DurationPropertyName);
             _period = serializedObject.FindProperty(PeriodPropertyName);
             _executeOnApplication = serializedObject.FindProperty(ExecuteOnApplicationPropertyName);
+            _stackingType = serializedObject.FindProperty(StackingTypePropertyName);
+            _stackDurationRefreshPolicy = serializedObject.FindProperty(StackDurationRefreshPolicyPropertyName);
+            _stackPeriodResetPolicy = serializedObject.FindProperty(StackPeriodResetPolicyPropertyName);
             _modifiers = serializedObject.FindProperty(ModifiersPropertyName);
             _executions = serializedObject.FindProperty(ExecutionsPropertyName);
             _components = serializedObject.FindProperty(ComponentsPropertyName);
@@ -121,7 +133,11 @@ namespace Core.AbilitySystem.Effect.Editor
         {
             serializedObject.Update();
 
+            EditorGUILayout.PropertyField(_description);
+            EditorGUILayout.Space(6f);
             DrawDurationPolicy();
+            EditorGUILayout.Space(6f);
+            DrawStacking();
             EditorGUILayout.Space(6f);
             DrawCollapsibleList(_componentList, _components, "Components");
             EditorGUILayout.Space(6f);
@@ -156,6 +172,29 @@ namespace Core.AbilitySystem.Effect.Editor
                     EditorGUI.indentLevel++;
                     EditorGUILayout.PropertyField(_executeOnApplication, new GUIContent("Execute on Application", _executeOnApplication.tooltip));
                     EditorGUI.indentLevel--;
+                }
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
+        // Instant는 활성 GE로 남지 않아 합칠 대상이 없다
+        private void DrawStacking()
+        {
+            if ((GameplayEffectType)_type.enumValueIndex == GameplayEffectType.Instant)
+            {
+                return;
+            }
+
+            EditorGUILayout.LabelField("Stacking", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(_stackingType, new GUIContent("Stacking Type", _stackingType.tooltip));
+            if ((GameplayEffectStackingType)_stackingType.enumValueIndex != GameplayEffectStackingType.None)
+            {
+                EditorGUILayout.PropertyField(_stackDurationRefreshPolicy, new GUIContent("Duration Refresh"));
+                if (_period.floatValue > Mathf.Epsilon)
+                {
+                    EditorGUILayout.PropertyField(_stackPeriodResetPolicy, new GUIContent("Period Reset"));
                 }
             }
 
