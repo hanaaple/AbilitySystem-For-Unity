@@ -13,7 +13,7 @@
 - 대안: 문자열 키 Dictionary(단순 / 매 접근 문자열 조회), enum 키 + switch(빠름 / Set을 늘릴 때마다 손으로 갱신).
 - 대가: UE `FGameplayAttribute`는 `FProperty`로 필드를 가리키지만 Unity엔 그 기반이 없어, 직렬화 타입(`GameplayAttribute`, gameplay-effect D15)과 런타임 핸들이 둘로 나뉜다.
 
-## D2 — `AttributeSet`은 빈 추상 베이스, 수치는 구체 Set의 `AttributeData` 필드
+## D2 — `AttributeSet`은 추상 베이스, 수치는 구체 Set의 `AttributeData` 필드
 
 - 날짜: 2026-05-26
 - 결정: 구체 Set(`CharacterAttributeSet`·`CombatAttributeSet`)이 `public AttributeData` 필드로 수치를 들고, ASC는 Set을 타입당 하나 등록한다. UE `UAttributeSet` 개념.
@@ -43,4 +43,4 @@
 
 - **D4** (2026-08-07) — 타입 선택 UI의 "New Script..."(서브클래스 .cs 생성 후 자동 배정). 에디터 편의 도구.
 - **D3** (2026-05-26) — 초기값은 SO(`AttributeDefinitionAsset`) + 리플렉션. 2026-10-21 D7로 대체(코드 삭제).
-- **D5** (2026-08-21) — 런타임 핸들을 `ResolvedGameplayAttribute`로 리네임. 이름은 이후 `GameplayAttributeHandle`로 되돌아갔고, 직렬화/런타임 분리 자체는 D1·gameplay-effect D15에 있다.
+- **D5** (2026-08-21) — 런타임 핸들을 `ResolvedGameplayAttribute`로 리네임. 이름은 이후 `GameplayAttributeHandle`로 바뀌었고, 직렬화/런타임 분리 자체는 D1·gameplay-effect D15에 있다.

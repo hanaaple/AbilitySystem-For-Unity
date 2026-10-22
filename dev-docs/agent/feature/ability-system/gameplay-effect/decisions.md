@@ -138,7 +138,7 @@
 - 결정: `GameplayEffectContext`(+Handle)에 `RaycastHit` 하나를 담는 `AddHitResult(hit, reset)`·`TryGetHitResult`. 이미 있으면 `reset`일 때만 덮어씀(UE `FGameplayEffectContext::AddHitResult`의 check — 우리는 에러 로그 후 무시). 데모 헤드샷: Execution이 맞은 콜라이더의 부위 태그를 읽어 배율.
 - 왜: (유저) "GAS Tag 기반으로 헤드 판정" → 전달 방식 두 안 중 "컨텍스트에 피격 정보 (Lyra 방식)". Lyra `LyraDamageExecution`이 Context HitResult → 물리 재질 태그 → 무기의 태그별 배율.
 - 대안: Spec 동적 Asset Tag(UE `AddDynamicAssetTag`, 코어 TODO) / 태그만 실어 단순하지만 위치·거리 같은 피격 정보는 못 씀.
-- 대가: UE Context의 Origin(`AddOrigin`)·HitResult 공유 포인터는 안 가져옴 — 값 하나 복사. Context가 Spec에 묶여, 한 Spec으로 여러 대상을 맞히면 첫 피격만 담김(지금 투사체는 1발 = 1 Spec = 첫 대상).
+- 대가: UE Context의 Origin(`AddOrigin`)·HitResult 공유 포인터는 안 가져옴 — 값 하나 복사. Context가 Spec에 묶여, 한 Spec으로 여러 대상을 맞히려면 대상마다 컨텍스트를 복제해야 한다(→D32).
 
 ## D30 — 디버그 표시용 읽기 전용 조회 API를 Core에 둠 (UE `DisplayDebug`가 쓰는 공개 API와 같은 이름)
 

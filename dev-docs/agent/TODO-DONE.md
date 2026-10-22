@@ -3,6 +3,9 @@
 > [TODO-BOARD.md](TODO-BOARD.md)에서 끝난 항목을 이리로 옮긴다. 최신이 위로. 규약은 [TODO-BOARD.harness.md](TODO-BOARD.harness.md).
 > 2026-10-20 유저 "TODO 완료된 것들은 파일 별개로 빼자" — 보드의 '✅ Done' 칸을 통째로 옮겨 이 파일을 만들었다(본문 그대로).
 
+- [x] **(code)** **`ResolvedGameplayAttribute` 이름 잔재** — `GameplayEffectSpec.cs` 경고 문자열을 `GameplayAttributeHandle`로. _(2026-08-21 등록, 2026-10-23 완료)_
+- [x] **(docs)** **architecture 문서를 코드에 맞춤** — ability-system 7개 문서를 코드 기준으로 갱신(GameplayAbility 구현 문서, 초기 스탯 GE, 훅 6종·저장값 조회, GE 스택·Component·질의·이벤트, 태그 연동·에디터). _(2026-10-20 등록, 2026-10-23 완료)_
+- [x] **(editor)** **ASC 인스펙터에 소유 태그 표시** — `AbilitySystemInspectorGUI`에 Owned Tags·Abilities 섹션(데모 작업 중 추가), 화면은 데모 4단계 확인에서 유저 "특별히 문제될 건 없어". _(2026-10-20 등록, 2026-10-23 완료)_
 - [x] **(ui)** **F11 전체 화면 켜고 끄기** — 유저 "f11에 전체화면 on/off". 입력 UI 맵 `ToggleFullscreen`(F11) + `SettingsMenu`가 처리: 켜면 모니터 해상도의 테두리 없는 창(`FullScreenWindow`), 끄면 켜기 전 창 크기로. 에디터 Game 뷰는 해상도가 안 바뀌어 F11 입력·예외 없음까지만 확인, 빌드 확인은 안 함. _(2026-10-23 등록, 2026-10-23 완료)_
 - [x] **(ui)** **HUD 정리 — 체력·마나 줄, 스킬 칸 위계** — 유저 "hp랑 mana text가 붙어있지 않아서 헷갈려", "쿨타임 및 Key UI가 일자로만 있으니 뭐가 중요한지 뭐가 뭔지 헷갈려 — 좋은 방법을 알아서".
   - 체력·마나: 같은 모양의 줄 두 개(이름 `HP`·`MP` · 바 · 바로 오른쪽 현재/최대 숫자). 체력 숫자가 바 위에, 마나 숫자가 바 옆에 있어 어느 숫자가 어느 바인지 헷갈리던 것.

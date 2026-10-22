@@ -66,7 +66,7 @@
 ## D8 — ASC 복제·파괴는 UE와 같은 결과로: 복제는 설정만, 파괴는 어빌리티 취소 → 해제
 
 - 날짜: 2026-10-21
-- 결정: 복제(`Instantiate`)는 설정(`attributeInitData`)만 따라가고 실행 중 상태(현재 값·어빌리티·GE·태그)는 새로 시작한다 — 지금 구조(직렬화 필드는 설정뿐, 나머지는 `Awake`에서 생성)가 이미 그래서 테스트로 고정만. 파괴는 `OnDestroy` → `DestroyActiveState`(Owner·ASC가 살아 있으면 `CancelAllAbilities` → `ClearAllAbilities`) → AttributeSet 목록 비움. 죽은 ASC를 의존 목록에서 빼는 건 이미 UE대로였다(`AttributeAggregator.BroadcastOnDirty`의 Unity null 확인) — 테스트로 고정.
+- 결정: 복제(`Instantiate`)는 직렬화 설정만 따라가고 실행 중 상태(현재 값·어빌리티·GE·태그)는 새로 시작한다 — 지금 구조(직렬화 필드는 설정뿐, 나머지는 `Awake`에서 생성)가 이미 그래서 테스트로 고정만. (당시 설정은 ASC `attributeInitData` — 2026-10-21 attribute D7로 소유 컴포넌트의 초기 스탯 GE가 됐다.) 파괴는 `OnDestroy` → `DestroyActiveState`(Owner·ASC가 살아 있으면 `CancelAllAbilities` → `ClearAllAbilities`) → AttributeSet 목록 비움. 죽은 ASC를 의존 목록에서 빼는 건 이미 UE대로였다(`AttributeAggregator.BroadcastOnDirty`의 Unity null 확인) — 테스트로 고정.
 - 왜: (유저) "UE의 결과와 동일하게 되도록 해." — 앞서 "구현 방법말고 결과, 기능으로서". UE 원문 `AbilitySystemComponent_Abilities.cpp:97`·`:1362`, 복제 기준은 `AbilitySystemComponent.h:1695`·`:1957`(`Transient`)·`:196`(설정).
 - 대가: 에이전트 판단(유저 미확정) — UE의 재진입 방지 플래그(`bDestroyActiveStateInitiated`)는 뺐다. UE는 `OnUnregister`·`OnComponentDestroyed` 둘 다 부르고 EndAbility 콜백이 액터를 다시 파괴할 수 있어 필요하지만, Unity `OnDestroy`는 한 번만 불린다(PlayMode D-4로 확인). AttributeSet은 C#에 강제 무효화가 없어 목록에서만 뺀다. 해제된 GA 인스턴스를 무효로 표시하는 것은 여전히 없다(TODO-BOARD 보류 항목) — ASC를 거치는 경로로는 Spec이 없어 못 쓴다. `CancelAllAbilities`의 Ignore 인자는 쓰는 곳이 없어 뺐다.
 - 재검토: 컴포넌트를 껐다 켜는(비활성화 후 재사용) 경로가 생기면 — UE `OnRegister`가 플래그를 되돌리는 경우에 해당.
