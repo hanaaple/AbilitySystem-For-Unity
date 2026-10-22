@@ -131,4 +131,3 @@ _asc.RemoveActiveGameplayEffect(handle);
 ---
 
 - 프로젝트 아키텍처 인덱스: [../overview.md](../overview.md)
-- feature 추적: [feature/ability-system](../../../agent/feature/feature-list.md)

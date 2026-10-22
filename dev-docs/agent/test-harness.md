@@ -1,7 +1,7 @@
 # test-harness — 테스트 규약
 
 **에이전트가 테스트(셀프체크·PlayMode 테스트·Play 확인)를 돌릴 때 따른다.** 상위: [HARNESS.md](HARNESS.md).
-Unity 없이 컴파일만 보는 방법은 → [dev-tools.md](../project/dev-tools.md) '컴파일 확인'. Unity MCP 연결은 → 같은 문서 'Unity MCP'.
+Unity 없이 컴파일만 보는 방법은 → [dev-tools.md](../dev/dev-tools.md) '컴파일 확인'. Unity MCP 연결은 → 같은 문서 'Unity MCP'.
 
 ---
 
@@ -22,7 +22,7 @@ Unity 없이 컴파일만 보는 방법은 → [dev-tools.md](../project/dev-too
 - **PlayMode 테스트:** `Assets/Scripts/Test/*PlayModeTest.cs` 컴포넌트를 저장하지 않는 씬에 붙이고 Play → 결과 줄 `[… Self-Check] passed N / failed N`(Editor.log). Aggregator PlayMode는 ASC를 같은 오브젝트에 붙이고 `Assets/_Test/` GE 5개(`GE_DefaultAttributes_PlayModeTest`·`GE_HealthBoost`·`GE_InstantHeal`·`GE_SpeedFromHealth_*`)를 직렬화 필드에 배선한다 — `Setup PlayMode Test` 메뉴는 열린 씬을 저장하므로 쓰지 않는다.
   - 열린 씬에 저장 안 된 변경이 있으면 씬을 바꾸지 않고 임시 씬을 **추가(Additive)**로 열어 거기에 붙인다. Play를 끈 뒤 임시 씬은 저장하지 않고 닫는다.
   - 열린 씬에 설정 창이 있으면 포커스가 빠질 때 `timeScale`이 0이 돼 시간 기반 테스트가 멈춘다 — '격리'를 Play 직후 적용해 막는다.
-- **임시 에셋 지우기:** MCP에선 `DeleteAsset`이 거부된다 → [dev-tools.md](../project/dev-tools.md) 'MCP에서 막히거나 조용히 틀리는 것'.
+- **임시 에셋 지우기:** MCP에선 `DeleteAsset`이 거부된다 → [dev-tools.md](../dev/dev-tools.md) 'MCP에서 막히거나 조용히 틀리는 것'.
 
 ---
 

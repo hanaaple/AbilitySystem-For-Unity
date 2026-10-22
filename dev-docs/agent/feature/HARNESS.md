@@ -50,7 +50,6 @@ feature/
 1. `수용 기준` 전 항목 체크 확인
 2. progress 상태 → `✅ DONE`, 최종 로그 기록
 3. `feature-list.md` 상태 동기화
-4. **wiki 갱신 리마인드(마일스톤):** feature를 `✅ DONE` 처리했으면, 포트폴리오 wiki(`dev-docs/project/wiki/`)가 낡았을 수 있음을 유저에게 **한 줄 리마인드**한다. — wiki를 직접 고치지는 않는다(갱신은 요청 시에만 — `dev-docs/project/wiki/HARNESS.md`의 "요청 시에만 갱신" 규칙). 어긋날 만한 섹션이 짐작되면 함께 짚어준다. (예: "item-system 완료 — wiki의 `arch`/`todo` 섹션이 코드와 어긋날 수 있으니 갱신할까요?")
 
 ### 폐기/통합 처리
 1. progress 최상단에 폐기 사유 및 (통합 시) 대상 feature-id 기록

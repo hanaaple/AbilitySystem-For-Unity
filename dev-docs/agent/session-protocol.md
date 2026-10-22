@@ -9,7 +9,7 @@
   - 세션 회고 — 잘못한 것 스스로 보고
   - 하네스 자체 점검 — 규약이 틀렸/안 걸린 곳
 
-> 세션 중간에 켜지는 규약은 각자 문서에 있다 — 답변 방식 → [conversation.md](conversation.md) / 착수·범위 → [work-scope.md](work-scope.md) / 진전 즉시 기록·블로커 → [feature/HARNESS.md](feature/HARNESS.md) '작업 중 기록' / 문서 write·참조 갱신 → [docs-harness.md](docs-harness.md) / 커밋 스테이징 → [git-convention.md](../project/git-convention.md) / 코드 → [code-guide/HARNESS.md](code-guide/HARNESS.md).
+> 세션 중간에 켜지는 규약은 각자 문서에 있다 — 답변 방식 → [conversation.md](conversation.md) / 착수·범위 → [work-scope.md](work-scope.md) / 진전 즉시 기록·블로커 → [feature/HARNESS.md](feature/HARNESS.md) '작업 중 기록' / 문서 write·참조 갱신 → [docs-harness.md](docs-harness.md) / 커밋·병합 → [git-harness.md](git-harness.md) / 코드 → [code-guide/HARNESS.md](code-guide/HARNESS.md).
 
 ---
 

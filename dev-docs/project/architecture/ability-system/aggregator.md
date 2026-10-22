@@ -4,7 +4,7 @@
 
 어트리뷰트별 CurrentValue 집계와, 캡처 대상이 바뀌면 의존 이펙트를 **즉시 재평가**하는 반응성 계층. UE `FAggregator`의 집계 + dirty/dependents 개념을 재구현한다. 상위 개요는 [overview](overview.md).
 
-> UE 대비는 [overview §UE GAS 대비](overview.md#ue-gas-대비--채택생략). **개념·방향** 중심. feature: [ability-system/aggregator](../../../agent/feature/ability-system/aggregator/progress.md).
+> UE 대비는 [overview §UE GAS 대비](overview.md#ue-gas-대비--채택생략).
 
 ## 무엇을 푸는가
 

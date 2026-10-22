@@ -3,7 +3,7 @@
 > Unity 커스텀 인스펙터/PropertyDrawer를 만들 때의 실전 규칙. 2026-07-08 에디터 툴링 정리에서
 > 실제로 터진 버그와 거기서 정착시킨 재사용 유틸을 근거로 한다. **에디터 GUI 코드(PropertyDrawer·CustomEditor·EditorWindow)를 새로 짜거나 고치기 전에 이 문서를 먼저 본다.**
 > (2026-10-16 범위 확장: "새 드로어"로만 적혀 있어 기존 EditorWindow를 고칠 때 이 문서를 안 읽었고, 배열 인덱스 경로를 상태 키로 쓰는 안티패턴을 다시 밟았다.)
-> 상위 규약(설계 원칙·범용/전용 분리)은 [`HARNESS.md`](HARNESS.md)(코드 작성 규약) 참고. 스타일은 [`../../project/CODE_CONVENTION.md`](../../project/CODE_CONVENTION.md).
+> 상위 규약(설계 원칙·범용/전용 분리)은 [`HARNESS.md`](HARNESS.md)(코드 작성 규약) 참고. 스타일은 [`../../dev/CODE_CONVENTION.md`](../../dev/CODE_CONVENTION.md).
 
 ---
 
