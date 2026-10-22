@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbfbc065558b85245af777d65720a126, type: 3}
+  m_Name: GE_Shield_Duration
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Effect.GameplayEffectAsset
+  description: "\uC2E4\uB4DC \uC5B4\uBE4C\uB9AC\uD2F0(GA_Shield)\uC758 \uC720\uC9C0
+    \uC2DC\uAC04(10\uCD08)\uC744 \uC7B0\uB2E4. \uC774 GE\uAC00 \uB05D\uB098\uBA74
+    \uC2E4\uB4DC\uB3C4 \uB05D\uB09C\uB2E4. HUD\uAC00 \uB0A8\uC740 \uC2DC\uAC04\uC744
+    \uCC3E\uB3C4\uB85D Asset Tag Status.Buff.Shielded."
+  type: 2
+  duration: 10
+  period: 0
+  executePeriodicEffectOnApplication: 1
+  stackingType: 0
+  stackDurationRefreshPolicy: 0
+  stackPeriodResetPolicy: 0
+  modifiers: []
+  executions: []
+  gameplayEffectComponents:
+  - rid: 8482666747409989971
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666747409989971
+      type: {class: AssetTagsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Assembly-CSharp}
+      data:
+        inheritableAssetTags:
+          _combinedTags:
+            _gameplayTags:
+            - name:
+                name: Status.Buff.Shielded
+          _added:
+            _gameplayTags:
+            - name:
+                name: Status.Buff.Shielded
+          _removed:
+            _gameplayTags: []

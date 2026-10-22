@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1636849b8700bf418f8f5e548b24470, type: 3}
+  m_Name: GA_Skill_Wave
+  m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Abilities.GameplayAbilityAsset
+  description: "\uAD00\uD1B5 \uD30C\uB3D9(E). \uC2ED\uC790\uC120 \uCABD\uC73C\uB85C
+    \uD30C\uB3D9\uC744 \uB0A0\uB824 \uC9C0\uB098\uAC00\uB294 \uD5C8\uC218\uC544\uBE44\uB97C
+    \uBAA8\uB450 \uB9DE\uD78C\uB2E4 \u2014 \uB9DE\uC740 \uB300\uC0C1\uB9C8\uB2E4
+    \uBC14\uB85C \uD53C\uD574(GE_Wave_Damage)\uC640 2\uCD08 \uB4A4 \uD130\uC9C0\uB294
+    \uB099\uC778(GE_Wave_Mark). \uCF54\uC2A4\uD2B8 \uB9C8\uB098 30, \uCFE8\uB2E4\uC6B4
+    4\uCD08. \uAD6C\uB974\uB294 \uC911\uC5D4 \uC4F8 \uC218 \uC5C6\uB2E4."
+  abilityTemplate:
+    rid: 8482666724614996285
+  references:
+    version: 2
+    RefIds:
+    - rid: 8482666724614996285
+      type: {class: FireProjectileAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      data:
+        instancingPolicy: 0
+        costGameplayEffect: {fileID: 11400000, guid: 23f76534265c5114a9f7b908d459c735, type: 2}
+        cooldownGameplayEffect: {fileID: 11400000, guid: 76ec8450c5a4e5c4d9570185b4438123, type: 2}
+        assetTags:
+          _gameplayTags: []
+        cancelAbilitiesWithTag:
+          _gameplayTags: []
+        blockAbilitiesWithTag:
+          _gameplayTags: []
+        activationOwnedTags:
+          _gameplayTags: []
+        activationRequiredTags:
+          _gameplayTags: []
+        activationBlockedTags:
+          _gameplayTags:
+          - name:
+              name: State.Dashing
+        activationPolicy: 0
+        scalesWithAttackSpeed: 0
+        projectilePrefab: {fileID: 7039337006209860910, guid: 21c9e34d3c555964baab196b707ecb2e, type: 3}
+        hitEffect: {fileID: 11400000, guid: 6bc1504758cf4ba41a5d00043f6f147a, type: 2}
+        additionalHitEffects:
+        - {fileID: 11400000, guid: ea304e888785850418fbf2d08e94b6e1, type: 2}
+        launchEffect: {fileID: 11400000, guid: e102571cdf41c20489e19a41969cadcf, type: 2}
+        flattenAim: 1
+        spreadHalfAngle: 0
+        spreadExponent: 1
+        preciseAimTags:
+          _gameplayTags:
+          - name:
+              name: State.Aiming
