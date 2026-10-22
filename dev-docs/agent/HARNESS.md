@@ -93,6 +93,7 @@
 | `conversation.md` | 대화 규율(답변 방식) — **유저에게 답하기 전에** 따른다. |
 | `work-scope.md` | 작업 착수·범위 — 착수 지시 구분, 지시 범위만, 큰 작업은 먼저 묻기. **코드·문서·에셋을 만들거나 고치기 전에**. |
 | `test-harness.md` | 테스트 규약 — 직접 테스트·유저 조작 처리·셀프체크/PlayMode/Play 테스트 실행법. **테스트를 돌리기 전에**. |
+| `git-harness.md` | 에이전트 git 작업 규약 — 커밋·push·병합은 유저 요청 시만, 병합 전후 절차. **커밋·push·PR·병합 전에**. |
 | `TODO-BOARD.harness.md` | `TODO-BOARD.md` 규약 (단일 파일 규약 = `<파일>.harness.md`) |
 
 **agent 상태 문서**

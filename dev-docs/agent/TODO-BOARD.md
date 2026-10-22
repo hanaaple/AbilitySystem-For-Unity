@@ -12,6 +12,7 @@
 > 이 칸으로 데모 목표는 끝(유저 2026-10-22). 위에서부터 순서대로. 테스트는 작업마다 돌리지 않고 4단계에서 몰아서 한다(test-harness 원칙 1).
 
 - [ ] **(docs)** **6. 포트폴리오 작성** _(2026-10-22 등록)_
+  - 유저 방향(2026-08-09, 옛 design.md에서 옮김): UI Toolkit은 HUD 구현 수단일 뿐 깊게 공부하는 스킬 투자 대상이 아니다(AI 스캐폴딩으로 저비용, 우대사항 정도 — 씨름이 시작되면 uGUI로 후퇴). DOTween 같은 연출 도구는 이력서 스킬로 내세우지 않고 크레딧은 아키텍처로.
 
 ## 📋 TODO (GE·Tag 남은 것 — 2026-10-20 정리)
 
@@ -70,7 +71,7 @@
 > 2026-10-18 목표 전환으로 미뤘다. 항목 본문은 옮기기 전 그대로다.
 > 2026-10-20 유저 "TODO 쪽에 이전에 GAS 제외한 TODO인 부분들 다 치우자. 아카이빙은 해두고", "_parked로 옮겨" — 게임 쪽(아이템·캐릭터·아트) 항목은 [`_parked/agent/TODO-BOARD.md`](../_parked/agent/TODO-BOARD.md)로 보관. 그 때문에 '2026-10-18 목표에서 미룬 것'(GE·Tag는 이미 'GE·Tag 남은 것'으로 옮김)·'이전 당장 목표·진행 중이던 것' 소제목은 비어 지웠다. 남은 건 GAS·문서 인프라 항목.
 
-> **이전 우선순위 낮음** (아래 GAS 대분류·기술은 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../project/design.md))의 목표 기능이다. 데모 씬 확정 후 필요분만 착수·feature 등록한다. 각 기능은 UE-complete가 아니라 "최소한 진짜 도는 버전".)
+> **이전 우선순위 낮음** (아래 GAS 대분류·기술은 포트폴리오 방향 전환(2026-08-09, [design.md 포트폴리오 방향](../dev/design.md))의 목표 기능이다. 데모 씬 확정 후 필요분만 착수·feature 등록한다. 각 기능은 UE-complete가 아니라 "최소한 진짜 도는 버전".)
 
 - [ ] **(art)** **데모 아트** — 2026-10-21 유저 "아트 관련은 다 미뤄둬". 데모 '개발 순서'에서 옮김.
   - ~~캐릭터 모델·애니메이션 + Animator 이동 연동~~ — 2026-10-21 3D-Action 프로젝트 것 사용(`Art/Character`), `Demo_Player`(단독 프리팹)에 연결, `PlayerCharacter`가 `MoveDirection X/Z`·`Speed`를 넣음.
@@ -109,11 +110,10 @@
 - [ ] **(editor, bonus)** **에셋 그래프(노드) 에디터** — 시각적 payoff 크나 GraphView 직렬화 rabbit hole. **맨 마지막 선택적 보너스.** 1~2일 스파이크로 리스크 확인 후, 가장 좁은 조각(GE 하나 저작→SO)으로만. 데모 성공을 여기 걸지 않음. _(2026-08-09 등록)_
 
 - [ ] **(docs)** **UE Execution 실행조건 원문 확정분 반영 여부** — 2026-08-05 ylyking UE 미러 원문으로 "period 0 Duration/Infinite에선 Execution 안 돎"을 확정(근거: `ExecuteGameplayEffect` asc.cpp:820 `check(...)` assert + Execute 경로 라인). 이걸 `architecture/ability-system/gameplay-effect.md`나 gameplay-effect `decisions.md`에 근거(파일·라인)와 함께 남길지 **유저 판단 대기**. 위 19번(GameplayEffectType 실전 상태 확정)과 인접하나 별개(enum 확정 ≠ Execution 실행조건). _(2026-08-05 등록)_
-- [ ] **(wiki)** 설계 문서 상호 연결 — 각 섹션 요약에서 `dev-docs/project/architecture/*` 심화 문서로 링크. 로컬/Pages에선 `.md`가 raw로 뜨므로 **GitHub blob URL** 사용. 저장소 public 전제. `SECTION_META.sources`도 같은 방식으로 클릭 가능하게. _(2026-07-05 등록)_
 - [ ] **(docs/refactor)** **에이전트 생성 "왜"의 유저 소유화 — 이번 세션(2026-08-04) 산출물 정리** — 유저 지적: 코드 주석·decisions(특히 D21(ModifierSpec UE 정렬))에 에이전트가 만든 근거가 많고 본인 생각이 반영 안 됨(HARNESS '왜는 지어내지 않는다'/'왜의 근거는 유저 의도 → UE 원본'). 방침: **코드 주석은 사실(무엇/어떻게+함정)만 lean하게, "왜"는 decisions에만·유저가 소유한 것만.** 접근 미정 — ① `GameplayModifierSpec` 시범 후 세션 파일(`AttributeBasedMagnitude`·`GameplayModifier`·`GameplayModifierSpec`·`GameplayEffectSpec`) 톤 일괄 적용(추천) ② D21(ModifierSpec UE 정렬)부터 같이 훑으며 근거 재작성/삭제. 하네스 규칙화(주석 lean·왜는 유저 소유)도 유저 승인 시 docs-harness '각색은 쓰기 전에 묻는다'/HARNESS '왜는 지어내지 않는다'에 추가. _(2026-08-04 등록)_
 - [ ] **(docs)** architecture 하류 문서 **반영 기준 마커 정비** — `camera.md`·`item-equipment.md`·`controller-character.md`·`architecture/overview.md`는 마커 자체가 없어 architecture/HARNESS '최종 갱신' 마커의 낡음 판별(하류 날짜 < 상류 날짜)이 불가능하다. 실제 반영 날짜를 알 수 없어 **지어내지 않고 그대로 뒀다**(그 절 "모르는 날짜는 지어내지 않는다"). 채우려면 **유저가 날짜를 알려주거나, 다음에 그 문서를 실제로 갱신할 때 그날 날짜로 stamp**한다. 더불어 `ability-system/overview.md`는 상류를 feature-id가 아닌 **그룹명**(`ability-system`)으로 적어, 어느 progress와 비교할지 모호하다(그룹 대표 규칙을 정하든 하위 3개 중 하나로 바꾸든 결정 필요). _(2026-07-19 등록 — 하네스 점검 중 발견)_
 - [ ] **(docs)** architecture 문서 **UE 구조 미러링 분류 검토** — UE 모듈/타입 계층(`GameplayAbilities` → `U*` → `F*`)을 참고한 폴더·네이밍 분류. 억지로 서두르지 않음. _(상위/하위 계층 정리·Capture 전용 문서(`capture.md`) 분리는 2026-09-10 완료.)_ 상세 `architecture/HARNESS.md` '문서 구조'. _(2026-09-10 등록 — 유저 발의)_
-- [ ] **(docs)** **§번호 제거 잔여분** — 이번(2026-08-22) 스윕에서 **의도적으로 남긴 것**: ① ✅ Done 로그의 과거 § 기록(동결 이력 — 당시 섹션번호를 서술한 기록이라 §9로 보존) ② `ue-reference.md` 자체 섹션 번호(§2·§9·§11 — 자기완결 UE 참고 자료, decisions/worklog가 "참고문서 §N"으로 참조) ③ `wiki/HARNESS.md` 자체 번호(§2·§2.1). ①은 이력이라 그대로 두는 게 맞고, ②③은 해당 문서 자체를 이름 기반으로 개편할지 유저 판단 필요. _(2026-08-22 등록)_
+- [ ] **(docs)** **§번호 제거 잔여분** — 이번(2026-08-22) 스윕에서 **의도적으로 남긴 것**: ① ✅ Done 로그의 과거 § 기록(동결 이력 — 당시 섹션번호를 서술한 기록이라 §9로 보존) ② `ue-reference.md` 자체 섹션 번호(§2·§9·§11 — 자기완결 UE 참고 자료, decisions/worklog가 "참고문서 §N"으로 참조) ③ `wiki/HARNESS.md` 자체 번호(§2·§2.1, wiki는 2026-10-23 `_parked/`로 보관). ①은 이력이라 그대로 두는 게 맞고, ②③은 해당 문서 자체를 이름 기반으로 개편할지 유저 판단 필요. _(2026-08-22 등록)_
 
 ## 🔧 진행 중
 

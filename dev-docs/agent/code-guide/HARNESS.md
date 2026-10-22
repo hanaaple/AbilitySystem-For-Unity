@@ -1,6 +1,6 @@
 # HARNESS.md — 코드 작성 규약
 
-코드를 **어떻게 짤지**에 대한 설계·실천 규약. 이름·포맷·멤버 순서 등 **스타일**은 [`../../project/CODE_CONVENTION.md`](../../project/CODE_CONVENTION.md).
+코드를 **어떻게 짤지**에 대한 설계·실천 규약. 이름·포맷·멤버 순서 등 **스타일**은 [`../../dev/CODE_CONVENTION.md`](../../dev/CODE_CONVENTION.md).
 
 > 이 폴더의 하위 문서(에디터 가이드 등)는 **이 규약을 상위로 두고** 따른다. 하위로 바로 점프하지 말고 이 문서를 먼저 본다.
 
@@ -72,7 +72,7 @@ public void TakeDamage(int damage) { }
 
 | 문서 | 내용 |
 |---|---|
-| [`CODE_CONVENTION.md`](../../project/CODE_CONVENTION.md) | 네이밍·포맷·`=>`·`var`·긴 줄·멤버 순서. `.editorconfig`로 자동 적용. **코드를 새로 쓰거나 고치기 전에** 이 규약과 함께 본다. |
+| [`CODE_CONVENTION.md`](../../dev/CODE_CONVENTION.md) | 네이밍·포맷·`=>`·`var`·긴 줄·멤버 순서. `.editorconfig`로 자동 적용. **코드를 새로 쓰거나 고치기 전에** 이 규약과 함께 본다. |
 
 **하위 문서**
 

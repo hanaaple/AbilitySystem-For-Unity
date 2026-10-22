@@ -31,3 +31,7 @@
   - 필드명 주의: `CharacterBase._controller`는 possess 하는 `ControllerBase`라 이름이 겹친다.
   - 관련: 이동 모드가 상태로 갈리는 장르(구르기·공격 중 이동·피격 경직)라 GA 착수 시 "어빌리티가 이동을 어떻게 점유하는가" 경계와 함께 봐야 한다. _(2026-07-20 등록 — GE 픽업 트리거 2회 원인 추적 중 발견)_
 - [ ] **(code)** `ItemPickup.OnTriggerEnter` **중복 적용 버그** — `GameplayEffectPickup`과 동일 원인(콜라이더 단위 콜백 + `Destroy` 프레임 지연)으로 인벤토리에 아이템이 2번 들어간다. `GameplayEffectPickup`에는 프레임+대상 가드를 넣었으나 `ItemPickup`은 파킹 중이라 손대지 않았다. 무기 재설계 때 함께 처리. _(2026-07-20 등록)_
+
+## wiki — 2026-10-23 wiki 보관과 함께 보드에서 분리
+
+- [ ] **(wiki)** 설계 문서 상호 연결 — 각 섹션 요약에서 `dev-docs/project/architecture/*` 심화 문서로 링크. 로컬/Pages에선 `.md`가 raw로 뜨므로 **GitHub blob URL** 사용. 저장소 public 전제. `SECTION_META.sources`도 같은 방식으로 클릭 가능하게. _(2026-07-05 등록)_
