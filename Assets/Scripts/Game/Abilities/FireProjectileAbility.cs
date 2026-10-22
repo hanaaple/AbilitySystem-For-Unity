@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Game.Abilities
 {
-    /// <summary>발동하면 시전 지점에서 시전자가 겨누는 지점으로 투사체를 생성하고 바로 끝난다. 날아가는 동안의 수명은 투사체가 가진다.</summary>
+    /// <summary>발동하면 시전 지점에서 시전자가 겨누는 지점으로 투사체를 생성하고 바로 끝난다(여러 개면 수평 부채꼴로). 날아가는 동안의 수명은 투사체가 가진다.</summary>
     [Serializable]
     public sealed class FireProjectileAbility : CharacterGameplayAbility
     {
@@ -35,6 +35,13 @@ namespace Game.Abilities
 
         [Tooltip("쏘는 순간 시전자가 이 중 하나라도 가지면 퍼짐 없이 쏜다(예: 조준).")]
         [SerializeField] private GameplayTagContainer preciseAimTags;
+
+        [Header("Fan")]
+        [Tooltip("한 번에 쏘는 투사체 수. 2 이상이면 겨눈 방향을 가운데로 수평 부채꼴로 고르게 벌린다.")]
+        [Min(1)] [SerializeField] private int projectileCount = 1;
+
+        [Tooltip("부채꼴 전체 각도(도) — 맨 왼쪽과 맨 오른쪽 투사체 사이.")]
+        [Min(0f)] [SerializeField] private float fanAngle;
 
         public override void ActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo)
         {
@@ -82,8 +89,16 @@ namespace Game.Abilities
 
                 Quaternion rotation = toAim.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(toAim) : Quaternion.identity;
                 rotation = ApplySpread(rotation, gameObjectInfo.AbilitySystemComponent);
-                Projectile projectile = UnityEngine.Object.Instantiate(projectilePrefab, origin, rotation);
-                projectile.Launch(gameObjectInfo.AvatarGameObject, hitSpecs);
+                for (int i = 0; i < projectileCount; i++)
+                {
+                    float yawOffset = projectileCount > 1 ? Mathf.Lerp(-fanAngle * 0.5f, fanAngle * 0.5f, i / (float)(projectileCount - 1)) : 0f;
+                    Quaternion fanRotation = Quaternion.Euler(0f, yawOffset, 0f) * rotation;
+                    Projectile projectile = UnityEngine.Object.Instantiate(projectilePrefab, origin, fanRotation);
+
+                    // Spec은 투사체끼리 같이 써도 된다 — 맞힌 대상마다 복제해서 건다
+                    projectile.Launch(gameObjectInfo.AvatarGameObject, hitSpecs);
+                }
+
                 if (launchEffect != null)
                 {
                     ApplyGameplayEffectToOwner(handle, gameObjectInfo, launchEffect, GetAbilityLevel(handle, gameObjectInfo));

@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: GE_Wave_Mark
   m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Effect.GameplayEffectAsset
   description: "\uAD00\uD1B5 \uD30C\uB3D9\uC774 \uB0A8\uAE30\uB294 \uB099\uC778.
-    2\uCD08 \uB3D9\uC548 Status.Debuff.Marked\uB97C \uC8FC\uACE0, \uB05D\uB0A0 \uB54C
+    4\uCD08 \uB3D9\uC548 Status.Debuff.Marked\uB97C \uC8FC\uACE0, \uB05D\uB0A0 \uB54C
     DamageExecution\uC73C\uB85C \uD55C \uBC88 \uD130\uC9C4\uB2E4 \u2014 \uACC4\uC0B0
-    Modifier\uAC00 \uCEA1\uCC98\uD55C \uACF5\uACA9\uB825\uC5D0 \xD72.5. \uC8FC\uAE30(1.95\uCD08)\uB97C
-    \uC9C0\uC18D(2\uCD08)\uBCF4\uB2E4 \uC870\uAE08 \uC9E7\uAC8C \uB454\uB2E4: \uAC19\uC740
+    Modifier\uAC00 \uCEA1\uCC98\uD55C \uACF5\uACA9\uB825\uC5D0 \xD72.5. \uC8FC\uAE30(3.95\uCD08)\uB97C
+    \uC9C0\uC18D(4\uCD08)\uBCF4\uB2E4 \uC870\uAE08 \uC9E7\uAC8C \uB454\uB2E4: \uAC19\uC740
     \uD504\uB808\uC784\uC5D0 \uB05D\uB098\uBA74 \uC8FC\uAE30 \uB204\uC801 \uC624\uCC28\uB85C
     \uC2E4\uD589\uC774 \uBE60\uC9C8 \uC218 \uC788\uC5B4\uC11C. \uD5C8\uC218\uC544\uBE44\uC758
     TagVfxEffect\uAC00 \uD0DC\uADF8\uB85C \uB099\uC778\xB7\uD3ED\uBC1C \uC774\uD399\uD2B8\uB97C
     \uB0B8\uB2E4."
   type: 2
-  duration: 2
-  period: 1.95
+  duration: 4
+  period: 3.95
   executePeriodicEffectOnApplication: 0
   stackingType: 0
   stackDurationRefreshPolicy: 0
