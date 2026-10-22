@@ -29,4 +29,4 @@
 
 - 요구사항·범위·목표 — [requirements.md](requirements.md)
 - 진행 상태·다음 작업 — [progress.md](progress.md)
-- 아키텍처(계획) — [architecture/ability-system/gameplay-ability.md](../../../../project/architecture/ability-system/gameplay-ability.md)
+- 아키텍처 — [architecture/ability-system/gameplay-ability.md](../../../../project/architecture/ability-system/gameplay-ability.md)
