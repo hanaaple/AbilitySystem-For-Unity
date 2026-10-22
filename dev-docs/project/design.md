@@ -2,6 +2,8 @@
 
 현재 활성 기획 = **Ability System(GAS 재구현) 데모**. 전체 게임 비전(컨셉·빙의·아이템·전투·씬·입력 등 비-GAS)은 보관됨 → [_parked/project/design.md](../_parked/project/design.md).
 
+구현된 데모(씬 구성·기능별 GAS 적용) → [demo.md](demo.md).
+
 ## 포트폴리오 방향 (2026-08-09 결정)
 
 **메인 포트폴리오 = "완성된 게임"이 아니라 Ability System(GAS 재구현)이 온전히 작동하는, 완성도 높은 게임 데모.** 완성된 게임에서 **완성도 높은 데모(수직 슬라이스)**로 범위를 줄인다. GAS의 알맹이(Attribute·GameplayEffect·집계·캡처·Execution)는 이미 동작하므로, 이를 중심으로 주요 GAS 기능이 **한 데모 씬에서 엮여 작동**하는 것을 보여준다.

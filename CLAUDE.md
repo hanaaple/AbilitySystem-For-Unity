@@ -47,6 +47,7 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 - feature 현황·진행 추적 — `dev-docs/agent/feature/feature-list.md` (대시보드) · `dev-docs/agent/feature/<feature-id>`
 - 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/TODO-BOARD.md`
 - 게임 기획 — `dev-docs/project/design.md`
+- 연습 모드 데모(씬 구성·기능별 GAS 적용·촬영) — `dev-docs/project/demo.md`
 - 아키텍처 — `dev-docs/project/architecture` (overview.md가 인덱스). 시스템 구조·설계를 개념·방향 중심으로 정리한 **에이전트·개발자·외부 공용** 문서. 작성 규약은 `architecture/HARNESS.md`.
 - 개발 도구 설정 — `dev-docs/project/dev-tools.md`
 - 커밋·PR 등 git 관련 규약 — `dev-docs/project/git-convention.md`
