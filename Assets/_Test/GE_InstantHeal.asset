@@ -10,21 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fbfbc065558b85245af777d65720a126, type: 3}
-  m_Name: GE_HealthBoost
+  m_Name: GE_InstantHeal
   m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Effect.GameplayEffectAsset
-  type: 1
+  description: "Aggregator PlayMode \uD14C\uC2A4\uD2B8\uC6A9. \uCCB4\uB825\uC744
+    \uD55C \uBC88 \uB354\uD558\uB294 Instant GE."
+  type: 0
   duration: 0
   period: 0
   executePeriodicEffectOnApplication: 1
   modifiers:
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp, Version=0.0.0.0,
-        Culture=neutral, PublicKeyToken=null
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       fieldName: health
     operation: 0
     modifierMagnitude:
       magnitudeCalculationType: 0
-      scalableFloatMagnitude: 100
+      scalableFloatMagnitude: 30
       attributeBasedMagnitude:
         backingAttribute:
           captureSource: 0
@@ -36,4 +38,30 @@ MonoBehaviour:
         coefficient: 1
         preMultiplyAdditive: 0
         postMultiplyAdditive: 0
+    sourceTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
+    targetTags:
+      _requireTags:
+        _gameplayTags: []
+      _ignoreTags:
+        _gameplayTags: []
+      _tagQuery:
+        _tokenStreamVersion: 0
+        _tagDictionary: []
+        _queryTokenStream: 
+        _userDescription: 
+        _autoDescription: 
   executions: []
+  gameplayEffectComponents: []
+  references:
+    version: 2
+    RefIds: []

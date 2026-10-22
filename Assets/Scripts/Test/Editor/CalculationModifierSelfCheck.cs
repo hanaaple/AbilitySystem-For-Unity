@@ -15,7 +15,7 @@ namespace Test.Editor
     // 편집기 함수는 GameplayEffectAssetDrawer의 private static이라 리플렉션으로 부른다.
     public static class CalculationModifierSelfCheck
     {
-        private const string SourceGePath = "Assets/Data/Test/GE_Speed.asset";
+        private const string SourceGePath = "Assets/_Test/GE_Speed.asset";
         private const string TempFolder = "Assets/_SelfCheckTemp";
         private const string TempGePath = TempFolder + "/GE_CalculationModifierSelfCheck.asset";
         private const float Eps = 0.001f;

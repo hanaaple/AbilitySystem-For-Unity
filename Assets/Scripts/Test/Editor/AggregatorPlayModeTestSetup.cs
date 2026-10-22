@@ -14,7 +14,7 @@ namespace Test.Editor
     /// <summary><see cref="AggregatorPlayModeTest"/>가 쓸 실제 GameplayEffect·Attribute 에셋을 만들고 현재 씬에 ASC + 테스트 컴포넌트를 배선한다. 리플렉션으로 private [SerializeField]를 채우지만 저장 후엔 인스펙터로 만든 것과 동일한 직렬화 .asset이 된다(라운드트립 검증 포함). 클릭 → Play로 검증 완료.</summary>
     public static class AggregatorPlayModeTestSetup
     {
-        private const string Folder = "Assets/_PlayModeTest";
+        private const string Folder = "Assets/_Test";
         private const BindingFlags NonPublicInstance = BindingFlags.Instance | BindingFlags.NonPublic;
 
         [MenuItem("Tools/Ability System/Setup PlayMode Test")]
@@ -22,7 +22,9 @@ namespace Test.Editor
         {
             EnsureFolder();
 
-            AttributeDefinitionAsset init = CreateAttributeInit($"{Folder}/AttrInit_PlayModeTest.asset");
+            GameplayEffectAsset defaultAttributes = CreateGe($"{Folder}/GE_DefaultAttributes_PlayModeTest.asset", GameplayEffectType.Instant,
+                MakeModifier(CharacterAttributeSet.Health, GameplayModifierOperation.Override, 100f),
+                MakeModifier(CharacterAttributeSet.Speed, GameplayModifierOperation.Override, 0f));
             GameplayEffectAsset healthBoost = CreateGe($"{Folder}/GE_HealthBoost.asset", GameplayEffectType.Infinite,
                 MakeModifier(CharacterAttributeSet.Health, GameplayModifierOperation.AddBase, 100f));
             GameplayEffectAsset speedLive = CreateGe($"{Folder}/GE_SpeedFromHealth_Live.asset", GameplayEffectType.Infinite,
@@ -35,13 +37,13 @@ namespace Test.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            WireScene(init, healthBoost, speedLive, speedSnap, instantHeal);
+            WireScene(defaultAttributes, healthBoost, speedLive, speedSnap, instantHeal);
 
             Debug.Log("[PlayMode Setup] 에셋 5개 생성 + 씬 배선 완료. Play를 눌러 검증하라 → 콘솔 '[PlayMode Self-Check] passed N / failed N'.");
         }
 
         // ── 씬 배선 ──
-        private static void WireScene(AttributeDefinitionAsset init, GameplayEffectAsset healthBoost,
+        private static void WireScene(GameplayEffectAsset defaultAttributes, GameplayEffectAsset healthBoost,
             GameplayEffectAsset speedLive, GameplayEffectAsset speedSnap, GameplayEffectAsset instantHeal)
         {
             const string goName = "AggregatorPlayModeTest";
@@ -54,13 +56,10 @@ namespace Test.Editor
             }
 
             GameObject go = new GameObject(goName);
-            AbilitySystemComponent asc = go.AddComponent<AbilitySystemComponent>();
+            go.AddComponent<AbilitySystemComponent>();
             AggregatorPlayModeTest test = go.AddComponent<AggregatorPlayModeTest>();
 
-            // ASC.attributeInitData 주입 → Awake에서 실제 초기화 경로를 타게.
-            SetSerializedRef(asc, "attributeInitData", init);
-
-            SetSerializedRef(test, "attributeInitData", init);
+            SetSerializedRef(test, "geDefaultAttributes", defaultAttributes);
             SetSerializedRef(test, "geHealthBoost", healthBoost);
             SetSerializedRef(test, "geSpeedFromHealthLive", speedLive);
             SetSerializedRef(test, "geSpeedFromHealthSnapshot", speedSnap);
@@ -85,35 +84,11 @@ namespace Test.Editor
         }
 
         // ── 에셋 빌더 ──
-        private static AttributeDefinitionAsset CreateAttributeInit(string path)
-        {
-            AttributeDefinitionAsset asset = LoadOrCreate<AttributeDefinitionAsset>(path);
-
-            AttributeFieldDefinition health = MakeField("health", 100f);
-            AttributeFieldDefinition speed = MakeField("speed", 0f);
-
-            object setDef = Activator.CreateInstance(typeof(AttributeSetDefinition));
-            SetPrivateField(setDef, "attributeSetTypeName", typeof(CharacterAttributeSet).AssemblyQualifiedName);
-            SetPrivateField(setDef, "attributes", new List<AttributeFieldDefinition> { health, speed });
-
-            SetPrivateField(asset, "attributeSets", new List<AttributeSetDefinition> { (AttributeSetDefinition)setDef });
-            EditorUtility.SetDirty(asset);
-            return asset;
-        }
-
-        private static AttributeFieldDefinition MakeField(string fieldName, float baseValue)
-        {
-            object field = Activator.CreateInstance(typeof(AttributeFieldDefinition));
-            SetPrivateField(field, "fieldName", fieldName);
-            SetPrivateField(field, "baseValue", baseValue);
-            return (AttributeFieldDefinition)field;
-        }
-
-        private static GameplayEffectAsset CreateGe(string path, GameplayEffectType type, GameplayModifier modifier)
+        private static GameplayEffectAsset CreateGe(string path, GameplayEffectType type, params GameplayModifier[] modifiers)
         {
             GameplayEffectAsset ge = LoadOrCreate<GameplayEffectAsset>(path);
             SetPrivateField(ge, "type", type);
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier> { modifier });
+            SetPrivateField(ge, "modifiers", new List<GameplayModifier>(modifiers));
             EditorUtility.SetDirty(ge);
             return ge;
         }
@@ -169,7 +144,7 @@ namespace Test.Editor
         {
             if (!AssetDatabase.IsValidFolder(Folder))
             {
-                AssetDatabase.CreateFolder("Assets", "_PlayModeTest");
+                AssetDatabase.CreateFolder("Assets", "_Test");
             }
         }
 

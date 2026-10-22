@@ -14,8 +14,8 @@ namespace Test
     [RequireComponent(typeof(AbilitySystemComponent))]
     public sealed class AggregatorPlayModeTest : MonoBehaviour
     {
-        [Tooltip("Health=100 / Speed=0 으로 초기화하는 정의 에셋. ASC.attributeInitData와 동일 에셋을 재주입(TryAdd라 안전).")]
-        [SerializeField] private AttributeDefinitionAsset attributeInitData;
+        [Tooltip("Instant · Health=100 / Speed=0 Override. 시작할 때 자신에게 적용하는 초기 스탯 GE.")]
+        [SerializeField] private GameplayEffectAsset geDefaultAttributes;
 
         [Tooltip("Infinite · Health AddBase +100.")]
         [SerializeField] private GameplayEffectAsset geHealthBoost;
@@ -33,12 +33,19 @@ namespace Test
         private int _passed;
         private int _failed;
 
-        private void Start()
+        private void Awake()
         {
             _asc = GetComponent<AbilitySystemComponent>();
+            _asc.AddSpawnedAttribute(new CharacterAttributeSet());
+        }
 
-            // ASC.Awake가 attributeInitData로 이미 초기화했지만, 인스펙터에 안 꽂혀 있어도 돌게 재주입(TryAdd라 중복 무해).
-            _asc.AddSet(attributeInitData);
+        // GE 컨테이너가 ASC Awake에서 만들어지므로 초기 스탯 GE는 Start에서 적용한다
+        private void Start()
+        {
+            if (geDefaultAttributes != null)
+            {
+                _asc.ApplyGameplayEffectToSelf(geDefaultAttributes);
+            }
 
             if (!Preconditions())
             {
@@ -56,7 +63,7 @@ namespace Test
 
         private bool Preconditions()
         {
-            bool ok = attributeInitData != null
+            bool ok = geDefaultAttributes != null
                       && geHealthBoost != null
                       && geSpeedFromHealthLive != null
                       && geSpeedFromHealthSnapshot != null
@@ -77,7 +84,7 @@ namespace Test
         private void RunInitCheck()
         {
             ResetAttributes();
-            Check("초기 Health == 100 (attributeInitData)", Current(CharacterAttributeSet.Health), 100f);
+            Check("초기 Health == 100 (geDefaultAttributes)", Current(CharacterAttributeSet.Health), 100f);
             Check("초기 Speed == 0", Current(CharacterAttributeSet.Speed), 0f);
         }
 
