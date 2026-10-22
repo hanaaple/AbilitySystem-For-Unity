@@ -130,7 +130,7 @@ flowchart TD
 
 - **Context(`GameplayEffectContext`)** — Instigator(시전자 ASC)·EffectCauser·SourceObject, **피격 정보**(`AddHitResult`/`TryGetHitResult` — `RaycastHit` 하나). Execution이 맞은 위치·콜라이더를 읽을 수 있다.
 - **대상별 복제** — 한 Spec을 여러 대상에 걸 땐 대상마다 `Clone()` + 컨텍스트 `Duplicate()` + `SetContext`로 피격 정보를 따로 담는다(UE TargetData 적용과 같은 이유 — 안 하면 공유 컨텍스트에 마지막 대상 정보가 남는다).
-- **지속 시간** — Spec이 정의 값으로 시작하는 `Duration`을 들고, 적용 전에 `SetDuration`으로 바꿀 수 있다(예: 쿨다운 감소). 에셋 쪽 Duration Magnitude·지속 시간 캡처는 없다.
+- **지속 시간** — Spec이 정의 값으로 시작하는 `Duration`을 들고, 적용 전에 `SetDuration`으로 바꿀 수 있다(예: 쿨다운을 공격속도로 나누기). 에셋 쪽 Duration Magnitude·지속 시간 캡처는 없다.
 
 ## Execution — 복합 계산 훅
 

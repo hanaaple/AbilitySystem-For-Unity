@@ -21,7 +21,7 @@ namespace Game.Abilities
             }
 
             // 거리는 소유자의 dashDistance 어트리뷰트, 시간은 어빌리티 정의값, 방향은 캐릭터가 가려는 쪽
-            float distance = gameObjectInfo.AbilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.DashDistance);
+            float distance = gameObjectInfo.AbilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.DashDistance);
             Vector3 velocity = character.GetMoveIntentDirection() * (distance / duration);
             character.Push(velocity, duration, () => EndAbility(handle, gameObjectInfo, false));
         }

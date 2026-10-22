@@ -21,7 +21,7 @@
 ### 포함
 - `AttributeData`(Base/Current struct) / `AttributeSet`(추상 + owner + 훅 6개: `Pre/PostAttributeBaseChange`·`Pre/PostGameplayEffectExecute`·`Pre/PostAttributeChange`, UE와 같은 이름)
 - 참조 2분할: `GameplayAttribute`(직렬화, AQN+필드명) ↔ `GameplayAttributeHandle`(런타임, FieldInfo 캐싱)
-- 구체 Set(Game 쪽): `CharacterAttributeSet`·`CombatAttributeSet`·`BoxAttributeSet`·`TestAtrributeSet`(훅 검증용)
+- 구체 Set(Game 쪽): `CharacterAttributeSet`(모든 캐릭터)·`PlayerAttributeSet`(플레이어 전용 — 점프·구르기·마나, 2026-10-23 분리)·`CombatAttributeSet`·`BoxAttributeSet`·`TestAtrributeSet`(훅 검증용)
 - 초기화: 소유 컴포넌트 `Awake`에 `AddSpawnedAttribute(new Set())`, `Start`에 초기 스탯 Instant GE(Override)
 - 에디터 드로어(`GameplayAttributeDrawer`)
 ### 제외

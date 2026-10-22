@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Game.Abilities
 {
-    /// <summary>캐릭터 스킬의 공통 부모. 쿨다운 GE를 걸 때 소유자의 쿨다운 감소 비율만큼 지속 시간을 줄이고, 공격속도를 따르는 어빌리티면 공격속도로 나눈다.</summary>
+    /// <summary>캐릭터 스킬의 공통 부모. 공격속도를 따르는 어빌리티면 쿨다운 GE의 지속 시간을 소유자의 공격속도로 나눈다.</summary>
     [Serializable]
     public abstract class CharacterGameplayAbility : GameplayAbility
     {
@@ -17,7 +17,7 @@ namespace Game.Abilities
 
         public AbilityActivationPolicy ActivationPolicy => activationPolicy;
 
-        // 감소 비율은 걸 때 한 번만 읽는다 — 이미 돌고 있는 쿨다운은 버프가 생기거나 끝나도 길이가 그대로다.
+        // 공격속도는 걸 때 한 번만 읽는다 — 이미 돌고 있는 쿨다운은 버프가 생기거나 끝나도 길이가 그대로다.
         public override void ApplyCooldown(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo)
         {
             GameplayEffectAsset cooldownEffect = GetCooldownGameplayEffect();
@@ -33,12 +33,6 @@ namespace Game.Abilities
             }
 
             AbilitySystemComponent abilitySystemComponent = gameObjectInfo.AbilitySystemComponent;
-            if (abilitySystemComponent.HasAttributeSetForAttribute(CharacterAttributeSet.CooldownReduction))
-            {
-                float reduction = abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.CooldownReduction);
-                spec.SetDuration(spec.Duration * (1f - reduction));
-            }
-
             if (scalesWithAttackSpeed && abilitySystemComponent.HasAttributeSetForAttribute(CharacterAttributeSet.AttackSpeed))
             {
                 // 초기값이 없는(0) 캐릭터는 기본 속도로 본다

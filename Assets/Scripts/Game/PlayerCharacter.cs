@@ -120,6 +120,7 @@ namespace Game
             _asc = GetComponent<AbilitySystemComponent>();
             _characterController = GetComponent<CharacterController>();
             _asc.AddSpawnedAttribute(new CharacterAttributeSet());
+            _asc.AddSpawnedAttribute(new PlayerAttributeSet());
 
             _targetRotation = model.eulerAngles.y;
             _viewCamera = Camera.main;
