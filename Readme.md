@@ -99,20 +99,103 @@ Unreal Engine 5의 Gameplay Ability System(GAS)을 Unity로 다시 구현한 어
 ## 구조
 
 모든 수치 변경은 GameplayEffect(GE)를 거칩니다. GA도 코스트·쿨다운·효과를 전부 GE로 겁니다.
-GE와 GA는 ScriptableObject로 정의하고, 적용·부여할 때 런타임 인스턴스로 복제됩니다.
+`AbilitySystemComponent`(ASC)는 진입점일 뿐이고, 실제 소유·수명·집계는 아래 컨테이너들이 맡습니다.
+
+```mermaid
+flowchart TD
+    ASC["AbilitySystemComponent<br/>진입점"]
+    ASET["AttributeSet<br/>타입당 하나 · Base/Current 저장"]
+    CONT["ActiveGameplayEffectsContainer<br/>GE 소유 · 수명 · 실행"]
+    AGE["ActiveGameplayEffect<br/>지속형 GE"]
+    AGG["AttributeAggregator<br/>어트리뷰트별 집계"]
+    TAGS["GameplayTagCountContainer<br/>소유 태그(개수)"]
+    SPECS["GameplayAbilitySpecContainer<br/>부여된 GA"]
+
+    ASC --> ASET
+    ASC --> CONT
+    ASC --> TAGS
+    ASC --> SPECS
+    CONT --> AGE
+    CONT --> AGG
+    AGG -. CurrentValue 계산 · 다시 계산 .-> ASET
+    AGE -. 부여 태그 .-> TAGS
+```
+
+GE와 GA는 ScriptableObject로 정의하고, 적용·부여할 때 런타임 인스턴스로 복제합니다. 어트리뷰트 참조는 직렬화용과 런타임용을 나눴습니다(`FieldInfo`는 직렬화할 수 없어서).
 
 ```mermaid
 flowchart LR
-    GA["GameplayAbility<br/>스킬 실행"] -->|코스트·쿨다운·효과| ASC
-    ASC["AbilitySystemComponent<br/>진입점"] --> SET["AttributeSet<br/>수치 저장"]
-    ASC --> CONT["ActiveGameplayEffectsContainer<br/>활성 GE · 수명 · 집계"]
-    ASC --> TAG["소유 태그<br/>GameplayTag 개수"]
-    CONT --> AGG["AttributeAggregator<br/>어트리뷰트별 집계"]
-    ASSET["GameplayEffectAsset (SO)"] -->|Spec 복제 후 적용| CONT
+    GEA["GameplayEffectAsset<br/>SO 정의"] -->|MakeOutgoingSpec| SPEC["GameplayEffectSpec<br/>대상마다 복제"]
+    SPEC -->|지속형이면| AGE2["ActiveGameplayEffect"]
+    GAA["GameplayAbilityAsset<br/>SO 정의"] -->|GiveAbility · 깊은 복사| GA["GameplayAbility 인스턴스"]
+    ATTR["GameplayAttribute<br/>직렬화용"] -->|ToAttributeHandle| HANDLE["GameplayAttributeHandle<br/>런타임용"]
 ```
 
-값은 두 가지입니다. 데미지나 회복처럼 영구적으로 바뀌는 BaseValue, 버프처럼 걸려 있는 효과를 모아 계산하는 CurrentValue입니다. 효과가 빠지면 CurrentValue는 원래대로 돌아갑니다.
-다른 어트리뷰트를 참조하는 값(예: 방어력 = 힘의 10%)은 참조 대상이 바뀌면 다시 계산되고, 태그로 GE 적용·유지나 GA 발동에 조건을 걸 수 있습니다.
+GE를 적용하면 타입에 따라 두 길로 갈립니다. Instant와 주기 실행은 BaseValue를 영구히 바꾸고, Duration·Infinite는 aggregator에 등록돼 CurrentValue에만 반영됩니다. 효과가 빠지면 CurrentValue는 원래대로 돌아갑니다.
+
+```mermaid
+sequenceDiagram
+    participant GA as GameplayAbility
+    participant ASC as ASC
+    participant Cont as GE 컨테이너
+    participant Agg as Aggregator
+
+    GA->>ASC: CommitAbility (코스트 GE · 쿨다운 GE)
+    GA->>ASC: 효과 GE 적용
+    ASC->>Cont: Spec 적용 (적용 조건 · 캡처 · magnitude)
+    alt Instant · 주기 실행
+        Cont->>Cont: Execute → AttributeSet 훅 → BaseValue 변경
+    else Duration · Infinite
+        Cont->>Agg: mod 등록
+        Agg-->>Cont: 다시 계산 → CurrentValue
+    end
+    Cont-->>ASC: 부여 태그 · 이벤트
+```
+
+다른 어트리뷰트를 참조하는 값(예: 방어력 = 힘의 10%)은 참조 대상이 바뀌면 다시 계산됩니다. 복잡한 계산(공격력 캡처 → 헤드샷 배율 → 실드 차감 같은)은 GE의 Execution에 둡니다.
+
+### GameplayTag
+
+태그는 계층 이름(`Status.Debuff.Burning`)이고, 등록된 이름만 쓸 수 있습니다. ASC는 지금 가진 태그를 개수로 세서, 같은 태그를 두 곳에서 주면 하나가 빠져도 남습니다. GA·GE·연출은 서로를 직접 모르고 태그로만 이어집니다.
+
+```mermaid
+flowchart LR
+    subgraph DEF["정의"]
+        NATIVE["코드 정의 태그<br/>NativeGameplayTag"]
+        REG["태그 목록 에셋<br/>GameplayTagRegistryAsset"]
+        MGR["GameplayTagsManager<br/>태그 트리 · 등록 판정"]
+        NATIVE --> MGR
+        REG --> MGR
+    end
+
+    subgraph OWN["소유 — ASC 태그 개수"]
+        COUNT["GameplayTagCountContainer"]
+    end
+
+    subgraph SRC["태그를 주는 쪽"]
+        GRANT["GE 부여 태그<br/>켜져 있는 동안 +1"]
+        ACT["GA 발동 중 태그<br/>Activation Owned"]
+        LOOSE["코드에서 직접<br/>Loose 태그"]
+    end
+
+    subgraph USE["태그를 보는 쪽"]
+        BLOCK["GA 발동 조건 · 차단 · 취소"]
+        REQ["GE 조건<br/>적용 · 유지(억제) · 제거"]
+        FX["애니메이션 · 화면 연출<br/>태그 이벤트 구독"]
+        QUERY["GE 찾기 · 제거<br/>GameplayEffectQuery"]
+    end
+
+    MGR -. 등록된 이름만 .-> COUNT
+    GRANT --> COUNT
+    ACT --> COUNT
+    LOOSE --> COUNT
+    COUNT --> BLOCK
+    COUNT --> REQ
+    COUNT --> FX
+    COUNT --> QUERY
+```
+
+태그 질의는 `GameplayTagQuery`(All/Any/None 조합)로 쓰고, 에디터에는 태그 피커·관리 창·질의 편집기가 있습니다. 자세한 내용은 [gameplay-tag 문서](dev-docs/project/architecture/ability-system/gameplay-tag.md).
 
 ## 실행
 
