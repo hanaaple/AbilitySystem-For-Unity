@@ -13,8 +13,35 @@ MonoBehaviour:
   m_Name: GameplayTagRegistry
   m_EditorClassIdentifier: Assembly-CSharp::Core.AbilitySystem.Tag.GameplayTagRegistryAsset
   _tags:
+  - A.B.C
+  - A.C
+  - ASD
   - Ability.ActivateFail.CanActivateAbility
   - Ability.ActivateFail.Cooldown
   - Ability.ActivateFail.Cost
   - Ability.ActivateFail.TagsBlocked
   - Ability.ActivateFail.TagsMissing
+  - Ability.Aim
+  - Ability.Sprint
+  - Cooldown.Dummy.Attack
+  - Cooldown.NormalAttack
+  - Cooldown.Pickup.Respawn
+  - Cooldown.Skill.Dash
+  - Cooldown.Skill.Wave
+  - Gameplay.Zone.Head
+  - Movement.Mode.Falling
+  - Movement.Mode.Walking
+  - State.Aiming
+  - State.Combat
+  - State.Dashing
+  - State.Healing
+  - State.Jumping
+  - State.Sprinting
+  - Status.Buff.Empowered
+  - Status.Buff.Shielded
+  - Status.Debuff.Burning
+  - Status.Debuff.Marked
+  - Status.Debuff.Poisoned
+  - Test.ASD.A
+  - Test.ASD.s
+  - Test.ModifierTag.Registry.Stunned
