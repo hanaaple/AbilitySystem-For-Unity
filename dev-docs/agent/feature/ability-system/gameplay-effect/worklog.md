@@ -3,6 +3,9 @@
 > 시간순 "무엇을 왜 했나" 기록. progress.md의 `## 다음 작업`이 재개 앵커이며, 과거 맥락이 필요할 때만 이 파일을 연다. 최신이 위로.
 > 결정은 `(→D#)`(decisions.md)로 링크한다. 2026-10-23 정리로 검증 수치·조사 경로·회고를 걷어냈다 — 원문은 git 이력.
 
+### 2026-10-23 — 경고 문구의 옛 핸들 이름 정리
+- `GameplayEffectSpec`의 modifier 대상 해석 실패 경고가 옛 이름 `ResolvedGameplayAttribute`를 써서 `GameplayAttributeHandle`로(문구만, 유저 지시).
+
 ### 2026-10-23 — 대상별 Spec·컨텍스트 복제 (→D32)
 - 데모 관통 파동은 발사 때 만든 Spec 하나를 여러 대상에 건다. `Clone()`은 컨텍스트를 공유해 대상마다 `AddHitResult`가 같은 객체를 덮어써, 2초 뒤 터지는 낙인이 마지막 대상의 부위로 헤드샷을 판정하게 된다.
 - UE도 대상마다 Spec 복사 + `Context.Duplicate()` + `SetContext`를 한다 → 컨텍스트 `Duplicate`(얕은 복사), Spec `SetContext`.
