@@ -114,7 +114,5 @@ dev-docs/temp/
 /[Aa]ssets/[Aa]rt/Third Party/
 /[Aa]ssets/[Aa]rt/Third Party.meta
 
-# Parked (non-GAS) docs & code — local-only archive, not in the public repo
+# Parked (non-GAS) docs — local-only archive, not in the public repo
 dev-docs/_parked/
-Assets/Scripts/_Parked/
-Assets/Scripts/_Parked.meta
