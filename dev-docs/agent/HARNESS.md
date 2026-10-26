@@ -101,5 +101,12 @@
 | 문서 | 내용 |
 |---|---|
 | `NOW.md` | 단일 재개 지점 — 휘발성 재개 메모(진실의 출처 아님). 지금 할 일·멈춘 지점·선행조건만 짧게. **개인용 로컬 파일**(`.gitignore`, 미커밋) — 각 작업 환경이 자기 것을 생성·유지하며, 없으면 이어하기 시 새로 만든다. 팀 공유 상태는 progress·decisions·feature-list. 매 세션 다시 쓰는 휘발 메모라 **별도 `최종 갱신` 타임스탬프를 두지 않는다**(낡음 판별 대상 아님). |
-| `TODO-BOARD.md` | 잡다한 작업·이슈 보드 |
-| `TODO-DONE.md` | 보드에서 끝난 항목 아카이브(최신이 위). 필요할 때만 연다 |
+| `private/TODO-BOARD.md` | 잡다한 작업·이슈 보드 |
+| `private/TODO-DONE.md` | 보드에서 끝난 항목 아카이브(최신이 위). 필요할 때만 연다 |
+
+**비공개 문서 (`private/`)**
+
+- 작업 보드(`TODO-BOARD.md`·`TODO-DONE.md`)와 feature 내용 문서(`feature/` 아래 feature-list·progress·worklog·decisions·보조 문서)는 `agent/private/`에 원래 하위 경로 그대로 둔다. 규약 문서는 공개 경로에 남는다.
+- `private/`는 별도 비공개 저장소의 **git submodule**이다(`.gitmodules`). 그 안의 커밋·push도 git-harness를 따른다.
+- `private/`에서 커밋하면 공개 저장소엔 submodule 포인터 변경이 생긴다 — 공개 쪽 커밋에 포인터 갱신을 함께 넣는다.
+- 새 환경에서는 `git clone --recurse-submodules`, 이미 받았으면 `git submodule update --init`. 비공개 저장소 접근 권한이 없으면 `private/`만 비어 있다.

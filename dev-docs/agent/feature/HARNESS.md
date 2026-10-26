@@ -30,6 +30,7 @@ feature/
         └── <보조 문서>.md          # (선택)
 ```
 
+- **위치 분리:** 위 트리 중 규약(`HARNESS.md`·`*-harness.md`)만 `agent/feature/`에 두고, 내용 문서(`feature-list.md`·progress·worklog·decisions·보조 문서)는 같은 하위 경로로 `agent/private/feature/`에 둔다(비공개 — [agent/HARNESS.md](../HARNESS.md) '비공개 문서').
 - **네이밍:** feature-id·group-id는 **kebab-case 영문 소문자** (예: `combat-core`, `enemy-ai`, `item-system`).
 - **위치:** 각 feature는 폴더를 가지며 진행 문서는 그 안에 `progress.md`로 둔다. 단일 feature는 `feature/<feature-id>/`, 그룹 하위는 `feature/<group-id>/<feature-id>/`.
 - **그룹(대분류):** 한 도메인의 하위 feature가 여럿으로 늘면 `feature/<group-id>/`로 묶는다(예: `item-system` → `item`·`inventory`·`equipment`). 그룹 자체는 progress를 갖지 않으며, 하위 전체를 지배하는 공유 불변조건·설계가 있으면 그룹 폴더에 `HARNESS.md`를 둔다(하위는 참조, 중복 정의 금지).

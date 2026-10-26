@@ -28,6 +28,7 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 └── dev-docs/ (작업 규약·프로젝트 내용·설계 문서)
     ├── agent/ (에이전트 작업 자료 — 내부용)
     │   └── feature/ (프로젝트 작업 피처)
+    │   └── private/ (비공개 — 작업 보드·feature 내용 문서. 별도 비공개 저장소 submodule)
     │   └── code-guide/ (코드 작성 규약 + 하위 실전 가이드)
     ├── dev/ (공개 개발자용 — 개발 방향·코드 컨벤션·개발 도구·git 규약)
     ├── project/ (외부 공개용 — 데모·아키텍처)
@@ -44,8 +45,8 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 - 최상위 하네스 — `CLAUDE.md`
 - 코드 스타일 컨벤션(네이밍·포맷·멤버 순서) — `.editorconfig` 자동 적용. `dev-docs/dev/CODE_CONVENTION.md`
 - 코드 작성 규약(설계 원칙·연쇄 호출·주석·에디터 확장) — `dev-docs/agent/code-guide/HARNESS.md`. 하위 실전 가이드(에디터 드로어 등)는 이 문서를 통해서만 진입한다(직접 링크 금지).
-- feature 현황·진행 추적 — `dev-docs/agent/feature/feature-list.md` (대시보드) · `dev-docs/agent/feature/<feature-id>`
-- 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/TODO-BOARD.md`
+- feature 현황·진행 추적 — `dev-docs/agent/private/feature/feature-list.md` (대시보드) · `dev-docs/agent/private/feature/<feature-id>`
+- 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/private/TODO-BOARD.md`
 - 개발 방향(GAS 데모 범위·기술 선택) — `dev-docs/dev/design.md`
 - 연습 모드 데모(씬 구성·기능별 GAS 적용, 외부 공개용) — `dev-docs/project/demo.md`
 - 아키텍처 — `dev-docs/project/architecture` (overview.md가 인덱스). 시스템 구조·설계를 개념·방향 중심으로 정리한 **에이전트·개발자·외부 공용** 문서. 작성 규약은 `architecture/HARNESS.md`.
