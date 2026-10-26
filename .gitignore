@@ -113,3 +113,8 @@ dev-docs/agent/NOW.md
 # Third-party store assets (재배포 불가 라이선스 — 로컬에만 둔다)
 /[Aa]ssets/[Aa]rt/Third Party/
 /[Aa]ssets/[Aa]rt/Third Party.meta
+
+# Parked (non-GAS) docs & code — local-only archive, not in the public repo
+dev-docs/_parked/
+Assets/Scripts/_Parked/
+Assets/Scripts/_Parked.meta

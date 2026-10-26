@@ -31,12 +31,10 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
     │   └── private/ (비공개 — 작업 보드·feature 내용 문서. 별도 비공개 저장소 submodule)
     │   └── code-guide/ (코드 작성 규약 + 하위 실전 가이드)
     ├── dev/ (공개 개발자용 — 개발 방향·코드 컨벤션·개발 도구·git 규약)
-    ├── project/ (외부 공개용 — 데모·아키텍처)
-    │   └── architecture/
-    └── _parked/ (보관 — 비활성 비-GAS 인게임 문서·접은 wiki. 원 경로 미러링. 되돌릴 때 원위치)
+    └── project/ (외부 공개용 — 데모·아키텍처)
+        └── architecture/
 ```
 - 각 파일을 확인 시, Root로부터 해당 경로까지의 `HARNESS.md`들을 우선하여 따른다.
-- **`_parked/`는 비활성 보관**이다 — 현재 작업(GAS 데모)에선 열지 않는다. 되돌릴 때만 참조. 코드 쪽 짝은 `Assets/Scripts/_Parked/`(같은 규칙).
 - 현재 필요하지 않은 문서를 미리 열지 않는다.
 - 필요 이상으로 광범위한 검색·파일 전체 읽기 등 **과한 탐색을 하지 않는다** — 목표를 좁혀 최소한으로 조회한다.
 
@@ -55,7 +53,6 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 - 세션 프로토콜(세션 시작·종료) — `dev-docs/agent/session-protocol.md`.
 - 대화 규율(답변 방식) — `dev-docs/agent/conversation.md`. 유저에게 답하기 전.
 - 작업 착수·범위 — `dev-docs/agent/work-scope.md`. 무엇을 얼마나 할지 정할 때.
-- 보관(비활성 비-GAS) — `dev-docs/_parked/` (README: `dev-docs/_parked/README.md`).
 
 
 ### 세부 탐색 규율
