@@ -1,7 +1,5 @@
 # AbilitySystem — Attribute
 
-> **최종 갱신:** 2026-10-23 (KST)
-
 캐릭터 수치(체력·스태미나·이동속도 등)를 담고 읽고/쓰는 계층. 상위 개요는 [overview](overview.md).
 
 > UE GAS의 `UAttributeSet`/`FGameplayAttribute`를 참고해 필요한 축만 재구현. **개념·방향** 중심 — 필드·선언 세부는 코드를 본다.

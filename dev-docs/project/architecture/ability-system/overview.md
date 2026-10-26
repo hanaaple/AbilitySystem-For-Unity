@@ -1,7 +1,5 @@
 # AbilitySystem (GAS-like) — Overview
 
-> **최종 갱신:** 2026-10-23 (KST)
-
 `Assets/Scripts/Core/AbilitySystem/` — 캐릭터 수치·효과·태그·스킬을 다루는 Ability System. **UE5 GAS를 참고해 필요한 축만 골라 Unity에 직접 재구현**한 것이다 — 라이브러리 이식이 아니라 개념의 선택적 재구현. 채택/생략은 아래 [UE GAS 대비](#ue-gas-대비--채택생략) 참고.
 
 > **심화 문서:** [Attribute](attribute.md) · [GameplayEffect](gameplay-effect.md) · [Aggregator (라이브 재평가)](aggregator.md) · [Capture (어트리뷰트 캡처)](capture.md) · [GameplayTag](gameplay-tag.md) · [GameplayAbility](gameplay-ability.md)

@@ -16,7 +16,7 @@
    - **확신도를 구분한다.** **직접 읽은 코드**(확정)와 **외부 API·엔진 동작 기억·2차 자료**(불확실)를 같은 어조로 말하지 않는다.
      - **트리거:** 엔진·외부 API 동작 질문("UE는 어떻게 하나" 류)엔 답을 쓰기 전에 멈추고 **원문부터** 확인한다 — 기억·2차 자료(포럼·블로그·WebFetch 요약)로 먼저 답하지 않는다. 결론이 걸린 지점은 원문 라인을 직접 본다.
        - **UE 원본은 로컬에 있다: `D:\GitHub\UnrealEngine` (UE 5.6.0).** gh(`EpicGames/UnrealEngine`는 비공개)·WebFetch보다 **이 경로를 Grep/Read로 직접** 본다. 프로젝트가 미러링하는 버전이라 버전 일치도 이쪽이 정확. (예: GameplayTags → `Engine/Source/Runtime/GameplayTags/Classes/`)
-       - **Lyra도 로컬에 있다: `C:\Users\Uisoo\Documents\Unreal Projects\LyraStarterGame`**(유저 2026-10-22). 게임 쪽 GAS 사용 예(입력 처리 등)는 여기서 원문을 본다. (예: 입력 → `Source/LyraGame/AbilitySystem/LyraAbilitySystemComponent.cpp`)
+       - **Lyra도 로컬에 있다: `C:\Users\Uisoo\Documents\Unreal Projects\LyraStarterGame`**(유저). 게임 쪽 GAS 사용 예(입력 처리 등)는 여기서 원문을 본다. (예: 입력 → `Source/LyraGame/AbilitySystem/LyraAbilitySystemComponent.cpp`)
        - **확인 엄밀도는 (필요한 정확도)와 (로컬 조회 비용)을 저울질해 정한다:**
          - 시그니처·멤버·동작을 **단정하거나 문서·결정 근거로 남길 때**는 원문 라인을 직접 보고 근거로 남긴다.
          - **골자·큰 흐름만 필요하면** 원문을 열지 않고 그 수준에서 답한다.

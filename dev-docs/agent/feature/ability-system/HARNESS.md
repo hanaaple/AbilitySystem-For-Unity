@@ -3,8 +3,6 @@
 `ability-system` 그룹(attribute · gameplay-effect · gameplay-tag · gameplay-ability · aggregator) 작업 시 지켜야 할 설계 방향·불변조건.
 진행 상황은 각 하위 feature의 `progress.md`, 구조 설명은 `dev-docs/project/architecture/ability-system/`에 있다.
 
-> 최종 갱신: 2026-10-23 (KST)
-
 ---
 
 ## 1. 설계 목적 — 동등성의 기준은 구현이 아니라 동작·결과
@@ -18,7 +16,7 @@
 
 판단이 갈릴 때 던지는 질문: **"UE GAS를 아는 사람이 이걸 보고 예상한 결과와 실제 결과가 같은가?"**
 
-### 1.1 GAS 모방의 의도 (유저 확정 — 2026-08-04)
+### 1.1 GAS 모방의 의도 (유저 확정)
 
 유저가 밝힌 모방 방침(그대로 기록):
 

@@ -1,7 +1,5 @@
 # AbilitySystem — GameplayTag
 
-> **최종 갱신:** 2026-10-23 (KST)
-
 `Assets/Scripts/Core/AbilitySystem/Tag/` — 계층 문자열(`Status.Debuff.Stun`)로 상태를 표현하는 태그 시스템. 태그 정의 → 트리 구성 → 획득 → 매칭(단일·컨테이너·질의) → ASC 소유 태그 → GE 연동까지를 다룬다. 상위 개요 [overview](overview.md).
 
 > UE `GameplayTags` 모듈(`UGameplayTagsManager`·`FGameplayTag`·`FGameplayTagContainer`·`FGameplayTagQuery`)의 런타임 API와 GAS의 태그 연동(`FGameplayTagCountContainer`·GE Component)을 기준으로 재구현. 에디터 도구는 맨 아래 [에디터](#9-에디터).

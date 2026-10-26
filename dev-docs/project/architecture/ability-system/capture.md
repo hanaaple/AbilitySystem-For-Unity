@@ -1,7 +1,5 @@
 # AbilitySystem — Attribute Capture
 
-> **최종 갱신:** 2026-10-23 (KST)
-
 한 GE의 계산이 **다른 어트리뷰트 값을 끌어와 쓰는** 메커니즘 — 값을 **가져오기까지**만 담당한다(가져온 값으로 magnitude를 계산하는 건 소비처 몫). "방어력 = 힘의 10%", "받는 피해 = 공격자 공격력 − 내 방어력" 같은 cross-attribute 계산의 토대다. 상위 개요 [overview](overview.md) · 라이브 재평가 [aggregator](aggregator.md).
 
 > **소비처는 gameplay-effect에 있다** — [AttributeBased Modifier](gameplay-effect.md#modifier)(캡처값 → magnitude 식)와 [Execution](gameplay-effect.md#execution--복합-계산-훅)(`Defs`로 선언·조회). 캡처는 그들에게 값을 넘길 뿐 계산식을 갖지 않는다.

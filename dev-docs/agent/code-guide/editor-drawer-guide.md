@@ -1,8 +1,8 @@
 # 에디터 드로어 구현 가이드
 
-> Unity 커스텀 인스펙터/PropertyDrawer를 만들 때의 실전 규칙. 2026-07-08 에디터 툴링 정리에서
+> Unity 커스텀 인스펙터/PropertyDrawer를 만들 때의 실전 규칙. 에디터 툴링 정리에서
 > 실제로 터진 버그와 거기서 정착시킨 재사용 유틸을 근거로 한다. **에디터 GUI 코드(PropertyDrawer·CustomEditor·EditorWindow)를 새로 짜거나 고치기 전에 이 문서를 먼저 본다.**
-> (2026-10-16 범위 확장: "새 드로어"로만 적혀 있어 기존 EditorWindow를 고칠 때 이 문서를 안 읽었고, 배열 인덱스 경로를 상태 키로 쓰는 안티패턴을 다시 밟았다.)
+> (범위 확장: "새 드로어"로만 적혀 있어 기존 EditorWindow를 고칠 때 이 문서를 안 읽었고, 배열 인덱스 경로를 상태 키로 쓰는 안티패턴을 다시 밟았다.)
 > 상위 규약(설계 원칙·범용/전용 분리)은 [`HARNESS.md`](HARNESS.md)(코드 작성 규약) 참고. 스타일은 [`../../dev/CODE_CONVENTION.md`](../../dev/CODE_CONVENTION.md).
 
 ---
@@ -70,7 +70,7 @@
 
 ## 3. DO — 기본기
 
-- **라벨·툴팁은 필드 Attribute에 두고 드로어는 읽기만 한다.** 설명은 `[Tooltip]`, 라벨은 필드 이름(`property.displayName`)에서 오게 하고, 드로어에 `new GUIContent("…", "설명")`을 하드코딩하지 않는다(단위 표기처럼 라벨만 바꿀 땐 `new GUIContent("Period (s)", prop.tooltip)`). 라벨·툴팁을 바꾸려고 타입별 전용 드로어를 만들지 않는다 — 전용 드로어는 그리기 방식 자체가 다를 때만. (유저 2026-10-19: "별 거 없는데 억지로 늘린거나 단순 Tooltip 같은거는 가능하면 Attribute 자체적으로 해결하도록, Editor 하드 코딩을 줄이고 Attribute 쪽으로 유도해")
+- **라벨·툴팁은 필드 Attribute에 두고 드로어는 읽기만 한다.** 설명은 `[Tooltip]`, 라벨은 필드 이름(`property.displayName`)에서 오게 하고, 드로어에 `new GUIContent("…", "설명")`을 하드코딩하지 않는다(단위 표기처럼 라벨만 바꿀 땐 `new GUIContent("Period (s)", prop.tooltip)`). 라벨·툴팁을 바꾸려고 타입별 전용 드로어를 만들지 않는다 — 전용 드로어는 그리기 방식 자체가 다를 때만. (유저: "별 거 없는데 억지로 늘린거나 단순 Tooltip 같은거는 가능하면 Attribute 자체적으로 해결하도록, Editor 하드 코딩을 줄이고 Attribute 쪽으로 유도해")
 - **공용 헬퍼는 `Core/Common/Editor/`에**, 그중 런타임에서 참조해야 하는 것(속성 등)은 **`Editor` 폴더 밖**의
   런타임 어셈블리(예: `Core.Common`)에 둔다 — 드로잉 로직만 `Editor`에.
 - **에디터 스크립트는 feature-local `Editor/` 폴더**에 둔다(대상 코드 옆, 서브시스템 레벨. 예:
@@ -93,4 +93,4 @@
 - 타입 피커: `SubclassSelectorDrawer`(+`SubclassSelectorAttribute`) · 검색 팝업 `SubclassAdvancedDropdown`
 - 재사용 진입점: `DrawSelector`(그리기) · `CollectArrayValues`/`CollectSiblingValues`(제외 수집 코어)
 - 위치: 공용은 `Core/Common/Editor/`, 필드 속성은 `Core/Common/`
-- 버그픽스 근거: item worklog · attribute worklog 2026-07-08 항목.
+- 버그픽스 근거: item worklog · attribute worklog 항목.

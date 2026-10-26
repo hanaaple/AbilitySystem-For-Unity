@@ -1,8 +1,8 @@
 # 에디터 UI 가독성 가이드
 
 > Unity 에디터 UI(인스펙터·PropertyDrawer·EditorWindow, IMGUI)의 **가독성**을 높일 때 쓰는 진단표·패턴·구현 주의·적용 절차.
-> 근거: 2026-10-16 Tag Query Editor 창 개선 1건(유저: "배열이 깊이 들어가면 가독성이 안좋아") + 웹 조사(디자인 시스템·제품 글 — 연구 결과가 아닌 2차 자료, 아래 '출처').
-> **에디터 동작 검증 전(2026-10-16).** '(미확인)' 표시는 Unity 동작 기억에 기댄 것이다 — 에디터에서 확인되면 표시를 지운다.
+> 근거: Tag Query Editor 창 개선 1건(유저: "배열이 깊이 들어가면 가독성이 안좋아") + 웹 조사(디자인 시스템·제품 글 — 연구 결과가 아닌 2차 자료, 아래 '출처').
+> **에디터 동작 검증 전.** '(미확인)' 표시는 Unity 동작 기억에 기댄 것이다 — 에디터에서 확인되면 표시를 지운다.
 > 상위 규약은 [`HARNESS.md`](HARNESS.md)(코드 작성 규약), 드로어 일반 규칙은 [`editor-drawer-guide.md`](editor-drawer-guide.md).
 
 ---
@@ -42,7 +42,7 @@
 ### 3.2 묶음 상자
 - **원칙.** 중첩 조건의 묶음을 경계로 감싸 관계를 한눈에 보이게 한다. (VMware 쿼리 빌더 개편 글)
 - **IMGUI.** 3.1과 같은 Rect에 반투명 회색을 칠한다. 회색 반투명 하나로 두 스킨에 공용이고, 중첩되면 칠이 겹쳐 깊을수록 진해진다.
-- **칠만으로는 경계가 흐리다.** 묶음 상자는 1px 테두리를 같이 그리고, 안쪽 칸의 접기 화살표는 테두리에서 충분히 띄운다(14px). 유저 2026-10-19: "수직선이 접는 기호랑 너무 붙어있고 … 명확하지 않아. outline을 그려" — 왼쪽 안내선만 그었을 때.
+- **칠만으로는 경계가 흐리다.** 묶음 상자는 1px 테두리를 같이 그리고, 안쪽 칸의 접기 화살표는 테두리에서 충분히 띄운다(14px). 유저: "수직선이 접는 기호랑 너무 붙어있고 … 명확하지 않아. outline을 그려" — 왼쪽 안내선만 그었을 때.
 
 ### 3.3 깊이당 한 번, 일정한 들여쓰기
 - **원칙.** 깊이마다 일정하게 들여쓴다(GitLab Pajamas Tree). 깊은 트리는 가로 폭이 모자라므로 앞뒤 장식을 줄인다(Primer).
@@ -99,9 +99,9 @@
 
 ## 6. 적용 사례
 
-- `Assets/Scripts/Core/AbilitySystem/Tag/Editor/GameplayTagQueryEditorWindow.cs` — 3장 전부(2026-10-16, 에디터 검증 전). 경위는 gameplay-tag worklog 2026-10-16의 접기 항목·가독성 개선 항목.
+- `Assets/Scripts/Core/AbilitySystem/Tag/Editor/GameplayTagQueryEditorWindow.cs` — 3장 전부(에디터 검증 전). 경위는 gameplay-tag worklog의 접기 항목·가독성 개선 항목.
   - 접힘 상태는 배열 경로를 키로 쓰고, 칸을 지울 때 상태를 옮기도록 구현했다. 4장 '접힘 상태 키'와 어긋나며 유저 확인을 기다리는 중이다.
-- `Assets/Scripts/Core/AbilitySystem/Effect/Editor/GameplayEffectAssetDrawer.cs` — 목록 세 개(Modifiers·Executions·Calculation Modifiers)를 한 규격으로(3.2 테두리 상자·3.5·3.6·3.7, 2026-10-19). 경위는 gameplay-effect worklog 2026-10-19 UI 규격 통일 항목.
+- `Assets/Scripts/Core/AbilitySystem/Effect/Editor/GameplayEffectAssetDrawer.cs` — 목록 세 개(Modifiers·Executions·Calculation Modifiers)를 한 규격으로(3.2 테두리 상자·3.5·3.6·3.7). 경위는 gameplay-effect worklog의 UI 규격 통일 항목.
 
 ---
 
