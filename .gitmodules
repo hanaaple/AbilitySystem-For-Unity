@@ -1,0 +1,3 @@
+[submodule "dev-docs/agent/private"]
+	path = dev-docs/agent/private
+	url = https://github.com/hanaaple/AbilitySystem-For-Unity-dev-docs.git

@@ -1,6 +1,6 @@
 # 개발 방향 — GAS 데모
 
-지금 만드는 것은 **Ability System(GAS 재구현) 데모**다. 전체 게임 기획(아이템·전투·씬 등 GAS가 아닌 부분)은 보관해 두었다 → [_parked/project/design.md](../_parked/project/design.md).
+지금 만드는 것은 **Ability System(GAS 재구현) 데모**다.
 구현된 데모는 → [project/demo.md](../project/demo.md).
 
 ## 방향

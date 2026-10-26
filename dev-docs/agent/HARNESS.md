@@ -16,7 +16,7 @@
    - **확신도를 구분한다.** **직접 읽은 코드**(확정)와 **외부 API·엔진 동작 기억·2차 자료**(불확실)를 같은 어조로 말하지 않는다.
      - **트리거:** 엔진·외부 API 동작 질문("UE는 어떻게 하나" 류)엔 답을 쓰기 전에 멈추고 **원문부터** 확인한다 — 기억·2차 자료(포럼·블로그·WebFetch 요약)로 먼저 답하지 않는다. 결론이 걸린 지점은 원문 라인을 직접 본다.
        - **UE 원본은 로컬에 있다: `D:\GitHub\UnrealEngine` (UE 5.6.0).** gh(`EpicGames/UnrealEngine`는 비공개)·WebFetch보다 **이 경로를 Grep/Read로 직접** 본다. 프로젝트가 미러링하는 버전이라 버전 일치도 이쪽이 정확. (예: GameplayTags → `Engine/Source/Runtime/GameplayTags/Classes/`)
-       - **Lyra도 로컬에 있다: `C:\Users\Uisoo\Documents\Unreal Projects\LyraStarterGame`**(유저 2026-10-22). 게임 쪽 GAS 사용 예(입력 처리 등)는 여기서 원문을 본다. (예: 입력 → `Source/LyraGame/AbilitySystem/LyraAbilitySystemComponent.cpp`)
+       - **Lyra도 로컬에 있다: `C:\Users\Uisoo\Documents\Unreal Projects\LyraStarterGame`**(유저). 게임 쪽 GAS 사용 예(입력 처리 등)는 여기서 원문을 본다. (예: 입력 → `Source/LyraGame/AbilitySystem/LyraAbilitySystemComponent.cpp`)
        - **확인 엄밀도는 (필요한 정확도)와 (로컬 조회 비용)을 저울질해 정한다:**
          - 시그니처·멤버·동작을 **단정하거나 문서·결정 근거로 남길 때**는 원문 라인을 직접 보고 근거로 남긴다.
          - **골자·큰 흐름만 필요하면** 원문을 열지 않고 그 수준에서 답한다.
@@ -100,6 +100,13 @@
 
 | 문서 | 내용 |
 |---|---|
-| `NOW.md` | 단일 재개 지점 — 휘발성 재개 메모(진실의 출처 아님). 지금 할 일·멈춘 지점·선행조건만 짧게. **개인용 로컬 파일**(`.gitignore`, 미커밋) — 각 작업 환경이 자기 것을 생성·유지하며, 없으면 이어하기 시 새로 만든다. 팀 공유 상태는 progress·decisions·feature-list. 매 세션 다시 쓰는 휘발 메모라 **별도 `최종 갱신` 타임스탬프를 두지 않는다**(낡음 판별 대상 아님). |
-| `TODO-BOARD.md` | 잡다한 작업·이슈 보드 |
-| `TODO-DONE.md` | 보드에서 끝난 항목 아카이브(최신이 위). 필요할 때만 연다 |
+| `../temp/NOW.md` | 단일 재개 지점 — 휘발성 재개 메모(진실의 출처 아님). 지금 할 일·멈춘 지점·선행조건만 짧게. **개인용 로컬 파일**(`dev-docs/temp/` — 폴더째 `.gitignore`, 미커밋) — 각 작업 환경이 자기 것을 생성·유지하며, 없으면 이어하기 시 새로 만든다. 팀 공유 상태는 progress·decisions·feature-list. 매 세션 다시 쓰는 휘발 메모라 **별도 `최종 갱신` 타임스탬프를 두지 않는다**(낡음 판별 대상 아님). |
+| `private/TODO-BOARD.md` | 잡다한 작업·이슈 보드 |
+| `private/TODO-DONE.md` | 보드에서 끝난 항목 아카이브(최신이 위). 필요할 때만 연다 |
+
+**비공개 문서 (`private/`)**
+
+- 작업 보드(`TODO-BOARD.md`·`TODO-DONE.md`)와 feature 내용 문서(`feature/` 아래 feature-list·progress·worklog·decisions·보조 문서)는 `agent/private/`에 원래 하위 경로 그대로 둔다. 규약 문서는 공개 경로에 남는다.
+- `private/`는 별도 비공개 저장소의 **git submodule**이다(`.gitmodules`). 그 안의 커밋·push도 git-harness를 따른다.
+- `private/`에서 커밋하면 공개 저장소엔 submodule 포인터 변경이 생긴다 — 공개 쪽 커밋에 포인터 갱신을 함께 넣는다.
+- 새 환경에서는 `git clone --recurse-submodules`, 이미 받았으면 `git submodule update --init`. 비공개 저장소 접근 권한이 없으면 `private/`만 비어 있다.

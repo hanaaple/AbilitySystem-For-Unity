@@ -101,8 +101,8 @@ InitTestScene*.unity*
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
-# Personal resume memo (local, per-environment — 각 작업 환경이 자기 것을 생성·유지, 미공유)
-dev-docs/agent/NOW.md
+# Local-only working files (NOW.md 재개 메모·STUDY-TODO 등 — 각 작업 환경이 자기 것을 유지, 미공유)
+dev-docs/temp/
 
 # Claude Code local settings (personal, machine-specific)
 .claude/settings.local.json
@@ -113,3 +113,8 @@ dev-docs/agent/NOW.md
 # Third-party store assets (재배포 불가 라이선스 — 로컬에만 둔다)
 /[Aa]ssets/[Aa]rt/Third Party/
 /[Aa]ssets/[Aa]rt/Third Party.meta
+
+# Parked (non-GAS) docs & code — local-only archive, not in the public repo
+dev-docs/_parked/
+Assets/Scripts/_Parked/
+Assets/Scripts/_Parked.meta

@@ -28,14 +28,14 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 └── dev-docs/ (작업 규약·프로젝트 내용·설계 문서)
     ├── agent/ (에이전트 작업 자료 — 내부용)
     │   └── feature/ (프로젝트 작업 피처)
+    │   └── private/ (비공개 — 작업 보드·feature 내용 문서. 별도 비공개 저장소 submodule)
     │   └── code-guide/ (코드 작성 규약 + 하위 실전 가이드)
     ├── dev/ (공개 개발자용 — 개발 방향·코드 컨벤션·개발 도구·git 규약)
     ├── project/ (외부 공개용 — 데모·아키텍처)
     │   └── architecture/
-    └── _parked/ (보관 — 비활성 비-GAS 인게임 문서·접은 wiki. 원 경로 미러링. 되돌릴 때 원위치)
+    └── temp/ (로컬 전용 — 폴더째 gitignore. NOW.md 재개 메모·STUDY-TODO 등)
 ```
 - 각 파일을 확인 시, Root로부터 해당 경로까지의 `HARNESS.md`들을 우선하여 따른다.
-- **`_parked/`는 비활성 보관**이다 — 현재 작업(GAS 데모)에선 열지 않는다. 되돌릴 때만 참조. 코드 쪽 짝은 `Assets/Scripts/_Parked/`(같은 규칙).
 - 현재 필요하지 않은 문서를 미리 열지 않는다.
 - 필요 이상으로 광범위한 검색·파일 전체 읽기 등 **과한 탐색을 하지 않는다** — 목표를 좁혀 최소한으로 조회한다.
 
@@ -44,8 +44,8 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 - 최상위 하네스 — `CLAUDE.md`
 - 코드 스타일 컨벤션(네이밍·포맷·멤버 순서) — `.editorconfig` 자동 적용. `dev-docs/dev/CODE_CONVENTION.md`
 - 코드 작성 규약(설계 원칙·연쇄 호출·주석·에디터 확장) — `dev-docs/agent/code-guide/HARNESS.md`. 하위 실전 가이드(에디터 드로어 등)는 이 문서를 통해서만 진입한다(직접 링크 금지).
-- feature 현황·진행 추적 — `dev-docs/agent/feature/feature-list.md` (대시보드) · `dev-docs/agent/feature/<feature-id>`
-- 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/TODO-BOARD.md`
+- feature 현황·진행 추적 — `dev-docs/agent/private/feature/feature-list.md` (대시보드) · `dev-docs/agent/private/feature/<feature-id>`
+- 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/private/TODO-BOARD.md`
 - 개발 방향(GAS 데모 범위·기술 선택) — `dev-docs/dev/design.md`
 - 연습 모드 데모(씬 구성·기능별 GAS 적용, 외부 공개용) — `dev-docs/project/demo.md`
 - 아키텍처 — `dev-docs/project/architecture` (overview.md가 인덱스). 시스템 구조·설계를 개념·방향 중심으로 정리한 **에이전트·개발자·외부 공용** 문서. 작성 규약은 `architecture/HARNESS.md`.
@@ -54,7 +54,6 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 - 세션 프로토콜(세션 시작·종료) — `dev-docs/agent/session-protocol.md`.
 - 대화 규율(답변 방식) — `dev-docs/agent/conversation.md`. 유저에게 답하기 전.
 - 작업 착수·범위 — `dev-docs/agent/work-scope.md`. 무엇을 얼마나 할지 정할 때.
-- 보관(비활성 비-GAS) — `dev-docs/_parked/` (README: `dev-docs/_parked/README.md`).
 
 
 ### 세부 탐색 규율

@@ -1,7 +1,5 @@
 # AbilitySystem — GameplayAbility
 
-> **최종 갱신:** 2026-10-23 (KST)
-
 스킬·액션의 실행 단위. 어빌리티를 ASC에 부여하고, 발동 조건(쿨다운·코스트·태그)을 확인해 발동하고, 효과·코스트·쿨다운을 GameplayEffect로 건 뒤 끝낸다. `Assets/Scripts/Core/AbilitySystem/Abilities/`. 상위 개요는 [overview](overview.md).
 
 > UE GAS의 `UGameplayAbility`·`FGameplayAbilitySpec`·ASC 어빌리티 API를 참고해 재구현. **개념·방향** 중심 — 필드·선언 세부는 코드를 본다.
