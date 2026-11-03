@@ -77,13 +77,14 @@ flowchart LR
 | `NativeGameplayTag.GetTag()` / 암시적 변환 | native 정의를 태그로. 마커 없이 만든 인스턴스는 트리에 없어 빈 태그 | `FNativeGameplayTag` → `FGameplayTag` |
 | `default(GameplayTag)` | 빈 태그("태그 없음"). `IsValid()` false | `FGameplayTag()` / `EmptyTag` |
 
-- 매니저 내부 생성은 `internal static GameplayTag.Create` 하나로 한다. 현재 단일 어셈블리라 `internal`이 실제로 막지는 못하며, AbilitySystem 어셈블리 분리 시 실효를 갖는다. (UE: protected 생성자 + friend)
+- 매니저 내부 생성은 `internal static GameplayTag.Create` 하나로 한다. `Core` 어셈블리의 `internal`은 에디터 확장(`Core.Editor`)과 테스트 어셈블리에만 열려 있어 게임 코드(`Game`)는 이 길을 쓸 수 없다. (UE: protected 생성자 + friend)
+- 이름 비교는 대소문자를 무시하고 표기는 쓴 그대로 보존한다. `InternedName`이 표기 문자열(직렬화)과 대문자로 접어 인턴한 비교 정본을 따로 들고, 비교·해시는 정본의 참조로 한다 (UE: `FName`의 ComparisonIndex / DisplayIndex). 요청으로 얻은 태그는 요청한 철자를 그대로 표기한다 (UE `RequestGameplayTag`도 요청한 `FName`을 돌려준다).
 - 로드된 데이터(직렬화된 `GameplayTag` 필드)는 생성자를 거치지 않으므로 미등록 이름이 들어올 수 있다. 이런 태그로 매칭하면 `Debug.LogError`를 내고 false를 돌려준다(UE: ensure).
 
 | 계획 🔜 | 내용 |
 |---|---|
 | 로드 시 미등록 경고 | 에셋 로드 시점에 미등록 이름을 알림 (UE: `WarnOnInvalidTags`) |
-| 대소문자 무시 비교 + 표기 보존 | UE `FName`식 — `InternedName` 쪽 작업 |
+| 등록 단계 대소문자 중복 차단 | 레지스트리 편집·native 수집에서 대소문자만 다른 이름을 거부 |
 
 ## 3. 단일 태그 매칭·계층 조회
 

@@ -8,8 +8,7 @@ Unity 에디터를 띄우지 않고 C# **컴파일 에러만** 잡는 방법이�
 
 | 것 | 위치 |
 |---|---|
-| 런타임 응답 파일 | `Library/Bee/artifacts/<dag>/Assembly-CSharp.rsp` (`<dag>`는 환경마다 다름, 예: `1900b0aE.dag`) |
-| 에디터 응답 파일 | `Library/Bee/artifacts/<dag>/Assembly-CSharp-Editor.rsp` |
+| 응답 파일 | `Library/Bee/artifacts/<dag>/<어셈블리>.rsp` (`<dag>`는 환경마다 다름, 예: `1900b0aE.dag`). 어셈블리는 asmdef 단위 — `Core`·`Core.Editor`·`Game`·`Game.Editor`·`Core.Tests.EditMode`·`Core.Tests.PlayMode`와 사전 정의 `Assembly-CSharp`·`Assembly-CSharp-Editor`(→ `test-environment.md`). 바뀐 파일이 속한 어셈블리와 그것을 참조하는 어셈블리만 컴파일한다 |
 | 컴파일러 | `<Unity 설치>/Editor/Data/NetCoreRuntime/dotnet.exe` + `<Unity 설치>/Editor/Data/DotNetSdkRoslyn/csc.dll` (이 프로젝트: `C:/Program Files/Unity/Hub/Editor/6000.3.12f1`) |
 
 ### 절차
@@ -20,9 +19,9 @@ Unity 에디터를 띄우지 않고 C# **컴파일 에러만** 잡는 방법이�
 2. 각 사본에서 출력 줄을 고친다. **Library 쪽 산출물을 덮어쓰지 않게** 하기 위해서다.
    - `-out:"…"` → 임시 폴더 경로(`Runtime.dll`·`Editor.dll`).
    - `-refout:"…"` 줄은 지운다(남기면 Unity의 `Assembly-CSharp.ref.dll`을 덮어쓴다).
-3. Unity가 마지막으로 컴파일한 뒤 새로 만든 `.cs`는 따옴표 경로로 한 줄씩 추가하고, 지운 파일은 줄을 지운다. 런타임 파일은 `runtime.rsp`에만, `Editor/` 폴더 파일은 `editor.rsp`에만 넣는다(양쪽에 넣으면 같은 타입이 두 번 정의돼 가짜 에러가 난다).
-4. 런타임을 먼저 컴파일한다.
-5. 에디터는 `editor.rsp`의 `-r:"Library/Bee/artifacts/<dag>/Assembly-CSharp.ref.dll"` 줄을 **4에서 만든 `Runtime.dll`로 바꾼 사본**으로 컴파일한다. 바꾸지 않으면 Unity가 예전에 만든 런타임 API로 검사해, 바뀐 시그니처를 놓치거나 가짜 에러가 난다.
+3. Unity가 마지막으로 컴파일한 뒤 새로 만든 `.cs`는 따옴표 경로로 한 줄씩 추가하고, 지운 파일은 줄을 지운다. 파일은 **그 파일이 속한 어셈블리의 응답 파일에만** 넣는다(예: `Core/**/Editor/`는 `Core.Editor.rsp`, `Assets/Tests/EditMode/`는 `Core.Tests.EditMode.rsp`). 두 곳에 넣으면 같은 타입이 두 번 정의돼 가짜 에러가 난다.
+4. 참조되는 쪽(`Core` → `Game` → Editor·테스트 어셈블리 순)을 먼저 컴파일한다.
+5. 참조하는 어셈블리는 응답 파일의 `-r:"Library/Bee/artifacts/<dag>/<참조 어셈블리>.ref.dll"` 줄을 **4에서 만든 dll로 바꾼 사본**으로 컴파일한다. 바꾸지 않으면 Unity가 예전에 만든 API로 검사해, 바뀐 시그니처를 놓치거나 가짜 에러가 난다.
 6. 판정: 종료 코드 0이고 출력에 `error`가 없으면 통과. 경고는 이번에 손댄 파일 것만 본다(기존 경고가 많다).
 
 ```bash

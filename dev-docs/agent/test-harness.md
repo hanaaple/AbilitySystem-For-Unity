@@ -24,6 +24,15 @@ Unity 없이 컴파일만 보는 방법은 → [dev-tools.md](../dev/dev-tools.m
   - 열린 씬에 설정 창이 있으면 포커스가 빠질 때 `timeScale`이 0이 돼 시간 기반 테스트가 멈춘다 — '격리'를 Play 직후 적용해 막는다.
 - **임시 에셋 지우기:** MCP에선 `DeleteAsset`이 거부된다 → [dev-tools.md](../dev/dev-tools.md) 'MCP에서 막히거나 조용히 틀리는 것'.
 
+## NUnit 테스트 (Unity Test Framework)
+
+구조·테스트 종류·성능 규약·CLI는 → [test-environment.md](../dev/test-environment.md). 여기는 에이전트가 돌리는 방법만.
+
+- **에디터가 열려 있으면 CLI(`-runTests`)는 같은 프로젝트를 못 연다** → `Unity_RunCommand`에서 `TestRunnerApi.Execute(new ExecutionSettings(new Filter { testMode = …, categoryNames = … }))`로 건다. 실행은 비동기라 명령은 바로 돌아온다.
+- **결과 읽기:** `Assets/Tests/EditMode/TestRunLogger.cs`가 모든 실행을 `Logs/TestRun.log`에 한 줄씩 적는다(`[RunStarted]`/`[Passed|Failed|Inconclusive|Skipped] 이름 (ms)` + message/output/`[RunFinished]`). 걸기 전에 파일을 지우고, `[RunFinished]`가 나올 때까지 백그라운드로 기다린다. 성능 테스트 수치는 Window ▸ Analysis ▸ Performance Test Report.
+- **Play가 끼는 테스트**(PlayMode 전체, EditMode의 `EnterPlayMode` 사용 테스트)는 위 '격리'·'Play 끄기' 원칙이 그대로 적용된다 — PlayMode 테스트는 UTF가 빈 씬에서 돌리므로 데모 씬 입력 문제는 없지만, EditMode의 `EnterPlayMode`는 **열린 씬으로** Play에 들어간다.
+- **컴파일 최신 확인**은 `Library/ScriptAssemblies/Core.Tests.EditMode.dll`·`Core.Tests.PlayMode.dll` 시각으로 본다(테스트 파일이 하나도 없으면 어셈블리가 만들어지지 않는 게 정상).
+
 ---
 
 ## Play 테스트 — `Unity_RunCommand`에서 통한 방법

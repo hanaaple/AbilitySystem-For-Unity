@@ -50,6 +50,7 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 - 연습 모드 데모(씬 구성·기능별 GAS 적용, 외부 공개용) — `dev-docs/project/demo.md`
 - 아키텍처 — `dev-docs/project/architecture` (overview.md가 인덱스). 시스템 구조·설계를 개념·방향 중심으로 정리한 **에이전트·개발자·외부 공용** 문서. 작성 규약은 `architecture/HARNESS.md`.
 - 개발 도구 설정 — `dev-docs/dev/dev-tools.md`
+- 테스트 환경(어셈블리 구조·테스트 종류·성능 규약·CLI) — `dev-docs/dev/test-environment.md`
 - 커밋·PR 등 git 관련 규약 — `dev-docs/dev/git-convention.md` (공통) · `dev-docs/agent/git-harness.md` (에이전트: 커밋·push·병합 조건)
 - 세션 프로토콜(세션 시작·종료) — `dev-docs/agent/session-protocol.md`.
 - 대화 규율(답변 방식) — `dev-docs/agent/conversation.md`. 유저에게 답하기 전.
