@@ -23,7 +23,7 @@
 
 4. **내부 식별 코드는 요약과 함께 쓴다.**
    - 문서에 `D#`(결정)·`S#`/`I#`/`E#`(로드맵 슬라이스)·`INV-#`(불변조건) 등 내부 식별 코드를 쓸 때 **맨코드 단독 표기 금지** — 옆에 짧은 요약(원본 제목)을 괄호/대시로 병기한다(예: `D3(대소문자=무시비교+표기보존)`). 요약은 지어내지 말고 원본 제목을 쓰되 길면 핵심만 줄인다.
-   - **범위 분담(재진술 대신 참조):** 유저 대화에서의 병기(gloss)는 → [conversation.md](conversation.md) '내부 코드 풀어쓰기'. feature 문서의 표·인덱스 열 형식과 산문 링크 형태(`(→D3 …)`)는 → [feature/progress-harness.md](feature/progress-harness.md).
+   - **범위 분담(재진술 대신 참조):** 유저 대화에서의 병기(gloss)는 → [conversation.md](conversation.md) '내부 코드 풀어쓰기'. feature 문서의 표·인덱스 열 형식과 산문 링크 형태(`(→D3 …)`)는 → [private/feature/progress-harness.md](../project/private/feature/progress-harness.md).
 
 5. **각색은 쓰기 전에 묻는다.**
    - 유저 의도를 넘어선 각색·해석·함의를 문서에 남기려면 쓰기 전에 반드시 유저에게 먼저 묻는다. 승인되면 남겨도 된다 — 기록 기준은 유저 의도.
@@ -44,4 +44,4 @@
 ## 적용
 
 - write 직전, 이 문서 + 대상 경로에 걸리는 `HARNESS.md`/`<파일>.harness.md`/`<이름>-harness.md`를 확인한다.
-- 서술 규율·근거 규약 등 개별 규칙은 상위에 있으면 **여기서 재진술하지 않고 참조**한다(예: 서술 근거·확신도는 agent/HARNESS 원칙5·8, architecture 서술 규율은 architecture/HARNESS).
+- 서술 규율·근거 규약 등 개별 규칙은 상위에 있으면 **여기서 재진술하지 않고 참조**한다(예: 서술 근거·확신도는 core/HARNESS 원칙5·8, architecture 서술 규율은 architecture/HARNESS).

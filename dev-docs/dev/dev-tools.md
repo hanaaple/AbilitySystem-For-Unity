@@ -97,4 +97,4 @@ Claude Code에서 Unity 에디터를 직접 조작하기 위한 연동. 현재�
 
 ### Play 테스트
 
-Unity MCP로 셀프체크·PlayMode 테스트·Play 확인을 돌리는 방법은 → [agent/test-harness.md](../agent/test-harness.md).
+Unity MCP로 셀프체크·PlayMode 테스트·Play 확인을 돌리는 방법은 → [agent/project/unity-test-harness.md](../agent/project/unity-test-harness.md).
