@@ -19,10 +19,13 @@ MonoBehaviour:
   duration: 0
   period: 0
   executePeriodicEffectOnApplication: 1
+  stackingType: 0
+  stackDurationRefreshPolicy: 0
+  stackPeriodResetPolicy: 0
   modifiers:
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
       fieldName: speed
     operation: 0
     modifierMagnitude:
@@ -32,8 +35,8 @@ MonoBehaviour:
         backingAttribute:
           captureSource: 0
           attribute:
-            attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
-              Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+            attributeSetTypeName: Game.Character.CharacterAttributeSet, Game, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
             fieldName: health
           snapshot: 1
         captureValueType: 0

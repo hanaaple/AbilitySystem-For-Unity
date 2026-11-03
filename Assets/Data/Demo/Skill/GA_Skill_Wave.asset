@@ -25,7 +25,7 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 8482666724614996285
-      type: {class: FireProjectileAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      type: {class: FireProjectileAbility, ns: Game.Abilities, asm: Game}
       data:
         instancingPolicy: 0
         costGameplayEffect: {fileID: 11400000, guid: 23f76534265c5114a9f7b908d459c735, type: 2}

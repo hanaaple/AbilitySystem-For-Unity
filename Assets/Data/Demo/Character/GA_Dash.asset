@@ -24,7 +24,7 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 8482666728725676145
-      type: {class: DashAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      type: {class: DashAbility, ns: Game.Abilities, asm: Game}
       data:
         instancingPolicy: 1
         costGameplayEffect: {fileID: 0}

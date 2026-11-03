@@ -28,7 +28,7 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 8482666728725676140
-      type: {class: TargetTagsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Assembly-CSharp}
+      type: {class: TargetTagsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Core}
       data:
         inheritableGrantedTagsContainer:
           _combinedTags:

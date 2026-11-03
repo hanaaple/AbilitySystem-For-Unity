@@ -30,13 +30,13 @@ MonoBehaviour:
   stackPeriodResetPolicy: 0
   modifiers: []
   executions:
-  - calculationClass: Game.Character.DamageExecution, Assembly-CSharp, Version=0.0.0.0,
+  - calculationClass: Game.Character.DamageExecution, Game, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     calculationModifiers:
     - capturedAttribute:
         captureSource: 0
         attribute:
-          attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+          attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
             Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
           fieldName: attack
         snapshot: 1
@@ -83,7 +83,7 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 8482666728725676144
-      type: {class: TargetTagsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Assembly-CSharp}
+      type: {class: TargetTagsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Core}
       data:
         inheritableGrantedTagsContainer:
           _combinedTags:

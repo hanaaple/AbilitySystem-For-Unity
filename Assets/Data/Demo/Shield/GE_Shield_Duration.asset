@@ -31,7 +31,7 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 8482666747409989971
-      type: {class: AssetTagsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Assembly-CSharp}
+      type: {class: AssetTagsGameplayEffectComponent, ns: Core.AbilitySystem.GameplayEffectComponents, asm: Core}
       data:
         inheritableAssetTags:
           _combinedTags:
