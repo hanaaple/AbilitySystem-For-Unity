@@ -79,7 +79,10 @@ namespace Core.AbilitySystem
 
         private void Update()
         {
-            _activeGameplayEffectsContainer.Tick();
+            using (TagProfiler.Begin(TagProfileSection.EffectTick))
+            {
+                _activeGameplayEffectsContainer.Tick();
+            }
         }
 
         /// <remarks>UE: UAbilitySystemComponent::OnComponentDestroyed</remarks>
@@ -225,10 +228,13 @@ namespace Core.AbilitySystem
         /// <remarks>UE: UAbilitySystemComponent::UpdateTagMap</remarks>
         internal void UpdateTagMap(GameplayTagContainer container, int countDelta)
         {
-            // 부여 태그가 없는 GE가 대부분이라 빈 컨테이너는 개수 갱신 준비(지연 콜백 목록 할당)부터 건너뛴다.
-            if (!container.IsEmpty())
+            using (TagProfiler.Begin(TagProfileSection.TagMapUpdate))
             {
-                _gameplayTagCountContainer.UpdateTagCount(container, countDelta);
+                // 부여 태그가 없는 GE가 대부분이라 빈 컨테이너는 개수 갱신 준비(지연 콜백 목록 할당)부터 건너뛴다.
+                if (!container.IsEmpty())
+                {
+                    _gameplayTagCountContainer.UpdateTagCount(container, countDelta);
+                }
             }
         }
 
@@ -291,7 +297,10 @@ namespace Core.AbilitySystem
         /// <summary>이미 만들어진 Spec을 자신에게 적용한다. 실제 적용·캡처·실행은 컨테이너가 수행한다.</summary>
         public ActiveGameplayEffectHandle ApplyGameplayEffectSpecToSelf(GameplayEffectSpec spec)
         {
-            return _activeGameplayEffectsContainer.ApplyGameplayEffectSpec(spec);
+            using (TagProfiler.Begin(TagProfileSection.EffectApply))
+            {
+                return _activeGameplayEffectsContainer.ApplyGameplayEffectSpec(spec);
+            }
         }
 
         /// <summary>GameplayEffectAsset SO로 Spec을 생성해 대상 ASC에 적용한다(자신이 Instigator). context가 비면 자신을 Instigator로 생성 — AttributeBased Source 캡처용.</summary>
@@ -318,7 +327,10 @@ namespace Core.AbilitySystem
 
         public bool RemoveActiveGameplayEffect(ActiveGameplayEffectHandle handle)
         {
-            return _activeGameplayEffectsContainer.RemoveActiveGameplayEffect(handle);
+            using (TagProfiler.Begin(TagProfileSection.EffectRemove))
+            {
+                return _activeGameplayEffectsContainer.RemoveActiveGameplayEffect(handle);
+            }
         }
 
         /// <summary>활성 GE를 끄거나 켠다(제거하지 않음). 켜고 끄는 중에 GE가 제거됐으면 Invalid를 돌려준다.</summary>
@@ -728,6 +740,14 @@ namespace Core.AbilitySystem
         /// </summary>
         /// <remarks>UE: UAbilitySystemComponent::TryActivateAbility</remarks>
         public bool TryActivateAbility(GameplayAbilitySpecHandle handle)
+        {
+            using (TagProfiler.Begin(TagProfileSection.AbilityActivate))
+            {
+                return TryActivateAbilityInternal(handle);
+            }
+        }
+
+        private bool TryActivateAbilityInternal(GameplayAbilitySpecHandle handle)
         {
             GameplayAbilitySpec spec = FindAbilitySpecFromHandle(handle);
             if (spec == null)

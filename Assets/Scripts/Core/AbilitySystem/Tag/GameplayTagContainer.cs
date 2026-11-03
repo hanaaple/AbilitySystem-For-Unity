@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Core.Common;
 using UnityEngine;
 
 namespace Core.AbilitySystem.Tag
@@ -513,13 +514,16 @@ namespace Core.AbilitySystem.Tag
         // 등록 태그의 부모는 항상 트리에 있으므로(중간 노드 자동 생성) 노드 캐시와 결과가 같다.
         void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
-            _gameplayTags ??= new List<GameplayTag>();
-            _parentTags ??= new List<GameplayTag>();
-            _parentTags.Clear();
-
-            foreach (GameplayTag tag in _gameplayTags)
+            using (TagProfiler.Begin(TagProfileSection.ContainerDeserialize))
             {
-                tag.ParseParentTags(_parentTags);
+                _gameplayTags ??= new List<GameplayTag>();
+                _parentTags ??= new List<GameplayTag>();
+                _parentTags.Clear();
+
+                foreach (GameplayTag tag in _gameplayTags)
+                {
+                    tag.ParseParentTags(_parentTags);
+                }
             }
         }
 

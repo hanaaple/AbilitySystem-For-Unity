@@ -31,6 +31,7 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: FNativeGameplayTag::GetTag</remarks>
         public GameplayTag GetTag()
         {
+            TagProfiler.Count(TagProfileCounter.NativeTagConvert);
             return GameplayTag.RequestGameplayTag(_tagName);
         }
 

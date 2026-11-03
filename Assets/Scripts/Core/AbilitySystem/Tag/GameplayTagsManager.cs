@@ -189,6 +189,7 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: UGameplayTagsManager::FindTagNode</remarks>
         public GameplayTagNode FindTagNode(InternedName tag)
         {
+            TagProfiler.Count(TagProfileCounter.NodeMapLookup);
             return gameplayTagNodeMap.GetValueOrDefault(tag);
         }
 
@@ -345,26 +346,29 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: UGameplayTagsManager::ConstructGameplayTagTree</remarks>
         private void ConstructGameplayTagTree()
         {
-            gameplayRootTag = new GameplayTagNode();
-            gameplayTagNodeMap = new Dictionary<InternedName, GameplayTagNode>();
-
-            // native 태그는 저장하지 않고 매 구성마다 코드에서 다시 모은다. 레지스트리와 경로가 겹치면 같은 노드로 합쳐진다.
-            foreach (NativeGameplayTag nativeTag in NativeGameplayTag.GetRegisteredNativeTags())
+            using (TagProfiler.Begin(TagProfileSection.TagTreeConstruct))
             {
-                AddTagToTree(nativeTag.TagName.ToString());
-            }
+                gameplayRootTag = new GameplayTagNode();
+                gameplayTagNodeMap = new Dictionary<InternedName, GameplayTagNode>();
 
-            // 에셋 생성은 에디터 로드 시점(GameplayTagRegistryInitializer)에 끝나므로 런타임은 읽기만 한다.
-            GameplayTagRegistryAsset registry = GameplayTagRegistryAsset.Load();
-            if (registry == null)
-            {
-                Debug.LogWarning($"{nameof(GameplayTagRegistryAsset)}를 찾지 못해 native 태그만으로 트리를 구성합니다. (Resources/{GameplayTagRegistryAsset.ResourcesPath})");
-                return;
-            }
+                // native 태그는 저장하지 않고 매 구성마다 코드에서 다시 모은다. 레지스트리와 경로가 겹치면 같은 노드로 합쳐진다.
+                foreach (NativeGameplayTag nativeTag in NativeGameplayTag.GetRegisteredNativeTags())
+                {
+                    AddTagToTree(nativeTag.TagName.ToString());
+                }
 
-            foreach (string tagName in registry.Tags)
-            {
-                AddTagToTree(tagName);
+                // 에셋 생성은 에디터 로드 시점(GameplayTagRegistryInitializer)에 끝나므로 런타임은 읽기만 한다.
+                GameplayTagRegistryAsset registry = GameplayTagRegistryAsset.Load();
+                if (registry == null)
+                {
+                    Debug.LogWarning($"{nameof(GameplayTagRegistryAsset)}를 찾지 못해 native 태그만으로 트리를 구성합니다. (Resources/{GameplayTagRegistryAsset.ResourcesPath})");
+                    return;
+                }
+
+                foreach (string tagName in registry.Tags)
+                {
+                    AddTagToTree(tagName);
+                }
             }
         }
 
