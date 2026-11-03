@@ -23,7 +23,7 @@ MonoBehaviour:
   executePeriodicEffectOnApplication: 1
   modifiers: []
   executions:
-  - calculationClass: Game.Character.DamageExecution, Assembly-CSharp, Version=0.0.0.0,
+  - calculationClass: Game.Character.DamageExecution, Game, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     calculationModifiers: []
   gameplayEffectComponents: []

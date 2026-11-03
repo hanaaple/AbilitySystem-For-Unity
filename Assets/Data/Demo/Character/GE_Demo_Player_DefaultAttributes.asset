@@ -24,7 +24,7 @@ MonoBehaviour:
   stackPeriodResetPolicy: 0
   modifiers:
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       fieldName: maxHealth
     operation: 5
@@ -65,7 +65,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       fieldName: health
     operation: 5
@@ -106,7 +106,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       fieldName: maxStamina
     operation: 5
@@ -147,7 +147,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       fieldName: stamina
     operation: 5
@@ -188,7 +188,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       fieldName: speed
     operation: 5
@@ -229,7 +229,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       fieldName: attack
     operation: 5
@@ -270,7 +270,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       fieldName: attackSpeed
     operation: 5
@@ -311,7 +311,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Game, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: jumpHeight
     operation: 5
@@ -352,7 +352,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Game, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: dashDistance
     operation: 5
@@ -393,7 +393,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Game, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: maxMana
     operation: 5
@@ -434,7 +434,7 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.PlayerAttributeSet, Assembly-CSharp, Version=0.0.0.0,
+      attributeSetTypeName: Game.Character.PlayerAttributeSet, Game, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       fieldName: mana
     operation: 5

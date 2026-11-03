@@ -19,10 +19,13 @@ MonoBehaviour:
   duration: 0
   period: 0
   executePeriodicEffectOnApplication: 1
+  stackingType: 0
+  stackDurationRefreshPolicy: 0
+  stackPeriodResetPolicy: 0
   modifiers:
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
       fieldName: health
     operation: 5
     modifierMagnitude:
@@ -36,7 +39,7 @@ MonoBehaviour:
             fieldName: 
           snapshot: 0
         captureValueType: 0
-        coefficient: 0
+        coefficient: 1
         preMultiplyAdditive: 0
         postMultiplyAdditive: 0
     sourceTags:
@@ -62,8 +65,8 @@ MonoBehaviour:
         _userDescription: 
         _autoDescription: 
   - attribute:
-      attributeSetTypeName: Game.Character.CharacterAttributeSet, Assembly-CSharp,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      attributeSetTypeName: Game.Character.CharacterAttributeSet, Game, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
       fieldName: speed
     operation: 5
     modifierMagnitude:
@@ -77,7 +80,7 @@ MonoBehaviour:
             fieldName: 
           snapshot: 0
         captureValueType: 0
-        coefficient: 0
+        coefficient: 1
         preMultiplyAdditive: 0
         postMultiplyAdditive: 0
     sourceTags:

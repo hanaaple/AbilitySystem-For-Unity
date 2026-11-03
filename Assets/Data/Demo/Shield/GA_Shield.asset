@@ -23,7 +23,7 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 8482666741645705639
-      type: {class: ShieldAbility, ns: Game.Abilities, asm: Assembly-CSharp}
+      type: {class: ShieldAbility, ns: Game.Abilities, asm: Game}
       data:
         instancingPolicy: 1
         costGameplayEffect: {fileID: 0}
