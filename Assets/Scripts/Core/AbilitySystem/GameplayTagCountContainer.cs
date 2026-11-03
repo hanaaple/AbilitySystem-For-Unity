@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core.AbilitySystem.Tag;
+using Core.Common;
 using UnityEngine;
 
 namespace Core.AbilitySystem
@@ -32,6 +33,7 @@ namespace Core.AbilitySystem
         /// <remarks>UE: FGameplayTagCountContainer::HasMatchingGameplayTag</remarks>
         public bool HasMatchingGameplayTag(GameplayTag tagToCheck)
         {
+            TagProfiler.Count(TagProfileCounter.CountMapLookup);
             return _gameplayTagCountMap.GetValueOrDefault(tagToCheck) > 0;
         }
 
@@ -154,6 +156,7 @@ namespace Core.AbilitySystem
         /// <remarks>UE: FGameplayTagCountContainer::UpdateTagMap_Internal</remarks>
         private bool UpdateTagMapInternal(GameplayTag tag, int countDelta)
         {
+            TagProfiler.Count(TagProfileCounter.CountMapUpdate);
             if (!UpdateExplicitTags(tag, countDelta, false))
             {
                 return false;
@@ -173,6 +176,7 @@ namespace Core.AbilitySystem
         /// <remarks>UE: FGameplayTagCountContainer::UpdateTagMapDeferredParentRemoval_Internal</remarks>
         private bool UpdateTagMapDeferredParentRemovalInternal(GameplayTag tag, int countDelta, List<Action> deferredTagChangeDelegates)
         {
+            TagProfiler.Count(TagProfileCounter.CountMapUpdate);
             if (!UpdateExplicitTags(tag, countDelta, true))
             {
                 return false;
