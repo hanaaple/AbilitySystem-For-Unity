@@ -4,7 +4,63 @@ using UnityEngine;
 
 namespace Core.Common
 {
-#if TAG_NAME_LEGACY
+#if TAG_NAME_INDEXED
+    /// <summary> A/B 실험용 구현 — 비교·해시는 IndexedName(전역 테이블 인덱스)이 맡고, string은 Unity 직렬화·표기용으로만 든다. </summary>
+    [Serializable]
+    public struct InternedName : IEquatable<InternedName>, ISerializationCallbackReceiver
+    {
+        public const string ImplementationName = "Indexed";
+
+        [SerializeField] private string name;
+
+        [NonSerialized] private IndexedName _indexed;
+
+        public InternedName(string inName)
+        {
+            TagProfiler.Count(TagProfileCounter.NameCreate);
+            name = string.IsNullOrEmpty(inName) ? null : inName;
+            _indexed = new IndexedName(inName);
+        }
+
+        public bool Equals(InternedName other)
+        {
+            TagProfiler.Count(TagProfileCounter.NameEquals);
+            return _indexed.Equals(other._indexed);
+        }
+
+        public override bool Equals(object inName)
+        {
+            return inName is InternedName other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return _indexed.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return name;
+        }
+
+        public bool IsNullOrEmpty()
+        {
+            return _indexed.IsNullOrEmpty();
+        }
+
+        // Unity 역직렬화는 생성자를 우회하고 필드를 직접 채우므로, 로드 직후 테이블 인덱스를 다시 구한다.
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
+        {
+            TagProfiler.Count(TagProfileCounter.NameDeserialize);
+            name = string.IsNullOrEmpty(name) ? null : name;
+            _indexed = new IndexedName(name);
+        }
+
+        void ISerializationCallbackReceiver.OnBeforeSerialize()
+        {
+        }
+    }
+#elif TAG_NAME_LEGACY
     /// <summary> 성능 비교 기준선 — 표기/비교 분리 전 구현(대소문자 구분, 표기 문자열 자체를 인터닝). 측정 외 용도로 쓰지 않는다. </summary>
     [Serializable]
     public struct InternedName : IEquatable<InternedName>, ISerializationCallbackReceiver

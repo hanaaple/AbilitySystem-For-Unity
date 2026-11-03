@@ -11,7 +11,7 @@ namespace Core.Tests.EditMode
 {
     /// <summary>
     /// InternedName 비용 측정. 바뀐 비용은 생성·역직렬화(정본 접기 + 캐시 조회)에 있으므로 그 경로를 잰다.
-    /// 구현 비교는 scripting define(TAG_NAME_LEGACY)을 바꿔 같은 테스트를 다시 돌린다 — 로그의 ImplementationName으로 실제 구현을 확인한다.
+    /// 구현 비교는 scripting define(TAG_NAME_LEGACY / TAG_NAME_INDEXED)을 바꿔 같은 테스트를 다시 돌린다 — 로그의 ImplementationName으로 실제 구현을 확인한다.
     /// 측정 수치는 Performance Test Report(Window ▸ Analysis)의 중앙값으로 읽는다.
     /// </summary>
     [TestFixture]

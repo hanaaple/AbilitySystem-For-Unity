@@ -30,7 +30,7 @@ namespace Core.Common
     }
 
     /// <summary>
-    /// 태그 이름 연산 측정용 집계 — 구현 A/B 비교에 쓴다. 횟수와 구간 시간을 모아 단계별로 보고한다.
+    /// 태그 이름 구현(InternedName vs IndexedName) A/B 측정용 집계. 횟수와 구간 시간을 모아 단계별로 보고한다.
     /// 뜨거운 경로의 호출은 TAG_PROFILING이 없으면 컴파일에서 사라진다 — 측정이 아닐 때 비용 0.
     /// </summary>
     public static class TagProfiler
