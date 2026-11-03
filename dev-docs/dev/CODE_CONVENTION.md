@@ -2,7 +2,7 @@
 
 Unity C# 코드 **스타일** 규약(네이밍·포맷팅·멤버 순서). `.editorconfig`로 자동 적용된다.
 
-> 코드를 **어떻게 짤지**(설계 원칙·연쇄 호출·주석·에디터 확장)는 → [`../agent/code-guide/HARNESS.md`](../agent/code-guide/HARNESS.md) (코드 작성 규약).
+> 코드를 **어떻게 짤지**(설계 원칙·연쇄 호출·주석·에디터 확장)는 → [`../agent/code-guide/HARNESS.md`](../agent/project/code-guide/HARNESS.md) (코드 작성 규약).
 
 ---
 

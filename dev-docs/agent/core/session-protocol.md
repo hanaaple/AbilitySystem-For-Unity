@@ -9,7 +9,7 @@
   - 세션 회고 — 잘못한 것 스스로 보고
   - 하네스 자체 점검 — 규약이 틀렸/안 걸린 곳
 
-> 세션 중간에 켜지는 규약은 각자 문서에 있다 — 답변 방식 → [conversation.md](conversation.md) / 착수·범위 → [work-scope.md](work-scope.md) / 진전 즉시 기록·블로커 → [feature/HARNESS.md](feature/HARNESS.md) '작업 중 기록' / 문서 write·참조 갱신 → [docs-harness.md](docs-harness.md) / 커밋·병합 → [git-harness.md](git-harness.md) / 코드 → [code-guide/HARNESS.md](code-guide/HARNESS.md).
+> 세션 중간에 켜지는 규약은 각자 문서에 있다 — 답변 방식 → [conversation.md](conversation.md) / 착수·범위 → [work-scope.md](work-scope.md) / 진전 즉시 기록·블로커 → [private/feature/HARNESS.md](../project/private/feature/HARNESS.md) '작업 중 기록' / 문서 write·참조 갱신 → [docs-harness.md](docs-harness.md) / 커밋·병합 → [git-harness.md](git-harness.md) / 코드 → [code-guide/HARNESS.md](../project/code-guide/HARNESS.md).
 
 ---
 
@@ -19,7 +19,7 @@
 
 > **`NOW.md`는 개인용 로컬 재개 메모다** — git에 커밋하지 않으며(`dev-docs/temp/` — 폴더째 `.gitignore`), 각 작업 환경(사람·머신)이 자기 것을 생성·유지한다. 새 환경엔 없을 수 있으니, 있으면 읽고 **없으면 그 자리에서 새로 만들어** 시작한다. 팀 공유 상태(진실의 출처)는 progress·decisions·feature-list이고, NOW.md는 그 위의 개인 스크래치다.
 
-- feature-list·progress·worklog·코드를 **미리 훑지 않는다.** (TODO-BOARD는 예외 — 작업 보드 규약(TODO-BOARD.harness.md)의 '유지 규약'에 따라 세션 시작 시 한 번 훑는다) NOW.md가 지목한 액션을 바로 하고, 막히거나 더 깊은 맥락이 필요할 때만 NOW.md에 걸린 링크(해당 feature progress 등)를 연다.
+- feature-list·progress·worklog·코드를 **미리 훑지 않는다.** (TODO-BOARD는 예외 — 작업 보드 규약(private/TODO-BOARD.harness.md)의 '유지 규약'에 따라 세션 시작 시 한 번 훑는다) NOW.md가 지목한 액션을 바로 하고, 막히거나 더 깊은 맥락이 필요할 때만 NOW.md에 걸린 링크(해당 feature progress 등)를 연다.
 - IN-PROGRESS feature가 여럿이어도 **어느 걸 이어할지 고민하지 않는다** — NOW.md가 지목한 하나가 진실이다.
 - NOW.md의 선행조건(예: Unity MCP)이 안 갖춰졌으면, NOW.md에 적힌 대안/요청을 그대로 따른다(예: "에디터 열고 세션 재시작" 1줄 요청 후 대기).
 - 유저 지시가 NOW.md와 다르면 **유저 지시가 우선**. 그 지시가 새 초점이면 NOW.md를 그 자리에서 갱신하고 진행한다.
@@ -27,7 +27,7 @@
 ## 세션 종료 시 (필수)
 
 1. **`NOW.md`를 다음 재개 지점으로 갱신한다 (최우선).** 이번 세션 종료 시점 기준으로 `## ▶ 지금 할 일`(feature + 다음 액션)과 `## ⚙ 선행조건`을 다시 쓴다. — **다음 세션이 NOW.md만 읽고 즉시 재개할 수 있어야 한다.** 액션이 외부 선행조건(Unity MCP 켜짐·에디터 열림·세션 재시작·특정 에셋 등)을 요구하면 반드시 여기 명시(다음 세션이 재발견하지 않게). NOW.md는 휘발성 재개 메모이므로 **지금 할 일·멈춘 지점·선행조건·미정만 짧게** 담고, 설계 논의·결정 근거는 여기 쓰지 말고 해당 문서로 보낸다.
-2. feature 폴더의 `worklog.md`에 오늘 날짜로 수행한 작업을 요약 기록한다. (로그는 아카이브라 progress.md에서 분리 — feature/progress-harness.md 'progress 작성 규칙')
+2. feature 폴더의 `worklog.md`에 오늘 날짜로 수행한 작업을 요약 기록한다. (로그는 아카이브라 progress.md에서 분리 — private/feature/progress-harness.md 'progress 작성 규칙')
 3. 해당 feature progress의 `## 다음 작업`을 갱신한다. (NOW.md는 "지금 하나", progress `## 다음 작업`은 그 feature의 이후 순서 — 둘이 어긋나지 않게)
 4. feature 상태가 변했으면 progress 상단의 상태와 `feature-list.md`의 상태를 **둘 다** 갱신한다. (단일 갱신 금지 — 항상 동기화)
 5. **`TODO-BOARD.md`를 갱신한다** (작업 보드 규약의 '유지 규약'). 이번 세션에 착수/완료한 항목을 해당 칸으로 옮기고, 대화 중 새로 나온 할 일을 `📋 TODO`에 포착한 뒤 상단 `최종 갱신`을 고친다.
@@ -39,7 +39,7 @@
 세션을 마무리할 때, **이번 세션에서 잘못했던 것을 스스로 짚어 보고한다.** 유저가 지적하기를 기다리지 않는다.
 
 - **대상:** 규약 위반 / 요청 범위를 벗어난 작업 / 잘못된 판단·추측 / 유저가 교정해준 지점 / 승인 없이 만든 코드·문서.
-- **형식:** "무엇을 · 왜 그렇게 됐는지 · 어디에 남길지" 세 줄. 요약으로 뭉개거나 "대체로 잘 됐다"로 덮지 않는다 — **다운사이드를 인정하는 게 HARNESS 포트폴리오 '왜의 품질'과 같은 기준**이다.
+- **형식:** "무엇을 · 왜 그렇게 됐는지 · 어디에 남길지" 세 줄. 요약으로 뭉개거나 "대체로 잘 됐다"로 덮지 않는다 — **다운사이드를 인정하는 게 project/HARNESS '왜'의 품질과 같은 기준**이다.
 - **기록 위치 제안까지 한다:** 재발 방지가 필요하면 그 규칙이 속한 규약 문서(위 인덱스 아래 목록)에 추가한다(개인 메모리가 아니라 하네스 — HARNESS 핵심 원칙).
 - **승인 없이 만든 산출물은 목록으로 남긴다.** 유지/철회 판단이 안 났으면 `NOW.md`에 "처리 여부 미정"으로 명시해 다음 세션이 그걸 기정사실로 취급하지 않게 한다.
 
@@ -57,5 +57,5 @@
   - ① **이미 있는 규약인지 grep으로 먼저 확인.** 있으면 빠진 게 아니라 **미준수** — 추가 금지(중복 = docs-harness 원칙2). 대신 **범위 오각인을 바로잡거나**(예: 문서용으로만 좁혀 읽은 규칙을 대화에도 적용) 자세로 내면화한다.
   - ② **정말 부재일 때만** 추가하되, **게이트형**(놓치는 순간이 이산적·포착 가능 → 점검/트리거 슬롯 값어치)과 **자세형**(산출물을 생성하는 방식 자체 → 내면화, 슬롯 안 씀)을 구분해 **게이트형만** 트리거로 건다.
   - 점검·트리거는 **희소 예산**이다 — 많아지면 리스트 자체를 안 돌리게 된다. 하나 늘리면 기존 항목 병합·삭제를 함께 본다.
-- **기록 규약이 지켜졌나** — decisions 즉시 기록(feature/HARNESS.md '작업 중 기록')·`D#` 재번호 금지(feature/progress-harness.md 'progress 작성 규칙')·`최종 갱신` 날짜 형식(각 문서 규약: progress-harness·TODO-BOARD.harness·architecture/HARNESS)처럼 **놓치기 쉬운 형식 규칙**을 실제로 지켰는지 대조한다.
+- **기록 규약이 지켜졌나** — decisions 즉시 기록(project/private/feature/HARNESS.md '작업 중 기록')·`D#` 재번호 금지(project/private/feature/progress-harness.md 'progress 작성 규칙')·`최종 갱신` 날짜 형식(각 문서 규약: progress-harness·TODO-BOARD.harness·architecture/HARNESS)처럼 **놓치기 쉬운 형식 규칙**을 실제로 지켰는지 대조한다.
 

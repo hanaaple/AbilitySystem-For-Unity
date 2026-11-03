@@ -12,11 +12,11 @@
 ## 빌드·검증
 
 이 프로젝트에는 CLI 빌드·테스트가 없다. Unity 없이는 코드 정합성(참조·시그니처·구조)과 컴파일 에러까지 확인한다 — 방법: `dev-docs/dev/dev-tools.md` '컴파일 확인'.
-Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 넘기지 말고 에이전트가 Play에서 직접 테스트한다 — 방법·규약: `dev-docs/agent/test-harness.md`.
+Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 넘기지 말고 에이전트가 Play에서 직접 테스트한다 — 방법·규약: `dev-docs/agent/project/unity-test-harness.md`.
 
 ## 개발 방향
 
-포트폴리오를 목적으로 하므로, 설계 결정에는 **기술적 근거와 선택 이유**가 명확히 드러나야 한다.  
+설계 결정에는 **기술적 근거와 선택 이유**가 명확히 드러나야 한다.  
 단, 기술적 완성도에 대한 집착으로 실제 게임 완성을 저해하는 과설계(over-engineering)는 지양한다.
 
 ## Routing Table
@@ -26,16 +26,18 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 ├── CLAUDE.md (최상위 하네스)
 ├── Readme.md (프로젝트 소개)
 └── dev-docs/ (작업 규약·프로젝트 내용·설계 문서)
-    ├── agent/ (에이전트 작업 자료 — 내부용)
-    │   └── feature/ (프로젝트 작업 피처)
-    │   └── private/ (비공개 — 작업 보드·feature 내용 문서. 별도 비공개 저장소 submodule)
-    │   └── code-guide/ (코드 작성 규약 + 하위 실전 가이드)
+    ├── agent/ (에이전트 작업 규약 — HARNESS.md는 인덱스)
+    │   ├── core/ (에이전트 자체 — 핵심 원칙·문서 write·세션·대화·작업 범위·git/테스트 원칙)
+    │   └── project/ (이 프로젝트 — 프로젝트 핵심 원칙·테스트 실행·git 세부)
+    │       ├── feature/ (feature 규약 파일 — 그룹·feature 전용 하네스)
+    │       ├── private/ (비공개 — 작업 보드·feature 내용 문서와 그 규약. 별도 비공개 저장소 submodule)
+    │       └── code-guide/ (코드 작성 규약 + 하위 실전 가이드)
     ├── dev/ (공개 개발자용 — 개발 방향·코드 컨벤션·개발 도구·git 규약)
     ├── project/ (외부 공개용 — 데모·아키텍처)
     │   └── architecture/
     └── temp/ (로컬 전용 — 폴더째 gitignore. NOW.md 재개 메모·STUDY-TODO 등)
 ```
-- 각 파일을 확인 시, Root로부터 해당 경로까지의 `HARNESS.md`들을 우선하여 따른다.
+- 각 파일을 확인 시, Root로부터 해당 경로까지의 `HARNESS.md`(폴더 안)·`<폴더>.harness.md`(폴더 옆)·`<파일>.harness.md`(파일 옆)를 우선하여 따른다.
 - 현재 필요하지 않은 문서를 미리 열지 않는다.
 - 필요 이상으로 광범위한 검색·파일 전체 읽기 등 **과한 탐색을 하지 않는다** — 목표를 좁혀 최소한으로 조회한다.
 
@@ -43,22 +45,22 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 - 프로젝트 소개 — `Readme.md`
 - 최상위 하네스 — `CLAUDE.md`
 - 코드 스타일 컨벤션(네이밍·포맷·멤버 순서) — `.editorconfig` 자동 적용. `dev-docs/dev/CODE_CONVENTION.md`
-- 코드 작성 규약(설계 원칙·연쇄 호출·주석·에디터 확장) — `dev-docs/agent/code-guide/HARNESS.md`. 하위 실전 가이드(에디터 드로어 등)는 이 문서를 통해서만 진입한다(직접 링크 금지).
-- feature 현황·진행 추적 — `dev-docs/agent/private/feature/feature-list.md` (대시보드) · `dev-docs/agent/private/feature/<feature-id>`
-- 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/private/TODO-BOARD.md`
+- 코드 작성 규약(설계 원칙·연쇄 호출·주석·에디터 확장) — `dev-docs/agent/project/code-guide/HARNESS.md`. 하위 실전 가이드(에디터 드로어 등)는 이 문서를 통해서만 진입한다(직접 링크 금지).
+- feature 현황·진행 추적 — `dev-docs/agent/project/private/feature/feature-list.md` (대시보드) · `dev-docs/agent/project/private/feature/<feature-id>`
+- 잡다한 작업·개인 TODO·이슈 보드 — `dev-docs/agent/project/private/TODO-BOARD.md`
 - 개발 방향(GAS 데모 범위·기술 선택) — `dev-docs/dev/design.md`
 - 연습 모드 데모(씬 구성·기능별 GAS 적용, 외부 공개용) — `dev-docs/project/demo.md`
 - 아키텍처 — `dev-docs/project/architecture` (overview.md가 인덱스). 시스템 구조·설계를 개념·방향 중심으로 정리한 **에이전트·개발자·외부 공용** 문서. 작성 규약은 `architecture/HARNESS.md`.
 - 개발 도구 설정 — `dev-docs/dev/dev-tools.md`
-- 커밋·PR 등 git 관련 규약 — `dev-docs/dev/git-convention.md` (공통) · `dev-docs/agent/git-harness.md` (에이전트: 커밋·push·병합 조건)
-- 세션 프로토콜(세션 시작·종료) — `dev-docs/agent/session-protocol.md`.
-- 대화 규율(답변 방식) — `dev-docs/agent/conversation.md`. 유저에게 답하기 전.
-- 작업 착수·범위 — `dev-docs/agent/work-scope.md`. 무엇을 얼마나 할지 정할 때.
+- 커밋·PR 등 git 관련 규약 — `dev-docs/dev/git-convention.md` (공통) · `dev-docs/agent/core/git-harness.md` (에이전트: 커밋·push·병합 조건) (에이전트: 커밋·push·병합 조건)
+- 세션 프로토콜(세션 시작·종료) — `dev-docs/agent/core/session-protocol.md`.
+- 대화 규율(답변 방식) — `dev-docs/agent/core/conversation.md`. 유저에게 답하기 전.
+- 작업 착수·범위 — `dev-docs/agent/core/work-scope.md`. 무엇을 얼마나 할지 정할 때.
 
 
 ### 세부 탐색 규율
 #### dev-docs/agent/HARNESS.md
- - **`dev-docs/agent/HARNESS.md`는 agent 작동 시 필수 규약이자, 하위 규약·문서를 잇는 인덱싱 허브다** — 규약 문서 네이밍(`HARNESS.md` / `<파일>.harness.md` / `<이름>-harness.md`)·하위 폴더·상태 문서 인덱스가 여기 있다. 아래 시점에 읽고, 거기서 하위 문서로 진입한다.
+ - **`dev-docs/agent/HARNESS.md`는 agent 작동 시 필수 규약이자, 하위 규약·문서를 잇는 인덱스다** — `core/`(에이전트 자체)와 `project/`(이 프로젝트)로 갈라진다. 규약 문서 네이밍은 `project/HARNESS.md`, 상태 문서(NOW.md)는 `core/HARNESS.md`. 아래 시점에 읽고, 거기서 하위 문서로 진입한다.
  - 프로젝트 개발에 해당하는 내용을 다루기 시작하면 — 구현이 아니어도 읽는다.** 코드 작성뿐 아니라 **질문 답변·개념 설명·설계 논의**도 포함한다.
  - `dev-docs/` 문서를 작성·수정하기 직전
  - 프로젝트 개발, 설계 등 프로젝트와 관련된 대화 시작 시. (검색, 해석, 판단 등)
@@ -66,4 +68,4 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
 #### 코드를 작성·수정하기 직전 (주석 한 줄 포함)
  - 경로 기반 HARNESS는 `Assets/` 코드에 걸리지 않으므로, 코드 편집은 아래를 직접 확인한다.
  - 스타일(네이밍·포맷·멤버 순서) — `dev-docs/dev/CODE_CONVENTION.md`
- - 설계 원칙·연쇄 호출·주석 규약 — `dev-docs/agent/code-guide/HARNESS.md`
+ - 설계 원칙·연쇄 호출·주석 규약 — `dev-docs/agent/project/code-guide/HARNESS.md`
