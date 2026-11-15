@@ -85,31 +85,6 @@ namespace Game.UI
             }
         }
 
-        private void OnDamaged(float damage, GameplayEffectSpec source)
-        {
-            // 같은 GE의 같은 프레임 피해(실드 + 체력)는 마지막 숫자에 더한다
-            if (_numbers.Count > 0)
-            {
-                Number last = _numbers[^1];
-                if (last.Source == source && last.Frame == Time.frameCount)
-                {
-                    last.Damage += damage;
-                    last.Text.text = FormatDamage(last.Damage, last.IsHead);
-                    return;
-                }
-            }
-
-            GameplayEffectContextHandle context = source != null ? source.Context : default;
-            bool isHead = source != null && DamageExecution.IsHeadHit(context);
-            Vector3 origin = context.TryGetHitResult(out RaycastHit hit) && hit.collider != null
-                ? hit.point
-                : transform.position + Vector3.up * _fallbackHeight;
-            Vector2 jitter = Random.insideUnitCircle * _horizontalJitter;
-            origin += new Vector3(jitter.x, 0f, jitter.y);
-
-            _numbers.Add(CreateNumber(damage, isHead, origin, source));
-        }
-
         private Number CreateNumber(float damage, bool isHead, Vector3 origin, GameplayEffectSpec source)
         {
             var root = new GameObject("DamageNumber", typeof(Canvas));
@@ -143,6 +118,31 @@ namespace Game.UI
         {
             string value = Mathf.RoundToInt(damage).ToString();
             return isHead ? value + "!" : value;
+        }
+
+        private void OnDamaged(float damage, GameplayEffectSpec source)
+        {
+            // 같은 GE의 같은 프레임 피해(실드 + 체력)는 마지막 숫자에 더한다
+            if (_numbers.Count > 0)
+            {
+                Number last = _numbers[^1];
+                if (last.Source == source && last.Frame == Time.frameCount)
+                {
+                    last.Damage += damage;
+                    last.Text.text = FormatDamage(last.Damage, last.IsHead);
+                    return;
+                }
+            }
+
+            GameplayEffectContextHandle context = source != null ? source.Context : default;
+            bool isHead = source != null && DamageExecution.IsHeadHit(context);
+            Vector3 origin = context.TryGetHitResult(out RaycastHit hit) && hit.collider != null
+                ? hit.point
+                : transform.position + Vector3.up * _fallbackHeight;
+            Vector2 jitter = Random.insideUnitCircle * _horizontalJitter;
+            origin += new Vector3(jitter.x, 0f, jitter.y);
+
+            _numbers.Add(CreateNumber(damage, isHead, origin, source));
         }
 
         private class Number

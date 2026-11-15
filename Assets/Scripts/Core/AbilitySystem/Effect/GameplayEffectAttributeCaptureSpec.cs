@@ -9,14 +9,14 @@ namespace Core.AbilitySystem.Effect
     /// </summary>
     public readonly struct GameplayEffectAttributeCaptureSpec
     {
-        /// <summary>이 Spec이 캡처한 정의(무엇을·어디서).</summary>
-        public GameplayEffectAttributeCaptureDefinition BackingDefinition { get; }
-
         // 캡처한 aggregator(값의 출처). snapshot이면 캡처 시점을 고정한 복사본, non-snapshot이면 컨테이너 소유 인스턴스 참조.
         private readonly AttributeAggregator _capturedAttributeAggregator;
 
         // ASC·핸들 해석에 성공해 캡처가 유효한지. false면 조회는 항상 실패한다.
         private readonly bool _isValid;
+
+        /// <summary>이 Spec이 캡처한 정의(무엇을·어디서).</summary>
+        public GameplayEffectAttributeCaptureDefinition BackingDefinition { get; }
 
         public bool IsValid => _isValid;
 

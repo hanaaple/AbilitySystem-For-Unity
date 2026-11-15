@@ -13,18 +13,6 @@ namespace Core.AbilitySystem.Effect
         // 담고 있는 GE가 OnGameplayEffectChanged 때마다 넣는다. 직렬화하지 않아야 Component를 다른 GE로 복사해도 옛 GE를 가리키지 않는다
         [NonSerialized] private GameplayEffectAsset _owner;
 
-        /// <summary>이 Component를 담고 있는 GE.</summary>
-        /// <remarks>UE: UGameplayEffectComponent::GetOwner</remarks>
-        public GameplayEffectAsset GetOwner()
-        {
-            return _owner;
-        }
-
-        internal void SetOwner(GameplayEffectAsset owner)
-        {
-            _owner = owner;
-        }
-
         /// <summary>이 Spec을 컨테이너 주인에게 적용할 수 있는지. GE의 Component 중 하나라도 false면 적용하지 않는다.</summary>
         /// <remarks>UE: UGameplayEffectComponent::CanGameplayEffectApply</remarks>
         public virtual bool CanGameplayEffectApply(ActiveGameplayEffectsContainer activeGameplayEffectsContainer, GameplayEffectSpec spec)
@@ -55,6 +43,18 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: UGameplayEffectComponent::OnGameplayEffectChanged</remarks>
         public virtual void OnGameplayEffectChanged()
         {
+        }
+
+        /// <summary>이 Component를 담고 있는 GE.</summary>
+        /// <remarks>UE: UGameplayEffectComponent::GetOwner</remarks>
+        public GameplayEffectAsset GetOwner()
+        {
+            return _owner;
+        }
+
+        internal void SetOwner(GameplayEffectAsset owner)
+        {
+            _owner = owner;
         }
     }
 }

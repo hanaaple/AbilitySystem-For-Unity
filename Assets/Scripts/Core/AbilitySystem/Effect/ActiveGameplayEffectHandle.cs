@@ -20,6 +20,16 @@ namespace Core.AbilitySystem.Effect
             _owner = owner;
         }
 
+        public override bool Equals(object obj)
+        {
+            return obj is ActiveGameplayEffectHandle other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return _id;
+        }
+
         public AbilitySystemComponent GetOwningAbilitySystemComponent()
         {
             return _owner;
@@ -29,16 +39,6 @@ namespace Core.AbilitySystem.Effect
         public bool Equals(ActiveGameplayEffectHandle other)
         {
             return _id == other._id;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is ActiveGameplayEffectHandle other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            return _id;
         }
     }
 }

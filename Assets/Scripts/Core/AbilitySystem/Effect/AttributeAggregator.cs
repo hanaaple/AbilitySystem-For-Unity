@@ -65,6 +65,9 @@ namespace Core.AbilitySystem.Effect
         // 평가 문맥에 태그가 없을 때(null) 판정에 쓰는 빈 컨테이너. 읽기만 한다.
         private static readonly GameplayTagContainer EmptyTags = new();
 
+        // 순환 의존(A→B→A)으로 인한 재귀 broadcast 폭주를 끊는 깊이 상한.
+        private const int MaxBroadcastDirty = 10;
+
         private float _baseValue;
 
         // persistent(period 0) mod. apply 시 등록, remove 시 해제.
@@ -75,9 +78,6 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>base/mod 변경 시 발화한다. 구독자가 <see cref="Evaluate"/>로 재계산한다.</summary>
         public event Action<AttributeAggregator> OnDirty;
-
-        // 순환 의존(A→B→A)으로 인한 재귀 broadcast 폭주를 끊는 깊이 상한.
-        private const int MaxBroadcastDirty = 10;
 
         private int _broadcastingDirtyCount;
 
@@ -139,6 +139,76 @@ namespace Core.AbilitySystem.Effect
             _dependents.Remove(handle);
         }
 
+        /// <summary>
+        /// 평가 문맥의 태그로 자격을 판정해 값을 계산한다. 캡처 어트리뷰트 평가(AttributeBased·Execution)는 캡처하는 Spec의 태그를, CurrentValue 계산은 빈 문맥을 넘긴다.
+        /// = ((Base + ΣAddBase) * MultiplyAdditive / DivideAdditive * ΠMultiplyCompound) + ΣAddFinal.
+        /// Override가 있으면 그 값으로 덮어쓴다(조건을 만족하는 Override 중 목록에서 먼저 만난 것).
+        /// </summary>
+        /// <remarks>UE: FAggregator::Evaluate</remarks>
+        public float Evaluate(AggregatorEvaluateParameters parameters)
+        {
+            EvaluateQualificationForAllMods(parameters);
+            return EvaluateWithBase();
+        }
+
+        /// <summary>연산을 base에 직접 적용한 값을 반환한다 — Instant/Periodic의 영구 base 변경용. <see cref="Evaluate"/>와 달리 즉시·영구다.</summary>
+        public static float ExecModOnBaseValue(float baseValue, GameplayModifierOperation modifierOp, float evaluatedMagnitude)
+        {
+            switch (modifierOp)
+            {
+                case GameplayModifierOperation.AddBase:
+                case GameplayModifierOperation.AddFinal:
+                {
+                    baseValue += evaluatedMagnitude;
+                    break;
+                }
+
+                case GameplayModifierOperation.MultiplyAdditive:
+                case GameplayModifierOperation.MultiplyCompound:
+                {
+                    baseValue *= evaluatedMagnitude;
+                    break;
+                }
+                case GameplayModifierOperation.DivideAdditive:
+                {
+                    baseValue = Mathf.Approximately(evaluatedMagnitude, 0f) ? baseValue : baseValue / evaluatedMagnitude;
+                    break;
+                }
+                case GameplayModifierOperation.Override:
+                {
+                    baseValue = evaluatedMagnitude;
+                    break;
+                }
+            }
+
+            return baseValue;
+        }
+
+        /// <summary>이 effect가 <paramref name="attributeHandle"/>에 건 mod를 모두 빼고 spec의 최신 magnitude로 다시 넣는다.</summary>
+        /// <remarks>UE: FAggregator::UpdateAggregatorMod</remarks>
+        public void UpdateAggregatorMod(ActiveGameplayEffect activeEffect, GameplayAttributeHandle attributeHandle)
+        {
+            ActiveGameplayEffectHandle activeHandle = activeEffect.Handle;
+
+            // _mods에는 여러 GE의 mod가 섞여 있어 spec의 modifier 번호로 칸을 찾을 수 없다. 핸들로 빼고 다시 넣는다.
+            // 다 넣은 뒤 dirty를 한 번만 알리려고 RemoveAggregatorMod 대신 목록에서 바로 뺀다
+            _mods.RemoveAll(mod => mod.ActiveHandle.Equals(activeHandle));
+
+            GameplayEffectSpec gameplayEffectSpec = activeEffect.Spec;
+
+            for (int modIndex = 0; modIndex < gameplayEffectSpec.Modifiers.Length; modIndex++)
+            {
+                GameplayModifier modDef = gameplayEffectSpec.Definition.Modifiers[modIndex];
+
+                if (modDef.ToResolvedAttribute() == attributeHandle)
+                {
+                    _mods.Add(new Mod(activeHandle, modDef.Operation, gameplayEffectSpec.Modifiers[modIndex].EvaluatedMagnitude, modDef.SourceTags, modDef.TargetTags));
+                }
+            }
+
+            BroadcastOnDirty();
+        }
+
         /// <summary>base/mod 변경을 구독자·dependents에 전파한다. 순환 의존은 <see cref="MaxBroadcastDirty"/> 깊이 상한으로 끊는다(폭주 방지지 해결이 아니다).</summary>
         private void BroadcastOnDirty()
         {
@@ -167,18 +237,6 @@ namespace Core.AbilitySystem.Effect
             }
 
             _broadcastingDirtyCount--;
-        }
-
-        /// <summary>
-        /// 평가 문맥의 태그로 자격을 판정해 값을 계산한다. 캡처 어트리뷰트 평가(AttributeBased·Execution)는 캡처하는 Spec의 태그를, CurrentValue 계산은 빈 문맥을 넘긴다.
-        /// = ((Base + ΣAddBase) * MultiplyAdditive / DivideAdditive * ΠMultiplyCompound) + ΣAddFinal.
-        /// Override가 있으면 그 값으로 덮어쓴다(조건을 만족하는 Override 중 목록에서 먼저 만난 것).
-        /// </summary>
-        /// <remarks>UE: FAggregator::Evaluate</remarks>
-        public float Evaluate(AggregatorEvaluateParameters parameters)
-        {
-            EvaluateQualificationForAllMods(parameters);
-            return EvaluateWithBase();
         }
 
         /// <summary>모든 mod의 자격을 평가 문맥의 태그로 갱신한다. <see cref="EvaluateWithBase"/> 전에 부른다.</summary>
@@ -253,64 +311,6 @@ namespace Core.AbilitySystem.Effect
             }
 
             return ((_baseValue + addBase) * multiplyAdditive / divideAdditive * multiplyCompound) + addFinal;
-        }
-
-        /// <summary>연산을 base에 직접 적용한 값을 반환한다 — Instant/Periodic의 영구 base 변경용. <see cref="Evaluate"/>와 달리 즉시·영구다.</summary>
-        public static float ExecModOnBaseValue(float baseValue, GameplayModifierOperation modifierOp, float evaluatedMagnitude)
-        {
-            switch (modifierOp)
-            {
-                case GameplayModifierOperation.AddBase:
-                case GameplayModifierOperation.AddFinal:
-                {
-                    baseValue += evaluatedMagnitude;
-                    break;
-                }
-
-                case GameplayModifierOperation.MultiplyAdditive:
-                case GameplayModifierOperation.MultiplyCompound:
-                {
-                    baseValue *= evaluatedMagnitude;
-                    break;
-                }
-                case GameplayModifierOperation.DivideAdditive:
-                {
-                    baseValue = Mathf.Approximately(evaluatedMagnitude, 0f) ? baseValue : baseValue / evaluatedMagnitude;
-                    break;
-                }
-                case GameplayModifierOperation.Override:
-                {
-                    baseValue = evaluatedMagnitude;
-                    break;
-                }
-            }
-
-            return baseValue;
-        }
-
-        /// <summary>이 effect가 <paramref name="attributeHandle"/>에 건 mod를 모두 빼고 spec의 최신 magnitude로 다시 넣는다.</summary>
-        /// <remarks>UE: FAggregator::UpdateAggregatorMod</remarks>
-        public void UpdateAggregatorMod(ActiveGameplayEffect activeEffect, GameplayAttributeHandle attributeHandle)
-        {
-            ActiveGameplayEffectHandle activeHandle = activeEffect.Handle;
-
-            // _mods에는 여러 GE의 mod가 섞여 있어 spec의 modifier 번호로 칸을 찾을 수 없다. 핸들로 빼고 다시 넣는다.
-            // 다 넣은 뒤 dirty를 한 번만 알리려고 RemoveAggregatorMod 대신 목록에서 바로 뺀다
-            _mods.RemoveAll(mod => mod.ActiveHandle.Equals(activeHandle));
-
-            GameplayEffectSpec gameplayEffectSpec = activeEffect.Spec;
-
-            for (int modIndex = 0; modIndex < gameplayEffectSpec.Modifiers.Length; modIndex++)
-            {
-                GameplayModifier modDef = gameplayEffectSpec.Definition.Modifiers[modIndex];
-
-                if (modDef.ToResolvedAttribute() == attributeHandle)
-                {
-                    _mods.Add(new Mod(activeHandle, modDef.Operation, gameplayEffectSpec.Modifiers[modIndex].EvaluatedMagnitude, modDef.SourceTags, modDef.TargetTags));
-                }
-            }
-
-            BroadcastOnDirty();
         }
     }
 }

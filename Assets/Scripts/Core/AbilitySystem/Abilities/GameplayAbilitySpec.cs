@@ -13,15 +13,6 @@ namespace Core.AbilitySystem.Abilities
         // Per GameObject면 부여 때 만든 하나, Per Execution이면 지금 활성인 발동들의 인스턴스.
         private readonly List<GameplayAbility> _instances = new();
 
-        public GameplayAbilitySpec(GameplayAbilityAsset ability, int level = 1, int inputID = NoInputID, UnityEngine.Object sourceObject = null)
-        {
-            Handle = GameplayAbilitySpecHandle.GenerateNewHandle();
-            Ability = ability;
-            Level = level;
-            InputID = inputID;
-            SourceObject = sourceObject;
-        }
-
         public GameplayAbilitySpecHandle Handle { get; }
 
         public GameplayAbilityAsset Ability { get; }
@@ -46,6 +37,15 @@ namespace Core.AbilitySystem.Abilities
 
         /// <remarks>UE: FGameplayAbilitySpec::IsActive</remarks>
         public bool IsActive => Ability != null && ActiveCount > 0;
+
+        public GameplayAbilitySpec(GameplayAbilityAsset ability, int level = 1, int inputID = NoInputID, UnityEngine.Object sourceObject = null)
+        {
+            Handle = GameplayAbilitySpecHandle.GenerateNewHandle();
+            Ability = ability;
+            Level = level;
+            InputID = inputID;
+            SourceObject = sourceObject;
+        }
 
         /// <summary>Per GameObject 어빌리티가 부여될 때 만든 이 ASC 전용 인스턴스. Per Execution이거나 부여 전·해제 후엔 null.</summary>
         /// <remarks>UE: FGameplayAbilitySpec::GetPrimaryInstance</remarks>

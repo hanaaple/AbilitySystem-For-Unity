@@ -20,11 +20,6 @@ namespace Core.AbilitySystem.Attribute
             _field = setType.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
         }
 
-        public bool Equals(GameplayAttributeHandle other)
-        {
-            return SetType == other.SetType && Name == other.Name;
-        }
-
         public override bool Equals(object obj)
         {
             return obj is GameplayAttributeHandle h && Equals(h);
@@ -35,6 +30,16 @@ namespace Core.AbilitySystem.Attribute
             return HashCode.Combine(SetType, Name);
         }
 
+        public override string ToString()
+        {
+            return $"{SetType.Name}.{Name}";
+        }
+
+        public bool Equals(GameplayAttributeHandle other)
+        {
+            return SetType == other.SetType && Name == other.Name;
+        }
+
         public static bool operator ==(GameplayAttributeHandle left, GameplayAttributeHandle right)
         {
             return left.Equals(right);
@@ -43,11 +48,6 @@ namespace Core.AbilitySystem.Attribute
         public static bool operator !=(GameplayAttributeHandle left, GameplayAttributeHandle right)
         {
             return !left.Equals(right);
-        }
-
-        public override string ToString()
-        {
-            return $"{SetType.Name}.{Name}";
         }
 
         internal bool TryGetData(AttributeSet set, out AttributeData data)

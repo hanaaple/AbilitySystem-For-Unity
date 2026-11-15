@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Game.Character;
 using Core.AbilitySystem;
@@ -69,7 +70,7 @@ namespace Test.Editor
         // ── A. Backing Data 후보 ──
         private static void RunBackingDataChecks(Action<string, bool> check)
         {
-            var defs = GetCaptureDefinitions(typeof(SpeedBoostExecution).AssemblyQualifiedName);
+            GameplayEffectAttributeCaptureDefinition[] defs = GetCaptureDefinitions(typeof(SpeedBoostExecution).AssemblyQualifiedName);
             check("A-1 SpeedBoostExecution의 후보 = Defs() 2개(순서·값 같음)", defs.Length == 2 && defs[0].Equals(SpeedBoostExecution.CaptureDefinitions[0]) && defs[1].Equals(SpeedBoostExecution.CaptureDefinitions[1]));
             check("A-2 계산 클래스가 비었으면 후보 없음", GetCaptureDefinitions(string.Empty).Length == 0);
             check("A-3 Execution이 아닌 타입이면 후보 없음", GetCaptureDefinitions(typeof(CharacterAttributeSet).AssemblyQualifiedName).Length == 0);
@@ -82,7 +83,7 @@ namespace Test.Editor
             SerializedProperty executions = so.FindProperty("_executions");
             SerializedProperty first = executions.GetArrayElementAtIndex(0);
             SerializedProperty calculationModifiers = first.FindPropertyRelative("_calculationModifiers");
-            var defs = GetCaptureDefinitions(typeof(SpeedBoostExecution).AssemblyQualifiedName);
+            GameplayEffectAttributeCaptureDefinition[] defs = GetCaptureDefinitions(typeof(SpeedBoostExecution).AssemblyQualifiedName);
 
             CallDrawer("AddScopedModifier", calculationModifiers, defs);
             SerializedProperty added = calculationModifiers.GetArrayElementAtIndex(0);
@@ -158,7 +159,7 @@ namespace Test.Editor
 
             var ge = AssetDatabase.LoadAssetAtPath<GameplayEffectAsset>(TempGePath);
             GameplayEffectExecutionDefinition execution = ge.Executions[0];
-            var modifiers = execution.CalculationModifiers;
+            IReadOnlyList<GameplayEffectExecutionScopedModifierInfo> modifiers = execution.CalculationModifiers;
             check("D-1 다시 읽은 에셋: Execution 1개, Calculation Modifier 2개", ge.Executions.Count == 1 && modifiers.Count == 2);
 
             GameplayEffectExecutionScopedModifierInfo first = modifiers[0];

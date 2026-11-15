@@ -19,18 +19,18 @@ namespace Game.Character
         private bool _isActive;
         private float _weight;
 
-        protected virtual void Start()
-        {
-            ApplyWeight(0f);
-            _isActive = _abilitySystemComponent.HasMatchingGameplayTag(_tag);
-            _abilitySystemComponent.RegisterGameplayTagEvent(_tag, OnTagCountChanged);
-        }
-
         private void Update()
         {
             float target = _isActive ? 1f - _pulseAmount * (0.5f + 0.5f * Mathf.Sin(Time.time * _pulseSpeed)) : 0f;
             _weight = Mathf.MoveTowards(_weight, target, _fadeSpeed * Time.deltaTime);
             ApplyWeight(_weight);
+        }
+
+        protected virtual void Start()
+        {
+            ApplyWeight(0f);
+            _isActive = _abilitySystemComponent.HasMatchingGameplayTag(_tag);
+            _abilitySystemComponent.RegisterGameplayTagEvent(_tag, OnTagCountChanged);
         }
 
         protected virtual void OnDestroy()

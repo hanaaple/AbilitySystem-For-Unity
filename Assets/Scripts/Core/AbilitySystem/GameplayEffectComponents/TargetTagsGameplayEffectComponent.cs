@@ -13,18 +13,18 @@ namespace Core.AbilitySystem.GameplayEffectComponents
         [Tooltip("이 GE가 활성인 동안 대상에게 주는 태그 (UE: Add Tags). Instant GE는 활성 목록에 남지 않아 주지 않는다.")]
         [SerializeField] [FormerlySerializedAs("inheritableGrantedTagsContainer")] private InheritedTagContainer _inheritableGrantedTagsContainer = new();
 
-        /// <summary>설정된 부여 태그 묶음.</summary>
-        /// <remarks>UE: UTargetTagsGameplayEffectComponent::GetConfiguredTargetTagChanges</remarks>
-        public InheritedTagContainer GetConfiguredTargetTagChanges()
-        {
-            return _inheritableGrantedTagsContainer;
-        }
-
         /// <remarks>UE: UTargetTagsGameplayEffectComponent::OnGameplayEffectChanged</remarks>
         public override void OnGameplayEffectChanged()
         {
             base.OnGameplayEffectChanged();
             SetAndApplyTargetTagChanges(_inheritableGrantedTagsContainer);
+        }
+
+        /// <summary>설정된 부여 태그 묶음.</summary>
+        /// <remarks>UE: UTargetTagsGameplayEffectComponent::GetConfiguredTargetTagChanges</remarks>
+        public InheritedTagContainer GetConfiguredTargetTagChanges()
+        {
+            return _inheritableGrantedTagsContainer;
         }
 
         /// <summary>부여 태그 묶음을 바꾸고 GE의 Granted Tags에 반영한다.</summary>

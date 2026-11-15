@@ -29,8 +29,6 @@ namespace Core.AbilitySystem.Editor
 
         private static readonly FieldInfo TargetSpecsField = typeof(GameplayEffectAttributeCaptureSpecContainer).GetField(TargetSpecsFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
 
-        // ── Runtime Attributes ────────────────────────────────────────────────────
-
         public static void DrawRuntimeAttributes(AbilitySystemComponent asc, ref bool foldout)
         {
             foldout = EditorGUILayout.Foldout(foldout, "Runtime Attributes", true, EditorStyles.foldoutHeader);
@@ -64,43 +62,6 @@ namespace Core.AbilitySystem.Editor
 
             EditorGUI.indentLevel--;
         }
-
-        private static void DrawAttributeSet(Type setType, AttributeSet set)
-        {
-            EditorGUILayout.LabelField(setType.Name, EditorStyles.boldLabel);
-
-            EditorGUI.indentLevel++;
-
-            FieldInfo[] fields = AttributeReflectionUtility.GetAttributeDataFields(setType);
-            if (fields.Length == 0)
-            {
-                EditorGUILayout.LabelField("No AttributeData fields.");
-                EditorGUI.indentLevel--;
-                return;
-            }
-
-            foreach (FieldInfo field in fields)
-            {
-                var data = (AttributeData)field.GetValue(set);
-                DrawAttributeData(field.Name, data);
-            }
-
-            EditorGUI.indentLevel--;
-        }
-
-        private static void DrawAttributeData(string fieldName, AttributeData data)
-        {
-            Rect rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
-            Rect nameRect = new Rect(rect.x, rect.y, rect.width * NameColumnWidth, rect.height);
-            Rect baseRect = new Rect(rect.x + rect.width * BaseColumnX, rect.y, rect.width * BaseColumnWidth, rect.height);
-            Rect currentRect = new Rect(rect.x + rect.width * CurrentColumnX, rect.y, rect.width * CurrentColumnWidth, rect.height);
-
-            EditorGUI.LabelField(nameRect, fieldName);
-            EditorGUI.LabelField(baseRect, $"Base: {data.GetBaseValue():0.###}");
-            EditorGUI.LabelField(currentRect, $"Current: {data.GetCurrentValue():0.###}");
-        }
-
-        // ── Active Effects ────────────────────────────────────────────────────────
 
         public static void DrawActiveEffects(AbilitySystemComponent asc, ref bool foldout)
         {
@@ -140,6 +101,106 @@ namespace Core.AbilitySystem.Editor
             }
 
             EditorGUI.indentLevel--;
+        }
+
+        /// <summary>부여된 어빌리티 목록. 발동 중인 것은 [Active]로 표시한다.</summary>
+        public static void DrawAbilities(AbilitySystemComponent asc, ref bool foldout)
+        {
+            foldout = EditorGUILayout.Foldout(foldout, "Abilities", true, EditorStyles.foldoutHeader);
+            if (!foldout)
+            {
+                return;
+            }
+
+            EditorGUI.indentLevel++;
+            if (!Application.isPlaying)
+            {
+                EditorGUILayout.HelpBox("Granted Abilities are available in Play Mode.", MessageType.Info);
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            IReadOnlyList<GameplayAbilitySpec> specs = asc.GetActivatableAbilities();
+            if (specs.Count == 0)
+            {
+                EditorGUILayout.HelpBox("No granted Abilities.", MessageType.Info);
+            }
+
+            foreach (GameplayAbilitySpec spec in specs)
+            {
+                string abilityName = spec.Ability != null ? spec.Ability.name : "(null)";
+                string input = spec.InputID == GameplayAbilitySpec.NoInputID ? "-" : spec.InputID.ToString();
+                string label = $"{abilityName}  (Lv {spec.Level}, Input {input})";
+                EditorGUILayout.LabelField(label, spec.IsActive ? $"[Active] x{spec.ActiveCount}" : "", spec.IsActive ? EditorStyles.boldLabel : EditorStyles.label);
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
+        /// <summary>ASC가 지금 가진 태그(GE 부여·느슨한 태그 합산).</summary>
+        public static void DrawOwnedTags(AbilitySystemComponent asc, ref bool foldout)
+        {
+            foldout = EditorGUILayout.Foldout(foldout, "Owned Tags", true, EditorStyles.foldoutHeader);
+            if (!foldout)
+            {
+                return;
+            }
+
+            EditorGUI.indentLevel++;
+            if (!Application.isPlaying)
+            {
+                EditorGUILayout.HelpBox("Owned Tags are available in Play Mode.", MessageType.Info);
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            IReadOnlyList<GameplayTag> tags = asc.GetOwnedGameplayTags().GetGameplayTagArray();
+            if (tags.Count == 0)
+            {
+                EditorGUILayout.HelpBox("No owned Tags.", MessageType.Info);
+            }
+
+            foreach (GameplayTag tag in tags)
+            {
+                EditorGUILayout.LabelField(tag.ToString());
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
+        private static void DrawAttributeSet(Type setType, AttributeSet set)
+        {
+            EditorGUILayout.LabelField(setType.Name, EditorStyles.boldLabel);
+
+            EditorGUI.indentLevel++;
+
+            FieldInfo[] fields = AttributeReflectionUtility.GetAttributeDataFields(setType);
+            if (fields.Length == 0)
+            {
+                EditorGUILayout.LabelField("No AttributeData fields.");
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            foreach (FieldInfo field in fields)
+            {
+                var data = (AttributeData)field.GetValue(set);
+                DrawAttributeData(field.Name, data);
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
+        private static void DrawAttributeData(string fieldName, AttributeData data)
+        {
+            Rect rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+            Rect nameRect = new Rect(rect.x, rect.y, rect.width * NameColumnWidth, rect.height);
+            Rect baseRect = new Rect(rect.x + rect.width * BaseColumnX, rect.y, rect.width * BaseColumnWidth, rect.height);
+            Rect currentRect = new Rect(rect.x + rect.width * CurrentColumnX, rect.y, rect.width * CurrentColumnWidth, rect.height);
+
+            EditorGUI.LabelField(nameRect, fieldName);
+            EditorGUI.LabelField(baseRect, $"Base: {data.GetBaseValue():0.###}");
+            EditorGUI.LabelField(currentRect, $"Current: {data.GetCurrentValue():0.###}");
         }
 
         private static void DrawActiveEffect(int index, ActiveGameplayEffect active)
@@ -336,75 +397,6 @@ namespace Core.AbilitySystem.Editor
             }
 
             return origins.Count == 0 ? "?" : string.Join(", ", origins);
-        }
-
-        // ── Abilities ─────────────────────────────────────────────────────────────
-
-        /// <summary>부여된 어빌리티 목록. 발동 중인 것은 [Active]로 표시한다.</summary>
-        public static void DrawAbilities(AbilitySystemComponent asc, ref bool foldout)
-        {
-            foldout = EditorGUILayout.Foldout(foldout, "Abilities", true, EditorStyles.foldoutHeader);
-            if (!foldout)
-            {
-                return;
-            }
-
-            EditorGUI.indentLevel++;
-            if (!Application.isPlaying)
-            {
-                EditorGUILayout.HelpBox("Granted Abilities are available in Play Mode.", MessageType.Info);
-                EditorGUI.indentLevel--;
-                return;
-            }
-
-            IReadOnlyList<GameplayAbilitySpec> specs = asc.GetActivatableAbilities();
-            if (specs.Count == 0)
-            {
-                EditorGUILayout.HelpBox("No granted Abilities.", MessageType.Info);
-            }
-
-            foreach (GameplayAbilitySpec spec in specs)
-            {
-                string abilityName = spec.Ability != null ? spec.Ability.name : "(null)";
-                string input = spec.InputID == GameplayAbilitySpec.NoInputID ? "-" : spec.InputID.ToString();
-                string label = $"{abilityName}  (Lv {spec.Level}, Input {input})";
-                EditorGUILayout.LabelField(label, spec.IsActive ? $"[Active] x{spec.ActiveCount}" : "", spec.IsActive ? EditorStyles.boldLabel : EditorStyles.label);
-            }
-
-            EditorGUI.indentLevel--;
-        }
-
-        // ── Owned Tags ────────────────────────────────────────────────────────────
-
-        /// <summary>ASC가 지금 가진 태그(GE 부여·느슨한 태그 합산).</summary>
-        public static void DrawOwnedTags(AbilitySystemComponent asc, ref bool foldout)
-        {
-            foldout = EditorGUILayout.Foldout(foldout, "Owned Tags", true, EditorStyles.foldoutHeader);
-            if (!foldout)
-            {
-                return;
-            }
-
-            EditorGUI.indentLevel++;
-            if (!Application.isPlaying)
-            {
-                EditorGUILayout.HelpBox("Owned Tags are available in Play Mode.", MessageType.Info);
-                EditorGUI.indentLevel--;
-                return;
-            }
-
-            IReadOnlyList<GameplayTag> tags = asc.GetOwnedGameplayTags().GetGameplayTagArray();
-            if (tags.Count == 0)
-            {
-                EditorGUILayout.HelpBox("No owned Tags.", MessageType.Info);
-            }
-
-            foreach (GameplayTag tag in tags)
-            {
-                EditorGUILayout.LabelField(tag.ToString());
-            }
-
-            EditorGUI.indentLevel--;
         }
     }
 }

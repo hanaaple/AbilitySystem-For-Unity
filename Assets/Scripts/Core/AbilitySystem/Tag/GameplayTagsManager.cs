@@ -33,14 +33,6 @@ namespace Core.AbilitySystem.Tag
             ConstructGameplayTagTree();
         }
 
-        // 씬 로드 전에 트리를 미리 빌드해, GE/ASC가 태그를 건드리기 전 준비를 보장한다.
-        // 도메인 리로드가 꺼져 있어도 매 재생마다 인스턴스를 새로 만들어 낡은 트리를 피한다.
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void Bootstrap()
-        {
-            Instance = CreateManager();
-        }
-
         /// <summary>전역 단일 인스턴스. 최초 접근 시 생성되며 트리를 1회 빌드한다. 에디터에서도 같은 방식으로 생성된다.</summary>
         /// <remarks>UE: UGameplayTagsManager::Get</remarks>
         public static GameplayTagsManager Get()
@@ -321,6 +313,14 @@ namespace Core.AbilitySystem.Tag
             OnEditorRefreshGameplayTagTree?.Invoke();
         }
 #endif
+
+        // 씬 로드 전에 트리를 미리 빌드해, GE/ASC가 태그를 건드리기 전 준비를 보장한다.
+        // 도메인 리로드가 꺼져 있어도 매 재생마다 인스턴스를 새로 만들어 낡은 트리를 피한다.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Bootstrap()
+        {
+            Instance = CreateManager();
+        }
 
         /// <remarks>UE: UGameplayTagsManager::InitializeManager</remarks>
         private static GameplayTagsManager CreateManager()

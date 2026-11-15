@@ -11,6 +11,13 @@ namespace Core.AbilitySystem.Attribute
         [SerializeField] [FormerlySerializedAs("attributeSetTypeName")] private string _attributeSetTypeName;
         [SerializeField] [FormerlySerializedAs("fieldName")] private string _fieldName;
 
+        public string AttributeSetTypeName => _attributeSetTypeName;
+
+        public string FieldName => _fieldName;
+
+        /// <summary>Set·Field 문자열이 모두 있는지. 타입 해석 성공까진 보장하지 않는다(그건 <see cref="ToAttributeHandle"/>).</summary>
+        public bool IsSet => !string.IsNullOrEmpty(_attributeSetTypeName) && !string.IsNullOrEmpty(_fieldName);
+
         public GameplayAttribute(string attributeSetTypeName, string fieldName)
         {
             _attributeSetTypeName = attributeSetTypeName;
@@ -21,25 +28,6 @@ namespace Core.AbilitySystem.Attribute
         {
             _attributeSetTypeName = handle.SetType?.AssemblyQualifiedName;
             _fieldName = handle.Name;
-        }
-
-        public string AttributeSetTypeName => _attributeSetTypeName;
-
-        public string FieldName => _fieldName;
-
-        /// <summary>Set·Field 문자열이 모두 있는지. 타입 해석 성공까진 보장하지 않는다(그건 <see cref="ToAttributeHandle"/>).</summary>
-        public bool IsSet => !string.IsNullOrEmpty(_attributeSetTypeName) && !string.IsNullOrEmpty(_fieldName);
-
-        /// <summary>런타임 핸들로 해석한다. 타입 해석 실패 시 default(무효).</summary>
-        public GameplayAttributeHandle ToAttributeHandle()
-        {
-            Type type = Type.GetType(_attributeSetTypeName);
-            return type == null ? default : new GameplayAttributeHandle(type, _fieldName);
-        }
-
-        public bool Equals(GameplayAttribute other)
-        {
-            return _attributeSetTypeName == other._attributeSetTypeName && _fieldName == other._fieldName;
         }
 
         public override bool Equals(object obj)
@@ -61,6 +49,18 @@ namespace Core.AbilitySystem.Attribute
 
             Type type = Type.GetType(_attributeSetTypeName);
             return $"{(type != null ? type.Name : _attributeSetTypeName)}.{_fieldName}";
+        }
+
+        /// <summary>런타임 핸들로 해석한다. 타입 해석 실패 시 default(무효).</summary>
+        public GameplayAttributeHandle ToAttributeHandle()
+        {
+            Type type = Type.GetType(_attributeSetTypeName);
+            return type == null ? default : new GameplayAttributeHandle(type, _fieldName);
+        }
+
+        public bool Equals(GameplayAttribute other)
+        {
+            return _attributeSetTypeName == other._attributeSetTypeName && _fieldName == other._fieldName;
         }
     }
 }

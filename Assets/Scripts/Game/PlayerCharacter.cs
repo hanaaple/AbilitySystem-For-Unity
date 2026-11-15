@@ -115,19 +115,8 @@ namespace Game
         private Action _onDashFinished;
         private Action _onLanded;
 
-        protected virtual void Awake()
-        {
-            _asc = GetComponent<AbilitySystemComponent>();
-            _characterController = GetComponent<CharacterController>();
-            _asc.AddSpawnedAttribute(new CharacterAttributeSet());
-            _asc.AddSpawnedAttribute(new PlayerAttributeSet());
-
-            _targetRotation = _model.eulerAngles.y;
-            _viewCamera = Camera.main;
-            _cameraBrain = _viewCamera != null ? _viewCamera.GetComponent<CinemachineBrain>() : null;
-            _jumpTimeoutDelta = _jumpTimeout;
-            _fallTimeoutDelta = _fallTimeout;
-        }
+        /// <summary>캐릭터에 걸리는 중력 가속도(음수).</summary>
+        public float Gravity => _gravity;
 
         private void OnEnable()
         {
@@ -167,6 +156,20 @@ namespace Game
         {
             CinemachineCore.CameraUpdatedEvent.RemoveListener(OnCameraUpdated);
             _pendingLaunches.Clear();
+        }
+
+        protected virtual void Awake()
+        {
+            _asc = GetComponent<AbilitySystemComponent>();
+            _characterController = GetComponent<CharacterController>();
+            _asc.AddSpawnedAttribute(new CharacterAttributeSet());
+            _asc.AddSpawnedAttribute(new PlayerAttributeSet());
+
+            _targetRotation = _model.eulerAngles.y;
+            _viewCamera = Camera.main;
+            _cameraBrain = _viewCamera != null ? _viewCamera.GetComponent<CinemachineBrain>() : null;
+            _jumpTimeoutDelta = _jumpTimeout;
+            _fallTimeoutDelta = _fallTimeout;
         }
 
         public override void OnPossessed(ControllerBase controller)
@@ -270,9 +273,6 @@ namespace Game
             return _isGrounded && _jumpTimeoutDelta <= 0f;
         }
 
-        /// <summary>캐릭터에 걸리는 중력 가속도(음수).</summary>
-        public float Gravity => _gravity;
-
         /// <summary>위로 띄운다(점프 높이 계산은 점프 어빌리티가 한다). 착지하면 onLanded를 부른다. 땅에 있는지는 <see cref="CanJump"/>로 먼저 확인한다.</summary>
         public void Launch(float verticalVelocity, Action onLanded)
         {
@@ -284,6 +284,44 @@ namespace Game
             {
                 _animator.SetTrigger(JumpHash);
             }
+        }
+
+        /// <summary>십자선이 가리키는 캐릭터 부위(머리 등). 캐릭터가 아니거나 부위가 없는 곳을 가리키면 null.</summary>
+        public HitZone FindAimedHitZone()
+        {
+            if (_viewCamera == null)
+            {
+                return null;
+            }
+
+            // 부위는 몸 콜라이더 안쪽 트리거라 트리거까지 맞힌다
+            RaycastHit[] hits = CastAimRay(QueryTriggerInteraction.Collide, out Ray ray, out float minDistance);
+            if (!TryFindAimBlocker(hits, minDistance, out RaycastHit blocker))
+            {
+                return null;
+            }
+
+            var target = blocker.collider.GetComponentInParent<AbilitySystemComponent>();
+            if (target == null)
+            {
+                return null;
+            }
+
+            HitZone closestZone = null;
+            float closestDistance = float.MaxValue;
+            foreach (RaycastHit hit in hits)
+            {
+                var zone = hit.collider.GetComponent<HitZone>();
+                if (zone == null || hit.distance >= closestDistance || hit.collider.GetComponentInParent<AbilitySystemComponent>() != target)
+                {
+                    continue;
+                }
+
+                closestZone = zone;
+                closestDistance = hit.distance;
+            }
+
+            return closestZone;
         }
 
         private void Locomote(Vector3 direction, float delta)
@@ -365,44 +403,6 @@ namespace Game
             float aimYaw = toAim.sqrMagnitude > 0.0001f ? Mathf.Atan2(toAim.x, toAim.z) * Mathf.Rad2Deg : _model.eulerAngles.y;
             Vector3 origin = _model.position + Quaternion.Euler(0f, aimYaw, 0f) * _castPoint.localPosition;
             launch(origin, aimPoint);
-        }
-
-        /// <summary>십자선이 가리키는 캐릭터 부위(머리 등). 캐릭터가 아니거나 부위가 없는 곳을 가리키면 null.</summary>
-        public HitZone FindAimedHitZone()
-        {
-            if (_viewCamera == null)
-            {
-                return null;
-            }
-
-            // 부위는 몸 콜라이더 안쪽 트리거라 트리거까지 맞힌다
-            RaycastHit[] hits = CastAimRay(QueryTriggerInteraction.Collide, out Ray ray, out float minDistance);
-            if (!TryFindAimBlocker(hits, minDistance, out RaycastHit blocker))
-            {
-                return null;
-            }
-
-            var target = blocker.collider.GetComponentInParent<AbilitySystemComponent>();
-            if (target == null)
-            {
-                return null;
-            }
-
-            HitZone closestZone = null;
-            float closestDistance = float.MaxValue;
-            foreach (RaycastHit hit in hits)
-            {
-                var zone = hit.collider.GetComponent<HitZone>();
-                if (zone == null || hit.distance >= closestDistance || hit.collider.GetComponentInParent<AbilitySystemComponent>() != target)
-                {
-                    continue;
-                }
-
-                closestZone = zone;
-                closestDistance = hit.distance;
-            }
-
-            return closestZone;
         }
 
         // 화면 가운데로 레이를 쏴 처음 맞는 곳

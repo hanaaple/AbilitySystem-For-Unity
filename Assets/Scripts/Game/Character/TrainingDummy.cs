@@ -63,13 +63,6 @@ namespace Game.Character
 
         public AbilitySystemComponent DebugAbilitySystem => _asc;
 
-        public void AppendDebugLines(List<string> lines)
-        {
-            lines.Add($"Damage last / DPS / total\t{LastDamage:0} / {DamagePerSecond:0} / {TotalDamage:0}");
-            lines.Add("Attack\t" + (_attackAbility != null ? _attackAbility.name : "-"));
-            lines.Add("Shield\t" + (_shieldAbility != null ? _shieldAbility.name : "-"));
-        }
-
         /// <summary>마지막 타격의 피해량.</summary>
         public float LastDamage { get; private set; }
 
@@ -143,6 +136,13 @@ namespace Game.Character
                 _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.HealthAttribute).OnValueChange -= OnDamageAttributeChanged;
                 _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.ShieldAttribute).OnValueChange -= OnDamageAttributeChanged;
             }
+        }
+
+        public void AppendDebugLines(List<string> lines)
+        {
+            lines.Add($"Damage last / DPS / total\t{LastDamage:0} / {DamagePerSecond:0} / {TotalDamage:0}");
+            lines.Add("Attack\t" + (_attackAbility != null ? _attackAbility.name : "-"));
+            lines.Add("Shield\t" + (_shieldAbility != null ? _shieldAbility.name : "-"));
         }
 
         // 허수아비는 정면 고정으로 쏜다

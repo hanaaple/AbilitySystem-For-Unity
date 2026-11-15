@@ -20,6 +20,17 @@ namespace Core.AbilitySystem.Tag
         [SerializeField] private string _userDescription;
         [SerializeField] private string _autoDescription;
 
+        public override bool Equals(object obj)
+        {
+            return obj is GameplayTagQuery other && Equals(other);
+        }
+
+        // 빈 목록과 null을 같게 보는 Equals와 맞추려고 개수와 설명만으로 만든다
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(_tagDictionary?.Count ?? 0, _queryTokenStream?.Count ?? 0, GetDescription());
+        }
+
         /// <remarks>UE: FGameplayTagQuery::operator==</remarks>
         public static bool operator ==(GameplayTagQuery left, GameplayTagQuery right)
         {
@@ -37,17 +48,6 @@ namespace Core.AbilitySystem.Tag
         public bool Equals(GameplayTagQuery other)
         {
             return _tokenStreamVersion == other._tokenStreamVersion && ListEquals(_tagDictionary, other._tagDictionary) && ListEquals(_queryTokenStream, other._queryTokenStream) && (_userDescription ?? string.Empty) == (other._userDescription ?? string.Empty) && (_autoDescription ?? string.Empty) == (other._autoDescription ?? string.Empty);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is GameplayTagQuery other && Equals(other);
-        }
-
-        // 빈 목록과 null을 같게 보는 Equals와 맞추려고 개수와 설명만으로 만든다
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(_tagDictionary?.Count ?? 0, _queryTokenStream?.Count ?? 0, GetDescription());
         }
 
         /// <summary>주어진 루트 식으로 질의를 만든다.</summary>

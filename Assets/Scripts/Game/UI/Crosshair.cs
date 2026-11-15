@@ -145,14 +145,14 @@ namespace Game.UI
             return zone != null && zone.ZoneTag.MatchesTag(_headZoneTag);
         }
 
-        private void SetHidden(bool isHidden)
-        {
-            _root.style.display = isHidden ? DisplayStyle.None : DisplayStyle.Flex;
-        }
-
         private void OnTagCountChanged(GameplayTag changedTag, int newCount)
         {
             _isAiming = newCount > 0;
+        }
+
+        private void SetHidden(bool isHidden)
+        {
+            _root.style.display = isHidden ? DisplayStyle.None : DisplayStyle.Flex;
         }
     }
 }

@@ -15,6 +15,8 @@ namespace Core.AbilitySystem.Effect
 
         private readonly List<GameplayModifierEvaluatedData> _outputModifiers;
 
+        public IReadOnlyList<GameplayModifierEvaluatedData> OutputModifiers => _outputModifiers ?? (IReadOnlyList<GameplayModifierEvaluatedData>)Array.Empty<GameplayModifierEvaluatedData>();
+
         public GameplayEffectExecutionOutput(int capacity)
         {
             _outputModifiers = new List<GameplayModifierEvaluatedData>(capacity);
@@ -24,8 +26,6 @@ namespace Core.AbilitySystem.Effect
         {
             return new GameplayEffectExecutionOutput(DefaultCapacity);
         }
-
-        public IReadOnlyList<GameplayModifierEvaluatedData> OutputModifiers => _outputModifiers ?? (IReadOnlyList<GameplayModifierEvaluatedData>)Array.Empty<GameplayModifierEvaluatedData>();
 
         public void AddOutputModifier(GameplayAttributeHandle handle, float magnitude, GameplayModifierOperation operation)
         {

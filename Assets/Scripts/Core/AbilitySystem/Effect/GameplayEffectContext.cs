@@ -18,6 +18,14 @@ namespace Core.AbilitySystem.Effect
         /// <summary>이 GE의 출처 오브젝트(무기·아이템·능력 등). Instigator(주체 ASC)와 별개로 전달한다.</summary>
         public GameObject SourceObject { get; private set; }
 
+        /// <summary>같은 내용의 새 컨텍스트. 한 Spec을 여러 대상에 걸 때 대상마다 피격 정보를 따로 담으려고 쓴다.</summary>
+        /// <remarks>UE: FGameplayEffectContext::Duplicate</remarks>
+        public virtual GameplayEffectContext Duplicate()
+        {
+            // 필드가 참조 몇 개와 값 타입(피격 정보)뿐이라 얕은 복사로 독립된다. 파생 클래스의 필드도 같이 복사된다.
+            return (GameplayEffectContext)MemberwiseClone();
+        }
+
         public void AddInstigator(AbilitySystemComponent instigator, GameObject effectCauser = null)
         {
             Instigator = instigator;
@@ -49,14 +57,6 @@ namespace Core.AbilitySystem.Effect
         {
             hitResult = _hitResult;
             return _hasHitResult;
-        }
-
-        /// <summary>같은 내용의 새 컨텍스트. 한 Spec을 여러 대상에 걸 때 대상마다 피격 정보를 따로 담으려고 쓴다.</summary>
-        /// <remarks>UE: FGameplayEffectContext::Duplicate</remarks>
-        public virtual GameplayEffectContext Duplicate()
-        {
-            // 필드가 참조 몇 개와 값 타입(피격 정보)뿐이라 얕은 복사로 독립된다. 파생 클래스의 필드도 같이 복사된다.
-            return (GameplayEffectContext)MemberwiseClone();
         }
 
         /// <summary>Instigator의 소유 태그를 <paramref name="actorTagContainer"/>에 채운다. Instigator가 없으면 건드리지 않는다.</summary>

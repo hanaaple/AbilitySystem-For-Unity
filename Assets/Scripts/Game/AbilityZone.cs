@@ -25,16 +25,6 @@ namespace Game
 
         public AbilitySystemComponent DebugAbilitySystem => null;
 
-        public void AppendDebugLines(List<string> lines)
-        {
-            lines.Add("Grants\t" + (_ability != null ? _ability.name : "-"));
-            lines.Add($"Inside\t{_overlapCounts.Count}");
-            foreach (AbilitySystemComponent asc in _overlapCounts.Keys)
-            {
-                lines.Add("  " + asc.name);
-            }
-        }
-
         private void Reset()
         {
             GetComponent<Collider>().isTrigger = true;
@@ -76,6 +66,16 @@ namespace Game
 
             _overlapCounts.Remove(asc);
             asc.CancelAbility(_ability);
+        }
+
+        public void AppendDebugLines(List<string> lines)
+        {
+            lines.Add("Grants\t" + (_ability != null ? _ability.name : "-"));
+            lines.Add($"Inside\t{_overlapCounts.Count}");
+            foreach (AbilitySystemComponent asc in _overlapCounts.Keys)
+            {
+                lines.Add("  " + asc.name);
+            }
         }
     }
 }

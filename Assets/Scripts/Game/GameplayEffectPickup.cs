@@ -67,19 +67,6 @@ namespace Game
         // 픽업 자신의 ASC — 재생성 쿨다운 GE가 여기 걸린다
         public AbilitySystemComponent DebugAbilitySystem => _selfAbilitySystem;
 
-        public void AppendDebugLines(List<string> lines)
-        {
-            lines.Add("Grants\t" + (_ability != null ? _ability.name : _effect != null ? _effect.name : "-"));
-            bool isAvailable = !UsesRespawn || !_selfAbilitySystem.HasMatchingGameplayTag(_respawnCooldownTag);
-            lines.Add("State\t" + (isAvailable ? "<color=#7CFC9A>available</color>" : "<color=#FFB86B>respawning</color>"));
-        }
-
-        private void Reset()
-        {
-            // 픽업은 트리거로 동작한다(에디터에서 컴포넌트 추가 시 자동 설정).
-            GetComponent<Collider>().isTrigger = true;
-        }
-
         private void Awake()
         {
             _trigger = GetComponent<Collider>();
@@ -90,12 +77,23 @@ namespace Game
             }
         }
 
+        private void Reset()
+        {
+            // 픽업은 트리거로 동작한다(에디터에서 컴포넌트 추가 시 자동 설정).
+            GetComponent<Collider>().isTrigger = true;
+        }
+
         private void Start()
         {
             if (UsesRespawn)
             {
                 _selfAbilitySystem.RegisterGameplayTagEvent(_respawnCooldownTag, OnRespawnCooldownChanged);
             }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            TryPickUp(other);
         }
 
         private void Update()
@@ -116,9 +114,11 @@ namespace Game
             }
         }
 
-        private void OnTriggerEnter(Collider other)
+        public void AppendDebugLines(List<string> lines)
         {
-            TryPickUp(other);
+            lines.Add("Grants\t" + (_ability != null ? _ability.name : _effect != null ? _effect.name : "-"));
+            bool isAvailable = !UsesRespawn || !_selfAbilitySystem.HasMatchingGameplayTag(_respawnCooldownTag);
+            lines.Add("State\t" + (isAvailable ? "<color=#7CFC9A>available</color>" : "<color=#FFB86B>respawning</color>"));
         }
 
         private void TryPickUp(Collider other)

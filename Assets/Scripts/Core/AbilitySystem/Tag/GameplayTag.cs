@@ -23,6 +23,23 @@ namespace Core.AbilitySystem.Tag
             _name = name;
         }
 
+        public override bool Equals(object obj)
+        {
+            return obj is GameplayTag other && Equals(other);
+        }
+
+        /// <remarks>UE: GetTypeHash(const FGameplayTag&)</remarks>
+        public override int GetHashCode()
+        {
+            return _name.GetHashCode();
+        }
+
+        /// <remarks>UE: FGameplayTag::ToString</remarks>
+        public override string ToString()
+        {
+            return _name.ToString() ?? string.Empty;
+        }
+
         /// <remarks>UE: FGameplayTag::operator==</remarks>
         public static bool operator ==(GameplayTag left, GameplayTag right)
         {
@@ -52,23 +69,6 @@ namespace Core.AbilitySystem.Tag
         public bool Equals(GameplayTag other)
         {
             return _name.Equals(other._name);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is GameplayTag other && Equals(other);
-        }
-
-        /// <remarks>UE: GetTypeHash(const FGameplayTag&)</remarks>
-        public override int GetHashCode()
-        {
-            return _name.GetHashCode();
-        }
-
-        /// <remarks>UE: FGameplayTag::ToString</remarks>
-        public override string ToString()
-        {
-            return _name.ToString() ?? string.Empty;
         }
 
         /// <summary>태그 이름.</summary>

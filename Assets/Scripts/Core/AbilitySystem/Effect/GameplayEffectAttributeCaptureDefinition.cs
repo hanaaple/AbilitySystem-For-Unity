@@ -29,23 +29,12 @@ namespace Core.AbilitySystem.Effect
             _captureSource = captureSource;
             _snapshot = snapshot;
         }
+
         public GameplayEffectAttributeCaptureDefinition(GameplayAttributeHandle gameplayAttributeHandle, AttributeCaptureSource captureSource, bool snapshot)
         {
             _attribute = new GameplayAttribute(gameplayAttributeHandle);
             _captureSource = captureSource;
             _snapshot = snapshot;
-        }
-
-        /// <summary>캡처 대상 핸들로 해석한다. 해석 실패 시 default(무효).</summary>
-        public GameplayAttributeHandle ToResolvedAttribute()
-        {
-            return _attribute.ToAttributeHandle();
-        }
-
-        // 캡처 컨테이너에서 "같은 대상을 두 번 캡처하지 않게" 하는 키로 쓰이므로 값 동등성을 정의한다.
-        public bool Equals(GameplayEffectAttributeCaptureDefinition other)
-        {
-            return _captureSource == other._captureSource && _attribute.Equals(other._attribute) && _snapshot == other._snapshot;
         }
 
         public override bool Equals(object obj)
@@ -61,6 +50,18 @@ namespace Core.AbilitySystem.Effect
         public override string ToString()
         {
             return $"{_captureSource}:{_attribute}{(_snapshot ? " (snapshot)" : "")}";
+        }
+
+        /// <summary>캡처 대상 핸들로 해석한다. 해석 실패 시 default(무효).</summary>
+        public GameplayAttributeHandle ToResolvedAttribute()
+        {
+            return _attribute.ToAttributeHandle();
+        }
+
+        // 캡처 컨테이너에서 "같은 대상을 두 번 캡처하지 않게" 하는 키로 쓰이므로 값 동등성을 정의한다.
+        public bool Equals(GameplayEffectAttributeCaptureDefinition other)
+        {
+            return _captureSource == other._captureSource && _attribute.Equals(other._attribute) && _snapshot == other._snapshot;
         }
     }
 }

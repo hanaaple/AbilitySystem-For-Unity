@@ -1095,17 +1095,17 @@ namespace Core.AbilitySystem.Tag.Editor
             }
         }
 
-        /// <remarks>UE: SGameplayTagPicker::RefreshOnNextTick</remarks>
-        private void RefreshOnNextTick()
-        {
-            _delayRefresh = true;
-            RepaintHost();
-        }
-
         /// <remarks>UE: SGameplayTagPicker::OnGameplayTagRenamed</remarks>
         private void OnGameplayTagRenamed(bool isRenamed, string message)
         {
             SetNotification(message, isRenamed ? MessageType.Info : MessageType.Error);
+            RepaintHost();
+        }
+
+        /// <remarks>UE: SGameplayTagPicker::RefreshOnNextTick</remarks>
+        private void RefreshOnNextTick()
+        {
+            _delayRefresh = true;
             RepaintHost();
         }
 

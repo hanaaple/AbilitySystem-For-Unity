@@ -129,7 +129,7 @@ namespace Game.UI
             SetBorder(frame, 2f, slot.IsMajor ? _borderColor : _minorBorderColor);
             cell.Add(frame);
 
-            var icon = MakeFullLayer(frame);
+            VisualElement icon = MakeFullLayer(frame);
             icon.style.backgroundImage = slot.Icon;
             icon.style.marginLeft = 6f;
             icon.style.marginRight = 6f;
@@ -145,7 +145,7 @@ namespace Game.UI
             }
 
             // 지난 쿨다운이 아니라 남은 쿨다운만큼 덮는다 — 덮개가 걷히며 아이콘이 차오른다
-            var cooldown = MakeFullLayer(frame);
+            VisualElement cooldown = MakeFullLayer(frame);
             cooldown.generateVisualContent += context => RadialFill.Draw(context, view.RemainingRatio, _cooldownColor);
             view.Cooldown = cooldown;
 
@@ -345,11 +345,6 @@ namespace Game.UI
             return spec != null && spec.InputPressed;
         }
 
-        private void SetHidden(bool isHidden)
-        {
-            _bar.style.display = isHidden ? DisplayStyle.None : DisplayStyle.Flex;
-        }
-
         private static VisualElement MakeFullLayer(VisualElement parent)
         {
             var layer = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -380,6 +375,11 @@ namespace Game.UI
             element.style.borderBottomColor = color;
             element.style.borderLeftColor = color;
             element.style.borderRightColor = color;
+        }
+
+        private void SetHidden(bool isHidden)
+        {
+            _bar.style.display = isHidden ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         [System.Serializable]

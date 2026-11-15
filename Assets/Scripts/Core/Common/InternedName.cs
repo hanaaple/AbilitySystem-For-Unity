@@ -18,12 +18,6 @@ namespace Core.Common
             _hash = ComputeHash(_name);
         }
 
-        public bool Equals(InternedName other)
-        {
-            // 생성·역직렬화 모든 경로에서 인터닝을 보장하므로 같은 내용은 같은 인스턴스 → 참조 비교로 충분하다.
-            return ReferenceEquals(_name, other._name);
-        }
-
         public override bool Equals(object inName)
         {
             return inName is InternedName other && Equals(other);
@@ -37,6 +31,12 @@ namespace Core.Common
         public override string ToString()
         {
             return _name;
+        }
+
+        public bool Equals(InternedName other)
+        {
+            // 생성·역직렬화 모든 경로에서 인터닝을 보장하므로 같은 내용은 같은 인스턴스 → 참조 비교로 충분하다.
+            return ReferenceEquals(_name, other._name);
         }
 
         public bool IsNullOrEmpty()

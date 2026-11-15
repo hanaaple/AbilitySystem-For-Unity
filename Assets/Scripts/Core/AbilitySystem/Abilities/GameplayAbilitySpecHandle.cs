@@ -12,12 +12,22 @@ namespace Core.AbilitySystem.Abilities
 
         private readonly int _id;
 
+        public bool IsValid => _id != 0;
+
         private GameplayAbilitySpecHandle(int id)
         {
             _id = id;
         }
 
-        public bool IsValid => _id != 0;
+        public override bool Equals(object obj)
+        {
+            return obj is GameplayAbilitySpecHandle other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return _id;
+        }
 
         /// <summary>새 핸들을 발급한다. 발급기가 static이라 ASC 간 전역 유일하다.</summary>
         /// <remarks>UE: FGameplayAbilitySpecHandle::GenerateNewHandle</remarks>
@@ -29,16 +39,6 @@ namespace Core.AbilitySystem.Abilities
         public bool Equals(GameplayAbilitySpecHandle other)
         {
             return _id == other._id;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is GameplayAbilitySpecHandle other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            return _id;
         }
     }
 }

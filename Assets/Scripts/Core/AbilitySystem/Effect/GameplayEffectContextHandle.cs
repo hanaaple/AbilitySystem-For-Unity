@@ -12,6 +12,11 @@ namespace Core.AbilitySystem.Effect
 
         public GameObject EffectCauser => _context?.EffectCauser;
 
+        public GameplayEffectContextHandle(GameplayEffectContext context)
+        {
+            _context = context;
+        }
+
         public AbilitySystemComponent GetInstigator()
         {
             return _context?.Instigator;
@@ -62,11 +67,6 @@ namespace Core.AbilitySystem.Effect
         {
             context = _context as T;
             return context != null;
-        }
-
-        public GameplayEffectContextHandle(GameplayEffectContext context)
-        {
-            _context = context;
         }
     }
 }

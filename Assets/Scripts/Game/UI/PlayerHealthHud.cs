@@ -340,16 +340,6 @@ namespace Game.UI
             }
         }
 
-        private void OnHealthChanged(OnAttributeChangeData data)
-        {
-            if (_barScale <= 0f)
-            {
-                return;
-            }
-
-            _trail.OnHealthRatioChanged(data.OldValue / _barScale, data.NewValue / _barScale);
-        }
-
         private VisualElement BuildStatusRow()
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -465,6 +455,16 @@ namespace Game.UI
                 icon.ElapsedRatio = elapsedRatio;
                 icon.Clock.MarkDirtyRepaint();
             }
+        }
+
+        private void OnHealthChanged(OnAttributeChangeData data)
+        {
+            if (_barScale <= 0f)
+            {
+                return;
+            }
+
+            _trail.OnHealthRatioChanged(data.OldValue / _barScale, data.NewValue / _barScale);
         }
 
         [System.Serializable]

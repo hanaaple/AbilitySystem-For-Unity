@@ -8,13 +8,15 @@ namespace Game.Character
     {
         private const float SpeedBonus = 10f;
 
-        public static readonly GameplayEffectAttributeCaptureDefinition[] CaptureDefinitions = {
+        public static readonly GameplayEffectAttributeCaptureDefinition[] CaptureDefinitions =
+        {
             new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.HealthAttribute, AttributeCaptureSource.Target, true),
             new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.StaminaAttribute, AttributeCaptureSource.Source, false)
         };
 
-        private GameplayEffectAttributeCaptureDefinition A => CaptureDefinitions[0];
         private GameplayEffectAttributeCaptureDefinition _b = CaptureDefinitions[1];
+
+        private GameplayEffectAttributeCaptureDefinition A => CaptureDefinitions[0];
 
         public override ReadOnlySpan<GameplayEffectAttributeCaptureDefinition> Defs()
         {

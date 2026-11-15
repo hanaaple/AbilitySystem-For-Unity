@@ -34,21 +34,6 @@ namespace Game.Settings
             _inputActions.UI.Enable();
         }
 
-        private void OnDisable()
-        {
-            _inputActions.UI.Cancel.performed -= OnCancelInput;
-            _inputActions.UI.ToggleFullscreen.performed -= OnToggleFullscreenInput;
-            _inputActions.UI.Disable();
-
-            if (_isOpen)
-            {
-                SetOpen(false);
-            }
-
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
-
         // 에디터는 Esc를 누르면 커서 잠금을 스스로 푼다. 창을 닫는 Esc와 겹치면 풀린 채 남으므로 닫혀 있는 동안 다시 건다.
         private void Update()
         {
@@ -66,6 +51,21 @@ namespace Game.Settings
             {
                 SetOpen(true);
             }
+        }
+
+        private void OnDisable()
+        {
+            _inputActions.UI.Cancel.performed -= OnCancelInput;
+            _inputActions.UI.ToggleFullscreen.performed -= OnToggleFullscreenInput;
+            _inputActions.UI.Disable();
+
+            if (_isOpen)
+            {
+                SetOpen(false);
+            }
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
         private void BuildLayout(VisualElement root)
@@ -122,6 +122,11 @@ namespace Game.Settings
             OnOpenChanged?.Invoke(isOpen);
         }
 
+        private void OnSensitivityChanged(ChangeEvent<float> evt)
+        {
+            GameSettings.MouseSensitivity = evt.newValue;
+        }
+
         private void OnCancelInput(InputAction.CallbackContext ctx)
         {
             SetOpen(!_isOpen);
@@ -140,11 +145,6 @@ namespace Game.Settings
             _windowedSize = new Vector2Int(Screen.width, Screen.height);
             Resolution native = Screen.currentResolution;
             Screen.SetResolution(native.width, native.height, FullScreenMode.FullScreenWindow);
-        }
-
-        private void OnSensitivityChanged(ChangeEvent<float> evt)
-        {
-            GameSettings.MouseSensitivity = evt.newValue;
         }
     }
 }

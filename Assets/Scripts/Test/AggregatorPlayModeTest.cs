@@ -128,8 +128,15 @@ namespace Test
             ResetAttributes();
         }
 
-        private float Current(GameplayAttributeHandle handle) => _asc.GetAttributeCurrentValue(handle);
-        private float Base(GameplayAttributeHandle handle) => _asc.GetAttributeBaseValue(handle);
+        private float Current(GameplayAttributeHandle handle)
+        {
+            return _asc.GetAttributeCurrentValue(handle);
+        }
+
+        private float Base(GameplayAttributeHandle handle)
+        {
+            return _asc.GetAttributeBaseValue(handle);
+        }
 
         private void Check(string label, float actual, float expected)
         {

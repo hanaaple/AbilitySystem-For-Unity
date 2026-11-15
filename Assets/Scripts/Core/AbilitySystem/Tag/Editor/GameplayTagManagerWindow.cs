@@ -21,15 +21,15 @@ namespace Core.AbilitySystem.Tag.Editor
             CreateTagWidget();
         }
 
+        private void OnGUI()
+        {
+            _tagWidget.OnGUI(new Rect(0f, 0f, position.width, position.height));
+        }
+
         private void OnDisable()
         {
             _tagWidget?.Dispose();
             _tagWidget = null;
-        }
-
-        private void OnGUI()
-        {
-            _tagWidget.OnGUI(new Rect(0f, 0f, position.width, position.height));
         }
 
         /// <summary>관리 창을 열고 검색창에 포커스를 준다. 이미 열려 있으면 그 창을 그대로 쓴다(필터도 유지).</summary>

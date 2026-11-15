@@ -13,18 +13,18 @@ namespace Core.AbilitySystem.GameplayEffectComponents
         [Tooltip("이 GE가 가지는 태그. 대상에게 주지 않는다.")]
         [SerializeField] [FormerlySerializedAs("inheritableAssetTags")] private InheritedTagContainer _inheritableAssetTags = new();
 
-        /// <summary>설정된 Asset Tags 묶음.</summary>
-        /// <remarks>UE: UAssetTagsGameplayEffectComponent::GetConfiguredAssetTagChanges</remarks>
-        public InheritedTagContainer GetConfiguredAssetTagChanges()
-        {
-            return _inheritableAssetTags;
-        }
-
         /// <remarks>UE: UAssetTagsGameplayEffectComponent::OnGameplayEffectChanged</remarks>
         public override void OnGameplayEffectChanged()
         {
             base.OnGameplayEffectChanged();
             SetAndApplyAssetTagChanges(_inheritableAssetTags);
+        }
+
+        /// <summary>설정된 Asset Tags 묶음.</summary>
+        /// <remarks>UE: UAssetTagsGameplayEffectComponent::GetConfiguredAssetTagChanges</remarks>
+        public InheritedTagContainer GetConfiguredAssetTagChanges()
+        {
+            return _inheritableAssetTags;
         }
 
         /// <summary>Asset Tags 묶음을 바꾸고 GE의 Asset Tags에 반영한다.</summary>

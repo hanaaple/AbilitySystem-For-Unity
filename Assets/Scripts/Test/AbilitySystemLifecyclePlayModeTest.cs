@@ -57,8 +57,6 @@ namespace Test
             Debug.Log($"[LifecyclePlayMode Self-Check] passed {_passed} / failed {_failed}");
         }
 
-        // ── C: 복제 ──────────────────────────────────────────────────────────────
-
         private IEnumerator CloneKeepsConfigOnly(GameplayTag looseTag)
         {
             GameplayEffectAsset defaultAttributes = MakeEffect(GameplayEffectType.Instant, MakeModifier(CharacterAttributeSet.StaminaAttribute, 50f), MakeModifier(CharacterAttributeSet.SpeedAttribute, 10f));
@@ -92,8 +90,6 @@ namespace Test
             yield return null;
         }
 
-        // ── D: 파괴 ──────────────────────────────────────────────────────────────
-
         private IEnumerator DestroyCancelsAndClearsAbilities()
         {
             LingeringAbility.Log.Clear();
@@ -117,8 +113,6 @@ namespace Test
             Check("D-4 취소 콜백 안에서 Owner를 다시 파괴해도 에러 없이 한 번만 정리", Count("Reentrant.Cancel") == 1 && Count("Reentrant.OnRemove") == 1 && _errorLogs == errorsBefore);
         }
 
-        // ── X: ASC 간 연결 ───────────────────────────────────────────────────────
-
         private IEnumerator DestroyedPeerIsDroppedFromLiveCapture()
         {
             AbilitySystemComponent source = MakeAsc("Lifecycle_LiveSource");
@@ -141,8 +135,6 @@ namespace Test
             Destroy(source.gameObject);
             yield return null;
         }
-
-        // ── 도우미 ────────────────────────────────────────────────────────────────
 
         // 취소·종료·해제를 기록하고, 발동 뒤 스스로 끝나지 않고 활성으로 남는 테스트 어빌리티
         [Serializable]
@@ -176,17 +168,6 @@ namespace Test
         private static int Count(string entry)
         {
             return LingeringAbility.Log.FindAll(logged => logged == entry).Count;
-        }
-
-        private void CountErrorLogs(string message, string stackTrace, LogType type)
-        {
-            if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
-            {
-                if (!message.Contains("[LifecyclePlayMode FAIL]"))
-                {
-                    _errorLogs++;
-                }
-            }
         }
 
         private static AbilitySystemComponent MakeAsc(string name)
@@ -311,6 +292,17 @@ namespace Test
             {
                 _failed++;
                 Debug.LogError($"[LifecyclePlayMode FAIL] {label}");
+            }
+        }
+
+        private void CountErrorLogs(string message, string stackTrace, LogType type)
+        {
+            if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
+            {
+                if (!message.Contains("[LifecyclePlayMode FAIL]"))
+                {
+                    _errorLogs++;
+                }
             }
         }
     }

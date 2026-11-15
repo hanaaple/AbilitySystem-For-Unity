@@ -69,11 +69,6 @@ namespace Core.AbilitySystem.Effect
             return false;
         }
 
-        private List<GameplayEffectAttributeCaptureSpec> SpecsFor(AttributeCaptureSource captureSource)
-        {
-            return captureSource == AttributeCaptureSource.Source ? _sourceSpecs : _targetSpecs;
-        }
-
         public GameplayEffectAttributeCaptureSpec FindCaptureSpecByDefinition(GameplayEffectAttributeCaptureDefinition captureDefinition, bool bOnlyIncludeValidCapture)
         {
             GameplayEffectAttributeCaptureSpec matchingSpec = default;
@@ -140,6 +135,11 @@ namespace Core.AbilitySystem.Effect
             {
                 spec.UnregisterLinkedAggregatorCallback(handle);
             }
+        }
+
+        private List<GameplayEffectAttributeCaptureSpec> SpecsFor(AttributeCaptureSource captureSource)
+        {
+            return captureSource == AttributeCaptureSource.Source ? _sourceSpecs : _targetSpecs;
         }
     }
 }

@@ -49,38 +49,6 @@ namespace Core.Common.Editor
             DrawSelector(position, property, attr.BaseType, null, label);
         }
 
-        // [SerializeReference] 단일 필드 — 첫 줄은 타입 선택기, 그 아래로 고른 하위 클래스의 필드를 들여 그린다.
-        private static void DrawManagedReferenceField(Rect position, SerializedProperty property, Type baseType, GUIContent label)
-        {
-            var line = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
-            DrawManagedReferenceSelector(line, property, baseType, null, label);
-
-            float y = line.yMax;
-            using (new EditorGUI.IndentLevelScope())
-            {
-                foreach (SerializedProperty child in GetVisibleChildren(property))
-                {
-                    y += EditorGUIUtility.standardVerticalSpacing;
-                    float childHeight = EditorGUI.GetPropertyHeight(child, true);
-                    EditorGUI.PropertyField(new Rect(position.x, y, position.width, childHeight), child, true);
-                    y += childHeight;
-                }
-            }
-        }
-
-        // 높이 계산과 그리기가 같은 목록을 쓰도록 한 곳에서 자식을 연다(editor-drawer-guide '높이와 그리기 소스 일치').
-        private static IEnumerable<SerializedProperty> GetVisibleChildren(SerializedProperty property)
-        {
-            SerializedProperty child = property.Copy();
-            SerializedProperty end = property.GetEndProperty();
-            bool enterChildren = true;
-            while (child.NextVisible(enterChildren) && !SerializedProperty.EqualContents(child, end))
-            {
-                enterChildren = false;
-                yield return child;
-            }
-        }
-
         /// <summary>
         /// SubclassSelector UI(스크립트 ping/open 필드 + 검색 팝업)를 그리는 재사용 진입점. <paramref name="excluded"/> AQN들은 팝업에서 뺀다(예: 리스트 중복 제외), null이면 제외 없음.
         /// 어느 범위에서 제외할지 수집은 이 드로어가 하지 않고 호출측이 모아 넘긴다(<see cref="CollectSiblingValues"/> 등).
@@ -150,6 +118,104 @@ namespace Core.Common.Editor
 
                 var dropdown = new SubclassAdvancedDropdown(ObjectNames.NicifyVariableName(baseType.Name), types, includeNone: false, type => ReplaceManagedReference(so, path, type), onNewScript: null, emptyMessage: "선택 가능한 타입 없음", new AdvancedDropdownState());
                 dropdown.Show(popupRect);
+            }
+        }
+
+        /// <summary>
+        /// 배열 요소 필드 하나만 받아 "같은 배열의 다른 요소들이 이 필드에 담은 값"을 모은다(자신 제외).
+        /// PropertyDrawer는 자기 필드 하나만 받아 이 필드가 어느 배열의 몇 번째인지 모르므로(요소는 부모 배열 참조가 없다), propertyPath에서 배열·인덱스를 역산해 <see cref="CollectArrayValues"/>에 위임한다 — 내 인덱스를 제외로 넘겨 형제들만 모은다.
+        /// "리스트 내 중복 제외"가 필요한 드로어가 이걸로 excluded를 만들어 <see cref="DrawSelector"/>에 넘긴다. 배열 요소가 아니면 빈 집합.
+        /// </summary>
+        public static HashSet<string> CollectSiblingValues(SerializedProperty property)
+        {
+            // propertyPath에서 "내가 속한 배열"과 "내 인덱스"를 역산한다. 경로 문자열의 구조:
+            //   "attributeSets.Array.data[2].attributeSetTypeName"
+            //    └─ 배열 경로 ─┘            └─ 요소 안 필드 상대경로 ─┘
+            //                          └ 내 인덱스(2) ┘
+            string path = property.propertyPath;
+            const string token = ".Array.data[";
+
+            // 배열 마디를 찾는다. 없으면 배열 요소가 아니라는 뜻(→ 제외할 형제도 없음). 중첩 배열이면 나를 직접 감싼 "가장 안쪽" 배열을 잡는다(LastIndexOf).
+            int idx = path.LastIndexOf(token, StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                return new HashSet<string>();
+            }
+
+            string arrayPath = path.Substring(0, idx); // token 앞부분 = 배열 경로
+
+            // "[2]" 안의 숫자 = 내 인덱스.
+            int bracketStart = idx + token.Length;
+            int bracketEnd = path.IndexOf(']', bracketStart);
+            if (bracketEnd < 0 || !int.TryParse(path.Substring(bracketStart, bracketEnd - bracketStart), out int currentIndex))
+            {
+                return new HashSet<string>();
+            }
+
+            string relativePath = path.Substring(bracketEnd + 2); // "]." 뒤 = 요소 안에서 이 필드까지의 상대 경로
+
+            // 요소는 부모를 못 가리키므로, 배열은 경로로 루트에서 되찾는다.
+            SerializedProperty arrayProp = property.serializedObject.FindProperty(arrayPath);
+
+            // 재료가 다 모였으니 코어에 위임. 내 인덱스를 제외 → 형제들 값만 모인다.
+            return CollectArrayValues(arrayProp, relativePath, currentIndex);
+        }
+
+        /// <summary>배열 각 요소에서 relativePath 필드의 문자열 값을 모은다(비어있지 않은 것만). excludeIndex는 건너뛴다(-1=전체). 요소 기반(<see cref="CollectSiblingValues"/>, 자기 제외)과 배열 기반(컨테이너 드로어, 전체) 수집이 공유하는 코어.</summary>
+        public static HashSet<string> CollectArrayValues(SerializedProperty arrayProperty, string relativePath, int excludeIndex = -1)
+        {
+            var result = new HashSet<string>();
+            if (arrayProperty == null || !arrayProperty.isArray)
+            {
+                return result;
+            }
+
+            for (int i = 0; i < arrayProperty.arraySize; i++)
+            {
+                if (i == excludeIndex)
+                {
+                    continue;
+                }
+
+                SerializedProperty field = arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(relativePath);
+                if (field != null && !string.IsNullOrEmpty(field.stringValue))
+                {
+                    result.Add(field.stringValue);
+                }
+            }
+
+            return result;
+        }
+
+        // [SerializeReference] 단일 필드 — 첫 줄은 타입 선택기, 그 아래로 고른 하위 클래스의 필드를 들여 그린다.
+        private static void DrawManagedReferenceField(Rect position, SerializedProperty property, Type baseType, GUIContent label)
+        {
+            var line = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
+            DrawManagedReferenceSelector(line, property, baseType, null, label);
+
+            float y = line.yMax;
+            using (new EditorGUI.IndentLevelScope())
+            {
+                foreach (SerializedProperty child in GetVisibleChildren(property))
+                {
+                    y += EditorGUIUtility.standardVerticalSpacing;
+                    float childHeight = EditorGUI.GetPropertyHeight(child, true);
+                    EditorGUI.PropertyField(new Rect(position.x, y, position.width, childHeight), child, true);
+                    y += childHeight;
+                }
+            }
+        }
+
+        // 높이 계산과 그리기가 같은 목록을 쓰도록 한 곳에서 자식을 연다(editor-drawer-guide '높이와 그리기 소스 일치').
+        private static IEnumerable<SerializedProperty> GetVisibleChildren(SerializedProperty property)
+        {
+            SerializedProperty child = property.Copy();
+            SerializedProperty end = property.GetEndProperty();
+            bool enterChildren = true;
+            while (child.NextVisible(enterChildren) && !SerializedProperty.EqualContents(child, end))
+            {
+                enterChildren = false;
+                yield return child;
             }
         }
 
@@ -247,72 +313,6 @@ namespace Core.Common.Editor
 
             var dropdown = new SubclassAdvancedDropdown(ObjectNames.NicifyVariableName(baseType.Name), types, includeNone: true, type => Assign(so, path, type), onNewScript, emptyMessage: null, new AdvancedDropdownState());
             dropdown.Show(rect);
-        }
-
-        /// <summary>
-        /// 배열 요소 필드 하나만 받아 "같은 배열의 다른 요소들이 이 필드에 담은 값"을 모은다(자신 제외).
-        /// PropertyDrawer는 자기 필드 하나만 받아 이 필드가 어느 배열의 몇 번째인지 모르므로(요소는 부모 배열 참조가 없다), propertyPath에서 배열·인덱스를 역산해 <see cref="CollectArrayValues"/>에 위임한다 — 내 인덱스를 제외로 넘겨 형제들만 모은다.
-        /// "리스트 내 중복 제외"가 필요한 드로어가 이걸로 excluded를 만들어 <see cref="DrawSelector"/>에 넘긴다. 배열 요소가 아니면 빈 집합.
-        /// </summary>
-        public static HashSet<string> CollectSiblingValues(SerializedProperty property)
-        {
-            // propertyPath에서 "내가 속한 배열"과 "내 인덱스"를 역산한다. 경로 문자열의 구조:
-            //   "attributeSets.Array.data[2].attributeSetTypeName"
-            //    └─ 배열 경로 ─┘            └─ 요소 안 필드 상대경로 ─┘
-            //                          └ 내 인덱스(2) ┘
-            string path = property.propertyPath;
-            const string token = ".Array.data[";
-
-            // 배열 마디를 찾는다. 없으면 배열 요소가 아니라는 뜻(→ 제외할 형제도 없음). 중첩 배열이면 나를 직접 감싼 "가장 안쪽" 배열을 잡는다(LastIndexOf).
-            int idx = path.LastIndexOf(token, StringComparison.Ordinal);
-            if (idx < 0)
-            {
-                return new HashSet<string>();
-            }
-
-            string arrayPath = path.Substring(0, idx); // token 앞부분 = 배열 경로
-
-            // "[2]" 안의 숫자 = 내 인덱스.
-            int bracketStart = idx + token.Length;
-            int bracketEnd = path.IndexOf(']', bracketStart);
-            if (bracketEnd < 0 || !int.TryParse(path.Substring(bracketStart, bracketEnd - bracketStart), out int currentIndex))
-            {
-                return new HashSet<string>();
-            }
-
-            string relativePath = path.Substring(bracketEnd + 2); // "]." 뒤 = 요소 안에서 이 필드까지의 상대 경로
-
-            // 요소는 부모를 못 가리키므로, 배열은 경로로 루트에서 되찾는다.
-            SerializedProperty arrayProp = property.serializedObject.FindProperty(arrayPath);
-
-            // 재료가 다 모였으니 코어에 위임. 내 인덱스를 제외 → 형제들 값만 모인다.
-            return CollectArrayValues(arrayProp, relativePath, currentIndex);
-        }
-
-        /// <summary>배열 각 요소에서 relativePath 필드의 문자열 값을 모은다(비어있지 않은 것만). excludeIndex는 건너뛴다(-1=전체). 요소 기반(<see cref="CollectSiblingValues"/>, 자기 제외)과 배열 기반(컨테이너 드로어, 전체) 수집이 공유하는 코어.</summary>
-        public static HashSet<string> CollectArrayValues(SerializedProperty arrayProperty, string relativePath, int excludeIndex = -1)
-        {
-            var result = new HashSet<string>();
-            if (arrayProperty == null || !arrayProperty.isArray)
-            {
-                return result;
-            }
-
-            for (int i = 0; i < arrayProperty.arraySize; i++)
-            {
-                if (i == excludeIndex)
-                {
-                    continue;
-                }
-
-                SerializedProperty field = arrayProperty.GetArrayElementAtIndex(i).FindPropertyRelative(relativePath);
-                if (field != null && !string.IsNullOrEmpty(field.stringValue))
-                {
-                    result.Add(field.stringValue);
-                }
-            }
-
-            return result;
         }
 
         private static void Assign(SerializedObject so, string path, Type type)

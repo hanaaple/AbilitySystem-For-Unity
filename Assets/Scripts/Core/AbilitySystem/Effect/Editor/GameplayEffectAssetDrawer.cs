@@ -51,7 +51,6 @@ namespace Core.AbilitySystem.Effect.Editor
         private const string SourceTagsPropertyName = "_sourceTags";
         private const string TargetTagsPropertyName = "_targetTags";
 
-        // ── 공통 규격 ──
         private const float LineGap = 4f;                 // 본문 줄 사이
         private const float SectionGap = 8f;              // 묶음(대상 / Magnitude / Tags) 사이
         private const float ElementVerticalPadding = 6f;  // 요소 위아래 여백
@@ -91,6 +90,8 @@ namespace Core.AbilitySystem.Effect.Editor
         private static readonly GameplayModifierOperation[] OperationValues = (GameplayModifierOperation[])Enum.GetValues(typeof(GameplayModifierOperation));
 
         private static readonly string[] OperationPopupOptions = OperationValues.Select(op => OperationDisplayNames[op]).ToArray();
+
+        private const string SummarySeparator = "   —   ";
 
         private SerializedProperty _description;
         private SerializedProperty _type;
@@ -199,8 +200,6 @@ namespace Core.AbilitySystem.Effect.Editor
             EditorGUI.indentLevel--;
         }
 
-        // ── 목록 공통 ────────────────────────────────────────────────────────────
-
         /// <summary>접힘 상태면 ReorderableList 대신 헤더만 그린다(ReorderableList엔 내장 foldout이 없다). 접힘 상태는 SerializedProperty.isExpanded에 저장돼 선택을 옮겨도 유지된다.</summary>
         private static void DrawCollapsibleList(ReorderableList list, SerializedProperty elements, string title)
         {
@@ -255,8 +254,6 @@ namespace Core.AbilitySystem.Effect.Editor
             EditorGUI.DrawRect(new Rect(rect.x, rect.y, 1f, rect.height), color);
             EditorGUI.DrawRect(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), color);
         }
-
-        // ── Modifiers ───────────────────────────────────────────────────────────
 
         private void BuildModifierList()
         {
@@ -329,8 +326,6 @@ namespace Core.AbilitySystem.Effect.Editor
             y = LayoutModifierBody(rect.x, y, rect.width, modifier, OperationPropertyName, draw);
             return y + ElementVerticalPadding - rect.y;
         }
-
-        // ── Executions ──────────────────────────────────────────────────────────
 
         // Execution은 계산 클래스를 골라 추가하는 게 자연스러워 AttributeSet 리스트와 같은 검색형 Add(TypeChoiceList)를 쓴다.
         // (New Script는 GameplayEffectExecution의 abstract Execute 때문에 빈 템플릿이 컴파일되지 않아 제외 — 필요하면 override 스텁 생성이 선행돼야 한다.)
@@ -525,38 +520,6 @@ namespace Core.AbilitySystem.Effect.Editor
             }
         }
 
-        /// <returns>칸 높이. 머리 줄 오른쪽 − 를 누르면 <paramref name="removeClicked"/>.</returns>
-        private static float LayoutScopedModifier(float x, float top, float width, float labelWidth, SerializedProperty scopedModifier, GameplayEffectAttributeCaptureDefinition[] captureDefinitions, bool draw, out bool removeClicked)
-        {
-            removeClicked = false;
-            float lineH = EditorGUIUtility.singleLineHeight;
-            SerializedProperty capturedAttribute = scopedModifier.FindPropertyRelative(CapturedAttributePropertyName);
-            float y = top;
-
-            if (draw)
-            {
-                DrawElementHeader(new Rect(x, y, width - RemoveButtonWidth, lineH), scopedModifier, GetScopedModifierSummary(scopedModifier));
-                removeClicked = GUI.Button(new Rect(x + width - RemoveButtonWidth, y, RemoveButtonWidth, lineH), "−", EditorStyles.miniButton);
-            }
-
-            y += lineH;
-            if (!scopedModifier.isExpanded)
-            {
-                return y - top;
-            }
-
-            // 대상: Backing Data — 이 Execution 클래스가 Defs()로 선언한 캡처 중에서만 고른다(UE와 같음).
-            y += LineGap;
-            if (draw)
-            {
-                WithLabelWidth(labelWidth, () => DrawBackingDataPopup(new Rect(x, y, width, lineH), capturedAttribute, captureDefinitions));
-            }
-
-            y += lineH + LineGap;
-            y = LayoutModifierBody(x, y, width, scopedModifier, ModifierOpPropertyName, draw, labelWidth);
-            return y - top;
-        }
-
         private static void DrawBackingDataPopup(Rect rect, SerializedProperty capturedAttribute, GameplayEffectAttributeCaptureDefinition[] captureDefinitions)
         {
             if (captureDefinitions.Length == 0)
@@ -601,8 +564,6 @@ namespace Core.AbilitySystem.Effect.Editor
 
             return definitions;
         }
-
-        // ── Components ──────────────────────────────────────────────────────────
 
         // Component는 [SerializeReference]라 타입을 골라 인스턴스를 넣는다(ItemData 모듈 목록과 같은 방식).
         private void BuildComponentList()
@@ -715,8 +676,6 @@ namespace Core.AbilitySystem.Effect.Editor
             return ObjectNames.NicifyVariableName(typeName);
         }
 
-        // ── Modifier·Calculation Modifier 공통 본문 ─────────────────────────────
-
         /// <summary>대상 줄 다음부터: Modifier Op → Modifier Magnitude → Source/Target Tags. 두 목록이 같은 순서·간격으로 그린다.</summary>
         /// <param name="labelWidth">라벨 폭. 안쪽 목록은 들여쓴 만큼 줄여 값 열(x + 라벨 폭)이 바깥 목록과 같은 x에 오게 한다.</param>
         /// <returns>본문 끝 y(마지막 묶음 아래 여백 포함).</returns>
@@ -811,10 +770,6 @@ namespace Core.AbilitySystem.Effect.Editor
             EditorGUIUtility.labelWidth = prevLabelWidth;
         }
 
-        // ── 요약 문구 — 세 목록이 같은 "대상   —   부가 정보" 꼴 ─────────────────
-
-        private const string SummarySeparator = "   —   ";
-
         private static string GetModifierSummary(SerializedProperty modifier)
         {
             string attributeLabel = GetAttributeLabel(modifier.FindPropertyRelative(AttributeSetTypeNamePropertyName).stringValue, modifier.FindPropertyRelative(FieldNamePropertyName).stringValue);
@@ -866,6 +821,38 @@ namespace Core.AbilitySystem.Effect.Editor
         private static string GetOperationLabel(GameplayModifierOperation op)
         {
             return OperationDisplayNames.TryGetValue(op, out string display) ? display : op.ToString();
+        }
+
+        /// <returns>칸 높이. 머리 줄 오른쪽 − 를 누르면 <paramref name="removeClicked"/>.</returns>
+        private static float LayoutScopedModifier(float x, float top, float width, float labelWidth, SerializedProperty scopedModifier, GameplayEffectAttributeCaptureDefinition[] captureDefinitions, bool draw, out bool removeClicked)
+        {
+            removeClicked = false;
+            float lineH = EditorGUIUtility.singleLineHeight;
+            SerializedProperty capturedAttribute = scopedModifier.FindPropertyRelative(CapturedAttributePropertyName);
+            float y = top;
+
+            if (draw)
+            {
+                DrawElementHeader(new Rect(x, y, width - RemoveButtonWidth, lineH), scopedModifier, GetScopedModifierSummary(scopedModifier));
+                removeClicked = GUI.Button(new Rect(x + width - RemoveButtonWidth, y, RemoveButtonWidth, lineH), "−", EditorStyles.miniButton);
+            }
+
+            y += lineH;
+            if (!scopedModifier.isExpanded)
+            {
+                return y - top;
+            }
+
+            // 대상: Backing Data — 이 Execution 클래스가 Defs()로 선언한 캡처 중에서만 고른다(UE와 같음).
+            y += LineGap;
+            if (draw)
+            {
+                WithLabelWidth(labelWidth, () => DrawBackingDataPopup(new Rect(x, y, width, lineH), capturedAttribute, captureDefinitions));
+            }
+
+            y += lineH + LineGap;
+            y = LayoutModifierBody(x, y, width, scopedModifier, ModifierOpPropertyName, draw, labelWidth);
+            return y - top;
         }
     }
 }

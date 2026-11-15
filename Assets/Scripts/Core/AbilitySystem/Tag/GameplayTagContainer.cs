@@ -44,18 +44,6 @@ namespace Core.AbilitySystem.Tag
             _parentTags.AddRange(parentTags);
         }
 
-        /// <summary>순서와 무관하게 같은 명시 태그를 가지면 같다.</summary>
-        /// <remarks>UE: FGameplayTagContainer::operator==</remarks>
-        public bool Equals(GameplayTagContainer other)
-        {
-            if (other == null)
-            {
-                return false;
-            }
-
-            return _gameplayTags.Count == other._gameplayTags.Count && HasAllExact(other);
-        }
-
         public override bool Equals(object obj)
         {
             return obj is GameplayTagContainer other && Equals(other);
@@ -77,6 +65,18 @@ namespace Core.AbilitySystem.Tag
         public override string ToString()
         {
             return ToStringSimple();
+        }
+
+        /// <summary>순서와 무관하게 같은 명시 태그를 가지면 같다.</summary>
+        /// <remarks>UE: FGameplayTagContainer::operator==</remarks>
+        public bool Equals(GameplayTagContainer other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            return _gameplayTags.Count == other._gameplayTags.Count && HasAllExact(other);
         }
 
         /// <summary>태그 배열로 컨테이너를 만든다.</summary>

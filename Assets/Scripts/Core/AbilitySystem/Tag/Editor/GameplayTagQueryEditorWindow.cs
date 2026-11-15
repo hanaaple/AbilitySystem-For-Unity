@@ -93,9 +93,6 @@ namespace Core.AbilitySystem.Tag.Editor
         private static GUIStyle CachedBodyStyle;
         private static GUIStyle CachedSummaryStyle;
 
-        private static GUIStyle BodyStyle => CachedBodyStyle ??= new GUIStyle { padding = new RectOffset(BodyPaddingLeft, 0, BodyPaddingVertical, BodyPaddingVertical) };
-        private static GUIStyle SummaryStyle => CachedSummaryStyle ??= new GUIStyle(EditorStyles.label) { normal = { textColor = Color.gray }, clipping = TextClipping.Clip };
-
         private Object[] _targets;
         private string _propertyPath;
         private SerializedObject[] _targetSerializedObjects;
@@ -119,6 +116,9 @@ namespace Core.AbilitySystem.Tag.Editor
         // 접은 식의 사본 속성 경로. 기본을 펼침으로 두어 새로 고른 식은 내용이 바로 보인다.
         // 경로는 Undo 등으로 사본을 다시 만들어도 같아 상태가 남는다. 대신 칸을 지우면 뒤 칸 경로가 바뀌어 옮겨 줘야 한다
         private readonly HashSet<string> _collapsedPaths = new();
+
+        private static GUIStyle BodyStyle => CachedBodyStyle ??= new GUIStyle { padding = new RectOffset(BodyPaddingLeft, 0, BodyPaddingVertical, BodyPaddingVertical) };
+        private static GUIStyle SummaryStyle => CachedSummaryStyle ??= new GUIStyle(EditorStyles.label) { normal = { textColor = Color.gray }, clipping = TextClipping.Clip };
 
         private void OnGUI()
         {

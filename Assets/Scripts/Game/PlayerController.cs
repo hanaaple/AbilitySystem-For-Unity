@@ -36,12 +36,6 @@ namespace Game
             SettingsMenu.OnOpenChanged += SetInputBlocked;
         }
 
-        private void OnDisable()
-        {
-            SettingsMenu.OnOpenChanged -= SetInputBlocked;
-            _playerInputActions.Player.Disable();
-        }
-
         private void Update()
         {
             if (_playerCharacter == null)
@@ -52,21 +46,10 @@ namespace Game
             HandleMovement();
         }
 
-        private void HandleMovement()
+        private void OnDisable()
         {
-            float cameraYaw = _camera != null ? _camera.transform.eulerAngles.y : 0f;
-            _playerCharacter.SetViewYaw(cameraYaw);
-
-            if (_moveInput == Vector2.zero)
-            {
-                _playerCharacter.StopMoving();
-                return;
-            }
-
-            // 입력은 카메라가 보는 방향 기준
-            Vector3 inputDirection = new Vector3(_moveInput.x, 0f, _moveInput.y).normalized;
-            Vector3 moveDir = Quaternion.Euler(0f, cameraYaw, 0f) * inputDirection;
-            _playerCharacter.MoveDelta(moveDir, Time.deltaTime);
+            SettingsMenu.OnOpenChanged -= SetInputBlocked;
+            _playerInputActions.Player.Disable();
         }
 
         public override void Possess(CharacterBase character)
@@ -108,6 +91,23 @@ namespace Game
             }
 
             base.UnPossess();
+        }
+
+        private void HandleMovement()
+        {
+            float cameraYaw = _camera != null ? _camera.transform.eulerAngles.y : 0f;
+            _playerCharacter.SetViewYaw(cameraYaw);
+
+            if (_moveInput == Vector2.zero)
+            {
+                _playerCharacter.StopMoving();
+                return;
+            }
+
+            // 입력은 카메라가 보는 방향 기준
+            Vector3 inputDirection = new Vector3(_moveInput.x, 0f, _moveInput.y).normalized;
+            Vector3 moveDir = Quaternion.Euler(0f, cameraYaw, 0f) * inputDirection;
+            _playerCharacter.MoveDelta(moveDir, Time.deltaTime);
         }
 
         // 맵을 끄면 눌려 있던 입력에 canceled가 와서 누르는 동안 유지하는 어빌리티·이동도 함께 풀린다
