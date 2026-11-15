@@ -29,7 +29,7 @@ namespace Core.AbilitySystem.Effect
         private readonly List<ActiveGameplayEffectHandle> _expiredEffects = new();
 
         // 활성 이펙트 핸들 발급기. ASC 간 전역 유일성을 위해 static.
-        private static int _handleIdCounter;
+        private static int HandleIdCounter;
 
         // 적용 시각과 Tick 시각을 같은 시계로 재야, 프레임 도중(이 컨테이너의 Tick보다 먼저) 적용된 이펙트가 그 프레임 시간을 잃지 않는다.
         private Func<float> _worldTimeSource = () => Time.time;
@@ -310,7 +310,7 @@ namespace Core.AbilitySystem.Effect
                 return ApplyToExistingStack(stackable, appliedSpec);
             }
 
-            var handle = new ActiveGameplayEffectHandle(++_handleIdCounter, _owner);
+            var handle = new ActiveGameplayEffectHandle(++HandleIdCounter, _owner);
             var active = new ActiveGameplayEffect(handle, appliedSpec, _owner, GetWorldTime());
             _activeGameplayEffects.Add(active.Handle, active);
 

@@ -23,15 +23,15 @@ namespace Core.AbilitySystem.Tag.Editor
         private const float ExplicitSourceAlpha = 0.5f;
         private const float ImplicitSourceAlpha = 0.25f;
 
-        private static readonly Color _menuItemHoverColor = new(0.5f, 0.5f, 0.5f, 0.2f);
-        private static readonly Color _separatorColor = new(0.5f, 0.5f, 0.5f, 0.4f);
+        private static readonly Color MenuItemHoverColor = new(0.5f, 0.5f, 0.5f, 0.2f);
+        private static readonly Color SeparatorColor = new(0.5f, 0.5f, 0.5f, 0.4f);
 
-        private static GUIContent _addNewTagContent;
-        private static GUIContent _closeSectionContent;
-        private static GUIContent _settingsContent;
-        private static GUIStyle _menuItemStyle;
-        private static GUIStyle _hintStyle;
-        private static GUIStyle _sourceStyle;
+        private static GUIContent CachedAddNewTagContent;
+        private static GUIContent CachedCloseSectionContent;
+        private static GUIContent CachedSettingsContent;
+        private static GUIStyle CachedMenuItemStyle;
+        private static GUIStyle CachedHintStyle;
+        private static GUIStyle CachedSourceStyle;
 
         private readonly GameplayTagPickerMode _gameplayTagPickerMode;
         private readonly GameplayTagPropertyHandle _propertyHandle;
@@ -76,17 +76,17 @@ namespace Core.AbilitySystem.Tag.Editor
         /// <summary>피커를 담은 창. 비동기 갱신(트리 재구성·메뉴 콜백) 뒤 다시 그리게 한다.</summary>
         public EditorWindow HostWindow { get; set; }
 
-        private static GUIContent AddNewTagContent => _addNewTagContent ??= EditorGUIUtility.TrIconContent("Toolbar Plus", "Add New Gameplay Tag");
+        private static GUIContent AddNewTagContent => CachedAddNewTagContent ??= EditorGUIUtility.TrIconContent("Toolbar Plus", "Add New Gameplay Tag");
 
-        private static GUIContent CloseSectionContent => _closeSectionContent ??= EditorGUIUtility.TrIconContent("Toolbar Minus", "Close Section");
+        private static GUIContent CloseSectionContent => CachedCloseSectionContent ??= EditorGUIUtility.TrIconContent("Toolbar Minus", "Close Section");
 
-        private static GUIContent SettingsContent => _settingsContent ??= EditorGUIUtility.TrIconContent("_Popup", "View Settings");
+        private static GUIContent SettingsContent => CachedSettingsContent ??= EditorGUIUtility.TrIconContent("_Popup", "View Settings");
 
-        private static GUIStyle MenuItemStyle => _menuItemStyle ??= new GUIStyle(EditorStyles.label) { padding = new RectOffset(8, 4, 2, 2) };
+        private static GUIStyle MenuItemStyle => CachedMenuItemStyle ??= new GUIStyle(EditorStyles.label) { padding = new RectOffset(8, 4, 2, 2) };
 
-        private static GUIStyle HintStyle => _hintStyle ??= new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.gray } };
+        private static GUIStyle HintStyle => CachedHintStyle ??= new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.gray } };
 
-        private static GUIStyle SourceStyle => _sourceStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight, clipping = TextClipping.Clip };
+        private static GUIStyle SourceStyle => CachedSourceStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight, clipping = TextClipping.Clip };
 
         /// <param name="propertyHandle">선택 모드에서 고칠 필드. 관리 모드면 null.</param>
         /// <param name="filter">루트를 제한하는 필터(<see cref="GameplayTagsManager.GetFilteredGameplayRootTags"/>).</param>
@@ -321,7 +321,7 @@ namespace Core.AbilitySystem.Tag.Editor
             }
 
             Rect separatorRect = GUILayoutUtility.GetRect(1f, 1f, GUILayout.ExpandWidth(true));
-            EditorGUI.DrawRect(separatorRect, _separatorColor);
+            EditorGUI.DrawRect(separatorRect, SeparatorColor);
             GUILayout.Space(2f);
         }
 
@@ -439,7 +439,7 @@ namespace Core.AbilitySystem.Tag.Editor
             Event currentEvent = Event.current;
             if (currentEvent.type == EventType.Repaint && rect.Contains(currentEvent.mousePosition))
             {
-                EditorGUI.DrawRect(rect, _menuItemHoverColor);
+                EditorGUI.DrawRect(rect, MenuItemHoverColor);
             }
 
             return GUI.Button(rect, content, MenuItemStyle);
@@ -1114,9 +1114,9 @@ namespace Core.AbilitySystem.Tag.Editor
         {
             private const float ActionsButtonWidth = 16f;
 
-            private static readonly GUIContent _actionsContent = new("▾", "More Actions...");
+            private static readonly GUIContent ActionsContent = new("▾", "More Actions...");
 
-            private static GUIStyle _actionsButtonStyle;
+            private static GUIStyle CachedActionsButtonStyle;
 
             private readonly GameplayTagPicker _picker;
             // 검색으로 트리를 다시 만들어도 펼침·선택이 유지되도록 태그 이름마다 고정 ID를 준다
@@ -1124,7 +1124,7 @@ namespace Core.AbilitySystem.Tag.Editor
             private readonly Dictionary<int, string> _tagNameById = new();
             private readonly Dictionary<int, GameplayTagNode> _nodeById = new();
 
-            private static GUIStyle ActionsButtonStyle => _actionsButtonStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
+            private static GUIStyle ActionsButtonStyle => CachedActionsButtonStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
 
             public GameplayTagTreeView(TreeViewState<int> state, GameplayTagPicker picker) : base(state)
             {
@@ -1157,7 +1157,7 @@ namespace Core.AbilitySystem.Tag.Editor
 
                 _picker.DrawRowContent(contentRect, item.Node);
 
-                if (EditorGUI.DropdownButton(actionsRect, _actionsContent, FocusType.Passive, ActionsButtonStyle))
+                if (EditorGUI.DropdownButton(actionsRect, ActionsContent, FocusType.Passive, ActionsButtonStyle))
                 {
                     GenericMenu actionsMenu = _picker.MakeTagActionsMenu(item.Node);
                     actionsMenu.DropDown(actionsRect);

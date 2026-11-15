@@ -8,7 +8,7 @@ namespace Core.AbilitySystem.Abilities
     {
         public static readonly GameplayAbilitySpecHandle Invalid = default;
 
-        private static int _handleIdCounter;
+        private static int HandleIdCounter;
 
         private readonly int _id;
 
@@ -23,7 +23,7 @@ namespace Core.AbilitySystem.Abilities
         /// <remarks>UE: FGameplayAbilitySpecHandle::GenerateNewHandle</remarks>
         public static GameplayAbilitySpecHandle GenerateNewHandle()
         {
-            return new GameplayAbilitySpecHandle(++_handleIdCounter);
+            return new GameplayAbilitySpecHandle(++HandleIdCounter);
         }
 
         public bool Equals(GameplayAbilitySpecHandle other)

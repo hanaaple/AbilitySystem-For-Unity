@@ -74,6 +74,15 @@ dotnet_naming_symbols.constants.applicable_kinds          = field
 dotnet_naming_symbols.constants.applicable_accessibilities = *
 dotnet_naming_symbols.constants.required_modifiers        = const
 
+# 정적 필드(static, static readonly — private 포함) → PascalCase
+dotnet_naming_rule.static_fields_pascal.symbols   = static_fields
+dotnet_naming_rule.static_fields_pascal.style     = pascal_case_style
+dotnet_naming_rule.static_fields_pascal.severity  = warning
+
+dotnet_naming_symbols.static_fields.applicable_kinds          = field
+dotnet_naming_symbols.static_fields.applicable_accessibilities = *
+dotnet_naming_symbols.static_fields.required_modifiers        = static
+
 # 로컬 변수/파라미터 → camelCase
 dotnet_naming_rule.locals_camel.symbols   = locals
 dotnet_naming_rule.locals_camel.style     = camel_case_style

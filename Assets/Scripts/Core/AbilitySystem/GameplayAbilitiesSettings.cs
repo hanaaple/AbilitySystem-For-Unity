@@ -1,5 +1,6 @@
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem
 {
@@ -10,52 +11,52 @@ namespace Core.AbilitySystem
         /// <summary>Resources 기준 고정 경로.</summary>
         public const string ResourcesPath = "AbilitySystem/GameplayAbilitiesSettings";
 
-        private static GameplayAbilitiesSettings _instance;
+        private static GameplayAbilitiesSettings Instance;
 
         [Tooltip("CanActivateAbility가 실패 사유 태그 없이 거부했을 때 붙는 태그(재정의한 발동 조건 등).")]
-        [SerializeField] private GameplayTag activateFailCanActivateAbilityTag;
+        [SerializeField] [FormerlySerializedAs("activateFailCanActivateAbilityTag")] private GameplayTag _activateFailCanActivateAbilityTag;
 
         [Tooltip("쿨다운 중이라 발동하지 못했을 때 붙는 태그.")]
-        [SerializeField] private GameplayTag activateFailCooldownTag;
+        [SerializeField] [FormerlySerializedAs("activateFailCooldownTag")] private GameplayTag _activateFailCooldownTag;
 
         [Tooltip("코스트를 감당하지 못해 발동하지 못했을 때 붙는 태그.")]
-        [SerializeField] private GameplayTag activateFailCostTag;
+        [SerializeField] [FormerlySerializedAs("activateFailCostTag")] private GameplayTag _activateFailCostTag;
 
         [Tooltip("차단 태그 때문에 발동하지 못했을 때 붙는 태그.")]
-        [SerializeField] private GameplayTag activateFailTagsBlockedTag;
+        [SerializeField] [FormerlySerializedAs("activateFailTagsBlockedTag")] private GameplayTag _activateFailTagsBlockedTag;
 
         [Tooltip("필요 태그가 없어 발동하지 못했을 때 붙는 태그.")]
-        [SerializeField] private GameplayTag activateFailTagsMissingTag;
+        [SerializeField] [FormerlySerializedAs("activateFailTagsMissingTag")] private GameplayTag _activateFailTagsMissingTag;
 
         /// <remarks>UE: UGameplayAbilitiesDeveloperSettings::ActivateFailCanActivateAbilityTag</remarks>
-        public GameplayTag ActivateFailCanActivateAbilityTag => activateFailCanActivateAbilityTag;
+        public GameplayTag ActivateFailCanActivateAbilityTag => _activateFailCanActivateAbilityTag;
 
         /// <remarks>UE: UGameplayAbilitiesDeveloperSettings::ActivateFailCooldownTag</remarks>
-        public GameplayTag ActivateFailCooldownTag => activateFailCooldownTag;
+        public GameplayTag ActivateFailCooldownTag => _activateFailCooldownTag;
 
         /// <remarks>UE: UGameplayAbilitiesDeveloperSettings::ActivateFailCostTag</remarks>
-        public GameplayTag ActivateFailCostTag => activateFailCostTag;
+        public GameplayTag ActivateFailCostTag => _activateFailCostTag;
 
         /// <remarks>UE: UGameplayAbilitiesDeveloperSettings::ActivateFailTagsBlockedTag</remarks>
-        public GameplayTag ActivateFailTagsBlockedTag => activateFailTagsBlockedTag;
+        public GameplayTag ActivateFailTagsBlockedTag => _activateFailTagsBlockedTag;
 
         /// <remarks>UE: UGameplayAbilitiesDeveloperSettings::ActivateFailTagsMissingTag</remarks>
-        public GameplayTag ActivateFailTagsMissingTag => activateFailTagsMissingTag;
+        public GameplayTag ActivateFailTagsMissingTag => _activateFailTagsMissingTag;
 
         /// <summary>고정 경로의 설정. 없으면 경고 후 빈 설정(모든 실패 사유 태그가 비어 있음)을 돌려준다.</summary>
         public static GameplayAbilitiesSettings Get()
         {
-            if (_instance == null)
+            if (Instance == null)
             {
-                _instance = Resources.Load<GameplayAbilitiesSettings>(ResourcesPath);
-                if (_instance == null)
+                Instance = Resources.Load<GameplayAbilitiesSettings>(ResourcesPath);
+                if (Instance == null)
                 {
                     Debug.LogWarning($"{nameof(GameplayAbilitiesSettings)}를 찾지 못해 실패 사유 태그 없이 동작합니다. (Resources/{ResourcesPath})");
-                    _instance = CreateInstance<GameplayAbilitiesSettings>();
+                    Instance = CreateInstance<GameplayAbilitiesSettings>();
                 }
             }
 
-            return _instance;
+            return Instance;
         }
     }
 }

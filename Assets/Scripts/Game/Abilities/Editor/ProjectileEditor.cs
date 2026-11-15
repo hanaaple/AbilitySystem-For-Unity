@@ -15,7 +15,7 @@ namespace Game.Abilities.Editor
         {
             DrawDefaultInspector();
 
-            var visualEffect = serializedObject.FindProperty("visualEffect").objectReferenceValue as VisualEffect;
+            var visualEffect = serializedObject.FindProperty("_visualEffect").objectReferenceValue as VisualEffect;
             if (visualEffect == null || visualEffect.visualEffectAsset == null)
             {
                 return;

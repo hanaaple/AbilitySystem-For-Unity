@@ -10,13 +10,13 @@ namespace Core.AbilitySystem.Tag
     {
         private const string InvalidTagCharacters = "\"',\r\n\t";
 
-        private static readonly char[] _tagTrimCharacters = { '.', ' ' };
+        private static readonly char[] TagTrimCharacters = { '.', ' ' };
 
-        private static GameplayTagsManager _instance;
-        private static bool _isConstructing;
+        private static GameplayTagsManager Instance;
+        private static bool IsConstructing;
 
         // 같은 이름으로 반복 요청될 때 로그가 쌓이지 않도록 이름당 한 번만 알린다
-        private static readonly HashSet<InternedName> _missingTagNames = new();
+        private static readonly HashSet<InternedName> MissingTagNames = new();
 
 #if UNITY_EDITOR
         /// <summary>에디터에서 태그 트리를 다시 만든 직후 호출된다. 이전 트리의 노드는 비워지므로, 노드를 들고 있던 에디터 UI는 여기서 노드를 다시 조회해야 한다.</summary>
@@ -24,9 +24,9 @@ namespace Core.AbilitySystem.Tag
         public static event Action OnEditorRefreshGameplayTagTree;
 #endif
 
-        private GameplayTagNode gameplayRootTag;
+        private GameplayTagNode _gameplayRootTag;
 
-        private Dictionary<InternedName, GameplayTagNode> gameplayTagNodeMap;
+        private Dictionary<InternedName, GameplayTagNode> _gameplayTagNodeMap;
 
         private GameplayTagsManager()
         {
@@ -38,14 +38,14 @@ namespace Core.AbilitySystem.Tag
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
         {
-            _instance = CreateManager();
+            Instance = CreateManager();
         }
 
         /// <summary>전역 단일 인스턴스. 최초 접근 시 생성되며 트리를 1회 빌드한다. 에디터에서도 같은 방식으로 생성된다.</summary>
         /// <remarks>UE: UGameplayTagsManager::Get</remarks>
         public static GameplayTagsManager Get()
         {
-            return _instance ??= CreateManager();
+            return Instance ??= CreateManager();
         }
 
         /// <summary>이름으로 등록된 태그를 찾는다. 미등록이면 빈 태그(default)를 돌려준다.</summary>
@@ -59,7 +59,7 @@ namespace Core.AbilitySystem.Tag
                 return GameplayTag.Create(tagName);
             }
 
-            if (errorIfNotFound && _missingTagNames.Add(tagName))
+            if (errorIfNotFound && MissingTagNames.Add(tagName))
             {
                 Debug.LogError($"요청한 태그 {tagName}를 찾지 못했습니다. 태그는 레지스트리 에셋이나 native 태그로 등록해야 합니다.");
             }
@@ -177,7 +177,7 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: UGameplayTagsManager::GetNumGameplayTagNodes</remarks>
         public int GetNumGameplayTagNodes()
         {
-            return gameplayTagNodeMap.Count;
+            return _gameplayTagNodeMap.Count;
         }
 
         /// <remarks>UE: UGameplayTagsManager::FindTagNode</remarks>
@@ -189,7 +189,7 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: UGameplayTagsManager::FindTagNode</remarks>
         public GameplayTagNode FindTagNode(InternedName tag)
         {
-            return gameplayTagNodeMap.GetValueOrDefault(tag);
+            return _gameplayTagNodeMap.GetValueOrDefault(tag);
         }
 
         /// <summary>문자열이 태그 사전에 추가될 수 있는 형식인지(문법 오류가 없는지).</summary>
@@ -215,7 +215,7 @@ namespace Core.AbilitySystem.Tag
                 isValid = false;
             }
 
-            string trimmedStart = fixedString.TrimStart(_tagTrimCharacters);
+            string trimmedStart = fixedString.TrimStart(TagTrimCharacters);
             if (trimmedStart.Length != fixedString.Length)
             {
                 AddTrimErrors(errors, fixedString.Substring(0, fixedString.Length - trimmedStart.Length), "begin");
@@ -223,7 +223,7 @@ namespace Core.AbilitySystem.Tag
                 fixedString = trimmedStart;
             }
 
-            string trimmedEnd = fixedString.TrimEnd(_tagTrimCharacters);
+            string trimmedEnd = fixedString.TrimEnd(TagTrimCharacters);
             if (trimmedEnd.Length != fixedString.Length)
             {
                 AddTrimErrors(errors, fixedString.Substring(trimmedEnd.Length), "end");
@@ -267,7 +267,7 @@ namespace Core.AbilitySystem.Tag
 
         /// <summary>native 태그 추가가 끝나는 시점(태그 초기화 완료)에 호출할 콜백을 등록한다. 이미 끝났으면 즉시 호출한다.</summary>
         /// <remarks>UE: UGameplayTagsManager::CallOrRegister_OnDoneAddingNativeTagsDelegate</remarks>
-        public void CallOrRegister_OnDoneAddingNativeTagsDelegate(Action inDelegate)
+        public void CallOrRegisterOnDoneAddingNativeTagsDelegate(Action inDelegate)
         {
             throw new NotImplementedException();
         }
@@ -293,7 +293,7 @@ namespace Core.AbilitySystem.Tag
         public void GetFilteredGameplayRootTags(string inFilterString, List<GameplayTagNode> outTagArray)
         {
             outTagArray.Clear();
-            IReadOnlyList<GameplayTagNode> gameplayRootTags = gameplayRootTag.GetChildTagNodes();
+            IReadOnlyList<GameplayTagNode> gameplayRootTags = _gameplayRootTag.GetChildTagNodes();
 
             if (!string.IsNullOrEmpty(inFilterString))
             {
@@ -326,27 +326,27 @@ namespace Core.AbilitySystem.Tag
         private static GameplayTagsManager CreateManager()
         {
             // native 태그 정의 클래스의 static 초기화에서 태그를 조회하면 트리 구성 중 다시 여기로 들어와 무한 재귀(에디터 크래시)가 된다.
-            if (_isConstructing)
+            if (IsConstructing)
             {
                 throw new InvalidOperationException($"{nameof(GameplayTagsManager)} 트리 구성 중에 매니저에 접근했습니다. native 태그를 정의하는 클래스의 static 초기화에서 태그를 조회하지 마십시오.");
             }
 
-            _isConstructing = true;
+            IsConstructing = true;
             try
             {
                 return new GameplayTagsManager();
             }
             finally
             {
-                _isConstructing = false;
+                IsConstructing = false;
             }
         }
 
         /// <remarks>UE: UGameplayTagsManager::ConstructGameplayTagTree</remarks>
         private void ConstructGameplayTagTree()
         {
-            gameplayRootTag = new GameplayTagNode();
-            gameplayTagNodeMap = new Dictionary<InternedName, GameplayTagNode>();
+            _gameplayRootTag = new GameplayTagNode();
+            _gameplayTagNodeMap = new Dictionary<InternedName, GameplayTagNode>();
 
             // native 태그는 저장하지 않고 매 구성마다 코드에서 다시 모은다. 레지스트리와 경로가 겹치면 같은 노드로 합쳐진다.
             foreach (NativeGameplayTag nativeTag in NativeGameplayTag.GetRegisteredNativeTags())
@@ -376,7 +376,7 @@ namespace Core.AbilitySystem.Tag
             }
 
             string[] segments = fullTagName.Split('.');
-            GameplayTagNode currentNode = gameplayRootTag;
+            GameplayTagNode currentNode = _gameplayRootTag;
             string accumulatedPath = null;
 
             foreach (string segment in segments)
@@ -391,7 +391,7 @@ namespace Core.AbilitySystem.Tag
                     var fullName = new InternedName(accumulatedPath);
                     childNode = new GameplayTagNode(shortTag, fullName, currentNode);
                     currentNode.AddChildNode(childNode);
-                    gameplayTagNodeMap.Add(fullName, childNode);
+                    _gameplayTagNodeMap.Add(fullName, childNode);
                 }
 
                 currentNode = childNode;
@@ -401,9 +401,9 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: UGameplayTagsManager::DestroyGameplayTagTree</remarks>
         private void DestroyGameplayTagTree()
         {
-            gameplayRootTag?.ResetNode();
-            gameplayRootTag = null;
-            gameplayTagNodeMap?.Clear();
+            _gameplayRootTag?.ResetNode();
+            _gameplayRootTag = null;
+            _gameplayTagNodeMap?.Clear();
         }
 
         /// <remarks>UE: UGameplayTagsManager::AddChildrenTags</remarks>

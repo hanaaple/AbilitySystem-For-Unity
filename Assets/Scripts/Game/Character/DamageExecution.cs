@@ -17,9 +17,9 @@ namespace Game.Character
         // 발사 순간의 공격력으로 친다 — 날아가는 동안 버프가 끝나도 쏠 때 값이 맞는다
         private static readonly GameplayEffectAttributeCaptureDefinition[] CaptureDefinitions =
         {
-            new(CharacterAttributeSet.Attack, AttributeCaptureSource.Source, true),
+            new(CharacterAttributeSet.AttackAttribute, AttributeCaptureSource.Source, true),
             // 맞는 순간 남아 있는 실드로 막는다
-            new(CharacterAttributeSet.Shield, AttributeCaptureSource.Target, false),
+            new(CharacterAttributeSet.ShieldAttribute, AttributeCaptureSource.Target, false),
         };
 
         private static GameplayEffectAttributeCaptureDefinition AttackDefinition => CaptureDefinitions[0];
@@ -54,13 +54,13 @@ namespace Game.Character
             float absorbed = Mathf.Clamp(shield, 0f, damage);
             if (absorbed > 0f)
             {
-                output.AddOutputModifier(CharacterAttributeSet.Shield, -absorbed, GameplayModifierOperation.AddBase);
+                output.AddOutputModifier(CharacterAttributeSet.ShieldAttribute, -absorbed, GameplayModifierOperation.AddBase);
             }
 
             float healthDamage = damage - absorbed;
             if (healthDamage > 0f)
             {
-                output.AddOutputModifier(CharacterAttributeSet.Health, -healthDamage, GameplayModifierOperation.AddBase);
+                output.AddOutputModifier(CharacterAttributeSet.HealthAttribute, -healthDamage, GameplayModifierOperation.AddBase);
             }
         }
 

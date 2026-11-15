@@ -12,8 +12,8 @@ namespace Core.AbilitySystem.Tag.Editor
     /// </summary>
     internal sealed class GameplayTagPropertyHandle
     {
-        // GameplayTag.name(InternedName) → InternedName.name(string). 런타임 직렬화 필드 이름을 바꾸면 여기도 바꿔야 한다.
-        private const string TagNamePath = "name.name";
+        // GameplayTag._name(InternedName) → InternedName._name(string). 런타임 직렬화 필드 이름을 바꾸면 여기도 바꿔야 한다.
+        private const string TagNamePath = "_name._name";
         // GameplayTagContainer._gameplayTags. 런타임 직렬화 필드 이름을 바꾸면 여기도 바꿔야 한다.
         private const string ContainerTagsPath = "_gameplayTags";
 

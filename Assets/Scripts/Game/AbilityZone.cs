@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Core.AbilitySystem;
 using Core.AbilitySystem.Abilities;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game
 {
@@ -10,23 +11,23 @@ namespace Game
     public class AbilityZone : MonoBehaviour, IDebugOverlayTarget
     {
         [Tooltip("안에 있는 동안 활성으로 두는 GA. 나가면 취소한다.")]
-        [SerializeField] private GameplayAbilityAsset ability;
+        [SerializeField] [FormerlySerializedAs("ability")] private GameplayAbilityAsset _ability;
 
         [Tooltip("디버그 오버레이에서 겨눴을 때 보일 썸네일.")]
-        [SerializeField] private Texture2D debugThumbnail;
+        [SerializeField] [FormerlySerializedAs("debugThumbnail")] private Texture2D _debugThumbnail;
 
         // 한 캐릭터에 콜라이더가 여럿이면 Enter/Exit도 그 수만큼 오므로 ASC별로 겹친 콜라이더 수를 센다.
         private readonly Dictionary<AbilitySystemComponent, int> _overlapCounts = new();
 
         public string DebugName => name;
 
-        public Texture2D DebugThumbnail => debugThumbnail;
+        public Texture2D DebugThumbnail => _debugThumbnail;
 
         public AbilitySystemComponent DebugAbilitySystem => null;
 
         public void AppendDebugLines(List<string> lines)
         {
-            lines.Add("Grants\t" + (ability != null ? ability.name : "-"));
+            lines.Add("Grants\t" + (_ability != null ? _ability.name : "-"));
             lines.Add($"Inside\t{_overlapCounts.Count}");
             foreach (AbilitySystemComponent asc in _overlapCounts.Keys)
             {
@@ -42,7 +43,7 @@ namespace Game
         private void OnTriggerEnter(Collider other)
         {
             var asc = other.GetComponentInParent<AbilitySystemComponent>();
-            if (asc == null || ability == null)
+            if (asc == null || _ability == null)
             {
                 return;
             }
@@ -54,8 +55,8 @@ namespace Game
                 return;
             }
 
-            GameplayAbilitySpec spec = asc.FindAbilitySpecFromAsset(ability);
-            GameplayAbilitySpecHandle handle = spec != null ? spec.Handle : asc.GiveAbility(new GameplayAbilitySpec(ability));
+            GameplayAbilitySpec spec = asc.FindAbilitySpecFromAsset(_ability);
+            GameplayAbilitySpecHandle handle = spec != null ? spec.Handle : asc.GiveAbility(new GameplayAbilitySpec(_ability));
             asc.TryActivateAbility(handle);
         }
 
@@ -74,7 +75,7 @@ namespace Game
             }
 
             _overlapCounts.Remove(asc);
-            asc.CancelAbility(ability);
+            asc.CancelAbility(_ability);
         }
     }
 }

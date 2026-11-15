@@ -53,7 +53,7 @@ namespace Core.AbilitySystem.Tag.Editor
         private static readonly Color BodyTint = new(0.5f, 0.5f, 0.5f, 0.06f);
 
         // 깊이마다 안내선 색을 돌려, 멀리 떨어진 줄도 같은 깊이인지 색으로 알아보게 한다
-        private static readonly Color[] _guideColors =
+        private static readonly Color[] GuideColors =
         {
             new(0.35f, 0.6f, 0.9f, 0.8f),
             new(0.45f, 0.75f, 0.45f, 0.8f),
@@ -62,7 +62,7 @@ namespace Core.AbilitySystem.Tag.Editor
         };
 
         // 팝업 0번은 빈 식(None). Exact 두 유형은 UE 5.6 에디터에 없어 덧붙였다
-        private static readonly GameplayTagQueryExprType[] _exprTypes =
+        private static readonly GameplayTagQueryExprType[] ExprTypes =
         {
             GameplayTagQueryExprType.AnyTagsMatch,
             GameplayTagQueryExprType.AllTagsMatch,
@@ -74,7 +74,7 @@ namespace Core.AbilitySystem.Tag.Editor
             GameplayTagQueryExprType.NoExprMatch,
         };
 
-        private static readonly GUIContent[] _exprTypeOptions =
+        private static readonly GUIContent[] ExprTypeOptions =
         {
             new("None"),
             new("Any Tags Match"),
@@ -87,14 +87,14 @@ namespace Core.AbilitySystem.Tag.Editor
             new("No Expressions Match"),
         };
 
-        private static readonly GUIContent _addContent = new("+ Expression", "하위 식 추가");
-        private static readonly GUIContent _removeContent = new("−", "이 식 제거");
+        private static readonly GUIContent AddContent = new("+ Expression", "하위 식 추가");
+        private static readonly GUIContent RemoveContent = new("−", "이 식 제거");
 
-        private static GUIStyle _bodyStyle;
-        private static GUIStyle _summaryStyle;
+        private static GUIStyle CachedBodyStyle;
+        private static GUIStyle CachedSummaryStyle;
 
-        private static GUIStyle BodyStyle => _bodyStyle ??= new GUIStyle { padding = new RectOffset(BodyPaddingLeft, 0, BodyPaddingVertical, BodyPaddingVertical) };
-        private static GUIStyle SummaryStyle => _summaryStyle ??= new GUIStyle(EditorStyles.label) { normal = { textColor = Color.gray }, clipping = TextClipping.Clip };
+        private static GUIStyle BodyStyle => CachedBodyStyle ??= new GUIStyle { padding = new RectOffset(BodyPaddingLeft, 0, BodyPaddingVertical, BodyPaddingVertical) };
+        private static GUIStyle SummaryStyle => CachedSummaryStyle ??= new GUIStyle(EditorStyles.label) { normal = { textColor = Color.gray }, clipping = TextClipping.Clip };
 
         private Object[] _targets;
         private string _propertyPath;
@@ -245,7 +245,7 @@ namespace Core.AbilitySystem.Tag.Editor
         {
             bool isEmpty = string.IsNullOrEmpty(expression.managedReferenceFullTypename);
             SerializedProperty exprType = isEmpty ? null : expression.FindPropertyRelative(ExprTypePath);
-            int optionIndex = exprType != null ? Array.IndexOf(_exprTypes, (GameplayTagQueryExprType)exprType.enumValueIndex) + 1 : 0;
+            int optionIndex = exprType != null ? Array.IndexOf(ExprTypes, (GameplayTagQueryExprType)exprType.enumValueIndex) + 1 : 0;
             bool isFoldable = exprType != null;
             bool canRemove = parentExpressions != null;
             string path = expression.propertyPath;
@@ -261,19 +261,19 @@ namespace Core.AbilitySystem.Tag.Editor
             Rect summaryRect = Rect.MinMaxRect(popupRect.xMax + SummarySpacing, rowRect.y, fieldXMax, rowRect.yMax);
 
             bool newIsExpanded = DrawExpressionLabel(labelRect, label, isFoldable, isExpanded);
-            int newOptionIndex = EditorGUI.Popup(popupRect, optionIndex, _exprTypeOptions);
+            int newOptionIndex = EditorGUI.Popup(popupRect, optionIndex, ExprTypeOptions);
             if (isFoldable && !isExpanded)
             {
                 DrawSummary(summaryRect, expression);
             }
 
-            bool removeClicked = canRemove && GUI.Button(removeRect, _removeContent, EditorStyles.miniButton);
+            bool removeClicked = canRemove && GUI.Button(removeRect, RemoveContent, EditorStyles.miniButton);
 
             if (newOptionIndex != optionIndex)
             {
                 // UE는 식 종류를 바꾸면 편집 오브젝트를 새로 만든다. 같은 칸에 새 노드를 넣어 태그·하위 식도 비운다
                 ForgetCollapsedPaths(path);
-                expression.managedReferenceValue = newOptionIndex == 0 ? null : new EditableGameplayTagQueryExpression(_exprTypes[newOptionIndex - 1]);
+                expression.managedReferenceValue = newOptionIndex == 0 ? null : new EditableGameplayTagQueryExpression(ExprTypes[newOptionIndex - 1]);
                 ApplyStructuralChange();
             }
 
@@ -330,7 +330,7 @@ namespace Core.AbilitySystem.Tag.Editor
             // 추가 버튼을 목록 끝(본문 안)에 두어 어느 묶음에 넣는지 위치로 드러낸다
             Rect addRect = EditorGUILayout.GetControlRect();
             addRect.width = AddButtonWidth;
-            if (GUI.Button(addRect, _addContent, EditorStyles.miniButton))
+            if (GUI.Button(addRect, AddContent, EditorStyles.miniButton))
             {
                 // UE처럼 빈 칸을 넣고 종류는 팝업으로 고르게 한다. 늘린 칸이 이전 칸의 참조를 물려받을 수 있어 비운다
                 int newIndex = expressions.arraySize;
@@ -364,7 +364,7 @@ namespace Core.AbilitySystem.Tag.Editor
 
             EditorGUI.DrawRect(bodyRect, BodyTint);
             var guideRect = new Rect(bodyRect.x + GuideOffset, bodyRect.y, GuideWidth, bodyRect.height);
-            EditorGUI.DrawRect(guideRect, _guideColors[depth % _guideColors.Length]);
+            EditorGUI.DrawRect(guideRect, GuideColors[depth % GuideColors.Length]);
         }
 
         private static void DrawSummary(Rect rect, SerializedProperty expression)

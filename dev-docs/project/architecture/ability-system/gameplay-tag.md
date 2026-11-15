@@ -158,7 +158,7 @@ flowchart LR
 | `AnyTagsExactMatch` / `AllTagsExactMatch` | 정확 매칭 버전 |
 | `AnyExprMatch` / `AllExprMatch` / `NoExprMatch` | 하위 식 중 하나 / 전부 / 없음 |
 
-- 단축 생성: `MakeQuery_MatchAnyTags` · `MakeQuery_MatchAllTags` · `MakeQuery_MatchNoTags` · `MakeQuery_MatchTag`. 식 트리로 되돌리기: `GetQueryExpr(out expr)`. 태그만 바꾸기: `ReplaceTagsFast` / `ReplaceTagFast`.
+- 단축 생성: `MakeQueryMatchAnyTags` · `MakeQueryMatchAllTags` · `MakeQueryMatchNoTags` · `MakeQueryMatchTag`. 식 트리로 되돌리기: `GetQueryExpr(out expr)`. 태그만 바꾸기: `ReplaceTagsFast` / `ReplaceTagFast`.
 - 빈 질의는 항상 false.
 - **직렬화:** 태그 사전·토큰 스트림·형식 버전·자동 설명·사용자 설명을 저장한다. 자동 설명(` ALL( ANY( A ), NONE( B ) )` 꼴)은 `Build` 때 만든다.
 - **UE와 다른 점:** 형식 버전을 스트림 첫 토큰이 아니라 필드로 저장, `*ExactMatch` 2종 추가(UE 5.6 원본에 없음).

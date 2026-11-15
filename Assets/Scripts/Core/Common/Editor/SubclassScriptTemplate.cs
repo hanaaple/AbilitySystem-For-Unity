@@ -125,10 +125,10 @@ namespace Core.Common.Editor
                 }
             }
 
-            return !_keywords.Contains(name);
+            return !Keywords.Contains(name);
         }
 
-        private static readonly HashSet<string> _keywords = new()
+        private static readonly HashSet<string> Keywords = new()
         {
             "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const",
             "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event", "explicit", "extern",

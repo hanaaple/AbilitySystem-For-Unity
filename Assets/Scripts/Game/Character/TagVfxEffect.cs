@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Core.AbilitySystem;
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.VFX;
 
 namespace Game.Character
@@ -9,34 +10,34 @@ namespace Game.Character
     /// <summary>캐릭터가 태그를 얻고 잃을 때 VFX Graph 이벤트를 보낸다(예: 낙인이 붙으면 표식, 빠지면 폭발). 태그가 있는 동안의 모양은 VFX가 정한다.</summary>
     public class TagVfxEffect : MonoBehaviour
     {
-        [SerializeField] private AbilitySystemComponent abilitySystemComponent;
-        [SerializeField] private GameplayTag gameplayTag;
-        [SerializeField] private VisualEffect visualEffect;
+        [SerializeField] [FormerlySerializedAs("abilitySystemComponent")] private AbilitySystemComponent _abilitySystemComponent;
+        [SerializeField] [FormerlySerializedAs("gameplayTag")] private GameplayTag _gameplayTag;
+        [SerializeField] [FormerlySerializedAs("visualEffect")] private VisualEffect _visualEffect;
 
         [Tooltip("태그가 붙을 때 차례로 보내는 이벤트.")]
-        [SerializeField] private List<string> addedEvents = new() { "create" };
+        [SerializeField] [FormerlySerializedAs("addedEvents")] private List<string> _addedEvents = new() { "create" };
 
         [Tooltip("태그가 빠질 때 차례로 보내는 이벤트.")]
-        [SerializeField] private List<string> removedEvents = new() { "stop" };
+        [SerializeField] [FormerlySerializedAs("removedEvents")] private List<string> _removedEvents = new() { "stop" };
 
         private bool _hasTag;
 
         private void Start()
         {
-            _hasTag = abilitySystemComponent.HasMatchingGameplayTag(gameplayTag);
+            _hasTag = _abilitySystemComponent.HasMatchingGameplayTag(_gameplayTag);
             if (_hasTag)
             {
-                SendEvents(addedEvents);
+                SendEvents(_addedEvents);
             }
 
-            abilitySystemComponent.RegisterGameplayTagEvent(gameplayTag, OnTagCountChanged);
+            _abilitySystemComponent.RegisterGameplayTagEvent(_gameplayTag, OnTagCountChanged);
         }
 
         private void OnDestroy()
         {
-            if (abilitySystemComponent != null)
+            if (_abilitySystemComponent != null)
             {
-                abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, gameplayTag);
+                _abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, _gameplayTag);
             }
         }
 
@@ -50,14 +51,14 @@ namespace Game.Character
             }
 
             _hasTag = hasTag;
-            SendEvents(hasTag ? addedEvents : removedEvents);
+            SendEvents(hasTag ? _addedEvents : _removedEvents);
         }
 
         private void SendEvents(List<string> eventNames)
         {
             foreach (string eventName in eventNames)
             {
-                visualEffect.SendEvent(eventName);
+                _visualEffect.SendEvent(eventName);
             }
         }
     }

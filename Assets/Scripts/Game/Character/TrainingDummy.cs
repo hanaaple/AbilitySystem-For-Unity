@@ -5,6 +5,7 @@ using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Effect;
 using Game.Abilities;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Character
 {
@@ -18,28 +19,28 @@ namespace Game.Character
         private readonly Queue<(float Time, float Damage)> _recentHits = new();
 
         [Tooltip("시작할 때 자신에게 적용하는 초기 스탯 GE(Instant, Override).")]
-        [SerializeField] private GameplayEffectAsset defaultAttributes;
+        [SerializeField] [FormerlySerializedAs("defaultAttributes")] private GameplayEffectAsset _defaultAttributes;
 
         [Header("Attack")]
         [Tooltip("비워 두면 맞기만 한다.")]
-        [SerializeField] private GameplayAbilityAsset attackAbility;
+        [SerializeField] [FormerlySerializedAs("attackAbility")] private GameplayAbilityAsset _attackAbility;
         [Tooltip("투사체가 나갈 위치·방향.")]
-        [SerializeField] private Transform castPoint;
+        [SerializeField] [FormerlySerializedAs("castPoint")] private Transform _castPoint;
 
         [Header("Shield")]
         [Tooltip("비워 두면 실드를 쓰지 않는다.")]
-        [SerializeField] private GameplayAbilityAsset shieldAbility;
+        [SerializeField] [FormerlySerializedAs("shieldAbility")] private GameplayAbilityAsset _shieldAbility;
         [Tooltip("실드가 끝난(깨진) 뒤, 체력이 다 찬 다음 다시 걸 때까지(초).")]
-        [Min(0f)] [SerializeField] private float shieldRecastDelay = 3f;
+        [Min(0f)] [SerializeField] [FormerlySerializedAs("shieldRecastDelay")] private float _shieldRecastDelay = 3f;
 
         [Tooltip("디버그 오버레이에서 겨눴을 때 보일 썸네일.")]
-        [SerializeField] private Texture2D debugThumbnail;
+        [SerializeField] [FormerlySerializedAs("debugThumbnail")] private Texture2D _debugThumbnail;
 
         [Header("Damage Meter")]
         [Tooltip("마지막 피해 후 이만큼(초) 안 맞으면 체력을 최대로 되돌리고 교전을 끝낸다.")]
-        [Min(0.1f)] [SerializeField] private float resetDelay = 3f;
+        [Min(0.1f)] [SerializeField] [FormerlySerializedAs("resetDelay")] private float _resetDelay = 3f;
         [Tooltip("초당 피해량을 이 시간(초) 동안 받은 피해의 평균으로 낸다.")]
-        [Min(0.1f)] [SerializeField] private float dpsWindow = 3f;
+        [Min(0.1f)] [SerializeField] [FormerlySerializedAs("dpsWindow")] private float _dpsWindow = 3f;
 
         private AbilitySystemComponent _asc;
         private GameplayAbilitySpecHandle _attackHandle = GameplayAbilitySpecHandle.Invalid;
@@ -58,15 +59,15 @@ namespace Game.Character
 
         public string DebugName => name;
 
-        public Texture2D DebugThumbnail => debugThumbnail;
+        public Texture2D DebugThumbnail => _debugThumbnail;
 
         public AbilitySystemComponent DebugAbilitySystem => _asc;
 
         public void AppendDebugLines(List<string> lines)
         {
             lines.Add($"Damage last / DPS / total\t{LastDamage:0} / {DamagePerSecond:0} / {TotalDamage:0}");
-            lines.Add("Attack\t" + (attackAbility != null ? attackAbility.name : "-"));
-            lines.Add("Shield\t" + (shieldAbility != null ? shieldAbility.name : "-"));
+            lines.Add("Attack\t" + (_attackAbility != null ? _attackAbility.name : "-"));
+            lines.Add("Shield\t" + (_shieldAbility != null ? _shieldAbility.name : "-"));
         }
 
         /// <summary>마지막 타격의 피해량.</summary>
@@ -81,7 +82,7 @@ namespace Game.Character
             get
             {
                 float now = Time.time;
-                while (_recentHits.Count > 0 && now - _recentHits.Peek().Time > dpsWindow)
+                while (_recentHits.Count > 0 && now - _recentHits.Peek().Time > _dpsWindow)
                 {
                     _recentHits.Dequeue();
                 }
@@ -93,7 +94,7 @@ namespace Game.Character
                 }
 
                 // 교전 초반엔 창이 다 차지 않았으므로 지난 시간으로 나눈다
-                float duration = _inCombat ? Mathf.Clamp(now - _combatStartTime, MinCombatDuration, dpsWindow) : dpsWindow;
+                float duration = _inCombat ? Mathf.Clamp(now - _combatStartTime, MinCombatDuration, _dpsWindow) : _dpsWindow;
                 return sum / duration;
             }
         }
@@ -107,25 +108,25 @@ namespace Game.Character
         // GE 컨테이너가 ASC Awake에서 만들어지므로 Start에서 적용한다
         private void Start()
         {
-            if (defaultAttributes != null)
+            if (_defaultAttributes != null)
             {
-                _asc.ApplyGameplayEffectToSelf(defaultAttributes);
+                _asc.ApplyGameplayEffectToSelf(_defaultAttributes);
             }
 
-            if (attackAbility != null && castPoint != null)
+            if (_attackAbility != null && _castPoint != null)
             {
-                _attackHandle = _asc.GiveAbility(new GameplayAbilitySpec(attackAbility));
+                _attackHandle = _asc.GiveAbility(new GameplayAbilitySpec(_attackAbility));
             }
 
-            if (shieldAbility != null)
+            if (_shieldAbility != null)
             {
-                _shieldHandle = _asc.GiveAbility(new GameplayAbilitySpec(shieldAbility));
+                _shieldHandle = _asc.GiveAbility(new GameplayAbilitySpec(_shieldAbility));
                 // 시작하자마자 건다
-                _shieldRecastTimer = shieldRecastDelay;
+                _shieldRecastTimer = _shieldRecastDelay;
             }
 
-            _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Health).OnValueChange += OnDamageAttributeChanged;
-            _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Shield).OnValueChange += OnDamageAttributeChanged;
+            _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.HealthAttribute).OnValueChange += OnDamageAttributeChanged;
+            _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.ShieldAttribute).OnValueChange += OnDamageAttributeChanged;
         }
 
         private void Update()
@@ -139,26 +140,26 @@ namespace Game.Character
         {
             if (_asc != null)
             {
-                _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Health).OnValueChange -= OnDamageAttributeChanged;
-                _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Shield).OnValueChange -= OnDamageAttributeChanged;
+                _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.HealthAttribute).OnValueChange -= OnDamageAttributeChanged;
+                _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.ShieldAttribute).OnValueChange -= OnDamageAttributeChanged;
             }
         }
 
         // 허수아비는 정면 고정으로 쏜다
         public void RequestLaunch(Action<Vector3, Vector3> launch)
         {
-            launch(castPoint.position, castPoint.position + castPoint.forward);
+            launch(_castPoint.position, _castPoint.position + _castPoint.forward);
         }
 
         private void TickReset()
         {
-            if (!_inCombat || Time.time - _lastHitTime < resetDelay)
+            if (!_inCombat || Time.time - _lastHitTime < _resetDelay)
             {
                 return;
             }
 
             _inCombat = false;
-            _asc.SetAttributeBaseValue(CharacterAttributeSet.Health, _asc.GetAttributeCurrentValue(CharacterAttributeSet.MaxHealth));
+            _asc.SetAttributeBaseValue(CharacterAttributeSet.HealthAttribute, _asc.GetAttributeCurrentValue(CharacterAttributeSet.MaxHealthAttribute));
         }
 
         private void TickAttack()
@@ -181,7 +182,7 @@ namespace Game.Character
 
             GameplayAbilitySpec spec = _asc.FindAbilitySpecFromHandle(_shieldHandle);
             // 체력이 다 찬 뒤에야 실드가 다시 차기 시작한다
-            bool isHealthFull = _asc.GetAttributeCurrentValue(CharacterAttributeSet.Health) >= _asc.GetAttributeCurrentValue(CharacterAttributeSet.MaxHealth);
+            bool isHealthFull = _asc.GetAttributeCurrentValue(CharacterAttributeSet.HealthAttribute) >= _asc.GetAttributeCurrentValue(CharacterAttributeSet.MaxHealthAttribute);
             if (spec == null || spec.IsActive || !isHealthFull)
             {
                 _shieldRecastTimer = 0f;
@@ -189,7 +190,7 @@ namespace Game.Character
             }
 
             _shieldRecastTimer += Time.deltaTime;
-            if (_shieldRecastTimer < shieldRecastDelay)
+            if (_shieldRecastTimer < _shieldRecastDelay)
             {
                 return;
             }

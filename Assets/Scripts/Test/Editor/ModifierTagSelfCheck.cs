@@ -140,7 +140,7 @@ namespace Test.Editor
             check("A-5 Ignore Stunned: 빈 태그 → 충족", ignoreStunned.RequirementsMet(empty));
 
             GameplayTagRequirements queryStunned = MakeRequirements(null, null);
-            SetPrivateField(queryStunned, "_tagQuery", GameplayTagQuery.MakeQuery_MatchAnyTags(withStunned));
+            SetPrivateField(queryStunned, "_tagQuery", GameplayTagQuery.MakeQueryMatchAnyTags(withStunned));
             check("A-6 TagQuery Any(Stunned): Stunned 보유 → 충족", queryStunned.RequirementsMet(withStunned));
             check("A-7 TagQuery Any(Stunned): Enraged만 보유 → 불충족", !queryStunned.RequirementsMet(withEnraged));
 
@@ -200,7 +200,7 @@ namespace Test.Editor
         // ── C-1. Instant: 실행 시 조건 못 맞춘 modifier 건너뛰기 ──
         private static void RunInstantChecks(AbilitySystemComponent asc, TestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
 
             SetBase(asc, health, 100f);
             GameplayEffectAsset targetRequire = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(health, GameplayModifierOperation.AddBase, 30f, null, MakeRequirements(new[] { tags.Enraged }, null)));
@@ -231,7 +231,7 @@ namespace Test.Editor
         // ── C-2. 지속형(Infinite): CurrentValue는 UE처럼 빈 문맥으로 계산 — Require가 있는 mod는 빠지고 Ignore만 있는 mod는 들어간다 ──
         private static void RunPersistentChecks(AbilitySystemComponent asc, TestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             SetBase(asc, health, 100f);
 
             GameplayEffectAsset targetRequire = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 50f, null, MakeRequirements(new[] { tags.Enraged }, null)));
@@ -265,8 +265,8 @@ namespace Test.Editor
         // CurrentValue(Health)는 빈 문맥이라 100이고, Speed GE의 캡처 평가는 Speed GE의 Source 태그로 판정한다.
         private static void RunCaptureContextChecks(AbilitySystemComponent asc, TestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
-            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
+            GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
             SetBase(asc, health, 100f);
             SetBase(asc, speed, 0f);
 
@@ -339,7 +339,7 @@ namespace Test.Editor
         // ── D-2. 소유 태그가 바뀌어도 modifier 조건은 CurrentValue에 쓰지 않음(GE 단위 Ongoing Tag Requirements 담당) / Instant 적용 ──
         private static void RunOwnedTagRecalculationChecks(AbilitySystemComponent asc, CharacterAttributeSet characterSet, TestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             SetBase(asc, health, 100f);
 
             GameplayEffectAsset requireEnraged = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 50f, null, MakeRequirements(new[] { tags.Enraged }, null)));
@@ -375,7 +375,7 @@ namespace Test.Editor
         // UE: FActiveGameplayEffectsContainer::ExecuteActiveEffectsFrom (GameplayEffect.cpp:3081-3112)
         private static void RunInstantTypeChecks(AbilitySystemComponent asc, TestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             GameplayEffectAsset targetRequire = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(health, GameplayModifierOperation.AddBase, 30f, null, MakeRequirements(new[] { tags.Enraged }, null)));
             GameplayEffectAsset targetIgnore = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(health, GameplayModifierOperation.AddBase, 30f, null, MakeRequirements(null, new[] { tags.Stunned })));
             GameplayEffectAsset sourceRequire = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(health, GameplayModifierOperation.AddBase, 30f, MakeRequirements(new[] { tags.Enraged }, null), null));
@@ -419,8 +419,8 @@ namespace Test.Editor
         // UE: AddActiveGameplayEffectGrantedTagsAndModifiers(:4350)·OnAttributeAggregatorDirty(:3311-3360)·FAttributeBasedFloat::CalculateMagnitude(:983-984)
         private static void RunPersistentTypeChecks(AbilitySystemComponent asc, TestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
-            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
+            GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
             SetBase(asc, health, 100f);
 
             foreach (GameplayEffectType type in new[] { GameplayEffectType.Duration, GameplayEffectType.Infinite })
@@ -481,7 +481,7 @@ namespace Test.Editor
         // UE: ExecuteActiveEffectsFrom(:3081-3112) — 주기 실행도 Instant와 같은 경로
         private static void RunPeriodicTypeChecks(AbilitySystemComponent asc, TestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             ActiveGameplayEffectsContainer container = GetContainer(asc);
 
             foreach (GameplayEffectType type in new[] { GameplayEffectType.Duration, GameplayEffectType.Infinite })
@@ -550,15 +550,15 @@ namespace Test.Editor
         private static GameplayEffectAsset MakePersistentEffect(GameplayEffectType type, GameplayModifier modifier)
         {
             GameplayEffectAsset ge = MakeGameplayEffect(type, modifier);
-            SetPrivateField(ge, "duration", 100f);
+            SetPrivateField(ge, "_duration", 100f);
             return ge;
         }
 
         private static GameplayEffectAsset MakePeriodicEffect(GameplayEffectType type, GameplayModifier modifier)
         {
             GameplayEffectAsset ge = MakePersistentEffect(type, modifier);
-            SetPrivateField(ge, "period", 1f);
-            SetPrivateField(ge, "executePeriodicEffectOnApplication", true);
+            SetPrivateField(ge, "_period", 1f);
+            SetPrivateField(ge, "_executePeriodicEffectOnApplication", true);
             return ge;
         }
 
@@ -580,7 +580,7 @@ namespace Test.Editor
         // GetAttributeCurrentValue는 조회 때마다 다시 계산하므로, 저장된 CurrentValue는 AttributeSet의 값을 직접 본다
         private static float GetStoredHealth(CharacterAttributeSet characterSet)
         {
-            return characterSet.health.GetCurrentValue();
+            return characterSet.Health.GetCurrentValue();
         }
 
         // Source 태그는 GE를 만들 때 Instigator에서 캡처하므로, 테스트에선 Spec에 직접 넣는다. 적용 시 복제돼도 Source 태그는 그대로 복사된다
@@ -622,7 +622,7 @@ namespace Test.Editor
         private static CharacterAttributeSet AddCharacterSet(AbilitySystemComponent asc, float health)
         {
             CharacterAttributeSet set = new CharacterAttributeSet();
-            set.health = new AttributeData(health, health);
+            set.Health = new AttributeData(health, health);
             asc.AddSpawnedAttribute(set);
             return set;
         }
@@ -635,39 +635,39 @@ namespace Test.Editor
         private static GameplayModifier MakeModifier(GameplayAttributeHandle handle, GameplayModifierOperation op, float magnitude, GameplayTagRequirements sourceTags, GameplayTagRequirements targetTags)
         {
             object boxed = default(GameplayModifier);
-            SetPrivateField(boxed, "attribute", new GameplayAttribute(handle));
-            SetPrivateField(boxed, "operation", op);
+            SetPrivateField(boxed, "_attribute", new GameplayAttribute(handle));
+            SetPrivateField(boxed, "_operation", op);
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
-            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
-            SetPrivateField(boxed, "sourceTags", sourceTags);
-            SetPrivateField(boxed, "targetTags", targetTags);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "_scalableFloatMagnitude", magnitude);
+            SetPrivateField(boxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(boxed, "_sourceTags", sourceTags);
+            SetPrivateField(boxed, "_targetTags", targetTags);
             return (GameplayModifier)boxed;
         }
 
         private static GameplayModifier MakeAttributeBasedModifier(GameplayAttributeHandle target, GameplayEffectAttributeCaptureDefinition captureDef, float coefficient)
         {
             AttributeBasedMagnitude attributeBased = new AttributeBasedMagnitude();
-            SetPrivateField(attributeBased, "backingAttribute", captureDef);
-            SetPrivateField(attributeBased, "captureValueType", AttributeCaptureValueType.CurrentValue);
-            SetPrivateField(attributeBased, "coefficient", coefficient);
+            SetPrivateField(attributeBased, "_backingAttribute", captureDef);
+            SetPrivateField(attributeBased, "_captureValueType", AttributeCaptureValueType.CurrentValue);
+            SetPrivateField(attributeBased, "_coefficient", coefficient);
 
             object boxed = default(GameplayModifier);
-            SetPrivateField(boxed, "attribute", new GameplayAttribute(target));
-            SetPrivateField(boxed, "operation", GameplayModifierOperation.AddBase);
+            SetPrivateField(boxed, "_attribute", new GameplayAttribute(target));
+            SetPrivateField(boxed, "_operation", GameplayModifierOperation.AddBase);
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
-            SetPrivateField(magnitudeBoxed, "attributeBasedMagnitude", attributeBased);
-            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
+            SetPrivateField(magnitudeBoxed, "_attributeBasedMagnitude", attributeBased);
+            SetPrivateField(boxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 
         private static GameplayEffectAsset MakeGameplayEffect(GameplayEffectType type, params GameplayModifier[] modifiers)
         {
             GameplayEffectAsset ge = ScriptableObject.CreateInstance<GameplayEffectAsset>();
-            SetPrivateField(ge, "type", type);
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier>(modifiers));
+            SetPrivateField(ge, "_type", type);
+            SetPrivateField(ge, "_modifiers", new List<GameplayModifier>(modifiers));
             return ge;
         }
 

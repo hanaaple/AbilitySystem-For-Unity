@@ -44,7 +44,7 @@ Unreal Engine 5의 Gameplay Ability System(GAS)을 Unity로 다시 구현한 어
     <td width="50%" valign="top">
       <img src="dev-docs/project/media/04_Items.gif" alt="아이템" width="100%"><br>
       <b>아이템</b><br>
-      픽업은 GA를 실행하고, 수치는 그 GA가 거는 GE가 바꿉니다. 강화 중에는 패널에 attack 65 (base 50)처럼 원래 값이 같이 보입니다.
+      픽업은 GA를 실행하고, 수치는 그 GA가 거는 GE가 바꿉니다. 강화 중에는 패널에 Attack 65 (base 50)처럼 원래 값이 같이 보입니다.
     </td>
   </tr>
   <tr>

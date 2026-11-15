@@ -16,14 +16,14 @@ namespace Core.AbilitySystem.Tag.Editor
         private const float ClearButtonWidth = 20f;
         private const float ButtonSpacing = 2f;
 
-        private static readonly GUIContent _emptyContent = new("Empty", "Empty Gameplay Tag Query");
-        private static readonly GUIContent _multipleSelectedContent = new("Multiple Selected", "Multiple Selected");
-        private static readonly GUIContent _editContent = new("Edit", "Edit Gameplay Tag Query.");
-        private static readonly GUIContent _clearContent = new("×", "Clear Query");
+        private static readonly GUIContent EmptyContent = new("Empty", "Empty Gameplay Tag Query");
+        private static readonly GUIContent MultipleSelectedContent = new("Multiple Selected", "Multiple Selected");
+        private static readonly GUIContent EditContent = new("Edit", "Edit Gameplay Tag Query.");
+        private static readonly GUIContent ClearContent = new("×", "Clear Query");
 
-        private static GUIStyle _grayStyle;
+        private static GUIStyle CachedGrayStyle;
 
-        private static GUIStyle GrayStyle => _grayStyle ??= new GUIStyle(EditorStyles.label) { normal = { textColor = Color.gray } };
+        private static GUIStyle GrayStyle => CachedGrayStyle ??= new GUIStyle(EditorStyles.label) { normal = { textColor = Color.gray } };
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -58,11 +58,11 @@ namespace Core.AbilitySystem.Tag.Editor
             var descriptionRect = new Rect(rect.x, rect.y, editRect.x - ButtonSpacing - rect.x, rect.height);
 
             GUIContent description = GetDescriptionContent(property);
-            GUIStyle descriptionStyle = description == _emptyContent ? GrayStyle : EditorStyles.label;
+            GUIStyle descriptionStyle = description == EmptyContent ? GrayStyle : EditorStyles.label;
 
             bool descriptionClicked = GUI.Button(descriptionRect, description, descriptionStyle);
-            bool editClicked = GUI.Button(editRect, _editContent, EditorStyles.miniButton);
-            bool clearClicked = GUI.Button(clearRect, _clearContent, EditorStyles.miniButton);
+            bool editClicked = GUI.Button(editRect, EditContent, EditorStyles.miniButton);
+            bool clearClicked = GUI.Button(clearRect, ClearContent, EditorStyles.miniButton);
 
             if (clearClicked)
             {
@@ -98,13 +98,13 @@ namespace Core.AbilitySystem.Tag.Editor
         {
             if (property.hasMultipleDifferentValues)
             {
-                return _multipleSelectedContent;
+                return MultipleSelectedContent;
             }
 
             var query = (GameplayTagQuery)property.boxedValue;
             if (query.IsEmpty())
             {
-                return _emptyContent;
+                return EmptyContent;
             }
 
             // UE는 런타임 Build가 자동 설명을 만들지 않아 여기서 다시 만들지만, 우리 Build는 늘 만들어 그대로 쓴다

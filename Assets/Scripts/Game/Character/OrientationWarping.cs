@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Character
 {
@@ -11,7 +12,7 @@ namespace Game.Character
     public class OrientationWarping : MonoBehaviour
     {
         [Tooltip("목표 각도로 따라가는 빠르기(초당). 클수록 바로 돈다.")]
-        [SerializeField] private float rotationInterpSpeed = 10f;
+        [SerializeField] [FormerlySerializedAs("rotationInterpSpeed")] private float _rotationInterpSpeed = 10f;
 
         private Transform _hips;
         private Transform[] _spineBones;
@@ -32,7 +33,7 @@ namespace Game.Character
 
         private void LateUpdate()
         {
-            _angle = Mathf.LerpAngle(_angle, _targetAngle, 1f - Mathf.Exp(-rotationInterpSpeed * Time.deltaTime));
+            _angle = Mathf.LerpAngle(_angle, _targetAngle, 1f - Mathf.Exp(-_rotationInterpSpeed * Time.deltaTime));
             if (Mathf.Abs(_angle) < 0.01f)
             {
                 return;

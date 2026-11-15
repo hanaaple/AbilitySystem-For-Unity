@@ -16,14 +16,14 @@ namespace Core.AbilitySystem.Effect.Editor
 
         // 캡처 대상(captureSource/attribute/snapshot)은 중첩된 backingAttribute(GameplayEffectAttributeCaptureDefinition) 안에 있다.
         // Set/Attribute 팝업은 attribute(GameplayAttribute)의 전용 드로어가 그린다.
-        private const string CaptureSourceName = "backingAttribute.captureSource";
-        private const string AttributeName = "backingAttribute.attribute";
-        private const string AttributeFieldName = "backingAttribute.attribute.fieldName";
-        private const string SnapshotName = "backingAttribute.snapshot";
-        private const string CaptureValueTypeName = "captureValueType";
-        private const string CoefficientName = "coefficient";
-        private const string PreMultiplyAdditiveName = "preMultiplyAdditive";
-        private const string PostMultiplyAdditiveName = "postMultiplyAdditive";
+        private const string CaptureSourceName = "_backingAttribute._captureSource";
+        private const string AttributeName = "_backingAttribute._attribute";
+        private const string AttributeFieldName = "_backingAttribute._attribute._fieldName";
+        private const string SnapshotName = "_backingAttribute._snapshot";
+        private const string CaptureValueTypeName = "_captureValueType";
+        private const string CoefficientName = "_coefficient";
+        private const string PreMultiplyAdditiveName = "_preMultiplyAdditive";
+        private const string PostMultiplyAdditiveName = "_postMultiplyAdditive";
 
         // 단일행: Capture From / Snapshot / Value Type / Coefficient / Pre-Add / Post-Add
         private const int SingleLineRowCount = 6;

@@ -12,9 +12,9 @@ namespace Core.AbilitySystem.Effect.Editor
     [CustomPropertyDrawer(typeof(GameplayEffectModifierMagnitude))]
     public sealed class GameplayEffectModifierMagnitudeDrawer : PropertyDrawer
     {
-        private const string MagnitudeCalculationTypeName = "magnitudeCalculationType";
-        private const string ScalableFloatMagnitudeName = "scalableFloatMagnitude";
-        private const string AttributeBasedMagnitudeName = "attributeBasedMagnitude";
+        private const string MagnitudeCalculationTypeName = "_magnitudeCalculationType";
+        private const string ScalableFloatMagnitudeName = "_scalableFloatMagnitude";
+        private const string AttributeBasedMagnitudeName = "_attributeBasedMagnitude";
 
         private const string Title = "Modifier Magnitude";
         private const float LineGap = 4f;

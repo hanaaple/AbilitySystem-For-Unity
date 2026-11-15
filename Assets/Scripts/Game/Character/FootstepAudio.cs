@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Character
 {
@@ -8,18 +9,18 @@ namespace Game.Character
         // 블렌드 트리에 섞인 클립마다 이벤트가 오므로, 주로 재생 중인 클립의 이벤트만 소리를 낸다
         private const float MinClipWeight = 0.5f;
 
-        [SerializeField] private AudioClip[] footstepClips;
-        [Range(0f, 1f)] [SerializeField] private float volume = 0.5f;
+        [SerializeField] [FormerlySerializedAs("footstepClips")] private AudioClip[] _footstepClips;
+        [Range(0f, 1f)] [SerializeField] [FormerlySerializedAs("volume")] private float _volume = 0.5f;
 
         private void OnFootstep(AnimationEvent animationEvent)
         {
-            if (animationEvent.animatorClipInfo.weight < MinClipWeight || footstepClips.Length == 0)
+            if (animationEvent.animatorClipInfo.weight < MinClipWeight || _footstepClips.Length == 0)
             {
                 return;
             }
 
-            AudioClip clip = footstepClips[Random.Range(0, footstepClips.Length)];
-            AudioSource.PlayClipAtPoint(clip, transform.position, volume);
+            AudioClip clip = _footstepClips[Random.Range(0, _footstepClips.Length)];
+            AudioSource.PlayClipAtPoint(clip, transform.position, _volume);
         }
     }
 }

@@ -472,13 +472,13 @@ namespace Test.Editor
             created.Add(effect);
 
             var serializedObject = new SerializedObject(asset);
-            SerializedProperty template = serializedObject.FindProperty("abilityTemplate");
+            SerializedProperty template = serializedObject.FindProperty("_abilityTemplate");
             float emptyHeight = EditorGUI.GetPropertyHeight(template, true);
 
             template.managedReferenceValue = new TestGameplayAbility();
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             serializedObject.Update();
-            template = serializedObject.FindProperty("abilityTemplate");
+            template = serializedObject.FindProperty("_abilityTemplate");
 
             SerializedProperty value = template.FindPropertyRelative("_testValue");
             SerializedProperty effectField = template.FindPropertyRelative("_testEffect");
@@ -489,7 +489,7 @@ namespace Test.Editor
             effectField.objectReferenceValue = effect;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             check("H-3 인스펙터 경로로 바꾼 값이 원형에 들어감", asset.AbilityTemplate is TestGameplayAbility
-                && Mathf.Approximately(new SerializedObject(asset).FindProperty("abilityTemplate._testValue").floatValue, 4.5f));
+                && Mathf.Approximately(new SerializedObject(asset).FindProperty("_abilityTemplate._testValue").floatValue, 4.5f));
 
             // 파일로 저장해 YAML에 하위 필드가 남는지 본다. GE 참조는 메모리 에셋이라 파일 검사에서 뺀다
             effectField.objectReferenceValue = null;
@@ -767,7 +767,7 @@ namespace Test.Editor
                 return;
             }
 
-            GameplayAttributeHandle stamina = CharacterAttributeSet.Stamina;
+            GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
             asc.AddSpawnedAttribute(new CharacterAttributeSet());
 
             GameplayEffectAsset costEffect = MakeInstantAddBaseEffect(stamina, -30f, created);
@@ -880,8 +880,8 @@ namespace Test.Editor
 
             GameplayTag cooldownTag = CooldownTag.GetTag();
             GameplayTag blockedTag = BlockedTag.GetTag();
-            GameplayAttributeHandle stamina = CharacterAttributeSet.Stamina;
-            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
+            GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
             asc.AddSpawnedAttribute(new CharacterAttributeSet());
             asc.SetAttributeBaseValue(stamina, 50f);
             asc.SetAttributeBaseValue(speed, 0f);
@@ -939,7 +939,7 @@ namespace Test.Editor
             EnsureInitialized(asc);
 
             GameplayTag cooldownTag = CooldownTag.GetTag();
-            GameplayAttributeHandle stamina = CharacterAttributeSet.Stamina;
+            GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
             asc.AddSpawnedAttribute(new CharacterAttributeSet());
 
             GameplayEffectAsset costEffect = MakeInstantAddBaseEffect(stamina, -30f, created);
@@ -1026,15 +1026,15 @@ namespace Test.Editor
             }
 
             // 프로젝트 설정 에셋 대신 테스트 태그를 채운 설정을 끼운다.
-            FieldInfo settingsField = typeof(GameplayAbilitiesSettings).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic);
+            FieldInfo settingsField = typeof(GameplayAbilitiesSettings).GetField("Instance", BindingFlags.Static | BindingFlags.NonPublic);
             object previousSettings = settingsField.GetValue(null);
             GameplayAbilitiesSettings settings = ScriptableObject.CreateInstance<GameplayAbilitiesSettings>();
             created.Add(settings);
-            SetPrivateField(settings, "activateFailCanActivateAbilityTag", failCanActivateTag);
-            SetPrivateField(settings, "activateFailCooldownTag", failCooldownTag);
-            SetPrivateField(settings, "activateFailCostTag", failCostTag);
-            SetPrivateField(settings, "activateFailTagsBlockedTag", failBlockedTag);
-            SetPrivateField(settings, "activateFailTagsMissingTag", failMissingTag);
+            SetPrivateField(settings, "_activateFailCanActivateAbilityTag", failCanActivateTag);
+            SetPrivateField(settings, "_activateFailCooldownTag", failCooldownTag);
+            SetPrivateField(settings, "_activateFailCostTag", failCostTag);
+            SetPrivateField(settings, "_activateFailTagsBlockedTag", failBlockedTag);
+            SetPrivateField(settings, "_activateFailTagsMissingTag", failMissingTag);
             settingsField.SetValue(null, settings);
 
             var events = new List<string>();
@@ -1066,7 +1066,7 @@ namespace Test.Editor
             asc.OnAbilityEndedWithData += onEndedHook;
             try
             {
-                GameplayAttributeHandle stamina = CharacterAttributeSet.Stamina;
+                GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
                 asc.AddSpawnedAttribute(new CharacterAttributeSet());
 
                 GameplayEffectAsset costEffect = MakeInstantAddBaseEffect(stamina, -30f, created);
@@ -1460,7 +1460,7 @@ namespace Test.Editor
                 check("Q-8 두 번 종료 — 종료 이벤트 한 번, Spec 활성 횟수 0", events.Count == 1 && SpecOf(twiceHandle).ActiveCount == 0);
 
                 // 한 발동에서 두 번 커밋 — 두 번째는 쿨다운이 막는다
-                GameplayAttributeHandle stamina = CharacterAttributeSet.Stamina;
+                GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
                 asc.AddSpawnedAttribute(new CharacterAttributeSet());
                 GameplayEffectAsset costEffect = MakeInstantAddBaseEffect(stamina, -30f, created);
                 GameplayEffectAsset cooldownEffect = MakeCooldownEffect(cooldownTag, 10f, created);
@@ -1487,14 +1487,14 @@ namespace Test.Editor
                 check("Q-9 한 발동에서 두 번 커밋 — 첫 번째만 성공(코스트 한 번 70), 두 번째는 쿨다운 사유, 커밋 이벤트 한 번", firstCommit && !secondCommit && Mathf.Approximately(asc.GetAttributeCurrentValue(stamina), 70f) && secondCommitTags.HasTagExact(cooldownTag) && commitEvents == 1);
 
                 // 쿨다운·코스트 GE는 Spec 레벨로 적용된다
-                List<ActiveGameplayEffectHandle> cooldownHandles = asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(cooldownTags));
+                List<ActiveGameplayEffectHandle> cooldownHandles = asc.GetActiveEffects(GameplayEffectQuery.MakeQueryMatchAnyOwningTags(cooldownTags));
                 ActiveGameplayEffect cooldownActive = cooldownHandles.Count == 1 ? asc.GetActiveGameplayEffect(cooldownHandles[0]) : null;
                 check("Q-10 쿨다운 GE가 Spec 레벨(3)로 적용", cooldownActive != null && Mathf.Approximately(cooldownActive.Spec.Level, 3f));
                 asc.RemoveActiveEffectsWithGrantedTags(cooldownTags);
 
                 // 코스트 확인은 Current 값 기준 — Infinite 버프로 늘어난 값으로 감당한다
                 GameplayEffectAsset staminaBuff = MakeEffect(GameplayEffectType.Infinite, created);
-                SetPrivateField(staminaBuff, "modifiers", new List<GameplayModifier> { MakeAddBaseModifier(stamina, 20f) });
+                SetPrivateField(staminaBuff, "_modifiers", new List<GameplayModifier> { MakeAddBaseModifier(stamina, 20f) });
                 asc.SetAttributeBaseValue(stamina, 20f);
                 ActiveGameplayEffectHandle buffEffectHandle = asc.ApplyGameplayEffectToSelf(staminaBuff);
                 float staminaWithBuff = asc.GetAttributeCurrentValue(stamina);
@@ -1610,12 +1610,12 @@ namespace Test.Editor
         private static GameplayModifier MakeAddBaseModifier(GameplayAttributeHandle handle, float magnitude)
         {
             object boxed = default(GameplayModifier);
-            SetPrivateField(boxed, "attribute", new GameplayAttribute(handle));
-            SetPrivateField(boxed, "operation", GameplayModifierOperation.AddBase);
+            SetPrivateField(boxed, "_attribute", new GameplayAttribute(handle));
+            SetPrivateField(boxed, "_operation", GameplayModifierOperation.AddBase);
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
-            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "_scalableFloatMagnitude", magnitude);
+            SetPrivateField(boxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 
@@ -1649,7 +1649,7 @@ namespace Test.Editor
             created.Add(effect);
 
             var serializedObject = new SerializedObject(effect);
-            serializedObject.FindProperty("type").enumValueIndex = (int)type;
+            serializedObject.FindProperty("_type").enumValueIndex = (int)type;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             return effect;
         }
@@ -1658,7 +1658,7 @@ namespace Test.Editor
         private static GameplayEffectAsset MakeInstantAddBaseEffect(GameplayAttributeHandle attribute, float magnitude, List<UnityEngine.Object> created)
         {
             GameplayEffectAsset effect = MakeEffect(GameplayEffectType.Instant, created);
-            SetPrivateField(effect, "modifiers", new List<GameplayModifier> { MakeAddBaseModifier(attribute, magnitude) });
+            SetPrivateField(effect, "_modifiers", new List<GameplayModifier> { MakeAddBaseModifier(attribute, magnitude) });
             return effect;
         }
 
@@ -1666,10 +1666,10 @@ namespace Test.Editor
         private static GameplayEffectAsset MakeCooldownEffect(GameplayTag cooldownTag, float duration, List<UnityEngine.Object> created)
         {
             GameplayEffectAsset effect = MakeEffect(GameplayEffectType.Duration, created);
-            SetPrivateField(effect, "duration", duration);
+            SetPrivateField(effect, "_duration", duration);
             TargetTagsGameplayEffectComponent grantCooldown = new TargetTagsGameplayEffectComponent();
             grantCooldown.GetConfiguredTargetTagChanges().AddTag(cooldownTag);
-            SetPrivateField(effect, "gameplayEffectComponents", new List<GameplayEffectComponent> { grantCooldown });
+            SetPrivateField(effect, "_gameplayEffectComponents", new List<GameplayEffectComponent> { grantCooldown });
             effect.OnGameplayEffectChanged();
             return effect;
         }
@@ -1678,8 +1678,8 @@ namespace Test.Editor
         private static void AssignCostAndCooldown(GameplayAbilityAsset asset, GameplayEffectAsset costEffect, GameplayEffectAsset cooldownEffect)
         {
             var serializedObject = new SerializedObject(asset);
-            serializedObject.FindProperty("abilityTemplate.costGameplayEffect").objectReferenceValue = costEffect;
-            serializedObject.FindProperty("abilityTemplate.cooldownGameplayEffect").objectReferenceValue = cooldownEffect;
+            serializedObject.FindProperty("_abilityTemplate._costGameplayEffect").objectReferenceValue = costEffect;
+            serializedObject.FindProperty("_abilityTemplate._cooldownGameplayEffect").objectReferenceValue = cooldownEffect;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -1691,10 +1691,10 @@ namespace Test.Editor
             created.Add(asset);
 
             var serializedObject = new SerializedObject(asset);
-            serializedObject.FindProperty("abilityTemplate").managedReferenceValue = new TestGameplayAbility();
+            serializedObject.FindProperty("_abilityTemplate").managedReferenceValue = new TestGameplayAbility();
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             serializedObject.Update();
-            serializedObject.FindProperty("abilityTemplate._testEffect").objectReferenceValue = testEffect;
+            serializedObject.FindProperty("_abilityTemplate._testEffect").objectReferenceValue = testEffect;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
 
             AssignCostAndCooldown(asset, costEffect, cooldownEffect);
@@ -1727,10 +1727,10 @@ namespace Test.Editor
             created.Add(asset);
 
             var serializedObject = new SerializedObject(asset);
-            serializedObject.FindProperty("abilityTemplate").managedReferenceValue = new RecordingAbility { Name = name };
+            serializedObject.FindProperty("_abilityTemplate").managedReferenceValue = new RecordingAbility { Name = name };
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             serializedObject.Update();
-            serializedObject.FindProperty("abilityTemplate.instancingPolicy").enumValueIndex = (int)policy;
+            serializedObject.FindProperty("_abilityTemplate._instancingPolicy").enumValueIndex = (int)policy;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             return asset;
         }

@@ -1,5 +1,6 @@
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Character
 {
@@ -10,8 +11,8 @@ namespace Game.Character
     [RequireComponent(typeof(Collider))]
     public class HitZone : MonoBehaviour
     {
-        [SerializeField] private GameplayTag zoneTag;
+        [SerializeField] [FormerlySerializedAs("zoneTag")] private GameplayTag _zoneTag;
 
-        public GameplayTag ZoneTag => zoneTag;
+        public GameplayTag ZoneTag => _zoneTag;
     }
 }

@@ -22,7 +22,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: speed
+      fieldName: Speed
     operation: 1
     modifierMagnitude:
       magnitudeCalculationType: 0

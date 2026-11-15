@@ -17,9 +17,9 @@ Unity C# 코드 **스타일** 규약(네이밍·포맷팅·멤버 순서). `.edi
 | 메서드 | PascalCase | `TakeDamage()` |
 | 프로퍼티 | PascalCase | `IsGrounded` |
 | public 필드 | PascalCase | `MoveSpeed` |
-| 정적 필드 | PascalCase | `InstanceCount` |
+| 정적 필드 (private 포함) | PascalCase | `InstanceCount` |
 | 상수 | PascalCase | `MaxHealth` |
-| private 필드 | `_` + camelCase | `_health` |
+| private 필드 (인스턴스) | `_` + camelCase | `_health` |
 | 지역 변수 / 매개 변수 | camelCase | `deltaTime` |
 | 이벤트 | `On` + PascalCase | `OnDeath` |
 

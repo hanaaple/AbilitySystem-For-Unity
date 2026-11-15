@@ -20,7 +20,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
-      fieldName: maxStamina
+      fieldName: MaxStamina
     operation: 0
     modifierMagnitude:
       magnitudeCalculationType: 1
@@ -31,7 +31,7 @@ MonoBehaviour:
           attribute:
             attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
               Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-            fieldName: health
+            fieldName: Health
           snapshot: 0
         captureValueType: 0
         coefficient: 1
@@ -40,7 +40,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
-      fieldName: speed
+      fieldName: Speed
     operation: 0
     modifierMagnitude:
       magnitudeCalculationType: 1
@@ -51,7 +51,7 @@ MonoBehaviour:
           attribute:
             attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
               Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-            fieldName: stamina
+            fieldName: Stamina
           snapshot: 0
         captureValueType: 0
         coefficient: 1

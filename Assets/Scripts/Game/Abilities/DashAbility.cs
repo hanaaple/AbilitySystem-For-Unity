@@ -2,6 +2,7 @@ using System;
 using Core.AbilitySystem.Abilities;
 using Game.Character;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Abilities
 {
@@ -9,7 +10,7 @@ namespace Game.Abilities
     [Serializable]
     public sealed class DashAbility : CharacterGameplayAbility
     {
-        [Min(0.01f)] [SerializeField] private float duration = 0.2f;
+        [Min(0.01f)] [SerializeField] [FormerlySerializedAs("duration")] private float _duration = 0.2f;
 
         public override void ActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo)
         {
@@ -21,9 +22,9 @@ namespace Game.Abilities
             }
 
             // 거리는 소유자의 dashDistance 어트리뷰트, 시간은 어빌리티 정의값, 방향은 캐릭터가 가려는 쪽
-            float distance = gameObjectInfo.AbilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.DashDistance);
-            Vector3 velocity = character.GetMoveIntentDirection() * (distance / duration);
-            character.Push(velocity, duration, () => EndAbility(handle, gameObjectInfo, false));
+            float distance = gameObjectInfo.AbilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.DashDistanceAttribute);
+            Vector3 velocity = character.GetMoveIntentDirection() * (distance / _duration);
+            character.Push(velocity, _duration, () => EndAbility(handle, gameObjectInfo, false));
         }
     }
 }

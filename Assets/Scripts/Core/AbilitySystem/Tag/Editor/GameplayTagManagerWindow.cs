@@ -9,7 +9,7 @@ namespace Core.AbilitySystem.Tag.Editor
         private const string WindowTitle = "Gameplay Tag Manager";
         private const string SettingsName = "Manager";
 
-        private static readonly Vector2 _defaultWindowSize = new(800f, 800f);
+        private static readonly Vector2 DefaultWindowSize = new(800f, 800f);
 
         [SerializeField] private string _filter = string.Empty;
 
@@ -52,7 +52,7 @@ namespace Core.AbilitySystem.Tag.Editor
         {
             _filter = filter ?? string.Empty;
             Rect windowPosition = position;
-            position = new Rect(windowPosition.x, windowPosition.y, _defaultWindowSize.x, _defaultWindowSize.y);
+            position = new Rect(windowPosition.x, windowPosition.y, DefaultWindowSize.x, DefaultWindowSize.y);
             CreateTagWidget();
         }
 

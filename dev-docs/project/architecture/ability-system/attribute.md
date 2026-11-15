@@ -28,14 +28,14 @@ flowchart TD
 public class CharacterAttributeSet : AttributeSet
 {
     // (1) 실제 값 — 인스턴스 필드. 초기 스탯 GE가 채우고, 핸들이 읽고/쓴다.
-    public AttributeData health;
-    public AttributeData maxHealth;
-    public AttributeData speed;
+    public AttributeData Health;
+    public AttributeData MaxHealth;
+    public AttributeData Speed;
 
     // (2) 외부 식별용 정적 핸들 — 필드 하나당 하나. typeof + nameof로 필드에 묶는다.
-    public static readonly GameplayAttributeHandle Health    = new(typeof(CharacterAttributeSet), nameof(health));
-    public static readonly GameplayAttributeHandle MaxHealth = new(typeof(CharacterAttributeSet), nameof(maxHealth));
-    public static readonly GameplayAttributeHandle Speed     = new(typeof(CharacterAttributeSet), nameof(speed));
+    public static readonly GameplayAttributeHandle HealthAttribute    = new(typeof(CharacterAttributeSet), nameof(Health));
+    public static readonly GameplayAttributeHandle MaxHealthAttribute = new(typeof(CharacterAttributeSet), nameof(MaxHealth));
+    public static readonly GameplayAttributeHandle SpeedAttribute     = new(typeof(CharacterAttributeSet), nameof(Speed));
 }
 ```
 
@@ -45,7 +45,7 @@ public class CharacterAttributeSet : AttributeSet
 쓰는 쪽은 이 정적 핸들 하나로 값을 조회한다:
 
 ```csharp
-float hp = asc.GetAttributeCurrentValue(CharacterAttributeSet.Health);
+float hp = asc.GetAttributeCurrentValue(CharacterAttributeSet.HealthAttribute);
 ```
 
 ### UE의 매크로를 손으로 옮긴 것
@@ -59,9 +59,9 @@ ATTRIBUTE_ACCESSORS(UMyAttributeSet, Health)  // 매크로가 접근자를 자�
 
 `ATTRIBUTE_ACCESSORS` 매크로가 `GetHealthAttribute()`(→ `FGameplayAttribute`) · `GetHealth()` · `SetHealth()` · `InitHealth()`를 **코드 생성**한다. 이 중 `GetHealthAttribute()`가 "밖에서 Health를 문자열 없이 가리키는 정적 진입점"이다.
 
-C#엔 그런 코드 생성 매크로가 없다. 그래서 그 정적 접근자를 **손으로 하나 선언**한 게 `public static readonly GameplayAttributeHandle Health`다 — UE의 `GetHealthAttribute()`에 대응한다. `typeof`+`nameof` 바인딩으로 매크로가 주던 안전성(문자열 오타·rename 취약점 제거)을 매크로 없이 흉내 냈다.
+C#엔 그런 코드 생성 매크로가 없다. 그래서 그 정적 접근자를 **손으로 하나 선언**한 게 `public static readonly GameplayAttributeHandle HealthAttribute`다 — UE의 `GetHealthAttribute()`에 대응한다. `typeof`+`nameof` 바인딩으로 매크로가 주던 안전성(문자열 오타·rename 취약점 제거)을 매크로 없이 흉내 냈다.
 
-> **대응 요약:** UE `FGameplayAttributeData Health`(값) + `GetHealthAttribute()`(정적 식별자) ↔ 여기 `AttributeData health`(값) + `static GameplayAttributeHandle Health`(정적 식별자).
+> **대응 요약:** UE `FGameplayAttributeData Health`(값) + `GetHealthAttribute()`(정적 식별자) ↔ 여기 `AttributeData Health`(값) + `static GameplayAttributeHandle HealthAttribute`(정적 식별자).
 
 ## 참조 2분할 — 직렬화 vs 런타임
 
@@ -92,7 +92,7 @@ private void Start()
 }
 ```
 
-- 초기값이 GE 경로를 타므로 Set 훅(클램프)과 값 변경 이벤트를 거친다. 그래서 모디파이어 순서가 의미를 가진다 — 예: health 클램프가 maxHealth를 상한으로 쓰면 maxHealth Override를 먼저 둔다.
+- 초기값이 GE 경로를 타므로 Set 훅(클램프)과 값 변경 이벤트를 거친다. 그래서 모디파이어 순서가 의미를 가진다 — 예: Health 클램프가 MaxHealth를 상한으로 쓰면 MaxHealth Override를 먼저 둔다.
 - 밸런싱 값은 GE 에셋에 있어 코드 수정 없이 조정한다.
 - 복제(`Instantiate`)하면 설정(이 GE 참조)만 따라가고, 복제본은 자기 `Start`에서 다시 초기화된다.
 

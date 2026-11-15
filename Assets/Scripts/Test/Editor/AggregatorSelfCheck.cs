@@ -151,7 +151,7 @@ namespace Test.Editor
         // ── B. ASC 라우팅 (aggregator 직접) ──
         private static void RunAscRoutingChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            GameplayAttributeHandle handle = CharacterAttributeSet.Health;
+            GameplayAttributeHandle handle = CharacterAttributeSet.HealthAttribute;
             SetBase(asc, handle, 100f);
 
             check("초기 Current == 100", Approx(asc.GetAttributeCurrentValue(handle), 100f));
@@ -179,7 +179,7 @@ namespace Test.Editor
         // ── C. capture 스냅샷 vs 라이브 ──
         private static void RunCaptureSnapshotChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            GameplayAttributeHandle handle = CharacterAttributeSet.Health;
+            GameplayAttributeHandle handle = CharacterAttributeSet.HealthAttribute;
             SetBase(asc, handle, 100f);
 
             GameplayEffectAttributeCaptureDefinition liveDef = new GameplayEffectAttributeCaptureDefinition(handle, AttributeCaptureSource.Source, false);
@@ -211,7 +211,7 @@ namespace Test.Editor
         // ── D. GameplayEffectAsset 적용 (다수 케이스) ──
         private static void RunAssetDrivenChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
 
             (GameplayModifierOperation op, float mag, float expected)[] cases =
             {
@@ -277,8 +277,8 @@ namespace Test.Editor
         // Speed magnitude가 즉시 재평가돼야 한다. 실패하면 dirty/OnMagnitudeDependencyChange 체인이 끊긴 것.
         private static void RunRuntimeDirtyReevalChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
-            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
+            GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
             SetBase(asc, health, 100f);
             SetBase(asc, speed, 0f);
 
@@ -304,7 +304,7 @@ namespace Test.Editor
         // Stamina는 위 단계에서 mod·캡처가 한 번도 걸리지 않아 aggregator가 없다. Base가 바뀌면 저장된 Current도 같이 바뀌어야 한다.
         private static void RunNoAggregatorBaseChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            GameplayAttributeHandle stamina = CharacterAttributeSet.Stamina;
+            GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
 
             SetBase(asc, stamina, 40f);
             check("aggregator 없음: SetBase 40 → Current 40", Approx(asc.GetAttributeCurrentValue(stamina), 40f));
@@ -320,9 +320,9 @@ namespace Test.Editor
         // 한 aggregator에는 여러 GE의 mod가 섞여 있다. 라이브 GE의 magnitude만 바뀌어야 하고, 먼저 건 고정 GE의 mod는 그대로 남아야 한다.
         private static void RunUpdateAggregatorModChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
-            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
-            GameplayAttributeHandle maxHealth = CharacterAttributeSet.MaxHealth;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
+            GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
+            GameplayAttributeHandle maxHealth = CharacterAttributeSet.MaxHealthAttribute;
             SetBase(asc, health, 100f);
             SetBase(asc, speed, 0f);
             SetBase(asc, maxHealth, 0f);
@@ -366,8 +366,8 @@ namespace Test.Editor
         // Speed AddBase = Health.current(non-snapshot) × 1을 1초마다 실행. 적용 뒤 Health가 바뀌면 다음 실행은 바뀐 Health만큼 더해야 한다.
         private static void RunPeriodicRecalculationChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
-            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
+            GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
             SetBase(asc, health, 100f);
             SetBase(asc, speed, 0f);
 
@@ -380,9 +380,9 @@ namespace Test.Editor
 
             GameplayEffectAttributeCaptureDefinition healthLive = new GameplayEffectAttributeCaptureDefinition(health, AttributeCaptureSource.Source, false);
             GameplayEffectAsset periodicGe = MakeGameplayEffect(GameplayEffectType.Duration, MakeAttributeBasedModifier(speed, healthLive, 1f, 0f, 0f));
-            SetPrivateField(periodicGe, "duration", 100f);
-            SetPrivateField(periodicGe, "period", 1f);
-            SetPrivateField(periodicGe, "executePeriodicEffectOnApplication", true);
+            SetPrivateField(periodicGe, "_duration", 100f);
+            SetPrivateField(periodicGe, "_period", 1f);
+            SetPrivateField(periodicGe, "_executePeriodicEffectOnApplication", true);
 
             ActiveGameplayEffectHandle periodicHandle = asc.ApplyGameplayEffectToSelf(periodicGe);
             check("주기 GE 적용 즉시 1회 실행 → Speed Base 100", Approx(asc.GetAttributeBaseValue(speed), 100f));
@@ -403,9 +403,9 @@ namespace Test.Editor
         // 원인(GEModData)은 GE 실행으로 Base가 바뀐 경우에만 실리고, Duration/Infinite mod·직접 Base 설정이면 null이다.
         private static void RunAttributeValueChangeEventChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
-            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
-            GameplayAttributeHandle stamina = CharacterAttributeSet.Stamina;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
+            GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
+            GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
             SetBase(asc, health, 100f);
             SetBase(asc, speed, 0f);
             SetBase(asc, stamina, 40f);
@@ -512,9 +512,9 @@ namespace Test.Editor
         private static void RunPreAttributeBaseChangeClampChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
             ClampedAttributeSet set = new ClampedAttributeSet();
-            set.health = new AttributeData(50f, 50f);
+            set.Health = new AttributeData(50f, 50f);
             asc.AddSpawnedAttribute(set);
-            GameplayAttributeHandle health = ClampedAttributeSet.Health;
+            GameplayAttributeHandle health = ClampedAttributeSet.HealthAttribute;
 
             SetBase(asc, health, -50f);
             check("aggregator 없음: SetBase -50 → Pre 클램프로 Base 0, Current 0", Approx(asc.GetAttributeBaseValue(health), 0f) && Approx(asc.GetAttributeCurrentValue(health), 0f));
@@ -551,11 +551,11 @@ namespace Test.Editor
         private static void RunAttributeSetHookChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
             TestAtrributeSet set = new TestAtrributeSet();
-            set.health = new AttributeData(100f, 100f);
-            set.damage = new AttributeData(0f, 0f);
+            set.Health = new AttributeData(100f, 100f);
+            set.Damage = new AttributeData(0f, 0f);
             asc.AddSpawnedAttribute(set);
-            GameplayAttributeHandle health = TestAtrributeSet.Health;
-            GameplayAttributeHandle damage = TestAtrributeSet.Damage;
+            GameplayAttributeHandle health = TestAtrributeSet.HealthAttribute;
+            GameplayAttributeHandle damage = TestAtrributeSet.DamageAttribute;
 
             List<OnAttributeChangeData> healthEvents = new List<OnAttributeChangeData>();
             void OnHealthChanged(OnAttributeChangeData data)
@@ -608,9 +608,9 @@ namespace Test.Editor
 
         private class ClampedAttributeSet : AttributeSet
         {
-            public static readonly GameplayAttributeHandle Health = new(typeof(ClampedAttributeSet), nameof(health));
+            public static readonly GameplayAttributeHandle HealthAttribute = new(typeof(ClampedAttributeSet), nameof(Health));
 
-            public AttributeData health;
+            public AttributeData Health;
 
             public float LastPostNewValue { get; private set; } = float.NaN;
 
@@ -630,7 +630,7 @@ namespace Test.Editor
         private static void AddHealthSet(AbilitySystemComponent asc, float value)
         {
             CharacterAttributeSet set = new CharacterAttributeSet();
-            set.health = new AttributeData(value, value);
+            set.Health = new AttributeData(value, value);
             asc.AddSpawnedAttribute(set);
         }
 
@@ -642,39 +642,39 @@ namespace Test.Editor
         private static GameplayModifier MakeModifier(GameplayAttributeHandle handle, GameplayModifierOperation op, float magnitude)
         {
             object boxed = default(GameplayModifier);
-            SetPrivateField(boxed, "attribute", new GameplayAttribute(handle));
-            SetPrivateField(boxed, "operation", op);
+            SetPrivateField(boxed, "_attribute", new GameplayAttribute(handle));
+            SetPrivateField(boxed, "_operation", op);
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
-            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "_scalableFloatMagnitude", magnitude);
+            SetPrivateField(boxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 
         private static GameplayModifier MakeAttributeBasedModifier(GameplayAttributeHandle target, GameplayEffectAttributeCaptureDefinition captureDef, float coefficient, float pre, float post)
         {
             AttributeBasedMagnitude attributeBased = new AttributeBasedMagnitude();
-            SetPrivateField(attributeBased, "backingAttribute", captureDef);
-            SetPrivateField(attributeBased, "captureValueType", AttributeCaptureValueType.CurrentValue);
-            SetPrivateField(attributeBased, "coefficient", coefficient);
-            SetPrivateField(attributeBased, "preMultiplyAdditive", pre);
-            SetPrivateField(attributeBased, "postMultiplyAdditive", post);
+            SetPrivateField(attributeBased, "_backingAttribute", captureDef);
+            SetPrivateField(attributeBased, "_captureValueType", AttributeCaptureValueType.CurrentValue);
+            SetPrivateField(attributeBased, "_coefficient", coefficient);
+            SetPrivateField(attributeBased, "_preMultiplyAdditive", pre);
+            SetPrivateField(attributeBased, "_postMultiplyAdditive", post);
 
             object boxed = default(GameplayModifier);
-            SetPrivateField(boxed, "attribute", new GameplayAttribute(target));
-            SetPrivateField(boxed, "operation", GameplayModifierOperation.AddBase);
+            SetPrivateField(boxed, "_attribute", new GameplayAttribute(target));
+            SetPrivateField(boxed, "_operation", GameplayModifierOperation.AddBase);
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
-            SetPrivateField(magnitudeBoxed, "attributeBasedMagnitude", attributeBased);
-            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
+            SetPrivateField(magnitudeBoxed, "_attributeBasedMagnitude", attributeBased);
+            SetPrivateField(boxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 
         private static GameplayEffectAsset MakeGameplayEffect(GameplayEffectType type, params GameplayModifier[] modifiers)
         {
             GameplayEffectAsset ge = ScriptableObject.CreateInstance<GameplayEffectAsset>();
-            SetPrivateField(ge, "type", type);
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier>(modifiers));
+            SetPrivateField(ge, "_type", type);
+            SetPrivateField(ge, "_modifiers", new List<GameplayModifier>(modifiers));
             return ge;
         }
 

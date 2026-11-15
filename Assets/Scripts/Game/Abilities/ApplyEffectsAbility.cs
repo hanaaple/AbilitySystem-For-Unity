@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Abilities
 {
@@ -10,7 +11,7 @@ namespace Game.Abilities
     [Serializable]
     public sealed class ApplyEffectsAbility : CharacterGameplayAbility
     {
-        [SerializeField] private List<GameplayEffectAsset> effects = new();
+        [SerializeField] [FormerlySerializedAs("effects")] private List<GameplayEffectAsset> _effects = new();
 
         public override void ActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo)
         {
@@ -21,7 +22,7 @@ namespace Game.Abilities
             }
 
             float level = GetAbilityLevel(handle, gameObjectInfo);
-            foreach (GameplayEffectAsset effect in effects)
+            foreach (GameplayEffectAsset effect in _effects)
             {
                 if (effect != null)
                 {

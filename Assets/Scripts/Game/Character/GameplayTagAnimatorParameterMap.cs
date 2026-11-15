@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Core.AbilitySystem;
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Character
 {
@@ -13,9 +14,9 @@ namespace Game.Character
     /// <remarks>UE(Lyra): ULyraAnimInstance::GameplayTagPropertyMap(FGameplayTagBlueprintPropertyMap)</remarks>
     public class GameplayTagAnimatorParameterMap : MonoBehaviour
     {
-        [SerializeField] private AbilitySystemComponent abilitySystemComponent;
-        [SerializeField] private Animator animator;
-        [SerializeField] private List<TagParameter> mappings = new();
+        [SerializeField] [FormerlySerializedAs("abilitySystemComponent")] private AbilitySystemComponent _abilitySystemComponent;
+        [SerializeField] [FormerlySerializedAs("animator")] private Animator _animator;
+        [SerializeField] [FormerlySerializedAs("mappings")] private List<TagParameter> _mappings = new();
 
         // 같은 태그를 여러 파라미터에 걸 수 있어 태그별로 묶는다
         private readonly Dictionary<GameplayTag, List<BoundParameter>> _parametersByTag = new();
@@ -24,12 +25,12 @@ namespace Game.Character
         private void Start()
         {
             Dictionary<string, AnimatorControllerParameterType> parameterTypes = new();
-            foreach (AnimatorControllerParameter parameter in animator.parameters)
+            foreach (AnimatorControllerParameter parameter in _animator.parameters)
             {
                 parameterTypes[parameter.name] = parameter.type;
             }
 
-            foreach (TagParameter mapping in mappings)
+            foreach (TagParameter mapping in _mappings)
             {
                 if (!mapping.Tag.IsValid() || !parameterTypes.TryGetValue(mapping.ParameterName, out AnimatorControllerParameterType type))
                 {
@@ -41,7 +42,7 @@ namespace Game.Character
                 {
                     parameters = new List<BoundParameter>();
                     _parametersByTag.Add(mapping.Tag, parameters);
-                    abilitySystemComponent.RegisterGameplayTagEvent(mapping.Tag, OnTagCountChanged, GameplayTagEventType.AnyCountChange);
+                    _abilitySystemComponent.RegisterGameplayTagEvent(mapping.Tag, OnTagCountChanged, GameplayTagEventType.AnyCountChange);
                 }
 
                 parameters.Add(new BoundParameter(Animator.StringToHash(mapping.ParameterName), type));
@@ -50,20 +51,20 @@ namespace Game.Character
             // 구독 전에 이미 붙어 있던 태그도 반영한다
             foreach (GameplayTag tag in _parametersByTag.Keys)
             {
-                OnTagCountChanged(tag, abilitySystemComponent.GetTagCount(tag));
+                OnTagCountChanged(tag, _abilitySystemComponent.GetTagCount(tag));
             }
         }
 
         private void OnDestroy()
         {
-            if (abilitySystemComponent == null)
+            if (_abilitySystemComponent == null)
             {
                 return;
             }
 
             foreach (GameplayTag tag in _parametersByTag.Keys)
             {
-                abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, tag, GameplayTagEventType.AnyCountChange);
+                _abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, tag, GameplayTagEventType.AnyCountChange);
             }
         }
 
@@ -80,17 +81,17 @@ namespace Game.Character
                 {
                     case AnimatorControllerParameterType.Bool:
                     {
-                        animator.SetBool(parameter.Hash, newCount > 0);
+                        _animator.SetBool(parameter.Hash, newCount > 0);
                         break;
                     }
                     case AnimatorControllerParameterType.Int:
                     {
-                        animator.SetInteger(parameter.Hash, newCount);
+                        _animator.SetInteger(parameter.Hash, newCount);
                         break;
                     }
                     case AnimatorControllerParameterType.Float:
                     {
-                        animator.SetFloat(parameter.Hash, newCount);
+                        _animator.SetFloat(parameter.Hash, newCount);
                         break;
                     }
                     default:
@@ -105,11 +106,11 @@ namespace Game.Character
         [Serializable]
         private struct TagParameter
         {
-            [SerializeField] private GameplayTag tag;
-            [SerializeField] private string parameterName;
+            [SerializeField] [FormerlySerializedAs("tag")] private GameplayTag _tag;
+            [SerializeField] [FormerlySerializedAs("parameterName")] private string _parameterName;
 
-            public GameplayTag Tag => tag;
-            public string ParameterName => parameterName;
+            public GameplayTag Tag => _tag;
+            public string ParameterName => _parameterName;
         }
 
         private readonly struct BoundParameter

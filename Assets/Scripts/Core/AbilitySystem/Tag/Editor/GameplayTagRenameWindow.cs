@@ -11,7 +11,7 @@ namespace Core.AbilitySystem.Tag.Editor
         private const string NewTagNameControlName = "GameplayTagRenameWindow.NewTagName";
         private const float ButtonWidth = 80f;
 
-        private static readonly Vector2 _windowSize = new(420f, 84f);
+        private static readonly Vector2 WindowSize = new(420f, 84f);
 
         private string _tagToRename;
         private string _newTagName;
@@ -74,8 +74,8 @@ namespace Core.AbilitySystem.Tag.Editor
             window._tagToRename = tagToRename;
             window._newTagName = tagToRename;
             window._onGameplayTagRenamed = onGameplayTagRenamed;
-            window.minSize = _windowSize;
-            window.maxSize = _windowSize;
+            window.minSize = WindowSize;
+            window.maxSize = WindowSize;
             window.ShowModalUtility();
         }
 

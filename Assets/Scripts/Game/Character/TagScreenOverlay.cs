@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 namespace Game.Character
@@ -12,17 +13,17 @@ namespace Game.Character
     {
         private const int TextureSize = 128;
 
-        [SerializeField] private Color color = new(0.2f, 0.9f, 0.35f, 0.6f);
+        [SerializeField] [FormerlySerializedAs("color")] private Color _color = new(0.2f, 0.9f, 0.35f, 0.6f);
 
         [Tooltip("화면 가운데에서 가장자리까지를 1로 볼 때 색이 나타나기 시작하는 거리. 클수록 테두리가 얇다.")]
-        [Range(0f, 1.4f)] [SerializeField] private float innerRadius = 0.7f;
+        [Range(0f, 1.4f)] [SerializeField] [FormerlySerializedAs("innerRadius")] private float _innerRadius = 0.7f;
 
         private VisualElement _overlay;
         private Texture2D _edgeTexture;
 
         protected override void Start()
         {
-            _edgeTexture = CreateEdgeTexture(innerRadius);
+            _edgeTexture = CreateEdgeTexture(_innerRadius);
 
             VisualElement root = GetComponent<UIDocument>().rootVisualElement;
             root.pickingMode = PickingMode.Ignore;
@@ -34,7 +35,7 @@ namespace Game.Character
             _overlay.style.bottom = 0f;
             _overlay.style.backgroundImage = _edgeTexture;
             _overlay.style.backgroundSize = new BackgroundSize(Length.Percent(100f), Length.Percent(100f));
-            _overlay.style.unityBackgroundImageTintColor = color;
+            _overlay.style.unityBackgroundImageTintColor = _color;
             root.Add(_overlay);
 
             base.Start();

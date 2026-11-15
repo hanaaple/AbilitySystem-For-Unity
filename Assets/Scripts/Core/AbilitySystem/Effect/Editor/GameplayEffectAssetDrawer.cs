@@ -19,37 +19,37 @@ namespace Core.AbilitySystem.Effect.Editor
     [CustomEditor(typeof(GameplayEffectAsset))]
     public sealed class GameplayEffectAssetDrawer : UnityEditor.Editor
     {
-        private const string DescriptionPropertyName = "description";
-        private const string TypePropertyName = "type";
-        private const string DurationPropertyName = "duration";
-        private const string PeriodPropertyName = "period";
-        private const string ExecuteOnApplicationPropertyName = "executePeriodicEffectOnApplication";
-        private const string StackingTypePropertyName = "stackingType";
-        private const string StackDurationRefreshPolicyPropertyName = "stackDurationRefreshPolicy";
-        private const string StackPeriodResetPolicyPropertyName = "stackPeriodResetPolicy";
-        private const string ModifiersPropertyName = "modifiers";
-        private const string ExecutionsPropertyName = "executions";
-        private const string ComponentsPropertyName = "gameplayEffectComponents";
+        private const string DescriptionPropertyName = "_description";
+        private const string TypePropertyName = "_type";
+        private const string DurationPropertyName = "_duration";
+        private const string PeriodPropertyName = "_period";
+        private const string ExecuteOnApplicationPropertyName = "_executePeriodicEffectOnApplication";
+        private const string StackingTypePropertyName = "_stackingType";
+        private const string StackDurationRefreshPolicyPropertyName = "_stackDurationRefreshPolicy";
+        private const string StackPeriodResetPolicyPropertyName = "_stackPeriodResetPolicy";
+        private const string ModifiersPropertyName = "_modifiers";
+        private const string ExecutionsPropertyName = "_executions";
+        private const string ComponentsPropertyName = "_gameplayEffectComponents";
         private const string ComponentClassSuffix = "GameplayEffectComponent";
 
         // GameplayModifier 필드. 대상 어트리뷰트(GameplayAttribute)의 Set/Attribute 팝업은 그 전용 드로어가 그리고, 여기선 요약을 위해 중첩 경로로 읽는다.
-        private const string AttributePropertyName = "attribute";
-        private const string AttributeSetTypeNamePropertyName = "attribute.attributeSetTypeName";
-        private const string FieldNamePropertyName = "attribute.fieldName";
-        private const string OperationPropertyName = "operation";
+        private const string AttributePropertyName = "_attribute";
+        private const string AttributeSetTypeNamePropertyName = "_attribute._attributeSetTypeName";
+        private const string FieldNamePropertyName = "_attribute._fieldName";
+        private const string OperationPropertyName = "_operation";
 
         // Execution 정의(GameplayEffectExecutionDefinition)와 그 Calculation Modifier(GameplayEffectExecutionScopedModifierInfo) 필드.
-        private const string CalculationClassPropertyName = "calculationClass";
-        private const string CalculationModifiersPropertyName = "calculationModifiers";
-        private const string CapturedAttributePropertyName = "capturedAttribute";
-        private const string ModifierOpPropertyName = "modifierOp";
+        private const string CalculationClassPropertyName = "_calculationClass";
+        private const string CalculationModifiersPropertyName = "_calculationModifiers";
+        private const string CapturedAttributePropertyName = "_capturedAttribute";
+        private const string ModifierOpPropertyName = "_modifierOp";
 
         // Modifier와 Calculation Modifier가 같은 이름으로 가진 필드. Magnitude·태그 조건은 각자의 전용 드로어가 그린다.
-        private const string ModifierMagnitudePropertyName = "modifierMagnitude";
-        private const string AttributeBasedMagnitudePropertyName = "modifierMagnitude.attributeBasedMagnitude";
-        private const string CoefficientPropertyName = "modifierMagnitude.attributeBasedMagnitude.coefficient";
-        private const string SourceTagsPropertyName = "sourceTags";
-        private const string TargetTagsPropertyName = "targetTags";
+        private const string ModifierMagnitudePropertyName = "_modifierMagnitude";
+        private const string AttributeBasedMagnitudePropertyName = "_modifierMagnitude._attributeBasedMagnitude";
+        private const string CoefficientPropertyName = "_modifierMagnitude._attributeBasedMagnitude._coefficient";
+        private const string SourceTagsPropertyName = "_sourceTags";
+        private const string TargetTagsPropertyName = "_targetTags";
 
         // ── 공통 규격 ──
         private const float LineGap = 4f;                 // 본문 줄 사이
@@ -76,9 +76,9 @@ namespace Core.AbilitySystem.Effect.Editor
         private static readonly Color NestedOutlineColor = new(0.5f, 0.5f, 0.5f, 0.8f);
 
         // Execution 클래스별 캡처 정의(Defs) 캐시. 타입이 키라 목록 순서가 바뀌어도 안전하다.
-        private static readonly Dictionary<Type, GameplayEffectAttributeCaptureDefinition[]> _captureDefinitionsByExecution = new();
+        private static readonly Dictionary<Type, GameplayEffectAttributeCaptureDefinition[]> CaptureDefinitionsByExecution = new();
 
-        private static readonly Dictionary<GameplayModifierOperation, string> _operationDisplayNames = new()
+        private static readonly Dictionary<GameplayModifierOperation, string> OperationDisplayNames = new()
         {
             { GameplayModifierOperation.AddBase,          "Add (Base)"          },
             { GameplayModifierOperation.MultiplyAdditive, "Multiply (Additive)" },
@@ -88,11 +88,11 @@ namespace Core.AbilitySystem.Effect.Editor
             { GameplayModifierOperation.Override,         "Override"            },
         };
 
-        private static readonly GameplayModifierOperation[] _operationValues =
+        private static readonly GameplayModifierOperation[] OperationValues =
             (GameplayModifierOperation[])Enum.GetValues(typeof(GameplayModifierOperation));
 
-        private static readonly string[] _operationPopupOptions =
-            _operationValues.Select(op => _operationDisplayNames[op]).ToArray();
+        private static readonly string[] OperationPopupOptions =
+            OperationValues.Select(op => OperationDisplayNames[op]).ToArray();
 
         private SerializedProperty _description;
         private SerializedProperty _type;
@@ -603,11 +603,11 @@ namespace Core.AbilitySystem.Effect.Editor
                 return Array.Empty<GameplayEffectAttributeCaptureDefinition>();
             }
 
-            if (!_captureDefinitionsByExecution.TryGetValue(type, out GameplayEffectAttributeCaptureDefinition[] definitions))
+            if (!CaptureDefinitionsByExecution.TryGetValue(type, out GameplayEffectAttributeCaptureDefinition[] definitions))
             {
                 var execution = (GameplayEffectExecution)Activator.CreateInstance(type);
                 definitions = execution.Defs().ToArray();
-                _captureDefinitionsByExecution[type] = definitions;
+                CaptureDefinitionsByExecution[type] = definitions;
             }
 
             return definitions;
@@ -751,9 +751,9 @@ namespace Core.AbilitySystem.Effect.Editor
                 WithLabelWidth(labelWidth, () =>
                 {
                     var currentOp = (GameplayModifierOperation)operation.enumValueIndex;
-                    int opPopupIndex = Array.IndexOf(_operationValues, currentOp);
-                    int newOpPopupIndex = EditorGUI.Popup(new Rect(x, y, width, lineH), "Modifier Op", opPopupIndex, _operationPopupOptions);
-                    operation.enumValueIndex = (int)_operationValues[newOpPopupIndex];
+                    int opPopupIndex = Array.IndexOf(OperationValues, currentOp);
+                    int newOpPopupIndex = EditorGUI.Popup(new Rect(x, y, width, lineH), "Modifier Op", opPopupIndex, OperationPopupOptions);
+                    operation.enumValueIndex = (int)OperationValues[newOpPopupIndex];
                 });
             }
 
@@ -858,7 +858,7 @@ namespace Core.AbilitySystem.Effect.Editor
             return $"{classLabel}{SummarySeparator}Calculation Modifiers {calculationModifiers.arraySize}";
         }
 
-        // 예: "CharacterAttributeSet.health". 비었거나 못 찾으면 그 사실을 표시한다.
+        // 예: "CharacterAttributeSet.Health". 비었거나 못 찾으면 그 사실을 표시한다.
         private static string GetAttributeLabel(string attributeSetTypeName, string fieldName)
         {
             if (string.IsNullOrEmpty(attributeSetTypeName))
@@ -872,7 +872,7 @@ namespace Core.AbilitySystem.Effect.Editor
             return $"{setLabel}.{fieldLabel}";
         }
 
-        // 예: "CharacterAttributeSet.health (Target, Snapshot)". Modifier 요약과 같은 어트리뷰트 표기에 캡처 출처를 붙인다.
+        // 예: "CharacterAttributeSet.Health (Target, Snapshot)". Modifier 요약과 같은 어트리뷰트 표기에 캡처 출처를 붙인다.
         private static string GetCaptureLabel(GameplayEffectAttributeCaptureDefinition definition)
         {
             GameplayAttribute attribute = definition.Attribute;
@@ -887,7 +887,7 @@ namespace Core.AbilitySystem.Effect.Editor
 
         private static string GetOperationLabel(GameplayModifierOperation op)
         {
-            return _operationDisplayNames.TryGetValue(op, out string display) ? display : op.ToString();
+            return OperationDisplayNames.TryGetValue(op, out string display) ? display : op.ToString();
         }
     }
 }

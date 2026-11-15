@@ -17,8 +17,8 @@ namespace Core.AbilitySystem.Tag.Editor
         // GameplayTagRegistryAsset._tags. 런타임 직렬화 필드 이름을 바꾸면 여기도 바꿔야 한다.
         private const string RegistryTagsPath = "_tags";
 
-        private static HashSet<string> _registryTagNames;
-        private static HashSet<string> _nativeTagNames;
+        private static HashSet<string> RegistryTagNames;
+        private static HashSet<string> NativeTagNames;
 
         static GameplayTagRegistryEditing()
         {
@@ -28,29 +28,29 @@ namespace Core.AbilitySystem.Tag.Editor
         /// <summary>레지스트리에 명시된 태그인지(편집할 수 있는 태그).</summary>
         public static bool IsRegistryTag(string tagName)
         {
-            if (_registryTagNames == null)
+            if (RegistryTagNames == null)
             {
                 GameplayTagRegistryAsset registry = GameplayTagRegistryAsset.Load();
-                _registryTagNames = registry != null ? new HashSet<string>(registry.Tags) : new HashSet<string>();
+                RegistryTagNames = registry != null ? new HashSet<string>(registry.Tags) : new HashSet<string>();
             }
 
-            return _registryTagNames.Contains(tagName);
+            return RegistryTagNames.Contains(tagName);
         }
 
         /// <summary>코드(<see cref="NativeTagAttribute"/>)로 정의된 태그인지.</summary>
         public static bool IsNativeTag(string tagName)
         {
-            if (_nativeTagNames == null)
+            if (NativeTagNames == null)
             {
-                _nativeTagNames = new HashSet<string>();
+                NativeTagNames = new HashSet<string>();
                 foreach (NativeGameplayTag nativeTag in NativeGameplayTag.GetRegisteredNativeTags())
                 {
                     InternedName nativeTagName = nativeTag.TagName;
-                    _nativeTagNames.Add(nativeTagName.ToString());
+                    NativeTagNames.Add(nativeTagName.ToString());
                 }
             }
 
-            return _nativeTagNames.Contains(tagName);
+            return NativeTagNames.Contains(tagName);
         }
 
         /// <summary>명시적으로 정의된 태그인지. 중간 부모로만 생긴(암시) 태그는 false.</summary>
@@ -226,13 +226,13 @@ namespace Core.AbilitySystem.Tag.Editor
 
             EditorUtility.SetDirty(registry);
             AssetDatabase.SaveAssetIfDirty(registry);
-            _registryTagNames = null;
+            RegistryTagNames = null;
         }
 
         private static void OnTagTreeRefreshed()
         {
-            _registryTagNames = null;
-            _nativeTagNames = null;
+            RegistryTagNames = null;
+            NativeTagNames = null;
         }
     }
 }

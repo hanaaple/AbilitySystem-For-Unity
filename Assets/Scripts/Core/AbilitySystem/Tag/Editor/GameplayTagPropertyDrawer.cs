@@ -16,13 +16,13 @@ namespace Core.AbilitySystem.Tag.Editor
         private const string MultipleValuesText = "Multiple Values";
         private const float ArrowWidth = 14f;
 
-        private static readonly GUIContent _arrowContent = new("▾");
+        private static readonly GUIContent ArrowContent = new("▾");
 
-        private static GUIStyle _arrowStyle;
+        private static GUIStyle CachedArrowStyle;
 
         private readonly Dictionary<string, GameplayTagPropertyHandle> _propertyHandles = new();
 
-        private static GUIStyle ArrowStyle => _arrowStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
+        private static GUIStyle ArrowStyle => CachedArrowStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -95,7 +95,7 @@ namespace Core.AbilitySystem.Tag.Editor
                 }
             }
 
-            if (EditorGUI.DropdownButton(arrowRect, _arrowContent, FocusType.Keyboard, ArrowStyle))
+            if (EditorGUI.DropdownButton(arrowRect, ArrowContent, FocusType.Keyboard, ArrowStyle))
             {
                 GameplayTagDrawerUtility.OpenPicker(rect, propertyHandle, tagName);
             }

@@ -9028,7 +9028,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3296435526094097312, guid: d6973c1f9b173ec408edf1343d5de50b, type: 3}
-      propertyPath: attackAbility
+      propertyPath: _attackAbility
       value: 
       objectReference: {fileID: 11400000, guid: ead4f5f7f1940d04fa1524e28d53db37, type: 2}
     - target: {fileID: 5734584605263751328, guid: d6973c1f9b173ec408edf1343d5de50b, type: 3}
@@ -15688,7 +15688,7 @@ PrefabInstance:
       value: Fire Zone
       objectReference: {fileID: 0}
     - target: {fileID: 5792493518403159161, guid: ef0402dcfeb035e4b912980864ce1050, type: 3}
-      propertyPath: whileInsideEffects.Array.size
+      propertyPath: _whileInsideEffects.Array.size
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5792493518403159161, guid: ef0402dcfeb035e4b912980864ce1050, type: 3}

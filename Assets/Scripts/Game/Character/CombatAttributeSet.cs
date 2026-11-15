@@ -4,8 +4,8 @@ namespace Game.Character
 {
     public class CombatAttributeSet : AttributeSet
     {
-        public static readonly GameplayAttributeHandle Damage = new(typeof(CombatAttributeSet), nameof(damage));
+        public static readonly GameplayAttributeHandle DamageAttribute = new(typeof(CombatAttributeSet), nameof(Damage));
 
-        public AttributeData damage;
+        public AttributeData Damage;
     }
 }

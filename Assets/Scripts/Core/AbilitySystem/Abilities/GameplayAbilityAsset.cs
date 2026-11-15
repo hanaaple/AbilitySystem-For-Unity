@@ -1,5 +1,6 @@
 using Core.Common;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.Abilities
 {
@@ -9,13 +10,13 @@ namespace Core.AbilitySystem.Abilities
     public sealed class GameplayAbilityAsset : ScriptableObject
     {
         [Tooltip("이 어빌리티가 무엇을 하는지 적는 메모. 동작에는 쓰이지 않는다.")]
-        [TextArea(2, 6)] [SerializeField] private string description;
+        [TextArea(2, 6)] [SerializeField] [FormerlySerializedAs("description")] private string _description;
 
         // 런타임 클래스마다 필드가 달라 SerializeReference로 담는다. 부여 때마다 이 인스턴스를 원형으로 복제하므로 직접 실행하지 않는다.
-        [SerializeReference] [SubclassSelector(typeof(GameplayAbility))] private GameplayAbility abilityTemplate;
+        [SerializeReference] [SubclassSelector(typeof(GameplayAbility))] [FormerlySerializedAs("abilityTemplate")] private GameplayAbility _abilityTemplate;
 
         /// <summary>부여 때 복제되는 원형. 비었으면 null.</summary>
         /// <remarks>UE: UGameplayAbility CDO</remarks>
-        public GameplayAbility AbilityTemplate => abilityTemplate;
+        public GameplayAbility AbilityTemplate => _abilityTemplate;
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Core.AbilitySystem.Effect;
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.GameplayEffectComponents
 {
@@ -12,17 +13,17 @@ namespace Core.AbilitySystem.GameplayEffectComponents
     public sealed class TargetTagRequirementsGameplayEffectComponent : GameplayEffectComponent
     {
         [Tooltip("적용하는 순간에만 본다. 못 맞추면 적용하지 않는다.")]
-        [SerializeField] private GameplayTagRequirements applicationTagRequirements = new();
+        [SerializeField] [FormerlySerializedAs("applicationTagRequirements")] private GameplayTagRequirements _applicationTagRequirements = new();
 
         [Tooltip("적용된 뒤 GE를 켜고 끄는 조건. 꺼져도 제거되지 않고 남는다.")]
-        [SerializeField] private GameplayTagRequirements ongoingTagRequirements = new();
+        [SerializeField] [FormerlySerializedAs("ongoingTagRequirements")] private GameplayTagRequirements _ongoingTagRequirements = new();
 
         [Tooltip("맞추면 GE를 제거한다. 적용도 막는다.")]
-        [SerializeField] private GameplayTagRequirements removalTagRequirements = new();
+        [SerializeField] [FormerlySerializedAs("removalTagRequirements")] private GameplayTagRequirements _removalTagRequirements = new();
 
-        public GameplayTagRequirements ApplicationTagRequirements => applicationTagRequirements;
-        public GameplayTagRequirements OngoingTagRequirements => ongoingTagRequirements;
-        public GameplayTagRequirements RemovalTagRequirements => removalTagRequirements;
+        public GameplayTagRequirements ApplicationTagRequirements => _applicationTagRequirements;
+        public GameplayTagRequirements OngoingTagRequirements => _ongoingTagRequirements;
+        public GameplayTagRequirements RemovalTagRequirements => _removalTagRequirements;
 
         /// <summary>대상 소유 태그가 Application 조건을 맞추고 Removal 조건은 맞추지 않아야 적용한다.</summary>
         /// <remarks>UE: UTargetTagRequirementsGameplayEffectComponent::CanGameplayEffectApply</remarks>
@@ -30,7 +31,7 @@ namespace Core.AbilitySystem.GameplayEffectComponents
         {
             GameplayTagContainer ownedTags = GetOwnedTags(activeGameplayEffectsContainer.Owner);
 
-            if (!applicationTagRequirements.RequirementsMet(ownedTags))
+            if (!_applicationTagRequirements.RequirementsMet(ownedTags))
             {
                 return false;
             }
@@ -50,8 +51,8 @@ namespace Core.AbilitySystem.GameplayEffectComponents
             {
                 // 아무 태그 변화마다 불리지 않도록 조건에 나오는 태그에만 건다
                 var tagsToBind = new List<GameplayTag>();
-                AppendTagsUnique(tagsToBind, ongoingTagRequirements);
-                AppendTagsUnique(tagsToBind, removalTagRequirements);
+                AppendTagsUnique(tagsToBind, _ongoingTagRequirements);
+                AppendTagsUnique(tagsToBind, _removalTagRequirements);
 
                 // Component는 에셋에 하나뿐이고 모든 적용이 같이 쓴다 — 적용별 구독 목록은 필드가 아니라 제거 이벤트에 건 콜백이 든다
                 var boundEvents = new List<(GameplayTag Tag, OnGameplayEffectTagCountChanged Callback)>();
@@ -70,7 +71,7 @@ namespace Core.AbilitySystem.GameplayEffectComponents
             }
 
             GameplayTagContainer ownedTags = GetOwnedTags(asc);
-            return ongoingTagRequirements.RequirementsMet(ownedTags);
+            return _ongoingTagRequirements.RequirementsMet(ownedTags);
         }
 
         /// <remarks>UE: UTargetTagRequirementsGameplayEffectComponent::OnGameplayEffectRemoved</remarks>
@@ -108,14 +109,14 @@ namespace Core.AbilitySystem.GameplayEffectComponents
                 return;
             }
 
-            bool ongoingRequirementsMet = ongoingTagRequirements.IsEmpty() || ongoingTagRequirements.RequirementsMet(ownedTags);
+            bool ongoingRequirementsMet = _ongoingTagRequirements.IsEmpty() || _ongoingTagRequirements.RequirementsMet(ownedTags);
             owner.SetActiveGameplayEffectInhibit(handle, !ongoingRequirementsMet);
         }
 
         /// <remarks>UE: UTargetTagRequirementsGameplayEffectComponent::HaveRemovalRequirementsBeenMet</remarks>
         private bool HaveRemovalRequirementsBeenMet(GameplayTagContainer targetOwnedTags)
         {
-            return !removalTagRequirements.IsEmpty() && removalTagRequirements.RequirementsMet(targetOwnedTags);
+            return !_removalTagRequirements.IsEmpty() && _removalTagRequirements.RequirementsMet(targetOwnedTags);
         }
 
         private static GameplayTagContainer GetOwnedTags(AbilitySystemComponent asc)

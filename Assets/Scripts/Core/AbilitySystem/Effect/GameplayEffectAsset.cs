@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 namespace Core.AbilitySystem.Effect
@@ -11,27 +12,27 @@ namespace Core.AbilitySystem.Effect
     public sealed class GameplayEffectAsset : ScriptableObject
     {
         [Tooltip("이 GE가 무엇을 하는지 적는 메모. 동작에는 쓰이지 않는다.")]
-        [TextArea(2, 6)] [SerializeField] private string description;
+        [TextArea(2, 6)] [SerializeField] [FormerlySerializedAs("description")] private string _description;
 
-        [SerializeField] private GameplayEffectType type;
-        [Min(0f)] [SerializeField] private float duration;
+        [SerializeField] [FormerlySerializedAs("type")] private GameplayEffectType _type;
+        [Min(0f)] [SerializeField] [FormerlySerializedAs("duration")] private float _duration;
         [Tooltip("0이면 주기 실행 없음. 0 초과면 해당 간격마다 반복 적용.")]
-        [Min(0f)] [SerializeField] private float period;
+        [Min(0f)] [SerializeField] [FormerlySerializedAs("period")] private float _period;
 
         [Tooltip("true면 적용 즉시 1회 실행 후 주기마다 실행. false면 첫 주기 이후부터 실행.")]
-        [SerializeField] private bool executePeriodicEffectOnApplication = true;
+        [SerializeField] [FormerlySerializedAs("executePeriodicEffectOnApplication")] private bool _executePeriodicEffectOnApplication = true;
 
         [Tooltip("같은 GE가 다시 걸릴 때 기존 활성 GE에 합칠지. 합치면 새로 만들지 않고 아래 정책대로 갱신한다(스택 수는 1로 고정).")]
-        [SerializeField] private GameplayEffectStackingType stackingType;
-        [SerializeField] private GameplayEffectStackingDurationPolicy stackDurationRefreshPolicy;
-        [SerializeField] private GameplayEffectStackingPeriodPolicy stackPeriodResetPolicy;
+        [SerializeField] [FormerlySerializedAs("stackingType")] private GameplayEffectStackingType _stackingType;
+        [SerializeField] [FormerlySerializedAs("stackDurationRefreshPolicy")] private GameplayEffectStackingDurationPolicy _stackDurationRefreshPolicy;
+        [SerializeField] [FormerlySerializedAs("stackPeriodResetPolicy")] private GameplayEffectStackingPeriodPolicy _stackPeriodResetPolicy;
 
-        [SerializeField] private List<GameplayModifier> modifiers;
+        [SerializeField] [FormerlySerializedAs("modifiers")] private List<GameplayModifier> _modifiers;
 
-        [SerializeField] private List<GameplayEffectExecutionDefinition> executions = new();
+        [SerializeField] [FormerlySerializedAs("executions")] private List<GameplayEffectExecutionDefinition> _executions = new();
 
         // Component 종류마다 타입이 달라 SerializeReference로 담는다.
-        [SerializeReference] private List<GameplayEffectComponent> gameplayEffectComponents = new();
+        [SerializeReference] [FormerlySerializedAs("gameplayEffectComponents")] private List<GameplayEffectComponent> _gameplayEffectComponents = new();
 
         // 설정값이 아니라 GE Component가 채우는 캐시 — 직렬화하지 않고 OnGameplayEffectChanged에서 다시 만든다.
         private readonly GameplayTagContainer _cachedAssetTags = new();
@@ -41,21 +42,21 @@ namespace Core.AbilitySystem.Effect
 
         // TODO Gameplay Cue
 
-        public GameplayEffectType Type => type;
-        public float Duration => duration;
-        public float Period => period;
-        public bool ExecutePeriodicEffectOnApplication => executePeriodicEffectOnApplication;
+        public GameplayEffectType Type => _type;
+        public float Duration => _duration;
+        public float Period => _period;
+        public bool ExecutePeriodicEffectOnApplication => _executePeriodicEffectOnApplication;
 
         /// <remarks>UE: UGameplayEffect::StackingType</remarks>
-        public GameplayEffectStackingType StackingType => stackingType;
+        public GameplayEffectStackingType StackingType => _stackingType;
 
         /// <remarks>UE: UGameplayEffect::StackDurationRefreshPolicy</remarks>
-        public GameplayEffectStackingDurationPolicy StackDurationRefreshPolicy => stackDurationRefreshPolicy;
+        public GameplayEffectStackingDurationPolicy StackDurationRefreshPolicy => _stackDurationRefreshPolicy;
 
         /// <remarks>UE: UGameplayEffect::StackPeriodResetPolicy</remarks>
-        public GameplayEffectStackingPeriodPolicy StackPeriodResetPolicy => stackPeriodResetPolicy;
-        public IReadOnlyList<GameplayModifier> Modifiers => modifiers;
-        public IReadOnlyList<GameplayEffectExecutionDefinition> Executions => executions;
+        public GameplayEffectStackingPeriodPolicy StackPeriodResetPolicy => _stackPeriodResetPolicy;
+        public IReadOnlyList<GameplayModifier> Modifiers => _modifiers;
+        public IReadOnlyList<GameplayEffectExecutionDefinition> Executions => _executions;
 
         // GE Component가 OnGameplayEffectChanged에서 채우는 통로. 밖에는 GetAssetTags()로 읽기만 내준다
         internal GameplayTagContainer CachedAssetTags => _cachedAssetTags;
@@ -82,7 +83,7 @@ namespace Core.AbilitySystem.Effect
             _cachedAssetTags.Reset();
             _cachedGrantedTags.Reset();
 
-            foreach (GameplayEffectComponent gameplayEffectComponent in gameplayEffectComponents)
+            foreach (GameplayEffectComponent gameplayEffectComponent in _gameplayEffectComponents)
             {
                 // SerializeReference 목록은 타입을 고르지 않은 칸이 null로 남는다
                 if (gameplayEffectComponent != null)
@@ -97,7 +98,7 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: UGameplayEffect::CanApply</remarks>
         public bool CanApply(ActiveGameplayEffectsContainer activeGameplayEffectsContainer, GameplayEffectSpec spec)
         {
-            foreach (GameplayEffectComponent gameplayEffectComponent in gameplayEffectComponents)
+            foreach (GameplayEffectComponent gameplayEffectComponent in _gameplayEffectComponents)
             {
                 if (gameplayEffectComponent != null && !gameplayEffectComponent.CanGameplayEffectApply(activeGameplayEffectsContainer, spec))
                 {
@@ -113,7 +114,7 @@ namespace Core.AbilitySystem.Effect
         internal bool OnAddedToActiveContainer(ActiveGameplayEffectsContainer activeGameplayEffectsContainer, ActiveGameplayEffect activeGameplayEffect)
         {
             bool shouldBeActive = true;
-            foreach (GameplayEffectComponent gameplayEffectComponent in gameplayEffectComponents)
+            foreach (GameplayEffectComponent gameplayEffectComponent in _gameplayEffectComponents)
             {
                 if (gameplayEffectComponent != null)
                 {
@@ -129,7 +130,7 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: UGameplayEffect::OnExecuted</remarks>
         internal void OnExecuted(ActiveGameplayEffectsContainer activeGameplayEffectsContainer, GameplayEffectSpec spec)
         {
-            foreach (GameplayEffectComponent gameplayEffectComponent in gameplayEffectComponents)
+            foreach (GameplayEffectComponent gameplayEffectComponent in _gameplayEffectComponents)
             {
                 if (gameplayEffectComponent != null)
                 {
@@ -142,7 +143,7 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: UGameplayEffect::OnApplied</remarks>
         internal void OnApplied(ActiveGameplayEffectsContainer activeGameplayEffectsContainer, GameplayEffectSpec spec)
         {
-            foreach (GameplayEffectComponent gameplayEffectComponent in gameplayEffectComponents)
+            foreach (GameplayEffectComponent gameplayEffectComponent in _gameplayEffectComponents)
             {
                 if (gameplayEffectComponent != null)
                 {

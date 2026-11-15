@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.Attribute
 {
@@ -7,38 +8,38 @@ namespace Core.AbilitySystem.Attribute
     [Serializable]
     public struct GameplayAttribute : IEquatable<GameplayAttribute>
     {
-        [SerializeField] private string attributeSetTypeName;
-        [SerializeField] private string fieldName;
+        [SerializeField] [FormerlySerializedAs("attributeSetTypeName")] private string _attributeSetTypeName;
+        [SerializeField] [FormerlySerializedAs("fieldName")] private string _fieldName;
 
         public GameplayAttribute(string attributeSetTypeName, string fieldName)
         {
-            this.attributeSetTypeName = attributeSetTypeName;
-            this.fieldName = fieldName;
+            _attributeSetTypeName = attributeSetTypeName;
+            _fieldName = fieldName;
         }
 
         public GameplayAttribute(GameplayAttributeHandle handle)
         {
-            this.attributeSetTypeName = handle.SetType?.AssemblyQualifiedName;
-            this.fieldName = handle.Name;
+            _attributeSetTypeName = handle.SetType?.AssemblyQualifiedName;
+            _fieldName = handle.Name;
         }
 
-        public string AttributeSetTypeName => attributeSetTypeName;
+        public string AttributeSetTypeName => _attributeSetTypeName;
 
-        public string FieldName => fieldName;
+        public string FieldName => _fieldName;
 
         /// <summary>Set·Field 문자열이 모두 있는지. 타입 해석 성공까진 보장하지 않는다(그건 <see cref="ToAttributeHandle"/>).</summary>
-        public bool IsSet => !string.IsNullOrEmpty(attributeSetTypeName) && !string.IsNullOrEmpty(fieldName);
+        public bool IsSet => !string.IsNullOrEmpty(_attributeSetTypeName) && !string.IsNullOrEmpty(_fieldName);
 
         /// <summary>런타임 핸들로 해석한다. 타입 해석 실패 시 default(무효).</summary>
         public GameplayAttributeHandle ToAttributeHandle()
         {
-            Type type = Type.GetType(attributeSetTypeName);
-            return type == null ? default : new GameplayAttributeHandle(type, fieldName);
+            Type type = Type.GetType(_attributeSetTypeName);
+            return type == null ? default : new GameplayAttributeHandle(type, _fieldName);
         }
 
         public bool Equals(GameplayAttribute other)
         {
-            return attributeSetTypeName == other.attributeSetTypeName && fieldName == other.fieldName;
+            return _attributeSetTypeName == other._attributeSetTypeName && _fieldName == other._fieldName;
         }
 
         public override bool Equals(object obj)
@@ -48,7 +49,7 @@ namespace Core.AbilitySystem.Attribute
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(attributeSetTypeName, fieldName);
+            return HashCode.Combine(_attributeSetTypeName, _fieldName);
         }
 
         public override string ToString()
@@ -58,8 +59,8 @@ namespace Core.AbilitySystem.Attribute
                 return "(none)";
             }
 
-            Type type = Type.GetType(attributeSetTypeName);
-            return $"{(type != null ? type.Name : attributeSetTypeName)}.{fieldName}";
+            Type type = Type.GetType(_attributeSetTypeName);
+            return $"{(type != null ? type.Name : _attributeSetTypeName)}.{_fieldName}";
         }
     }
 }

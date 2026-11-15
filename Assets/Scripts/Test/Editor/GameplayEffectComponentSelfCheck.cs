@@ -153,7 +153,7 @@ namespace Test.Editor
         private static void RunCallOrderChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
             ActiveGameplayEffectsContainer container = GetContainer(asc);
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             List<string> log = new List<string>();
 
             // Instant
@@ -221,7 +221,7 @@ namespace Test.Editor
         private static void RunCanApplyChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
             ActiveGameplayEffectsContainer container = GetContainer(asc);
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             List<string> log = new List<string>();
 
             RecordingComponent blocker = new RecordingComponent("B1", log) { AllowApply = false };
@@ -247,7 +247,7 @@ namespace Test.Editor
         {
             ActiveGameplayEffectsContainer container = GetContainer(asc);
             IReadOnlyDictionary<ActiveGameplayEffectHandle, ActiveGameplayEffect> activeEffects = container.ActiveGameplayEffects;
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             List<string> log = new List<string>();
 
             RecordingComponent off = new RecordingComponent("C1", log) { ShouldBeActive = false };
@@ -315,7 +315,7 @@ namespace Test.Editor
         private static void RunPeriodicInhibitChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
             ActiveGameplayEffectsContainer container = GetContainer(asc);
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             List<string> log = new List<string>();
 
             RecordingComponent off = new RecordingComponent("D1", log) { ShouldBeActive = false };
@@ -342,7 +342,7 @@ namespace Test.Editor
         private static void RunStackingChecks(AbilitySystemComponent asc, GameplayTag grantedTag, Action<string, bool> check)
         {
             ActiveGameplayEffectsContainer container = GetContainer(asc);
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             GameObject otherGo = new GameObject("GameplayEffectComponentSelfCheck_OtherSource");
             try
             {
@@ -370,7 +370,7 @@ namespace Test.Editor
                 check("S-6 갱신 기준 4초가 지나면 끝남 — modifier·태그 거둠", asc.GetActiveGameplayEffect(t1) == null && Approx(asc.GetAttributeCurrentValue(health), 100f) && asc.GetTagCount(grantedTag) == 0);
 
                 GameplayEffectAsset neverRefresh = MakeStackingEffect(grantedTag, health, GameplayEffectStackingType.AggregateByTarget);
-                SetPrivateField(neverRefresh, "stackDurationRefreshPolicy", GameplayEffectStackingDurationPolicy.NeverRefresh);
+                SetPrivateField(neverRefresh, "_stackDurationRefreshPolicy", GameplayEffectStackingDurationPolicy.NeverRefresh);
                 ActiveGameplayEffectHandle r1 = asc.ApplyGameplayEffectToSelf(neverRefresh);
                 AdvanceTime(container, 3f);
                 asc.ApplyGameplayEffectToSelf(neverRefresh);
@@ -386,7 +386,7 @@ namespace Test.Editor
                 asc.RemoveActiveGameplayEffect(s2);
 
                 GameplayEffectAsset periodic = MakePeriodicEffect(GameplayEffectType.Infinite, Array.Empty<GameplayEffectComponent>(), MakeModifier(health, 10f));
-                SetPrivateField(periodic, "stackingType", GameplayEffectStackingType.AggregateByTarget);
+                SetPrivateField(periodic, "_stackingType", GameplayEffectStackingType.AggregateByTarget);
                 SetBase(asc, health, 100f);
                 ActiveGameplayEffectHandle p1 = asc.ApplyGameplayEffectToSelf(periodic);
                 AdvanceTime(container, 0.5f);
@@ -416,8 +416,8 @@ namespace Test.Editor
         {
             GameplayEffectAsset ge = MakePersistentEffect(GameplayEffectType.Duration, Array.Empty<GameplayEffectComponent>(), MakeModifier(health, 10f));
             GrantTag(ge, grantedTag);
-            SetPrivateField(ge, "duration", 4f);
-            SetPrivateField(ge, "stackingType", stackingType);
+            SetPrivateField(ge, "_duration", 4f);
+            SetPrivateField(ge, "_stackingType", stackingType);
             return ge;
         }
 
@@ -505,8 +505,8 @@ namespace Test.Editor
         // ── E. Asset Tags: GE 캐시·Spec·판정 경로 ──
         private static void RunAssetTagsChecks(AbilitySystemComponent asc, AssetTestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
-            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
+            GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
 
             AssetTagsGameplayEffectComponent assetTagsComponent = MakeAssetTagsComponent(tags.Child, tags.Other);
             GameplayEffectAsset ge = MakePersistentEffect(GameplayEffectType.Infinite, new GameplayEffectComponent[] { assetTagsComponent }, MakeModifier(health, 50f));
@@ -571,7 +571,7 @@ namespace Test.Editor
         // ── F. Granted Tags(Target Tags Component) ──
         private static void RunGrantedTagsChecks(AbilitySystemComponent asc, AssetTestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
 
             TargetTagsGameplayEffectComponent grantOther = MakeTargetTagsComponent(tags.Other);
             GameplayEffectAsset first = MakePersistentEffect(GameplayEffectType.Infinite, new GameplayEffectComponent[] { grantOther }, MakeModifier(health, 0f));
@@ -640,7 +640,7 @@ namespace Test.Editor
         // ── G. Target Tag Requirements ──
         private static void RunTargetTagRequirementsChecks(AbilitySystemComponent asc, AssetTestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             var created = new List<GameplayEffectAsset>();
 
             GameplayEffectAsset MakeRequirementsEffect(GameplayEffectType type, Action<TargetTagRequirementsGameplayEffectComponent> configure, params GameplayEffectComponent[] extra)
@@ -721,7 +721,7 @@ namespace Test.Editor
 
             // 질의(TagQuery)에 나오는 태그도 구독한다
             GameplayEffectAsset queryOngoing = MakeRequirementsEffect(GameplayEffectType.Infinite,
-                c => SetPrivateField(c.OngoingTagRequirements, "_tagQuery", GameplayTagQuery.MakeQuery_MatchAnyTags(new GameplayTagContainer(tags.Other))));
+                c => SetPrivateField(c.OngoingTagRequirements, "_tagQuery", GameplayTagQuery.MakeQueryMatchAnyTags(new GameplayTagContainer(tags.Other))));
             ActiveGameplayEffectHandle queryHandle = asc.ApplyGameplayEffectToSelf(queryOngoing);
             bool queryOff = Approx(asc.GetAttributeCurrentValue(health), 100f);
             asc.AddLooseGameplayTag(tags.Other);
@@ -741,13 +741,13 @@ namespace Test.Editor
         // ── H. GameplayEffectQuery·ASC 질의 API ──
         private static void RunEffectQueryChecks(AbilitySystemComponent asc, AssetTestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
-            GameplayAttributeHandle speed = CharacterAttributeSet.Speed;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
+            GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
             var child = new GameplayTagContainer(tags.Child);
             var parent = new GameplayTagContainer(tags.Parent);
             var other = new GameplayTagContainer(tags.Other);
 
-            check("H-1 빈 질의는 IsEmpty, 태그 질의는 아니다", new GameplayEffectQuery().IsEmpty() && !GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child).IsEmpty());
+            check("H-1 빈 질의는 IsEmpty, 태그 질의는 아니다", new GameplayEffectQuery().IsEmpty() && !GameplayEffectQuery.MakeQueryMatchAnyEffectTags(child).IsEmpty());
 
             // A: Asset Tag Child, Health +10 / B: Granted Tag Other, Health +20 / C: Duration 100초, Speed +5
             GameplayEffectAsset geA = MakePersistentEffect(GameplayEffectType.Infinite, new GameplayEffectComponent[] { MakeAssetTagsComponent(tags.Child) }, MakeModifier(health, 10f));
@@ -761,13 +761,13 @@ namespace Test.Editor
             ActiveGameplayEffectHandle handleB = asc.ApplyGameplayEffectToSelf(geB);
             ActiveGameplayEffectHandle handleC = asc.ApplyGameplayEffectToSelf(geC);
 
-            check("H-2 MatchAnyEffectTags{Child} = A", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child)), handleA));
-            check("H-3 MatchAnyEffectTags{Asset(부모)} = A(자식 태그를 가진 GE도 맞는다)", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(parent)), handleA));
-            check("H-4 Effect 태그는 Granted를 안 본다: MatchAnyEffectTags{Other} = 없음", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(other))));
-            check("H-5 Owning 태그는 Asset+Granted: {Other} = B, {Child} = A", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(other)), handleB) && IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(child)), handleA));
-            check("H-6 MatchNoEffectTags{Child} = B, C", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchNoEffectTags(child)), handleB, handleC));
+            check("H-2 MatchAnyEffectTags{Child} = A", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQueryMatchAnyEffectTags(child)), handleA));
+            check("H-3 MatchAnyEffectTags{Asset(부모)} = A(자식 태그를 가진 GE도 맞는다)", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQueryMatchAnyEffectTags(parent)), handleA));
+            check("H-4 Effect 태그는 Granted를 안 본다: MatchAnyEffectTags{Other} = 없음", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQueryMatchAnyEffectTags(other))));
+            check("H-5 Owning 태그는 Asset+Granted: {Other} = B, {Child} = A", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQueryMatchAnyOwningTags(other)), handleB) && IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQueryMatchAnyOwningTags(child)), handleA));
+            check("H-6 MatchNoEffectTags{Child} = B, C", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQueryMatchNoEffectTags(child)), handleB, handleC));
             check("H-7 GetActiveEffectsWithAllTags{Child} = A", IsHandles(asc.GetActiveEffectsWithAllTags(child), handleA));
-            check("H-8 Asset Tags는 시전자 Spec 태그로도 들어가 MatchAnySourceSpecTags{Child} = A", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnySourceSpecTags(child)), handleA));
+            check("H-8 Asset Tags는 시전자 Spec 태그로도 들어가 MatchAnySourceSpecTags{Child} = A", IsHandles(asc.GetActiveEffects(GameplayEffectQuery.MakeQueryMatchAnySourceSpecTags(child)), handleA));
             check("H-9 ModifyingAttribute Speed = C", IsHandles(asc.GetActiveEffects(new GameplayEffectQuery { ModifyingAttribute = new GameplayAttribute(speed) }), handleC));
             check("H-10 EffectDefinition B = B", IsHandles(asc.GetActiveEffects(new GameplayEffectQuery { EffectDefinition = geB }), handleB));
 
@@ -778,7 +778,7 @@ namespace Test.Editor
             var customQuery = new GameplayEffectQuery { CustomMatchDelegate = effect => effect.Handle.Equals(handleC) };
             check("H-12 CustomMatchDelegate만 채운 질의: 비어 있지 않고 C만 고른다", !customQuery.IsEmpty() && IsHandles(asc.GetActiveEffects(customQuery), handleC));
 
-            GameplayEffectQuery ownsOther = GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(other);
+            GameplayEffectQuery ownsOther = GameplayEffectQuery.MakeQueryMatchAnyOwningTags(other);
             bool countBefore = asc.GetAggregatedStackCount(ownsOther) == 1;
             asc.SetActiveGameplayEffectInhibit(handleB, true);
             bool countInhibited = asc.GetAggregatedStackCount(ownsOther) == 0 && IsHandles(asc.GetActiveEffects(new GameplayEffectQuery { EffectDefinition = geB }), handleB);
@@ -796,7 +796,7 @@ namespace Test.Editor
             bool foundC = asc.GetActiveEffectsEndTimeAndDuration(queryC, out float endTimeC, out float durationC);
             var queryAOrC = new GameplayEffectQuery { CustomMatchDelegate = effect => effect.Handle.Equals(handleA) || effect.Handle.Equals(handleC) };
             bool foundAOrC = asc.GetActiveEffectsEndTimeAndDuration(queryAOrC, out float endTimeAOrC, out float durationAOrC);
-            bool foundNone = asc.GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(other), out _, out _);
+            bool foundNone = asc.GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery.MakeQueryMatchAnyEffectTags(other), out _, out _);
             check("H-15 끝나는 시각: C = 지금+100, 끝 없는 A가 섞이면 -1, 맞는 GE가 없으면 false", foundC && Approx(endTimeC, GetContainer(asc).GetWorldTime() + 100f) && Approx(durationC, 100f) && foundAOrC && Approx(endTimeAOrC, GameplayEffectConstants.InfiniteDuration) && Approx(durationAOrC, GameplayEffectConstants.InfiniteDuration) && !foundNone);
 
             asc.SetActiveGameplayEffectLevelUsingQuery(queryA, 3f);
@@ -840,7 +840,7 @@ namespace Test.Editor
         // ── I. Remove Other Component ──
         private static void RunRemoveOtherChecks(AbilitySystemComponent asc, AssetTestTags tags, Action<string, bool> check)
         {
-            GameplayAttributeHandle health = CharacterAttributeSet.Health;
+            GameplayAttributeHandle health = CharacterAttributeSet.HealthAttribute;
             var child = new GameplayTagContainer(tags.Child);
             var created = new List<GameplayEffectAsset>();
 
@@ -861,7 +861,7 @@ namespace Test.Editor
 
             // 자기도 Child를 가진 정화 GE — 자기를 지우면 안 된다
             GameplayEffectAsset debuff = MakeEffect(GameplayEffectType.Infinite, 10f, MakeAssetTagsComponent(tags.Child));
-            GameplayEffectQuery removeChild = GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child);
+            GameplayEffectQuery removeChild = GameplayEffectQuery.MakeQueryMatchAnyEffectTags(child);
             GameplayEffectAsset cleanse = MakeEffect(GameplayEffectType.Infinite, 1f, MakeAssetTagsComponent(tags.Child), MakeRemoveOther(removeChild));
 
             ActiveGameplayEffectHandle debuffHandle = asc.ApplyGameplayEffectToSelf(debuff);
@@ -875,7 +875,7 @@ namespace Test.Editor
             asc.RemoveActiveGameplayEffect(cleanseHandle2);
 
             // UE는 둘째 질의부터 자기 제외가 빠진다 — 우리는 모든 질의에 건다
-            GameplayEffectAsset cleanseTwoQueries = MakeEffect(GameplayEffectType.Infinite, 1f, MakeAssetTagsComponent(tags.Child), MakeRemoveOther(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child), GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child)));
+            GameplayEffectAsset cleanseTwoQueries = MakeEffect(GameplayEffectType.Infinite, 1f, MakeAssetTagsComponent(tags.Child), MakeRemoveOther(GameplayEffectQuery.MakeQueryMatchAnyEffectTags(child), GameplayEffectQuery.MakeQueryMatchAnyEffectTags(child)));
             debuffHandle = asc.ApplyGameplayEffectToSelf(debuff);
             ActiveGameplayEffectHandle twoQueriesHandle = asc.ApplyGameplayEffectToSelf(cleanseTwoQueries);
             check("I-4 질의가 둘이어도 자기는 남고 대상은 지운다", asc.GetActiveGameplayEffect(twoQueriesHandle) != null && asc.GetActiveGameplayEffect(debuffHandle) == null);
@@ -887,7 +887,7 @@ namespace Test.Editor
             check("I-5 빈 질의는 건너뛴다(아무것도 지우지 않음)", asc.GetActiveGameplayEffect(debuffHandle) != null && asc.GetActiveGameplayEffect(emptyHandle) != null);
             asc.RemoveActiveGameplayEffect(emptyHandle);
 
-            GameplayEffectAsset instantCleanse = MakeEffect(GameplayEffectType.Instant, 5f, MakeRemoveOther(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(child)));
+            GameplayEffectAsset instantCleanse = MakeEffect(GameplayEffectType.Instant, 5f, MakeRemoveOther(GameplayEffectQuery.MakeQueryMatchAnyEffectTags(child)));
             asc.ApplyGameplayEffectToSelf(instantCleanse);
             check("I-6 Instant GE도 적용되면 지운다(Debuff 제거, Base 105)", asc.GetActiveGameplayEffect(debuffHandle) == null && IsBaseAndCurrent(asc, health, 105f));
 
@@ -1028,9 +1028,9 @@ namespace Test.Editor
         private static GameplayEffectAsset MakeGameplayEffect(GameplayEffectType type, GameplayEffectComponent[] components, params GameplayModifier[] modifiers)
         {
             GameplayEffectAsset ge = ScriptableObject.CreateInstance<GameplayEffectAsset>();
-            SetPrivateField(ge, "type", type);
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier>(modifiers));
-            SetPrivateField(ge, "gameplayEffectComponents", new List<GameplayEffectComponent>(components));
+            SetPrivateField(ge, "_type", type);
+            SetPrivateField(ge, "_modifiers", new List<GameplayModifier>(modifiers));
+            SetPrivateField(ge, "_gameplayEffectComponents", new List<GameplayEffectComponent>(components));
             return ge;
         }
 
@@ -1038,30 +1038,30 @@ namespace Test.Editor
         private static GameplayEffectAsset MakePersistentEffect(GameplayEffectType type, GameplayEffectComponent[] components, GameplayModifier modifier)
         {
             GameplayEffectAsset ge = MakeGameplayEffect(type, components, modifier);
-            SetPrivateField(ge, "duration", 100f);
+            SetPrivateField(ge, "_duration", 100f);
             return ge;
         }
 
         private static GameplayEffectAsset MakePeriodicEffect(GameplayEffectType type, GameplayEffectComponent[] components, GameplayModifier modifier)
         {
             GameplayEffectAsset ge = MakePersistentEffect(type, components, modifier);
-            SetPrivateField(ge, "period", 1f);
-            SetPrivateField(ge, "executePeriodicEffectOnApplication", true);
+            SetPrivateField(ge, "_period", 1f);
+            SetPrivateField(ge, "_executePeriodicEffectOnApplication", true);
             return ge;
         }
 
         private static GameplayModifier MakeModifier(GameplayAttributeHandle handle, float magnitude, GameplayTagRequirements sourceTags = null)
         {
             object boxed = default(GameplayModifier);
-            SetPrivateField(boxed, "attribute", new GameplayAttribute(handle));
-            SetPrivateField(boxed, "operation", GameplayModifierOperation.AddBase);
+            SetPrivateField(boxed, "_attribute", new GameplayAttribute(handle));
+            SetPrivateField(boxed, "_operation", GameplayModifierOperation.AddBase);
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
-            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "_scalableFloatMagnitude", magnitude);
+            SetPrivateField(boxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             if (sourceTags != null)
             {
-                SetPrivateField(boxed, "sourceTags", sourceTags);
+                SetPrivateField(boxed, "_sourceTags", sourceTags);
             }
 
             return (GameplayModifier)boxed;
@@ -1070,24 +1070,24 @@ namespace Test.Editor
         private static GameplayModifier MakeAttributeBasedModifier(GameplayAttributeHandle target, GameplayEffectAttributeCaptureDefinition captureDef, float coefficient)
         {
             AttributeBasedMagnitude attributeBased = new AttributeBasedMagnitude();
-            SetPrivateField(attributeBased, "backingAttribute", captureDef);
-            SetPrivateField(attributeBased, "captureValueType", AttributeCaptureValueType.CurrentValue);
-            SetPrivateField(attributeBased, "coefficient", coefficient);
+            SetPrivateField(attributeBased, "_backingAttribute", captureDef);
+            SetPrivateField(attributeBased, "_captureValueType", AttributeCaptureValueType.CurrentValue);
+            SetPrivateField(attributeBased, "_coefficient", coefficient);
 
             object boxed = default(GameplayModifier);
-            SetPrivateField(boxed, "attribute", new GameplayAttribute(target));
-            SetPrivateField(boxed, "operation", GameplayModifierOperation.AddBase);
+            SetPrivateField(boxed, "_attribute", new GameplayAttribute(target));
+            SetPrivateField(boxed, "_operation", GameplayModifierOperation.AddBase);
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
-            SetPrivateField(magnitudeBoxed, "attributeBasedMagnitude", attributeBased);
-            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
+            SetPrivateField(magnitudeBoxed, "_attributeBasedMagnitude", attributeBased);
+            SetPrivateField(boxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 
         private static void AddCharacterSet(AbilitySystemComponent asc, float health)
         {
             CharacterAttributeSet set = new CharacterAttributeSet();
-            set.health = new AttributeData(health, health);
+            set.Health = new AttributeData(health, health);
             asc.AddSpawnedAttribute(set);
         }
 

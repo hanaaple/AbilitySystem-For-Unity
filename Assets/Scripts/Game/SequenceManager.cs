@@ -1,24 +1,25 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game
 {
     public class SequenceManager : MonoBehaviour
     {
-        private static SequenceManager _instance;
+        private static SequenceManager Instance;
 
-        [SerializeField] private PlayerController playerControllerPrefab;
-        [SerializeField] private PlayerCharacter playerCharacterPrefab;
-        [SerializeField] private GameObject spawnPoint;
+        [SerializeField] [FormerlySerializedAs("playerControllerPrefab")] private PlayerController _playerControllerPrefab;
+        [SerializeField] [FormerlySerializedAs("playerCharacterPrefab")] private PlayerCharacter _playerCharacterPrefab;
+        [SerializeField] [FormerlySerializedAs("spawnPoint")] private GameObject _spawnPoint;
 
         private void Awake()
         {
-            if (_instance != null)
+            if (Instance != null)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            Instance = this;
             DontDestroyOnLoad(gameObject);
         }
 
@@ -29,10 +30,10 @@ namespace Game
 
         private void SpawnPlayer()
         {
-            Vector3 spawnPos = spawnPoint != null ? spawnPoint.transform.position : Vector3.zero;
+            Vector3 spawnPos = _spawnPoint != null ? _spawnPoint.transform.position : Vector3.zero;
 
-            PlayerCharacter character = Instantiate(playerCharacterPrefab, spawnPos, Quaternion.identity);
-            PlayerController controller = Instantiate(playerControllerPrefab, Vector3.zero, Quaternion.identity);
+            PlayerCharacter character = Instantiate(_playerCharacterPrefab, spawnPos, Quaternion.identity);
+            PlayerController controller = Instantiate(_playerControllerPrefab, Vector3.zero, Quaternion.identity);
 
             controller.Possess(character);
         }

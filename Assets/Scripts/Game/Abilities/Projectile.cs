@@ -5,6 +5,7 @@ using Core.AbilitySystem.Effect;
 using Core.AbilitySystem.Tag;
 using Game.Character;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.VFX;
 
 namespace Game.Abilities
@@ -17,32 +18,32 @@ namespace Game.Abilities
         private const string StopEvent = "stop";
 
         [Tooltip("있으면 발사·명중·정지 이벤트를 보낸다.")]
-        [SerializeField] private VisualEffect visualEffect;
+        [SerializeField] [FormerlySerializedAs("visualEffect")] private VisualEffect _visualEffect;
 
         [Tooltip("멈추면 숨기는 탄두. 꼬리 궤적처럼 남아서 사라져야 하는 것은 여기 넣지 않는다.")]
-        [SerializeField] private GameObject body;
+        [SerializeField] [FormerlySerializedAs("body")] private GameObject _body;
 
         [Tooltip("명중 지점에 생성하는 이펙트. 스스로 사라져야 한다(파티클 Stop Action = Destroy 등).")]
-        [SerializeField] private GameObject hitEffectPrefab;
+        [SerializeField] [FormerlySerializedAs("hitEffectPrefab")] private GameObject _hitEffectPrefab;
 
         [Tooltip("이 태그의 부위(HitZone)에 맞으면 hitEffectPrefab 대신 headHitEffectPrefab을 생성한다.")]
-        [SerializeField] private GameplayTag headZoneTag;
+        [SerializeField] [FormerlySerializedAs("headZoneTag")] private GameplayTag _headZoneTag;
         [Tooltip("비워 두면 머리에 맞아도 hitEffectPrefab을 쓴다.")]
-        [SerializeField] private GameObject headHitEffectPrefab;
+        [SerializeField] [FormerlySerializedAs("headHitEffectPrefab")] private GameObject _headHitEffectPrefab;
 
-        [SerializeField] private float speed = 15f;
-        [SerializeField] private float radius = 0.2f;
-        [SerializeField] private float lifeTime = 3f;
-        [SerializeField] private LayerMask hitLayers = ~0;
+        [SerializeField] [FormerlySerializedAs("speed")] private float _speed = 15f;
+        [SerializeField] [FormerlySerializedAs("radius")] private float _radius = 0.2f;
+        [SerializeField] [FormerlySerializedAs("lifeTime")] private float _lifeTime = 3f;
+        [SerializeField] [FormerlySerializedAs("hitLayers")] private LayerMask _hitLayers = ~0;
 
         [Tooltip("켜면 캐릭터(ASC)를 뚫고 지나가며 닿은 캐릭터마다 한 번씩 GE를 건다. 캐릭터가 아닌 것(벽 등)에 닿으면 멈춘다.")]
-        [SerializeField] private bool piercesCharacters;
+        [SerializeField] [FormerlySerializedAs("piercesCharacters")] private bool _piercesCharacters;
 
         [Tooltip("몸에 닿은 뒤 같은 방향으로 이만큼 더 들어가며 맞은 부위(머리 등)를 찾는다. 캐릭터 몸 두께보다 길게.")]
-        [SerializeField] private float hitZoneSearchDepth = 1f;
+        [SerializeField] [FormerlySerializedAs("hitZoneSearchDepth")] private float _hitZoneSearchDepth = 1f;
 
         // 멈춘 뒤에도 이미 뿌린 파티클이 사라질 때까지 오브젝트를 남겨 둔다
-        [SerializeField] private float despawnDelay = 2f;
+        [SerializeField] [FormerlySerializedAs("despawnDelay")] private float _despawnDelay = 2f;
 
         private readonly HashSet<AbilitySystemComponent> _hitTargets = new();
         private GameObject _instigator;
@@ -57,8 +58,8 @@ namespace Game.Abilities
                 return;
             }
 
-            float distance = speed * Time.deltaTime;
-            bool hasStopped = piercesCharacters ? MovePiercing(distance) : MoveUntilHit(distance);
+            float distance = _speed * Time.deltaTime;
+            bool hasStopped = _piercesCharacters ? MovePiercing(distance) : MoveUntilHit(distance);
             if (hasStopped)
             {
                 return;
@@ -76,11 +77,11 @@ namespace Game.Abilities
         {
             _instigator = instigator;
             _hitEffectSpecs = hitEffectSpecs ?? Array.Empty<GameplayEffectSpec>();
-            _remainingLifeTime = lifeTime;
+            _remainingLifeTime = _lifeTime;
             _isFlying = true;
-            if (visualEffect != null)
+            if (_visualEffect != null)
             {
-                visualEffect.SendEvent(CreateEvent);
+                _visualEffect.SendEvent(CreateEvent);
             }
         }
 
@@ -107,7 +108,7 @@ namespace Game.Abilities
         {
             Vector3 start = transform.position;
             Vector3 direction = transform.forward;
-            RaycastHit[] hits = Physics.SphereCastAll(start, radius, direction, distance, hitLayers, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = Physics.SphereCastAll(start, _radius, direction, distance, _hitLayers, QueryTriggerInteraction.Ignore);
             Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
             foreach (RaycastHit hit in hits)
             {
@@ -135,9 +136,9 @@ namespace Game.Abilities
                 RaycastHit partHit = ResolveHitPart(hit);
                 ApplyHitEffects(partHit);
                 SpawnHitEffect(partHit.collider);
-                if (visualEffect != null)
+                if (_visualEffect != null)
                 {
-                    visualEffect.SendEvent(HitEvent);
+                    _visualEffect.SendEvent(HitEvent);
                 }
             }
 
@@ -148,7 +149,7 @@ namespace Game.Abilities
         private bool TryFindHit(float distance, out RaycastHit closestHit)
         {
             closestHit = default;
-            RaycastHit[] hits = Physics.SphereCastAll(transform.position, radius, transform.forward, distance, hitLayers, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = Physics.SphereCastAll(transform.position, _radius, transform.forward, distance, _hitLayers, QueryTriggerInteraction.Ignore);
             bool found = false;
             foreach (RaycastHit hit in hits)
             {
@@ -205,7 +206,7 @@ namespace Game.Abilities
         private bool TryFindHitZone(AbilitySystemComponent target, out RaycastHit zoneHit)
         {
             zoneHit = default;
-            RaycastHit[] hits = Physics.RaycastAll(transform.position, transform.forward, hitZoneSearchDepth, hitLayers, QueryTriggerInteraction.Collide);
+            RaycastHit[] hits = Physics.RaycastAll(transform.position, transform.forward, _hitZoneSearchDepth, _hitLayers, QueryTriggerInteraction.Collide);
             bool found = false;
             foreach (RaycastHit hit in hits)
             {
@@ -226,7 +227,7 @@ namespace Game.Abilities
 
         private void SpawnHitEffect(Collider partCollider)
         {
-            GameObject effectPrefab = IsHeadHit(partCollider) && headHitEffectPrefab != null ? headHitEffectPrefab : hitEffectPrefab;
+            GameObject effectPrefab = IsHeadHit(partCollider) && _headHitEffectPrefab != null ? _headHitEffectPrefab : _hitEffectPrefab;
             if (effectPrefab != null)
             {
                 // 날아온 쪽으로 튀게 반대 방향을 본다
@@ -237,33 +238,33 @@ namespace Game.Abilities
         private bool IsHeadHit(Collider partCollider)
         {
             var hitZone = partCollider.GetComponent<HitZone>();
-            if (hitZone == null || !headZoneTag.IsValid())
+            if (hitZone == null || !_headZoneTag.IsValid())
             {
                 return false;
             }
 
             GameplayTag zoneTag = hitZone.ZoneTag;
-            return zoneTag.MatchesTag(headZoneTag);
+            return zoneTag.MatchesTag(_headZoneTag);
         }
 
         private void Stop(string finishEvent)
         {
             _isFlying = false;
-            if (body != null)
+            if (_body != null)
             {
-                body.SetActive(false);
+                _body.SetActive(false);
             }
 
-            if (visualEffect != null)
+            if (_visualEffect != null)
             {
-                visualEffect.SendEvent(StopEvent);
+                _visualEffect.SendEvent(StopEvent);
                 if (finishEvent != null)
                 {
-                    visualEffect.SendEvent(finishEvent);
+                    _visualEffect.SendEvent(finishEvent);
                 }
             }
 
-            Destroy(gameObject, despawnDelay);
+            Destroy(gameObject, _despawnDelay);
         }
     }
 }

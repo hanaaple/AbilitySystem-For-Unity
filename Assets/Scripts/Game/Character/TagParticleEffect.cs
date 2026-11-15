@@ -1,27 +1,28 @@
 using Core.AbilitySystem;
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Character
 {
     /// <summary>캐릭터가 태그를 가진 동안 파티클을 켠다. 태그가 빠지면 새로 뿜는 것만 멈추고 이미 나온 입자는 수명대로 사라진다.</summary>
     public class TagParticleEffect : MonoBehaviour
     {
-        [SerializeField] private AbilitySystemComponent abilitySystemComponent;
-        [SerializeField] private GameplayTag tag;
-        [SerializeField] private ParticleSystem particles;
+        [SerializeField] [FormerlySerializedAs("abilitySystemComponent")] private AbilitySystemComponent _abilitySystemComponent;
+        [SerializeField] [FormerlySerializedAs("tag")] private GameplayTag _tag;
+        [SerializeField] [FormerlySerializedAs("particles")] private ParticleSystem _particles;
 
         private void Start()
         {
-            SetPlaying(abilitySystemComponent.HasMatchingGameplayTag(tag));
-            abilitySystemComponent.RegisterGameplayTagEvent(tag, OnTagCountChanged);
+            SetPlaying(_abilitySystemComponent.HasMatchingGameplayTag(_tag));
+            _abilitySystemComponent.RegisterGameplayTagEvent(_tag, OnTagCountChanged);
         }
 
         private void OnDestroy()
         {
-            if (abilitySystemComponent != null)
+            if (_abilitySystemComponent != null)
             {
-                abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, tag);
+                _abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, _tag);
             }
         }
 
@@ -29,11 +30,11 @@ namespace Game.Character
         {
             if (isPlaying)
             {
-                particles.Play(true);
+                _particles.Play(true);
             }
             else
             {
-                particles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                _particles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
             }
         }
 

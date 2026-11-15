@@ -26,7 +26,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.PlayerAttributeSet, Game, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
-      fieldName: mana
+      fieldName: Mana
     operation: 0
     modifierMagnitude:
       magnitudeCalculationType: 0

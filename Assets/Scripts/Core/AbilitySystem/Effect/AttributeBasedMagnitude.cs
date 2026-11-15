@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.Effect
 {
@@ -19,28 +20,28 @@ namespace Core.AbilitySystem.Effect
 
     /// <summary>
     /// 캡처한 어트리뷰트 값에서 magnitude를 유도하는 AttributeBased 계산 정의. 계산식: (capturedValue + preMultiplyAdditive) * coefficient + postMultiplyAdditive.
-    /// class인 이유: Unity는 struct 필드 초기화값을 새 인스턴스에 반영하지 않지만 class는 반영해 <see cref="coefficient"/> 기본값 1을 필드 초기화로 둘 수 있다(struct면 0이 되어 식 전체가 0).
+    /// class인 이유: Unity는 struct 필드 초기화값을 새 인스턴스에 반영하지 않지만 class는 반영해 <see cref="_coefficient"/> 기본값 1을 필드 초기화로 둘 수 있다(struct면 0이 되어 식 전체가 0).
     /// </summary>
     [Serializable]
     public class AttributeBasedMagnitude
     {
         // 캡처 대상(어디서·무엇을·snapshot 여부). "무엇을 캡처하나"는 여기가, "어떻게 소비하나"(Base/Current)는 captureValueType가 담는다.
-        [SerializeField] private GameplayEffectAttributeCaptureDefinition backingAttribute;
+        [SerializeField] [FormerlySerializedAs("backingAttribute")] private GameplayEffectAttributeCaptureDefinition _backingAttribute;
 
-        [SerializeField] private AttributeCaptureValueType captureValueType;
+        [SerializeField] [FormerlySerializedAs("captureValueType")] private AttributeCaptureValueType _captureValueType;
 
         // 기본값 1 — 식이 (value + Pre) * coefficient + Post라 0이면 캡처값이 통째로 사라진다.
-        [SerializeField] private float coefficient = 1f;
-        [SerializeField] private float preMultiplyAdditive;
-        [SerializeField] private float postMultiplyAdditive;
+        [SerializeField] [FormerlySerializedAs("coefficient")] private float _coefficient = 1f;
+        [SerializeField] [FormerlySerializedAs("preMultiplyAdditive")] private float _preMultiplyAdditive;
+        [SerializeField] [FormerlySerializedAs("postMultiplyAdditive")] private float _postMultiplyAdditive;
 
         /// <summary>캡처 대상 정의. <see cref="GameplayEffectSpec.SetupAttributeCaptureDefinitions"/>가 컨테이너에 등록하는 키.</summary>
-        public GameplayEffectAttributeCaptureDefinition BackingAttribute => backingAttribute;
+        public GameplayEffectAttributeCaptureDefinition BackingAttribute => _backingAttribute;
 
-        public AttributeCaptureValueType CaptureValueType => captureValueType;
-        public float Coefficient => coefficient;
-        public float PreMultiplyAdditive => preMultiplyAdditive;
-        public float PostMultiplyAdditive => postMultiplyAdditive;
+        public AttributeCaptureValueType CaptureValueType => _captureValueType;
+        public float Coefficient => _coefficient;
+        public float PreMultiplyAdditive => _preMultiplyAdditive;
+        public float PostMultiplyAdditive => _postMultiplyAdditive;
 
         /// <summary>
         /// 캡처값에서 최종 magnitude를 계산한다: (capturedValue + PreMultiplyAdditive) * Coefficient + PostMultiplyAdditive. 캡처 이후에 호출해야 한다.
@@ -55,12 +56,12 @@ namespace Core.AbilitySystem.Effect
             var evaluationParameters = new AggregatorEvaluateParameters(capturedSourceTags.GetAggregatedTags(), capturedTargetTags.GetAggregatedTags());
 
             GameplayEffectAttributeCaptureSpecContainer capturedRelevantAttributes = spec.CapturedRelevantAttributes;
-            if (!capturedRelevantAttributes.TryGetCapturedValue(backingAttribute, captureValueType, evaluationParameters, out float capturedValue))
+            if (!capturedRelevantAttributes.TryGetCapturedValue(_backingAttribute, _captureValueType, evaluationParameters, out float capturedValue))
             {
                 Debug.LogWarning($"[AttributeBased] 캡처값 조회 실패 — '{spec.Definition.name}'. 캡처값 0으로 계산한다(미등록·미캡처·무효 캡처).");
             }
 
-            return (capturedValue + preMultiplyAdditive) * coefficient + postMultiplyAdditive;
+            return (capturedValue + _preMultiplyAdditive) * _coefficient + _postMultiplyAdditive;
         }
     }
 }

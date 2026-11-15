@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Core.AbilitySystem;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game
 {
@@ -10,10 +11,10 @@ namespace Game
     public class GameplayEffectZone : MonoBehaviour
     {
         [Tooltip("안에 있는 동안 유지하는 GE(Infinite). 나가면 지운다.")]
-        [SerializeField] private List<GameplayEffectAsset> whileInsideEffects = new();
+        [SerializeField] [FormerlySerializedAs("whileInsideEffects")] private List<GameplayEffectAsset> _whileInsideEffects = new();
 
         [Tooltip("나갈 때 거는 GE. 나와도 잠시 남는 디버프(Duration)용.")]
-        [SerializeField] private List<GameplayEffectAsset> onExitEffects = new();
+        [SerializeField] [FormerlySerializedAs("onExitEffects")] private List<GameplayEffectAsset> _onExitEffects = new();
 
         // 한 캐릭터에 콜라이더가 여럿이면 Enter/Exit도 그 수만큼 오므로 ASC별로 겹친 콜라이더 수를 센다.
         private readonly Dictionary<AbilitySystemComponent, int> _overlapCounts = new();
@@ -40,7 +41,7 @@ namespace Game
             }
 
             var handles = new List<ActiveGameplayEffectHandle>();
-            foreach (GameplayEffectAsset effect in whileInsideEffects)
+            foreach (GameplayEffectAsset effect in _whileInsideEffects)
             {
                 handles.Add(asc.ApplyGameplayEffectToSelf(effect));
             }
@@ -71,7 +72,7 @@ namespace Game
                 }
             }
 
-            foreach (GameplayEffectAsset effect in onExitEffects)
+            foreach (GameplayEffectAsset effect in _onExitEffects)
             {
                 asc.ApplyGameplayEffectToSelf(effect);
             }

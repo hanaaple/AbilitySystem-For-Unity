@@ -3,6 +3,7 @@ using Core.AbilitySystem;
 using Core.AbilitySystem.Attribute;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Test
 {
@@ -15,19 +16,19 @@ namespace Test
     public sealed class AggregatorPlayModeTest : MonoBehaviour
     {
         [Tooltip("Instant · Health=100 / Speed=0 Override. 시작할 때 자신에게 적용하는 초기 스탯 GE.")]
-        [SerializeField] private GameplayEffectAsset geDefaultAttributes;
+        [SerializeField] [FormerlySerializedAs("geDefaultAttributes")] private GameplayEffectAsset _geDefaultAttributes;
 
         [Tooltip("Infinite · Health AddBase +100.")]
-        [SerializeField] private GameplayEffectAsset geHealthBoost;
+        [SerializeField] [FormerlySerializedAs("geHealthBoost")] private GameplayEffectAsset _geHealthBoost;
 
         [Tooltip("Infinite · Speed = Health.current(Source, non-snapshot) * 0.5. Health 변경을 라이브 추종해야 한다.")]
-        [SerializeField] private GameplayEffectAsset geSpeedFromHealthLive;
+        [SerializeField] [FormerlySerializedAs("geSpeedFromHealthLive")] private GameplayEffectAsset _geSpeedFromHealthLive;
 
         [Tooltip("Infinite · Speed = Health.current(Source, snapshot) * 0.5. 캡처 시점 값으로 고정돼야 한다.")]
-        [SerializeField] private GameplayEffectAsset geSpeedFromHealthSnapshot;
+        [SerializeField] [FormerlySerializedAs("geSpeedFromHealthSnapshot")] private GameplayEffectAsset _geSpeedFromHealthSnapshot;
 
         [Tooltip("Instant · Health AddBase +30 (BaseValue 영구 변경).")]
-        [SerializeField] private GameplayEffectAsset geInstantHeal;
+        [SerializeField] [FormerlySerializedAs("geInstantHeal")] private GameplayEffectAsset _geInstantHeal;
 
         private AbilitySystemComponent _asc;
         private int _passed;
@@ -42,9 +43,9 @@ namespace Test
         // GE 컨테이너가 ASC Awake에서 만들어지므로 초기 스탯 GE는 Start에서 적용한다
         private void Start()
         {
-            if (geDefaultAttributes != null)
+            if (_geDefaultAttributes != null)
             {
-                _asc.ApplyGameplayEffectToSelf(geDefaultAttributes);
+                _asc.ApplyGameplayEffectToSelf(_geDefaultAttributes);
             }
 
             if (!Preconditions())
@@ -63,73 +64,73 @@ namespace Test
 
         private bool Preconditions()
         {
-            bool ok = geDefaultAttributes != null
-                      && geHealthBoost != null
-                      && geSpeedFromHealthLive != null
-                      && geSpeedFromHealthSnapshot != null
-                      && geInstantHeal != null
-                      && _asc.HasAttributeSetForAttribute(CharacterAttributeSet.Health)
-                      && _asc.HasAttributeSetForAttribute(CharacterAttributeSet.Speed);
+            bool ok = _geDefaultAttributes != null
+                      && _geHealthBoost != null
+                      && _geSpeedFromHealthLive != null
+                      && _geSpeedFromHealthSnapshot != null
+                      && _geInstantHeal != null
+                      && _asc.HasAttributeSetForAttribute(CharacterAttributeSet.HealthAttribute)
+                      && _asc.HasAttributeSetForAttribute(CharacterAttributeSet.SpeedAttribute);
             return ok;
         }
 
         // 케이스마다 깨끗한 출발점: Health=100 / Speed=0. (Unity의 Reset() 메시지와 충돌 피하려 이름 분리.)
         private void ResetAttributes()
         {
-            _asc.SetAttributeBaseValue(CharacterAttributeSet.Health, 100f);
-            _asc.SetAttributeBaseValue(CharacterAttributeSet.Speed, 0f);
+            _asc.SetAttributeBaseValue(CharacterAttributeSet.HealthAttribute, 100f);
+            _asc.SetAttributeBaseValue(CharacterAttributeSet.SpeedAttribute, 0f);
         }
 
         // A. 초기값이 실제 에셋 초기화로 잡히는가.
         private void RunInitCheck()
         {
             ResetAttributes();
-            Check("초기 Health == 100 (geDefaultAttributes)", Current(CharacterAttributeSet.Health), 100f);
-            Check("초기 Speed == 0", Current(CharacterAttributeSet.Speed), 0f);
+            Check("초기 Health == 100 (geDefaultAttributes)", Current(CharacterAttributeSet.HealthAttribute), 100f);
+            Check("초기 Speed == 0", Current(CharacterAttributeSet.SpeedAttribute), 0f);
         }
 
         // B. non-snapshot 라이브 재평가 (핵심): Health 변경이 Speed로 즉시 전파.
         private void RunLiveReevalCheck()
         {
             ResetAttributes();
-            ActiveGameplayEffectHandle speedHandle = _asc.ApplyGameplayEffectToSelf(geSpeedFromHealthLive);
-            Check("[Live] 적용 직후 Speed == Health(100)*0.5 = 50", Current(CharacterAttributeSet.Speed), 50f);
+            ActiveGameplayEffectHandle speedHandle = _asc.ApplyGameplayEffectToSelf(_geSpeedFromHealthLive);
+            Check("[Live] 적용 직후 Speed == Health(100)*0.5 = 50", Current(CharacterAttributeSet.SpeedAttribute), 50f);
 
-            ActiveGameplayEffectHandle boostHandle = _asc.ApplyGameplayEffectToSelf(geHealthBoost);
-            Check("[Live] Health 100→200", Current(CharacterAttributeSet.Health), 200f);
-            Check("[Live] Health 변경 → Speed 라이브 재평가 200*0.5 = 100", Current(CharacterAttributeSet.Speed), 100f);
+            ActiveGameplayEffectHandle boostHandle = _asc.ApplyGameplayEffectToSelf(_geHealthBoost);
+            Check("[Live] Health 100→200", Current(CharacterAttributeSet.HealthAttribute), 200f);
+            Check("[Live] Health 변경 → Speed 라이브 재평가 200*0.5 = 100", Current(CharacterAttributeSet.SpeedAttribute), 100f);
 
             _asc.RemoveActiveGameplayEffect(boostHandle);
-            Check("[Live] boost 제거 → Health 100 복귀", Current(CharacterAttributeSet.Health), 100f);
-            Check("[Live] boost 제거 → Speed 50 복귀", Current(CharacterAttributeSet.Speed), 50f);
+            Check("[Live] boost 제거 → Health 100 복귀", Current(CharacterAttributeSet.HealthAttribute), 100f);
+            Check("[Live] boost 제거 → Speed 50 복귀", Current(CharacterAttributeSet.SpeedAttribute), 50f);
 
             _asc.RemoveActiveGameplayEffect(speedHandle);
-            Check("[Live] speed GE 제거 → Speed 0", Current(CharacterAttributeSet.Speed), 0f);
+            Check("[Live] speed GE 제거 → Speed 0", Current(CharacterAttributeSet.SpeedAttribute), 0f);
         }
 
         // C. snapshot 회귀 없음: 캡처 시점 값으로 고정, Health가 바뀌어도 재평가 안 됨.
         private void RunSnapshotFixedCheck()
         {
             ResetAttributes();
-            ActiveGameplayEffectHandle snapHandle = _asc.ApplyGameplayEffectToSelf(geSpeedFromHealthSnapshot);
-            Check("[Snapshot] 적용 직후 Speed == 50 (캡처 100*0.5)", Current(CharacterAttributeSet.Speed), 50f);
+            ActiveGameplayEffectHandle snapHandle = _asc.ApplyGameplayEffectToSelf(_geSpeedFromHealthSnapshot);
+            Check("[Snapshot] 적용 직후 Speed == 50 (캡처 100*0.5)", Current(CharacterAttributeSet.SpeedAttribute), 50f);
 
-            ActiveGameplayEffectHandle boostHandle = _asc.ApplyGameplayEffectToSelf(geHealthBoost);
-            Check("[Snapshot] Health 100→200", Current(CharacterAttributeSet.Health), 200f);
-            Check("[Snapshot] Health 변경에도 Speed 50 고정(재평가 없음)", Current(CharacterAttributeSet.Speed), 50f);
+            ActiveGameplayEffectHandle boostHandle = _asc.ApplyGameplayEffectToSelf(_geHealthBoost);
+            Check("[Snapshot] Health 100→200", Current(CharacterAttributeSet.HealthAttribute), 200f);
+            Check("[Snapshot] Health 변경에도 Speed 50 고정(재평가 없음)", Current(CharacterAttributeSet.SpeedAttribute), 50f);
 
             _asc.RemoveActiveGameplayEffect(boostHandle);
             _asc.RemoveActiveGameplayEffect(snapHandle);
-            Check("[Snapshot] 정리 → Speed 0", Current(CharacterAttributeSet.Speed), 0f);
+            Check("[Snapshot] 정리 → Speed 0", Current(CharacterAttributeSet.SpeedAttribute), 0f);
         }
 
         // D. Instant: BaseValue 영구 변경.
         private void RunInstantBaseCheck()
         {
             ResetAttributes();
-            _asc.ApplyGameplayEffectToSelf(geInstantHeal);
-            Check("[Instant] AddBase +30 → Base 130 (영구)", Base(CharacterAttributeSet.Health), 130f);
-            Check("[Instant] Instant 후 Current도 130", Current(CharacterAttributeSet.Health), 130f);
+            _asc.ApplyGameplayEffectToSelf(_geInstantHeal);
+            Check("[Instant] AddBase +30 → Base 130 (영구)", Base(CharacterAttributeSet.HealthAttribute), 130f);
+            Check("[Instant] Instant 후 Current도 130", Current(CharacterAttributeSet.HealthAttribute), 130f);
             ResetAttributes();
         }
 

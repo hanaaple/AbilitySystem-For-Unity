@@ -11,7 +11,7 @@ namespace Core.AbilitySystem.Attribute
     {
         private static readonly Dictionary<Type, GameplayAttributeHandle[]> AttributesBySetType = new();
 
-        private AbilitySystemComponent owner;
+        private AbilitySystemComponent _owner;
 
         /// <summary>Set 타입이 가진 어트리뷰트(공개이거나 [SerializeField]인 AttributeData 필드)를 선언 순서대로 attributes에 더한다.</summary>
         /// <remarks>UE: UAttributeSet::GetAttributesFromSetClass</remarks>
@@ -40,7 +40,7 @@ namespace Core.AbilitySystem.Attribute
 
         internal void SetOwner(AbilitySystemComponent abilitySystemComponent)
         {
-            this.owner = abilitySystemComponent;
+            _owner = abilitySystemComponent;
         }
 
 
@@ -74,7 +74,7 @@ namespace Core.AbilitySystem.Attribute
 
         public void SetBaseValue(GameplayAttributeHandle attributeHandle, float newValue)
         {
-            owner.SetAttributeBaseValue(attributeHandle, newValue);
+            _owner.SetAttributeBaseValue(attributeHandle, newValue);
         }
     }
 }

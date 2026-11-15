@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.Effect
 {
@@ -13,26 +14,26 @@ namespace Core.AbilitySystem.Effect
     [Serializable]
     public class GameplayEffectExecutionScopedModifierInfo
     {
-        [SerializeField] private GameplayEffectAttributeCaptureDefinition capturedAttribute;
-        [SerializeField] private GameplayModifierOperation modifierOp;
-        [SerializeField] private GameplayEffectModifierMagnitude modifierMagnitude;
+        [SerializeField] [FormerlySerializedAs("capturedAttribute")] private GameplayEffectAttributeCaptureDefinition _capturedAttribute;
+        [SerializeField] [FormerlySerializedAs("modifierOp")] private GameplayModifierOperation _modifierOp;
+        [SerializeField] [FormerlySerializedAs("modifierMagnitude")] private GameplayEffectModifierMagnitude _modifierMagnitude;
         [Tooltip("이 modifier가 적용되려면 Source가 갖춰야 할 태그 조건.")]
-        [SerializeField] private GameplayTagRequirements sourceTags = new();
+        [SerializeField] [FormerlySerializedAs("sourceTags")] private GameplayTagRequirements _sourceTags = new();
 
         [Tooltip("이 modifier가 적용되려면 Target이 갖춰야 할 태그 조건.")]
-        [SerializeField] private GameplayTagRequirements targetTags = new();
+        [SerializeField] [FormerlySerializedAs("targetTags")] private GameplayTagRequirements _targetTags = new();
 
         /// <summary>이 modifier를 거는 캡처 어트리뷰트.</summary>
-        public GameplayEffectAttributeCaptureDefinition CapturedAttribute => capturedAttribute;
+        public GameplayEffectAttributeCaptureDefinition CapturedAttribute => _capturedAttribute;
 
-        public GameplayModifierOperation ModifierOp => modifierOp;
+        public GameplayModifierOperation ModifierOp => _modifierOp;
 
-        public GameplayEffectModifierMagnitude ModifierMagnitude => modifierMagnitude;
+        public GameplayEffectModifierMagnitude ModifierMagnitude => _modifierMagnitude;
 
         /// <summary>이 modifier가 적용되려면 Source가 갖춰야 할 태그 조건.</summary>
-        public GameplayTagRequirements SourceTags => sourceTags;
+        public GameplayTagRequirements SourceTags => _sourceTags;
 
         /// <summary>이 modifier가 적용되려면 Target이 갖춰야 할 태그 조건.</summary>
-        public GameplayTagRequirements TargetTags => targetTags;
+        public GameplayTagRequirements TargetTags => _targetTags;
     }
 }

@@ -356,7 +356,7 @@ namespace Core.AbilitySystem
         /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsWithAllTags</remarks>
         public List<ActiveGameplayEffectHandle> GetActiveEffectsWithAllTags(GameplayTagContainer tags)
         {
-            return GetActiveEffects(GameplayEffectQuery.MakeQuery_MatchAllEffectTags(tags));
+            return GetActiveEffects(GameplayEffectQuery.MakeQueryMatchAllEffectTags(tags));
         }
 
         /// <summary>질의에 맞는 켜진 GE 수.</summary>
@@ -419,28 +419,28 @@ namespace Core.AbilitySystem
         /// <remarks>UE: UAbilitySystemComponent::RemoveActiveEffectsWithTags</remarks>
         public int RemoveActiveEffectsWithTags(GameplayTagContainer tags)
         {
-            return RemoveActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyEffectTags(tags));
+            return RemoveActiveEffects(GameplayEffectQuery.MakeQueryMatchAnyEffectTags(tags));
         }
 
         /// <summary>시전자 Spec 태그가 주어진 태그와 하나라도 겹치는 활성 GE를 제거한다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::RemoveActiveEffectsWithSourceTags</remarks>
         public int RemoveActiveEffectsWithSourceTags(GameplayTagContainer tags)
         {
-            return RemoveActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnySourceSpecTags(tags));
+            return RemoveActiveEffects(GameplayEffectQuery.MakeQueryMatchAnySourceSpecTags(tags));
         }
 
         /// <summary>Owning 태그(Asset+Granted)가 주어진 태그와 하나라도 겹치는 활성 GE를 제거한다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::RemoveActiveEffectsWithAppliedTags</remarks>
         public int RemoveActiveEffectsWithAppliedTags(GameplayTagContainer tags)
         {
-            return RemoveActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(tags));
+            return RemoveActiveEffects(GameplayEffectQuery.MakeQueryMatchAnyOwningTags(tags));
         }
 
         /// <summary>Owning 태그(Asset+Granted)가 주어진 태그와 하나라도 겹치는 활성 GE를 제거한다. UE도 <see cref="RemoveActiveEffectsWithAppliedTags"/>와 같은 질의를 쓴다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::RemoveActiveEffectsWithGrantedTags</remarks>
         public int RemoveActiveEffectsWithGrantedTags(GameplayTagContainer tags)
         {
-            return RemoveActiveEffects(GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(tags));
+            return RemoveActiveEffects(GameplayEffectQuery.MakeQueryMatchAnyOwningTags(tags));
         }
 
         /// <remarks>UE: UAbilitySystemComponent::SetActiveGameplayEffectLevel</remarks>

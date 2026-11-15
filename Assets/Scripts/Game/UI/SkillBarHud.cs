@@ -19,35 +19,35 @@ namespace Game.UI
     [RequireComponent(typeof(UIDocument))]
     public class SkillBarHud : MonoBehaviour
     {
-        [SerializeField] private AbilitySystemComponent abilitySystemComponent;
-        [SerializeField] private List<SkillSlot> slots = new();
+        [SerializeField] [FormerlySerializedAs("abilitySystemComponent")] private AbilitySystemComponent _abilitySystemComponent;
+        [SerializeField] [FormerlySerializedAs("slots")] private List<SkillSlot> _slots = new();
 
         // 패널 기준 해상도(1920×1080)의 픽셀. 화면이 작으면 함께 줄어든다.
         [Header("Layout (px)")]
         [FormerlySerializedAs("slotSize")]
-        [SerializeField] private float majorSlotSize = 84f;
-        [SerializeField] private float minorSlotSize = 54f;
-        [SerializeField] private float slotSpacing = 10f;
+        [SerializeField] [FormerlySerializedAs("majorSlotSize")] private float _majorSlotSize = 84f;
+        [SerializeField] [FormerlySerializedAs("minorSlotSize")] private float _minorSlotSize = 54f;
+        [SerializeField] [FormerlySerializedAs("slotSpacing")] private float _slotSpacing = 10f;
         [Tooltip("기본 동작 묶음과 스킬 묶음 사이 간격.")]
-        [SerializeField] private float groupSpacing = 36f;
-        [SerializeField] private float bottomMargin = 32f;
+        [SerializeField] [FormerlySerializedAs("groupSpacing")] private float _groupSpacing = 36f;
+        [SerializeField] [FormerlySerializedAs("bottomMargin")] private float _bottomMargin = 32f;
 
         [Header("Look")]
-        [SerializeField] private Color backgroundColor = new(0.08f, 0.09f, 0.12f, 0.85f);
-        [SerializeField] private Color borderColor = new(1f, 1f, 1f, 0.35f);
+        [SerializeField] [FormerlySerializedAs("backgroundColor")] private Color _backgroundColor = new(0.08f, 0.09f, 0.12f, 0.85f);
+        [SerializeField] [FormerlySerializedAs("borderColor")] private Color _borderColor = new(1f, 1f, 1f, 0.35f);
         [Tooltip("기본 동작 칸의 테두리. 스킬 칸보다 흐리게 해 뒤로 물린다.")]
-        [SerializeField] private Color minorBorderColor = new(1f, 1f, 1f, 0.15f);
+        [SerializeField] [FormerlySerializedAs("minorBorderColor")] private Color _minorBorderColor = new(1f, 1f, 1f, 0.15f);
         [Tooltip("코스트 배지 배경. 마나 바 색과 맞춘다.")]
-        [SerializeField] private Color costBadgeColor = new(0.4f, 0.3f, 0.85f, 0.95f);
-        [SerializeField] private Color activeBorderColor = new(1f, 0.85f, 0.3f, 1f);
-        [SerializeField] private Color cooldownColor = new(0f, 0f, 0f, 0.65f);
+        [SerializeField] [FormerlySerializedAs("costBadgeColor")] private Color _costBadgeColor = new(0.4f, 0.3f, 0.85f, 0.95f);
+        [SerializeField] [FormerlySerializedAs("activeBorderColor")] private Color _activeBorderColor = new(1f, 0.85f, 0.3f, 1f);
+        [SerializeField] [FormerlySerializedAs("cooldownColor")] private Color _cooldownColor = new(0f, 0f, 0f, 0.65f);
         [Tooltip("코스트를 못 낼 때 칸 전체를 덮는 색. 마나 바 색과 맞춘다.")]
-        [SerializeField] private Color unaffordableColor = new(0.2f, 0.12f, 0.45f, 0.7f);
-        [SerializeField] private Color nameColor = new(1f, 0.97f, 0.9f, 1f);
-        [SerializeField] private Color keyColor = new(0.85f, 0.9f, 1f, 1f);
-        [SerializeField] private Color keyBadgeColor = new(0f, 0f, 0f, 0.55f);
+        [SerializeField] [FormerlySerializedAs("unaffordableColor")] private Color _unaffordableColor = new(0.2f, 0.12f, 0.45f, 0.7f);
+        [SerializeField] [FormerlySerializedAs("nameColor")] private Color _nameColor = new(1f, 0.97f, 0.9f, 1f);
+        [SerializeField] [FormerlySerializedAs("keyColor")] private Color _keyColor = new(0.85f, 0.9f, 1f, 1f);
+        [SerializeField] [FormerlySerializedAs("keyBadgeColor")] private Color _keyBadgeColor = new(0f, 0f, 0f, 0.55f);
         [Tooltip("쿨다운이 끝나는 순간 덮는 흰빛이 사라지는 시간(초).")]
-        [SerializeField] private float flashDuration = 0.25f;
+        [SerializeField] [FormerlySerializedAs("flashDuration")] private float _flashDuration = 0.25f;
 
         private readonly List<SlotView> _views = new();
         private VisualElement _bar;
@@ -86,17 +86,17 @@ namespace Game.UI
             _bar.style.position = Position.Absolute;
             _bar.style.left = 0f;
             _bar.style.right = 0f;
-            _bar.style.bottom = bottomMargin;
+            _bar.style.bottom = _bottomMargin;
             _bar.style.flexDirection = FlexDirection.Row;
             _bar.style.justifyContent = Justify.Center;
             root.Add(_bar);
 
             _minorGroup = MakeGroup();
             _majorGroup = MakeGroup();
-            _majorGroup.style.marginLeft = groupSpacing;
-            foreach (SkillSlot slot in slots)
+            _majorGroup.style.marginLeft = _groupSpacing;
+            foreach (SkillSlot slot in _slots)
             {
-                _views.Add(slot.isMajor ? BuildSlot(slot, majorSlotSize, _majorGroup) : BuildSlot(slot, minorSlotSize, _minorGroup));
+                _views.Add(slot.IsMajor ? BuildSlot(slot, _majorSlotSize, _majorGroup) : BuildSlot(slot, _minorSlotSize, _minorGroup));
             }
         }
 
@@ -115,42 +115,42 @@ namespace Game.UI
             // 칸 + (작은 칸이면) 아래 이름 글자를 세로로 묶는다
             var cell = new VisualElement { pickingMode = PickingMode.Ignore };
             cell.style.alignItems = Align.Center;
-            cell.style.marginLeft = slotSpacing * 0.5f;
-            cell.style.marginRight = slotSpacing * 0.5f;
+            cell.style.marginLeft = _slotSpacing * 0.5f;
+            cell.style.marginRight = _slotSpacing * 0.5f;
             group.Add(cell);
 
             var frame = new VisualElement { pickingMode = PickingMode.Ignore };
             frame.style.width = size;
             frame.style.height = size;
-            frame.style.backgroundColor = backgroundColor;
-            frame.style.backgroundImage = slot.background;
+            frame.style.backgroundColor = _backgroundColor;
+            frame.style.backgroundImage = slot.Background;
             frame.style.overflow = Overflow.Hidden;
             SetRadius(frame, size * 0.14f);
-            SetBorder(frame, 2f, slot.isMajor ? borderColor : minorBorderColor);
+            SetBorder(frame, 2f, slot.IsMajor ? _borderColor : _minorBorderColor);
             cell.Add(frame);
 
             var icon = MakeFullLayer(frame);
-            icon.style.backgroundImage = slot.icon;
+            icon.style.backgroundImage = slot.Icon;
             icon.style.marginLeft = 6f;
             icon.style.marginRight = 6f;
             icon.style.marginTop = 6f;
             icon.style.marginBottom = 6f;
 
             var view = new SlotView(slot, frame);
-            if (slot.cooldownTag.IsValid())
+            if (slot.CooldownTag.IsValid())
             {
                 var tags = new GameplayTagContainer();
-                tags.AddTag(slot.cooldownTag);
-                view.CooldownQuery = GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(tags);
+                tags.AddTag(slot.CooldownTag);
+                view.CooldownQuery = GameplayEffectQuery.MakeQueryMatchAnyOwningTags(tags);
             }
 
             // 지난 쿨다운이 아니라 남은 쿨다운만큼 덮는다 — 덮개가 걷히며 아이콘이 차오른다
             var cooldown = MakeFullLayer(frame);
-            cooldown.generateVisualContent += context => RadialFill.Draw(context, view.RemainingRatio, cooldownColor);
+            cooldown.generateVisualContent += context => RadialFill.Draw(context, view.RemainingRatio, _cooldownColor);
             view.Cooldown = cooldown;
 
             view.Unaffordable = MakeFullLayer(frame);
-            view.Unaffordable.style.backgroundColor = unaffordableColor;
+            view.Unaffordable.style.backgroundColor = _unaffordableColor;
             view.Unaffordable.style.display = DisplayStyle.None;
 
             view.Flash = MakeFullLayer(frame);
@@ -159,39 +159,39 @@ namespace Game.UI
 
             // 아이콘 그림이 없으면 글자가 그 자리를 대신한다. 큰 칸(스킬)은 스킬 이름을(키 배지와 겹치지 않게 조금 아래),
             // 작은 칸(기본 동작)은 무엇을 하는지 뻔하므로 누를 키를 크게 두고 이름은 칸 아래 작은 글자로 단다.
-            string centerText = slot.isMajor ? slot.displayName : slot.keyLabel;
-            if (slot.icon == null && !string.IsNullOrEmpty(centerText))
+            string centerText = slot.IsMajor ? slot.DisplayName : slot.KeyLabel;
+            if (slot.Icon == null && !string.IsNullOrEmpty(centerText))
             {
                 var nameLabel = new Label(centerText) { pickingMode = PickingMode.Ignore };
                 nameLabel.style.position = Position.Absolute;
                 nameLabel.style.left = 0f;
                 nameLabel.style.right = 0f;
-                nameLabel.style.top = slot.isMajor ? size * 0.18f : 0f;
+                nameLabel.style.top = slot.IsMajor ? size * 0.18f : 0f;
                 nameLabel.style.bottom = 0f;
                 nameLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
-                nameLabel.style.fontSize = size * (slot.isMajor ? 0.23f : 0.26f);
+                nameLabel.style.fontSize = size * (slot.IsMajor ? 0.23f : 0.26f);
                 nameLabel.style.letterSpacing = size * 0.01f;
-                nameLabel.style.color = nameColor;
+                nameLabel.style.color = _nameColor;
                 nameLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
                 nameLabel.style.textShadow = new TextShadow { offset = new Vector2(0f, 2f), blurRadius = 4f, color = new Color(0f, 0f, 0f, 0.9f) };
                 frame.Insert(frame.IndexOf(view.Cooldown), nameLabel);
             }
 
-            if (!slot.isMajor && !string.IsNullOrEmpty(slot.displayName))
+            if (!slot.IsMajor && !string.IsNullOrEmpty(slot.DisplayName))
             {
-                var caption = new Label(slot.displayName) { pickingMode = PickingMode.Ignore };
+                var caption = new Label(slot.DisplayName) { pickingMode = PickingMode.Ignore };
                 caption.style.marginTop = 3f;
                 caption.style.paddingLeft = 0f;
                 caption.style.paddingRight = 0f;
                 caption.style.fontSize = size * 0.24f;
-                caption.style.color = new Color(nameColor.r, nameColor.g, nameColor.b, 0.75f);
+                caption.style.color = new Color(_nameColor.r, _nameColor.g, _nameColor.b, 0.75f);
                 caption.style.textShadow = new TextShadow { offset = new Vector2(1f, 1f), blurRadius = 2f, color = new Color(0f, 0f, 0f, 0.9f) };
                 cell.Add(caption);
             }
 
             // 큰 칸의 키는 왼쪽 위 배지 — 스킬 이름보다 작고 차분하게
-            var keyBadge = new Label(slot.keyLabel) { pickingMode = PickingMode.Ignore };
-            keyBadge.style.display = slot.isMajor ? DisplayStyle.Flex : DisplayStyle.None;
+            var keyBadge = new Label(slot.KeyLabel) { pickingMode = PickingMode.Ignore };
+            keyBadge.style.display = slot.IsMajor ? DisplayStyle.Flex : DisplayStyle.None;
             keyBadge.style.position = Position.Absolute;
             keyBadge.style.left = 5f;
             keyBadge.style.top = 5f;
@@ -200,9 +200,9 @@ namespace Game.UI
             keyBadge.style.paddingTop = 1f;
             keyBadge.style.paddingBottom = 1f;
             keyBadge.style.fontSize = size * 0.17f;
-            keyBadge.style.color = keyColor;
+            keyBadge.style.color = _keyColor;
             keyBadge.style.unityFontStyleAndWeight = FontStyle.Bold;
-            keyBadge.style.backgroundColor = keyBadgeColor;
+            keyBadge.style.backgroundColor = _keyBadgeColor;
             SetRadius(keyBadge, size * 0.06f);
             SetBorder(keyBadge, 1f, new Color(1f, 1f, 1f, 0.25f));
             frame.Add(keyBadge);
@@ -232,7 +232,7 @@ namespace Game.UI
             view.CostLabel.style.fontSize = size * 0.16f;
             view.CostLabel.style.color = Color.white;
             view.CostLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-            view.CostLabel.style.backgroundColor = costBadgeColor;
+            view.CostLabel.style.backgroundColor = _costBadgeColor;
             view.CostLabel.style.display = DisplayStyle.None;
             SetRadius(view.CostLabel, size * 0.06f);
             frame.Add(view.CostLabel);
@@ -248,7 +248,7 @@ namespace Game.UI
 
             float remaining = 0f;
             float duration = 0f;
-            foreach ((float timeRemaining, float total) in abilitySystemComponent.GetActiveEffectsTimeRemainingAndDuration(view.CooldownQuery))
+            foreach ((float timeRemaining, float total) in _abilitySystemComponent.GetActiveEffectsTimeRemainingAndDuration(view.CooldownQuery))
             {
                 if (timeRemaining > remaining)
                 {
@@ -269,32 +269,32 @@ namespace Game.UI
 
             if (view.WasCoolingDown && !isCoolingDown)
             {
-                view.FlashTime = flashDuration;
+                view.FlashTime = _flashDuration;
             }
 
             view.WasCoolingDown = isCoolingDown;
             view.FlashTime = Mathf.Max(0f, view.FlashTime - Time.deltaTime);
-            view.Flash.style.opacity = flashDuration > 0f ? view.FlashTime / flashDuration * 0.8f : 0f;
+            view.Flash.style.opacity = _flashDuration > 0f ? view.FlashTime / _flashDuration * 0.8f : 0f;
         }
 
         private void UpdateActive(SlotView view)
         {
             SkillSlot slot = view.Slot;
-            if (!slot.activeTag.IsValid() && !slot.showInputHeld)
+            if (!slot.ActiveTag.IsValid() && !slot.ShowInputHeld)
             {
                 return;
             }
 
-            bool isActive = (slot.activeTag.IsValid() && abilitySystemComponent.HasMatchingGameplayTag(slot.activeTag))
-                || (slot.showInputHeld && IsInputHeld(slot.inputID));
-            SetBorder(view.Frame, isActive ? 3f : 2f, isActive ? activeBorderColor : borderColor);
+            bool isActive = (slot.ActiveTag.IsValid() && _abilitySystemComponent.HasMatchingGameplayTag(slot.ActiveTag))
+                || (slot.ShowInputHeld && IsInputHeld(slot.InputID));
+            SetBorder(view.Frame, isActive ? 3f : 2f, isActive ? _activeBorderColor : _borderColor);
         }
 
         private void UpdateCost(SlotView view)
         {
-            GameplayAbilitySpec spec = FindSpec(view.Slot.inputID);
+            GameplayAbilitySpec spec = FindSpec(view.Slot.InputID);
             GameplayAbility ability = spec != null ? spec.GetPrimaryInstance() ?? spec.Ability.AbilityTemplate : null;
-            bool canAfford = ability == null || ability.CheckCost(spec.Handle, abilitySystemComponent.AbilityGameObjectInfo);
+            bool canAfford = ability == null || ability.CheckCost(spec.Handle, _abilitySystemComponent.AbilityGameObjectInfo);
             view.Unaffordable.style.display = canAfford ? DisplayStyle.None : DisplayStyle.Flex;
 
             if (ability != null && !view.HasCostLabel)
@@ -314,7 +314,7 @@ namespace Game.UI
                 return 0f;
             }
 
-            GameplayEffectSpec spec = abilitySystemComponent.MakeOutgoingSpec(costEffect);
+            GameplayEffectSpec spec = _abilitySystemComponent.MakeOutgoingSpec(costEffect);
             float total = 0f;
             foreach (GameplayModifier modifier in costEffect.Modifiers)
             {
@@ -330,7 +330,7 @@ namespace Game.UI
 
         private GameplayAbilitySpec FindSpec(AbilityInputID inputID)
         {
-            foreach (GameplayAbilitySpec spec in abilitySystemComponent.GetActivatableAbilities())
+            foreach (GameplayAbilitySpec spec in _abilitySystemComponent.GetActivatableAbilities())
             {
                 if (spec.InputID == (int)inputID)
                 {
@@ -388,21 +388,21 @@ namespace Game.UI
         private class SkillSlot
         {
             [Tooltip("칸에 표시할 키 이름(예: LMB, F).")]
-            public string keyLabel;
+            [FormerlySerializedAs("keyLabel")] public string KeyLabel;
             [Tooltip("아이콘 그림이 없을 때 칸 가운데에 대신 보이는 스킬 이름.")]
-            public string displayName;
-            public Texture2D icon;
+            [FormerlySerializedAs("displayName")] public string DisplayName;
+            [FormerlySerializedAs("icon")] public Texture2D Icon;
             [Tooltip("비우면 기본 배경색만 쓴다.")]
-            public Texture2D background;
+            [FormerlySerializedAs("background")] public Texture2D Background;
             [Tooltip("이 태그를 주는 GE가 걸려 있는 동안 쿨다운으로 덮는다. 비우면 쿨다운을 표시하지 않는다.")]
-            public GameplayTag cooldownTag;
+            [FormerlySerializedAs("cooldownTag")] public GameplayTag CooldownTag;
             [Tooltip("이 태그가 있는 동안(쓰는 중) 테두리를 밝힌다. 비우면 표시하지 않는다.")]
-            public GameplayTag activeTag;
+            [FormerlySerializedAs("activeTag")] public GameplayTag ActiveTag;
             [Tooltip("켜면 이 입력에 묶인 어빌리티의 입력이 눌려 있는 동안에도 테두리를 밝힌다(누르고 있는 연사 등 쓰는 중 태그가 없는 것).")]
-            public bool showInputHeld;
+            [FormerlySerializedAs("showInputHeld")] public bool ShowInputHeld;
             [Tooltip("켜면 오른쪽 스킬 묶음에 큰 칸으로(쿨다운·코스트가 있는 스킬), 끄면 왼쪽 기본 동작 묶음에 작은 칸으로.")]
-            public bool isMajor;
-            public AbilityInputID inputID;
+            [FormerlySerializedAs("isMajor")] public bool IsMajor;
+            [FormerlySerializedAs("inputID")] public AbilityInputID InputID;
         }
 
         private class SlotView
