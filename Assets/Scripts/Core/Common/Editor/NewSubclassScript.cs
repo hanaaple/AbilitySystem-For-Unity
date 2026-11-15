@@ -10,15 +10,13 @@ namespace Core.Common.Editor
         /// <summary>기존 요소(문자열 필드)의 타입을 새로 만든 스크립트로 바꾼다.</summary>
         public static void OpenForField(Rect activatorScreenRect, Type baseType, UnityEngine.Object target, string propertyPath)
         {
-            Open(activatorScreenRect, baseType,
-                (className, scriptPath) => PendingSubclassAssignment.StashFieldAssign(baseType, className, target, propertyPath, scriptPath));
+            Open(activatorScreenRect, baseType, (className, scriptPath) => PendingSubclassAssignment.StashFieldAssign(baseType, className, target, propertyPath, scriptPath));
         }
 
         /// <summary>배열에 새 요소를 추가하며 그 타입을 새로 만든 스크립트로 채운다.</summary>
         public static void OpenForListAdd(Rect activatorScreenRect, Type baseType, UnityEngine.Object target, string arrayPath, string typeRelPath, string clearArrayRelPath)
         {
-            Open(activatorScreenRect, baseType,
-                (className, scriptPath) => PendingSubclassAssignment.StashListAdd(baseType, className, target, arrayPath, typeRelPath, clearArrayRelPath, scriptPath));
+            Open(activatorScreenRect, baseType, (className, scriptPath) => PendingSubclassAssignment.StashListAdd(baseType, className, target, arrayPath, typeRelPath, clearArrayRelPath, scriptPath));
         }
 
         // 팝업을 연다. onCreated는 파일 생성 직후(리로드 전) 호출돼 배정을 stash한다.

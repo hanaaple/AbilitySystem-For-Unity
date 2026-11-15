@@ -124,8 +124,7 @@ namespace Core.AbilitySystem.Effect
             {
                 if (!defs[i].ToResolvedAttribute().IsValid)
                 {
-                    Debug.LogWarning(
-                        $"[GESpec] GameplayAttributeHandle 해석 실패 — '{Definition.name}' 의 {i}번 modifier는 적용 시 반영되지 않는다.");
+                    Debug.LogWarning($"[GESpec] GameplayAttributeHandle 해석 실패 — '{Definition.name}' 의 {i}번 modifier는 적용 시 반영되지 않는다.");
                 }
             }
         }

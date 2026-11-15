@@ -87,10 +87,7 @@ namespace Test.Editor
             CallDrawer("AddScopedModifier", calculationModifiers, defs);
             SerializedProperty added = calculationModifiers.GetArrayElementAtIndex(0);
             check("B-1 첫 Calculation Modifier: 대상 = 첫 후보(health Target Snapshot)", ((GameplayEffectAttributeCaptureDefinition)added.FindPropertyRelative("_capturedAttribute").boxedValue).Equals(defs[0]));
-            check("B-2 기본값: Add (Base), Scalable Float 0, AttributeBased coefficient 1", added.FindPropertyRelative("_modifierOp").enumValueIndex == (int)GameplayModifierOperation.AddBase
-                && added.FindPropertyRelative("_modifierMagnitude._magnitudeCalculationType").enumValueIndex == (int)MagnitudeCalculationType.ScalableFloat
-                && Approx(added.FindPropertyRelative("_modifierMagnitude._scalableFloatMagnitude").floatValue, 0f)
-                && Approx(added.FindPropertyRelative("_modifierMagnitude._attributeBasedMagnitude._coefficient").floatValue, 1f));
+            check("B-2 기본값: Add (Base), Scalable Float 0, AttributeBased coefficient 1", added.FindPropertyRelative("_modifierOp").enumValueIndex == (int)GameplayModifierOperation.AddBase && added.FindPropertyRelative("_modifierMagnitude._magnitudeCalculationType").enumValueIndex == (int)MagnitudeCalculationType.ScalableFloat && Approx(added.FindPropertyRelative("_modifierMagnitude._scalableFloatMagnitude").floatValue, 0f) && Approx(added.FindPropertyRelative("_modifierMagnitude._attributeBasedMagnitude._coefficient").floatValue, 1f));
             check("B-3 새 칸은 칸·Magnitude·AttributeBased 묶음이 펼쳐진 채", added.isExpanded && added.FindPropertyRelative("_modifierMagnitude").isExpanded && added.FindPropertyRelative("_modifierMagnitude._attributeBasedMagnitude").isExpanded);
 
             // 앞 칸을 바꿔 둔 뒤 하나 더 — 삽입이 앞 칸을 복사해도 새 칸은 빈 값이어야 한다
@@ -99,9 +96,7 @@ namespace Test.Editor
             added.FindPropertyRelative("_sourceTags._requireTags._gameplayTags").arraySize = 1;
             CallDrawer("AddScopedModifier", calculationModifiers, defs);
             SerializedProperty second = calculationModifiers.GetArrayElementAtIndex(1);
-            check("B-4 두 번째 칸은 앞 칸 값을 물려받지 않는다(Add (Base)·0·태그 없음)", second.FindPropertyRelative("_modifierOp").enumValueIndex == (int)GameplayModifierOperation.AddBase
-                && Approx(second.FindPropertyRelative("_modifierMagnitude._scalableFloatMagnitude").floatValue, 0f)
-                && second.FindPropertyRelative("_sourceTags._requireTags._gameplayTags").arraySize == 0);
+            check("B-4 두 번째 칸은 앞 칸 값을 물려받지 않는다(Add (Base)·0·태그 없음)", second.FindPropertyRelative("_modifierOp").enumValueIndex == (int)GameplayModifierOperation.AddBase && Approx(second.FindPropertyRelative("_modifierMagnitude._scalableFloatMagnitude").floatValue, 0f) && second.FindPropertyRelative("_sourceTags._requireTags._gameplayTags").arraySize == 0);
             added.FindPropertyRelative("_sourceTags._requireTags._gameplayTags").arraySize = 0;
 
             CallDrawer("AddScopedModifier", calculationModifiers, Array.Empty<GameplayEffectAttributeCaptureDefinition>());
@@ -119,9 +114,7 @@ namespace Test.Editor
             executions.arraySize++;
             SerializedProperty newExecution = executions.GetArrayElementAtIndex(executionCount);
             CallDrawer("AddExecution", newExecution, typeof(SpeedBoostExecution));
-            check("B-6 새 Execution: 계산 클래스만 들어가고 Calculation Modifier 0개, 펼쳐진 채", newExecution.FindPropertyRelative("_calculationClass").stringValue == typeof(SpeedBoostExecution).AssemblyQualifiedName
-                && newExecution.FindPropertyRelative("_calculationModifiers").arraySize == 0
-                && newExecution.isExpanded && newExecution.FindPropertyRelative("_calculationModifiers").isExpanded);
+            check("B-6 새 Execution: 계산 클래스만 들어가고 Calculation Modifier 0개, 펼쳐진 채", newExecution.FindPropertyRelative("_calculationClass").stringValue == typeof(SpeedBoostExecution).AssemblyQualifiedName && newExecution.FindPropertyRelative("_calculationModifiers").arraySize == 0 && newExecution.isExpanded && newExecution.FindPropertyRelative("_calculationModifiers").isExpanded);
             executions.DeleteArrayElementAtIndex(executionCount);
 
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -170,19 +163,14 @@ namespace Test.Editor
 
             GameplayEffectExecutionScopedModifierInfo first = modifiers[0];
             GameplayEffectModifierMagnitude firstMagnitude = first.ModifierMagnitude;
-            check("D-2 첫 칸: health(Target, Snapshot) · Multiply (Additive) · Scalable Float 25", first.CapturedAttribute.Equals(SpeedBoostExecution.CaptureDefinitions[0])
-                && first.ModifierOp == GameplayModifierOperation.MultiplyAdditive
-                && firstMagnitude.MagnitudeCalculationType == MagnitudeCalculationType.ScalableFloat);
+            check("D-2 첫 칸: health(Target, Snapshot) · Multiply (Additive) · Scalable Float 25", first.CapturedAttribute.Equals(SpeedBoostExecution.CaptureDefinitions[0]) && first.ModifierOp == GameplayModifierOperation.MultiplyAdditive && firstMagnitude.MagnitudeCalculationType == MagnitudeCalculationType.ScalableFloat);
 
             GameplayEffectExecutionScopedModifierInfo second = modifiers[1];
-            check("D-3 둘째 칸: stamina(Source) · Add (Base), 태그 조건 비어 있음", second.CapturedAttribute.Equals(SpeedBoostExecution.CaptureDefinitions[1])
-                && second.ModifierOp == GameplayModifierOperation.AddBase
-                && second.SourceTags.IsEmpty() && second.TargetTags.IsEmpty());
+            check("D-3 둘째 칸: stamina(Source) · Add (Base), 태그 조건 비어 있음", second.CapturedAttribute.Equals(SpeedBoostExecution.CaptureDefinitions[1]) && second.ModifierOp == GameplayModifierOperation.AddBase && second.SourceTags.IsEmpty() && second.TargetTags.IsEmpty());
 
             var so = new SerializedObject(ge);
             SerializedProperty reloaded = so.FindProperty("_executions").GetArrayElementAtIndex(0).FindPropertyRelative("_calculationModifiers");
-            check("D-4 magnitude 값 유지(25, 7)", Approx(reloaded.GetArrayElementAtIndex(0).FindPropertyRelative("_modifierMagnitude._scalableFloatMagnitude").floatValue, 25f)
-                && Approx(reloaded.GetArrayElementAtIndex(1).FindPropertyRelative("_modifierMagnitude._scalableFloatMagnitude").floatValue, 7f));
+            check("D-4 magnitude 값 유지(25, 7)", Approx(reloaded.GetArrayElementAtIndex(0).FindPropertyRelative("_modifierMagnitude._scalableFloatMagnitude").floatValue, 25f) && Approx(reloaded.GetArrayElementAtIndex(1).FindPropertyRelative("_modifierMagnitude._scalableFloatMagnitude").floatValue, 7f));
         }
 
         // ── E. 런타임 적용 ──
@@ -212,8 +200,7 @@ namespace Test.Editor
                 const float expectedIncrease = ((100f * 25f + 57f) - (100f + 50f)) * 0.01f;
                 check($"E-2 Execution이 Calculation Modifier를 건 캡처값을 읽는다 — Speed 차이 {speedWith - speedWithout:0.###} (기대 {expectedIncrease:0.###})", Approx(speedWith - speedWithout, expectedIncrease));
 
-                check("E-3 실제 어트리뷰트는 그대로(health 100, stamina 50)", Approx(asc.GetAttributeCurrentValue(CharacterAttributeSet.HealthAttribute), 100f)
-                    && Approx(asc.GetAttributeCurrentValue(CharacterAttributeSet.StaminaAttribute), 50f));
+                check("E-3 실제 어트리뷰트는 그대로(health 100, stamina 50)", Approx(asc.GetAttributeCurrentValue(CharacterAttributeSet.HealthAttribute), 100f) && Approx(asc.GetAttributeCurrentValue(CharacterAttributeSet.StaminaAttribute), 50f));
             }
             finally
             {

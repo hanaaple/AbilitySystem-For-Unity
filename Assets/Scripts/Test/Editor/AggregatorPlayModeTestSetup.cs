@@ -22,17 +22,11 @@ namespace Test.Editor
         {
             EnsureFolder();
 
-            GameplayEffectAsset defaultAttributes = CreateGe($"{Folder}/GE_DefaultAttributes_PlayModeTest.asset", GameplayEffectType.Instant,
-                MakeModifier(CharacterAttributeSet.HealthAttribute, GameplayModifierOperation.Override, 100f),
-                MakeModifier(CharacterAttributeSet.SpeedAttribute, GameplayModifierOperation.Override, 0f));
-            GameplayEffectAsset healthBoost = CreateGe($"{Folder}/GE_HealthBoost.asset", GameplayEffectType.Infinite,
-                MakeModifier(CharacterAttributeSet.HealthAttribute, GameplayModifierOperation.AddBase, 100f));
-            GameplayEffectAsset speedLive = CreateGe($"{Folder}/GE_SpeedFromHealth_Live.asset", GameplayEffectType.Infinite,
-                MakeAttributeBasedModifier(CharacterAttributeSet.SpeedAttribute, CharacterAttributeSet.HealthAttribute, snapshot: false, coefficient: 0.5f));
-            GameplayEffectAsset speedSnap = CreateGe($"{Folder}/GE_SpeedFromHealth_Snapshot.asset", GameplayEffectType.Infinite,
-                MakeAttributeBasedModifier(CharacterAttributeSet.SpeedAttribute, CharacterAttributeSet.HealthAttribute, snapshot: true, coefficient: 0.5f));
-            GameplayEffectAsset instantHeal = CreateGe($"{Folder}/GE_InstantHeal.asset", GameplayEffectType.Instant,
-                MakeModifier(CharacterAttributeSet.HealthAttribute, GameplayModifierOperation.AddBase, 30f));
+            GameplayEffectAsset defaultAttributes = CreateGe($"{Folder}/GE_DefaultAttributes_PlayModeTest.asset", GameplayEffectType.Instant, MakeModifier(CharacterAttributeSet.HealthAttribute, GameplayModifierOperation.Override, 100f), MakeModifier(CharacterAttributeSet.SpeedAttribute, GameplayModifierOperation.Override, 0f));
+            GameplayEffectAsset healthBoost = CreateGe($"{Folder}/GE_HealthBoost.asset", GameplayEffectType.Infinite, MakeModifier(CharacterAttributeSet.HealthAttribute, GameplayModifierOperation.AddBase, 100f));
+            GameplayEffectAsset speedLive = CreateGe($"{Folder}/GE_SpeedFromHealth_Live.asset", GameplayEffectType.Infinite, MakeAttributeBasedModifier(CharacterAttributeSet.SpeedAttribute, CharacterAttributeSet.HealthAttribute, snapshot: false, coefficient: 0.5f));
+            GameplayEffectAsset speedSnap = CreateGe($"{Folder}/GE_SpeedFromHealth_Snapshot.asset", GameplayEffectType.Infinite, MakeAttributeBasedModifier(CharacterAttributeSet.SpeedAttribute, CharacterAttributeSet.HealthAttribute, snapshot: true, coefficient: 0.5f));
+            GameplayEffectAsset instantHeal = CreateGe($"{Folder}/GE_InstantHeal.asset", GameplayEffectType.Instant, MakeModifier(CharacterAttributeSet.HealthAttribute, GameplayModifierOperation.AddBase, 30f));
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -43,8 +37,7 @@ namespace Test.Editor
         }
 
         // ── 씬 배선 ──
-        private static void WireScene(GameplayEffectAsset defaultAttributes, GameplayEffectAsset healthBoost,
-            GameplayEffectAsset speedLive, GameplayEffectAsset speedSnap, GameplayEffectAsset instantHeal)
+        private static void WireScene(GameplayEffectAsset defaultAttributes, GameplayEffectAsset healthBoost, GameplayEffectAsset speedLive, GameplayEffectAsset speedSnap, GameplayEffectAsset instantHeal)
         {
             const string goName = "AggregatorPlayModeTest";
 
@@ -107,8 +100,7 @@ namespace Test.Editor
 
         private static GameplayModifier MakeAttributeBasedModifier(GameplayAttributeHandle target, GameplayAttributeHandle captured, bool snapshot, float coefficient)
         {
-            GameplayEffectAttributeCaptureDefinition captureDef =
-                new GameplayEffectAttributeCaptureDefinition(captured, AttributeCaptureSource.Source, snapshot);
+            GameplayEffectAttributeCaptureDefinition captureDef = new GameplayEffectAttributeCaptureDefinition(captured, AttributeCaptureSource.Source, snapshot);
 
             AttributeBasedMagnitude attributeBased = new AttributeBasedMagnitude();
             SetPrivateField(attributeBased, "_backingAttribute", captureDef);

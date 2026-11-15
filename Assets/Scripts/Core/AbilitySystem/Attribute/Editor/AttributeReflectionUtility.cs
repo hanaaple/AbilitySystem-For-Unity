@@ -40,10 +40,7 @@ namespace Core.AbilitySystem.Attribute.Editor
             }
 
             FieldInfo[] fields = attributeSetType
-                .GetFields(
-                    BindingFlags.Instance |
-                    BindingFlags.Public |
-                    BindingFlags.NonPublic)
+                .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 .Where(IsAttributeDataField)
                 .OrderBy(f => f.MetadataToken)
                 .ToArray();

@@ -239,10 +239,7 @@ namespace Test.Editor
 
             // 한 GE에 여러 modifier 조합: (100+10)*(1+1) + 5 = 225
             SetBase(asc, health, 100f);
-            GameplayEffectAsset combo = MakeGameplayEffect(GameplayEffectType.Infinite,
-                MakeModifier(health, GameplayModifierOperation.AddBase, 10f),
-                MakeModifier(health, GameplayModifierOperation.MultiplyAdditive, 2f),
-                MakeModifier(health, GameplayModifierOperation.AddFinal, 5f));
+            GameplayEffectAsset combo = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 10f), MakeModifier(health, GameplayModifierOperation.MultiplyAdditive, 2f), MakeModifier(health, GameplayModifierOperation.AddFinal, 5f));
             ActiveGameplayEffectHandle comboHandle = asc.ApplyGameplayEffectToSelf(combo);
             check("Asset 복합 mod → (100+10)*2 + 5 = 225", Approx(asc.GetAttributeCurrentValue(health), 225f));
             asc.RemoveActiveGameplayEffect(comboHandle);
@@ -345,10 +342,7 @@ namespace Test.Editor
             check("라이브 GE 제거 → Speed 0", Approx(asc.GetAttributeCurrentValue(speed), 0f));
 
             // 라이브 modifier가 GE 안 2번인데 MaxHealth aggregator에는 이 mod 하나뿐인 경우
-            GameplayEffectAsset mixedGe = MakeGameplayEffect(GameplayEffectType.Infinite,
-                MakeModifier(speed, GameplayModifierOperation.AddBase, 1f),
-                MakeModifier(speed, GameplayModifierOperation.AddBase, 2f),
-                MakeAttributeBasedModifier(maxHealth, healthLive, 1f, 0f, 0f));
+            GameplayEffectAsset mixedGe = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(speed, GameplayModifierOperation.AddBase, 1f), MakeModifier(speed, GameplayModifierOperation.AddBase, 2f), MakeAttributeBasedModifier(maxHealth, healthLive, 1f, 0f, 0f));
             ActiveGameplayEffectHandle mixedHandle = asc.ApplyGameplayEffectToSelf(mixedGe);
             check("2번 modifier가 라이브인 GE → MaxHealth 200, Speed 3", Approx(asc.GetAttributeCurrentValue(maxHealth), 200f) && Approx(asc.GetAttributeCurrentValue(speed), 3f));
 

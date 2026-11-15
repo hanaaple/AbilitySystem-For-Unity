@@ -285,8 +285,7 @@ namespace Game.UI
                 return;
             }
 
-            bool isActive = (slot.ActiveTag.IsValid() && _abilitySystemComponent.HasMatchingGameplayTag(slot.ActiveTag))
-                || (slot.ShowInputHeld && IsInputHeld(slot.InputID));
+            bool isActive = (slot.ActiveTag.IsValid() && _abilitySystemComponent.HasMatchingGameplayTag(slot.ActiveTag)) || (slot.ShowInputHeld && IsInputHeld(slot.InputID));
             SetBorder(view.Frame, isActive ? 3f : 2f, isActive ? _activeBorderColor : _borderColor);
         }
 
@@ -318,8 +317,7 @@ namespace Game.UI
             float total = 0f;
             foreach (GameplayModifier modifier in costEffect.Modifiers)
             {
-                if (modifier.Operation == GameplayModifierOperation.AddBase
-                    && modifier.ModifierMagnitude.AttemptCalculateMagnitude(spec, out float magnitude) && magnitude < 0f)
+                if (modifier.Operation == GameplayModifierOperation.AddBase && modifier.ModifierMagnitude.AttemptCalculateMagnitude(spec, out float magnitude) && magnitude < 0f)
                 {
                     total -= magnitude;
                 }

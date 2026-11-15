@@ -27,8 +27,7 @@ namespace Core.AbilitySystem.Attribute
                 // 에디터 AttributeReflectionUtility.GetAttributeDataFields와 같은 필드 규칙 — 한쪽을 바꾸면 다른 쪽도
                 handles = attributeSetType
                     .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                    .Where(field => typeof(AttributeData).IsAssignableFrom(field.FieldType)
-                                    && (field.IsPublic || field.GetCustomAttribute<SerializeField>() != null))
+                    .Where(field => typeof(AttributeData).IsAssignableFrom(field.FieldType) && (field.IsPublic || field.GetCustomAttribute<SerializeField>() != null))
                     .OrderBy(field => field.MetadataToken)
                     .Select(field => new GameplayAttributeHandle(attributeSetType, field.Name))
                     .ToArray();

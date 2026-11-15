@@ -25,11 +25,9 @@ namespace Core.AbilitySystem.Editor
 
         // 캡처 컨테이너의 source/target 캡처 목록은 private이므로 리플렉션으로 읽어
         // 프로덕션 API에 디버그 전용 표면을 만들지 않고 인스펙터에만 노출한다.
-        private static readonly FieldInfo SourceSpecsField = typeof(GameplayEffectAttributeCaptureSpecContainer)
-            .GetField(SourceSpecsFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly FieldInfo SourceSpecsField = typeof(GameplayEffectAttributeCaptureSpecContainer).GetField(SourceSpecsFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
 
-        private static readonly FieldInfo TargetSpecsField = typeof(GameplayEffectAttributeCaptureSpecContainer)
-            .GetField(TargetSpecsFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly FieldInfo TargetSpecsField = typeof(GameplayEffectAttributeCaptureSpecContainer).GetField(TargetSpecsFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
 
         // ── Runtime Attributes ────────────────────────────────────────────────────
 
@@ -319,8 +317,7 @@ namespace Core.AbilitySystem.Editor
             {
                 GameplayModifier modifier = modifiers[i];
                 GameplayEffectModifierMagnitude modifierMagnitude = modifier.ModifierMagnitude;
-                if (modifierMagnitude.MagnitudeCalculationType == MagnitudeCalculationType.AttributeBased
-                    && modifierMagnitude.AttributeBasedMagnitude.BackingAttribute.Equals(def))
+                if (modifierMagnitude.MagnitudeCalculationType == MagnitudeCalculationType.AttributeBased && modifierMagnitude.AttributeBasedMagnitude.BackingAttribute.Equals(def))
                 {
                     origins.Add($"Modifier[{i}]");
                 }

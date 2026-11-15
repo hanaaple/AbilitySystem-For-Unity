@@ -214,10 +214,7 @@ namespace Test.Editor
             check("A-8 인스턴스가 만들어짐(RecordingAbility)", instance != null);
             check("A-9 인스턴스는 원형과 다른 객체", instance != null && !ReferenceEquals(instance, asset.AbilityTemplate));
             check("A-10 OnGiveAbility 뒤 CurrentSpecHandle·CurrentGameObjectInfo", instance != null && instance.CurrentAbilitySpecHandle.Equals(handle) && instance.CurrentGameObjectInfo == asc.AbilityGameObjectInfo);
-            check("A-11 GetAbilitySystemComponent/OwnerGameObject/AvatarGameObjectFromInfo", instance != null
-                && instance.GetAbilitySystemComponentFromInfo() == asc
-                && instance.GetOwnerGameObjectFromInfo() == go
-                && instance.GetAvatarGameObjectFromInfo() == go);
+            check("A-11 GetAbilitySystemComponent/OwnerGameObject/AvatarGameObjectFromInfo", instance != null && instance.GetAbilitySystemComponentFromInfo() == asc && instance.GetOwnerGameObjectFromInfo() == go && instance.GetAvatarGameObjectFromInfo() == go);
             check("A-12 호출 순서 OnGive → OnAvatarSet(Avatar 있음)", Sequence("A.OnGive", "A.OnAvatarSet"));
             check("A-13 원형은 실행되지 않음(GameObject 정보 없음)", asset.AbilityTemplate.CurrentGameObjectInfo == null);
             check("A-14 비활성 상태로 시작", !spec.IsActive && spec.ActiveCount == 0 && !spec.PendingRemove);
@@ -419,8 +416,7 @@ namespace Test.Editor
             };
             asc.ClearAllAbilities();
             RecordingAbility.Hook = null;
-            check("F-9 ClearAll 중 재진입 해제 — 비워지고 OnRemove는 한 번씩", asc.GetActivatableAbilities().Count == 0
-                && Count("Outer.OnRemove") == 1 && Count("Inner.OnRemove") == 1);
+            check("F-9 ClearAll 중 재진입 해제 — 비워지고 OnRemove는 한 번씩", asc.GetActivatableAbilities().Count == 0 && Count("Outer.OnRemove") == 1 && Count("Inner.OnRemove") == 1);
 
             // F-10: 락 중 ClearAllAbilities는 락이 풀릴 때 처리(같은 락 안의 부여보다 우선)
             RecordingAbility.Hook = (evt, ability, s) =>
@@ -488,8 +484,7 @@ namespace Test.Editor
             value.floatValue = 4.5f;
             effectField.objectReferenceValue = effect;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            check("H-3 인스펙터 경로로 바꾼 값이 원형에 들어감", asset.AbilityTemplate is TestGameplayAbility
-                && Mathf.Approximately(new SerializedObject(asset).FindProperty("_abilityTemplate._testValue").floatValue, 4.5f));
+            check("H-3 인스펙터 경로로 바꾼 값이 원형에 들어감", asset.AbilityTemplate is TestGameplayAbility && Mathf.Approximately(new SerializedObject(asset).FindProperty("_abilityTemplate._testValue").floatValue, 4.5f));
 
             // 파일로 저장해 YAML에 하위 필드가 남는지 본다. GE 참조는 메모리 에셋이라 파일 검사에서 뺀다
             effectField.objectReferenceValue = null;
@@ -700,8 +695,7 @@ namespace Test.Editor
             };
             bool firstActivated = asc.TryActivateAbility(handle);
             RecordingAbility.Hook = null;
-            check("K-3 발동 — 새 인스턴스 1개(원형 아님), 활성, GameObject 정보 있음", firstActivated && spec.GetAbilityInstances().Count == 1 && first != null && !ReferenceEquals(first, template)
-                && first.IsInstantiated && first.IsActive && first.CurrentGameObjectInfo == asc.AbilityGameObjectInfo && first.CurrentAbilitySpecHandle.Equals(handle));
+            check("K-3 발동 — 새 인스턴스 1개(원형 아님), 활성, GameObject 정보 있음", firstActivated && spec.GetAbilityInstances().Count == 1 && first != null && !ReferenceEquals(first, template) && first.IsInstantiated && first.IsActive && first.CurrentGameObjectInfo == asc.AbilityGameObjectInfo && first.CurrentAbilitySpecHandle.Equals(handle));
             check("K-4 활성 중 다시 발동 — 성공, 인스턴스 2개·ActiveCount 2", asc.TryActivateAbility(handle) && spec.GetAbilityInstances().Count == 2 && spec.ActiveCount == 2 && !ReferenceEquals(spec.GetAbilityInstances()[0], spec.GetAbilityInstances()[1]));
 
             first.EndAbility(handle, asc.AbilityGameObjectInfo, false);
@@ -738,8 +732,7 @@ namespace Test.Editor
             asc.TryActivateAbility(handle);
             RecordingAbility.Log.Clear();
             asc.ClearAbility(handle);
-            check("K-10 활성 2개 중 ClearAbility — End 2번 → 원형 OnRemove, 목록에서 빠짐", Count("K.End") == 2 && !RecordingAbility.Log.Contains("K.Cancel") && Sequence("K.End", "K.OnRemove")
-                && spec.GetAbilityInstances().Count == 0 && asc.FindAbilitySpecFromHandle(handle) == null);
+            check("K-10 활성 2개 중 ClearAbility — End 2번 → 원형 OnRemove, 목록에서 빠짐", Count("K.End") == 2 && !RecordingAbility.Log.Contains("K.Cancel") && Sequence("K.End", "K.OnRemove") && spec.GetAbilityInstances().Count == 0 && asc.FindAbilitySpecFromHandle(handle) == null);
 
             // K-11: Per GameObject와 섞여 있어도 각자 규칙대로
             GameplayAbilityAsset actorAsset = MakeAsset("KActor", created);

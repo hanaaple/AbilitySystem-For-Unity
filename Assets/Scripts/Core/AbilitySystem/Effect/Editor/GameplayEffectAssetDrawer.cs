@@ -88,11 +88,9 @@ namespace Core.AbilitySystem.Effect.Editor
             { GameplayModifierOperation.Override,         "Override"            },
         };
 
-        private static readonly GameplayModifierOperation[] OperationValues =
-            (GameplayModifierOperation[])Enum.GetValues(typeof(GameplayModifierOperation));
+        private static readonly GameplayModifierOperation[] OperationValues = (GameplayModifierOperation[])Enum.GetValues(typeof(GameplayModifierOperation));
 
-        private static readonly string[] OperationPopupOptions =
-            OperationValues.Select(op => OperationDisplayNames[op]).ToArray();
+        private static readonly string[] OperationPopupOptions = OperationValues.Select(op => OperationDisplayNames[op]).ToArray();
 
         private SerializedProperty _description;
         private SerializedProperty _type;
@@ -338,15 +336,7 @@ namespace Core.AbilitySystem.Effect.Editor
         // (New Script는 GameplayEffectExecution의 abstract Execute 때문에 빈 템플릿이 컴파일되지 않아 제외 — 필요하면 override 스텁 생성이 선행돼야 한다.)
         private void BuildExecutionList()
         {
-            _executionList = TypeChoiceList.Create(
-                serializedObject,
-                _executions,
-                "Executions",
-                GetAddableExecutions,
-                AddExecution,
-                "추가 가능한 Execution 없음",
-                drawElement: DrawExecutionElement,
-                elementHeight: index => LayoutExecutionElement(new Rect(0f, 0f, 0f, 0f), _executions.GetArrayElementAtIndex(index), false));
+            _executionList = TypeChoiceList.Create(serializedObject, _executions, "Executions", GetAddableExecutions, AddExecution, "추가 가능한 Execution 없음", drawElement: DrawExecutionElement, elementHeight: index => LayoutExecutionElement(new Rect(0f, 0f, 0f, 0f), _executions.GetArrayElementAtIndex(index), false));
 
             // Modifiers와 같은 머리 줄(접기 + 개수)
             _executionList.drawHeaderCallback = rect => DrawListHeader(rect, _executions, "Executions");
@@ -431,8 +421,7 @@ namespace Core.AbilitySystem.Effect.Editor
             if (draw)
             {
                 Rect foldoutRect = new Rect(rect.x + FoldoutIndent, y, rect.width - FoldoutIndent, lineH);
-                calculationModifiers.isExpanded = EditorGUI.Foldout(foldoutRect, calculationModifiers.isExpanded,
-                    $"Calculation Modifiers ({calculationModifiers.arraySize})", toggleOnLabelClick: true);
+                calculationModifiers.isExpanded = EditorGUI.Foldout(foldoutRect, calculationModifiers.isExpanded, $"Calculation Modifiers ({calculationModifiers.arraySize})", toggleOnLabelClick: true);
             }
 
             y += lineH;
@@ -618,15 +607,7 @@ namespace Core.AbilitySystem.Effect.Editor
         // Component는 [SerializeReference]라 타입을 골라 인스턴스를 넣는다(ItemData 모듈 목록과 같은 방식).
         private void BuildComponentList()
         {
-            _componentList = TypeChoiceList.Create(
-                serializedObject,
-                _components,
-                "Components",
-                GetAddableComponents,
-                AddComponent,
-                "추가 가능한 Component 없음",
-                drawElement: DrawComponentElement,
-                elementHeight: index => LayoutComponentElement(new Rect(0f, 0f, 0f, 0f), _components.GetArrayElementAtIndex(index), false));
+            _componentList = TypeChoiceList.Create(serializedObject, _components, "Components", GetAddableComponents, AddComponent, "추가 가능한 Component 없음", drawElement: DrawComponentElement, elementHeight: index => LayoutComponentElement(new Rect(0f, 0f, 0f, 0f), _components.GetArrayElementAtIndex(index), false));
 
             _componentList.drawHeaderCallback = rect => DrawListHeader(rect, _components, "Components");
         }
@@ -696,8 +677,7 @@ namespace Core.AbilitySystem.Effect.Editor
             if (draw)
             {
                 float classY = y;
-                WithLabelWidth(LabelWidth, () => SubclassSelectorDrawer.DrawManagedReferenceSelector(
-                    new Rect(rect.x, classY, rect.width, lineH), component, typeof(GameplayEffectComponent), usedByOthers, new GUIContent("Component Class")));
+                WithLabelWidth(LabelWidth, () => SubclassSelectorDrawer.DrawManagedReferenceSelector(new Rect(rect.x, classY, rect.width, lineH), component, typeof(GameplayEffectComponent), usedByOthers, new GUIContent("Component Class")));
             }
 
             y += lineH;
@@ -837,9 +817,7 @@ namespace Core.AbilitySystem.Effect.Editor
 
         private static string GetModifierSummary(SerializedProperty modifier)
         {
-            string attributeLabel = GetAttributeLabel(
-                modifier.FindPropertyRelative(AttributeSetTypeNamePropertyName).stringValue,
-                modifier.FindPropertyRelative(FieldNamePropertyName).stringValue);
+            string attributeLabel = GetAttributeLabel(modifier.FindPropertyRelative(AttributeSetTypeNamePropertyName).stringValue, modifier.FindPropertyRelative(FieldNamePropertyName).stringValue);
             var op = (GameplayModifierOperation)modifier.FindPropertyRelative(OperationPropertyName).enumValueIndex;
             return attributeLabel + SummarySeparator + GetOperationLabel(op);
         }

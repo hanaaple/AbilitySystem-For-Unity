@@ -79,8 +79,7 @@ namespace Core.Common.Editor
             EditorApplication.delayCall += () => Assign(mode, baseAqn, typeName, objectId, scriptPath, propertyPath, arrayPath, typeRel, clearRel);
         }
 
-        private static void Assign(string mode, string baseAqn, string typeName, string objectId, string scriptPath,
-            string propertyPath, string arrayPath, string typeRel, string clearRel)
+        private static void Assign(string mode, string baseAqn, string typeName, string objectId, string scriptPath, string propertyPath, string arrayPath, string typeRel, string clearRel)
         {
             Type baseType = Type.GetType(baseAqn);
             if (baseType == null)

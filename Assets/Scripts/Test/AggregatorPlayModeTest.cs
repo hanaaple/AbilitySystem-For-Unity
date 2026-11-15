@@ -64,13 +64,7 @@ namespace Test
 
         private bool Preconditions()
         {
-            bool ok = _geDefaultAttributes != null
-                      && _geHealthBoost != null
-                      && _geSpeedFromHealthLive != null
-                      && _geSpeedFromHealthSnapshot != null
-                      && _geInstantHeal != null
-                      && _asc.HasAttributeSetForAttribute(CharacterAttributeSet.HealthAttribute)
-                      && _asc.HasAttributeSetForAttribute(CharacterAttributeSet.SpeedAttribute);
+            bool ok = _geDefaultAttributes != null && _geHealthBoost != null && _geSpeedFromHealthLive != null && _geSpeedFromHealthSnapshot != null && _geInstantHeal != null && _asc.HasAttributeSetForAttribute(CharacterAttributeSet.HealthAttribute) && _asc.HasAttributeSetForAttribute(CharacterAttributeSet.SpeedAttribute);
             return ok;
         }
 

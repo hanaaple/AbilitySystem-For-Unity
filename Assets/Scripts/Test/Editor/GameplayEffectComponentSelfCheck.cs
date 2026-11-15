@@ -720,8 +720,7 @@ namespace Test.Editor
             check("G-7 다른 GE의 Granted Tag로 Ongoing 충족: 부여 GE 적용 → 켜짐(150), 부여 GE 제거 → 꺼짐(100)", onWithGrant && offWithoutGrant);
 
             // 질의(TagQuery)에 나오는 태그도 구독한다
-            GameplayEffectAsset queryOngoing = MakeRequirementsEffect(GameplayEffectType.Infinite,
-                c => SetPrivateField(c.OngoingTagRequirements, "_tagQuery", GameplayTagQuery.MakeQueryMatchAnyTags(new GameplayTagContainer(tags.Other))));
+            GameplayEffectAsset queryOngoing = MakeRequirementsEffect(GameplayEffectType.Infinite, c => SetPrivateField(c.OngoingTagRequirements, "_tagQuery", GameplayTagQuery.MakeQueryMatchAnyTags(new GameplayTagContainer(tags.Other))));
             ActiveGameplayEffectHandle queryHandle = asc.ApplyGameplayEffectToSelf(queryOngoing);
             bool queryOff = Approx(asc.GetAttributeCurrentValue(health), 100f);
             asc.AddLooseGameplayTag(tags.Other);

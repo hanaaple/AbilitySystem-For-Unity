@@ -43,17 +43,12 @@ namespace Core.AbilitySystem.Editor
         {
             AbilitySystemComponent asc = ResolveSelectedAsc();
 
-            EditorGUILayout.LabelField(
-                "Target",
-                Selection.activeGameObject != null ? Selection.activeGameObject.name : "(none)",
-                EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Target", Selection.activeGameObject != null ? Selection.activeGameObject.name : "(none)", EditorStyles.boldLabel);
 
             if (asc == null)
             {
                 EditorGUILayout.Space(4f);
-                EditorGUILayout.HelpBox(
-                    "선택된 GameObject에 AbilitySystemComponent가 없습니다.",
-                    MessageType.Info);
+                EditorGUILayout.HelpBox("선택된 GameObject에 AbilitySystemComponent가 없습니다.", MessageType.Info);
                 return;
             }
 

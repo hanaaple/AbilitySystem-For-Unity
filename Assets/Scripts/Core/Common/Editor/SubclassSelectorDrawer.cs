@@ -148,9 +148,7 @@ namespace Core.Common.Editor
                     .Where(type => type == current || excluded == null || !excluded.Contains(type))
                     .ToList();
 
-                var dropdown = new SubclassAdvancedDropdown(
-                    ObjectNames.NicifyVariableName(baseType.Name), types, includeNone: false,
-                    type => ReplaceManagedReference(so, path, type), onNewScript: null, emptyMessage: "선택 가능한 타입 없음", new AdvancedDropdownState());
+                var dropdown = new SubclassAdvancedDropdown(ObjectNames.NicifyVariableName(baseType.Name), types, includeNone: false, type => ReplaceManagedReference(so, path, type), onNewScript: null, emptyMessage: "선택 가능한 타입 없음", new AdvancedDropdownState());
                 dropdown.Show(popupRect);
             }
         }
@@ -247,9 +245,7 @@ namespace Core.Common.Editor
                 ? () => NewSubclassScript.OpenForField(activatorScreenRect, baseType, target, path)
                 : null;
 
-            var dropdown = new SubclassAdvancedDropdown(
-                ObjectNames.NicifyVariableName(baseType.Name), types, includeNone: true,
-                type => Assign(so, path, type), onNewScript, emptyMessage: null, new AdvancedDropdownState());
+            var dropdown = new SubclassAdvancedDropdown(ObjectNames.NicifyVariableName(baseType.Name), types, includeNone: true, type => Assign(so, path, type), onNewScript, emptyMessage: null, new AdvancedDropdownState());
             dropdown.Show(rect);
         }
 

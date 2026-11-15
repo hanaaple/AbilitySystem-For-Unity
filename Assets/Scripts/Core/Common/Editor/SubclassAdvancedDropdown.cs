@@ -24,15 +24,7 @@ namespace Core.Common.Editor
         // 후보가 하나도 없을 때 보여줄 비활성 안내(무반응처럼 보이지 않게). null이면 표시 안 함.
         private readonly string _emptyMessage;
 
-        public SubclassAdvancedDropdown(
-            string title,
-            IReadOnlyList<Type> types,
-            bool includeNone,
-            Action<Type> onSelected,
-            Action onNewScript,
-            string emptyMessage,
-            AdvancedDropdownState state)
-            : base(state)
+        public SubclassAdvancedDropdown(string title, IReadOnlyList<Type> types, bool includeNone, Action<Type> onSelected, Action onNewScript, string emptyMessage, AdvancedDropdownState state) : base(state)
         {
             _title = title;
             _types = types;

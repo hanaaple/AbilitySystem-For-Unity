@@ -16,26 +16,9 @@ namespace Core.Common.Editor
     /// </summary>
     public static class TypeChoiceList
     {
-        public static ReorderableList Create(
-            SerializedObject serializedObject,
-            SerializedProperty elements,
-            string header,
-            Func<IEnumerable<Type>> typeProvider,
-            Action<SerializedProperty, Type> onAdd,
-            string emptyMessage,
-            ReorderableList.ElementCallbackDelegate drawElement = null,
-            ReorderableList.ElementHeightCallbackDelegate elementHeight = null,
-            Type newScriptBaseType = null,
-            string newScriptTypeRelPath = null,
-            string newScriptClearArrayRelPath = null)
+        public static ReorderableList Create(SerializedObject serializedObject, SerializedProperty elements, string header, Func<IEnumerable<Type>> typeProvider, Action<SerializedProperty, Type> onAdd, string emptyMessage, ReorderableList.ElementCallbackDelegate drawElement = null, ReorderableList.ElementHeightCallbackDelegate elementHeight = null, Type newScriptBaseType = null, string newScriptTypeRelPath = null, string newScriptClearArrayRelPath = null)
         {
-            return new ReorderableList(
-                serializedObject,
-                elements,
-                draggable: true,
-                displayHeader: true,
-                displayAddButton: true,
-                displayRemoveButton: true)
+            return new ReorderableList(serializedObject, elements, draggable: true, displayHeader: true, displayAddButton: true, displayRemoveButton: true)
             {
                 drawHeaderCallback = rect => EditorGUI.LabelField(rect, header),
 
@@ -53,17 +36,7 @@ namespace Core.Common.Editor
 
         // 후보 타입을 검색 가능한 AdvancedDropdown으로 띄우고, 선택 시 요소를 삽입한 뒤 onAdd로 채운다.
         // newScriptBaseType이 있으면 "New Script..."로 새 서브클래스를 만들어 리로드 뒤 새 요소로 추가한다.
-        private static void ShowAddDropdown(
-            SerializedObject serializedObject,
-            SerializedProperty elements,
-            string header,
-            IEnumerable<Type> types,
-            Action<SerializedProperty, Type> onAdd,
-            string emptyMessage,
-            Rect buttonRect,
-            Type newScriptBaseType,
-            string newScriptTypeRelPath,
-            string newScriptClearArrayRelPath)
+        private static void ShowAddDropdown(SerializedObject serializedObject, SerializedProperty elements, string header, IEnumerable<Type> types, Action<SerializedProperty, Type> onAdd, string emptyMessage, Rect buttonRect, Type newScriptBaseType, string newScriptTypeRelPath, string newScriptClearArrayRelPath)
         {
             IReadOnlyList<Type> typeList = types as IReadOnlyList<Type> ?? types.ToList();
 
@@ -86,12 +59,10 @@ namespace Core.Common.Editor
                 string arrayPath = elements.propertyPath;
                 Rect activatorScreenRect = new Rect(GUIUtility.GUIToScreenPoint(buttonRect.position), buttonRect.size);
 
-                onNewScript = () => NewSubclassScript.OpenForListAdd(
-                    activatorScreenRect, newScriptBaseType, target, arrayPath, newScriptTypeRelPath, newScriptClearArrayRelPath);
+                onNewScript = () => NewSubclassScript.OpenForListAdd(activatorScreenRect, newScriptBaseType, target, arrayPath, newScriptTypeRelPath, newScriptClearArrayRelPath);
             }
 
-            var dropdown = new SubclassAdvancedDropdown(
-                header, typeList, includeNone: false, onSelected, onNewScript, emptyMessage, new AdvancedDropdownState());
+            var dropdown = new SubclassAdvancedDropdown(header, typeList, includeNone: false, onSelected, onNewScript, emptyMessage, new AdvancedDropdownState());
             dropdown.Show(buttonRect);
         }
     }
