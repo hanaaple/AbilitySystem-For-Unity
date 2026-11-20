@@ -189,7 +189,7 @@ namespace Core.AbilitySystem.Effect
                 }
             }
 
-            if (_modifyingAttribute.IsSet && !ModifiesAttribute(spec, _modifyingAttribute))
+            if (!_modifyingAttribute.IsEmpty && !ModifiesAttribute(spec, _modifyingAttribute))
             {
                 return false;
             }
@@ -214,7 +214,7 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FGameplayEffectQuery::IsEmpty</remarks>
         public bool IsEmpty()
         {
-            return CustomMatchDelegate == null && _owningTagQuery.IsEmpty() && _effectTagQuery.IsEmpty() && _sourceAggregateTagQuery.IsEmpty() && _sourceTagQuery.IsEmpty() && !_modifyingAttribute.IsSet && _effectSource == null && _effectDefinition == null;
+            return CustomMatchDelegate == null && _owningTagQuery.IsEmpty() && _effectTagQuery.IsEmpty() && _sourceAggregateTagQuery.IsEmpty() && _sourceTagQuery.IsEmpty() && _modifyingAttribute.IsEmpty && _effectSource == null && _effectDefinition == null;
         }
 
         /// <summary>Owning 태그(Asset+Granted)와 하나라도 겹치는 GE를 고른다.</summary>

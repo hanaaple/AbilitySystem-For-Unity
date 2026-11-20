@@ -809,7 +809,7 @@ namespace Core.AbilitySystem.Effect.Editor
         private static string GetCaptureLabel(GameplayEffectAttributeCaptureDefinition definition)
         {
             GameplayAttribute attribute = definition.Attribute;
-            if (!attribute.IsSet)
+            if (attribute.IsEmpty)
             {
                 return "(캡처 미지정)";
             }

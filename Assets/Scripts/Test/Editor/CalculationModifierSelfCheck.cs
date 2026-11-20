@@ -103,7 +103,7 @@ namespace Test.Editor
             CallDrawer("AddScopedModifier", calculationModifiers, Array.Empty<GameplayEffectAttributeCaptureDefinition>());
             SerializedProperty noDefs = calculationModifiers.GetArrayElementAtIndex(2);
             var noDefsCapture = (GameplayEffectAttributeCaptureDefinition)noDefs.FindPropertyRelative("_capturedAttribute").boxedValue;
-            check("B-5 후보가 없을 때 추가하면 대상은 비어 있다", !noDefsCapture.Attribute.IsSet);
+            check("B-5 후보가 없을 때 추가하면 대상은 비어 있다", noDefsCapture.Attribute.IsEmpty);
             calculationModifiers.DeleteArrayElementAtIndex(2);
 
             // 두 번째 칸은 stamina(Source)를 대상으로 바꿔 둔다 — D에서 저장·다시 읽기로 본다

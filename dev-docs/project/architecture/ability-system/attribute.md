@@ -11,7 +11,7 @@ flowchart TD
     OWNER["소유 컴포넌트<br/>(캐릭터 등)"] -->|"Awake: AddSpawnedAttribute(new Set)"| ASC["AbilitySystemComponent"]
     ASC -->|타입당 하나| SET["AttributeSet (추상 베이스)<br/>구체 Set이 수치를 필드로 보유 · 훅 virtual"]
     SET -->|필드| DATA["AttributeData<br/>BaseValue / CurrentValue"]
-    ATTR["GameplayAttribute<br/>직렬화 · AQN + 필드명"] -->|ToAttributeHandle| HANDLE["GameplayAttributeHandle<br/>런타임 · FieldInfo 캐싱"]
+    ATTR["GameplayAttribute<br/>직렬화 · AQN + 필드명"] -->|ToAttributeHandle| HANDLE["GameplayAttributeHandle<br/>런타임 · 필드 오프셋 직접 접근"]
     HANDLE -. 읽기/쓰기 .-> DATA
 ```
 
@@ -32,15 +32,15 @@ public class CharacterAttributeSet : AttributeSet
     public AttributeData MaxHealth;
     public AttributeData Speed;
 
-    // (2) 외부 식별용 정적 핸들 — 필드 하나당 하나. typeof + nameof로 필드에 묶는다.
-    public static readonly GameplayAttributeHandle HealthAttribute    = new(typeof(CharacterAttributeSet), nameof(Health));
-    public static readonly GameplayAttributeHandle MaxHealthAttribute = new(typeof(CharacterAttributeSet), nameof(MaxHealth));
-    public static readonly GameplayAttributeHandle SpeedAttribute     = new(typeof(CharacterAttributeSet), nameof(Speed));
+    // (2) 외부 식별용 정적 핸들 — 필드 하나당 하나. 제네릭 Set 타입 + nameof로 필드에 묶는다.
+    public static readonly GameplayAttributeHandle HealthAttribute    = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(Health));
+    public static readonly GameplayAttributeHandle MaxHealthAttribute = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(MaxHealth));
+    public static readonly GameplayAttributeHandle SpeedAttribute     = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(Speed));
 }
 ```
 
 - **값 필드(`AttributeData`)** — 실제 Base/Current를 든다. 캐릭터마다 값이 다르니 인스턴스에 있다.
-- **정적 핸들(`GameplayAttributeHandle`)** — "이 Set의 이 어트리뷰트"를 코드에서 문자열 없이 가리키는 **이름표**. 값이 아니라 식별자라 타입당 하나면 충분해 `static readonly`. `typeof`+`nameof`로 Set·필드에 컴파일 타임에 묶어 오타·rename에 안전하다.
+- **정적 핸들(`GameplayAttributeHandle`)** — "이 Set의 이 어트리뷰트"를 코드에서 문자열 없이 가리키는 **이름표**. 값이 아니라 식별자라 타입당 하나면 충분해 `static readonly`. 제네릭 인자(`where TSet : AttributeSet`)와 `nameof`로 Set·필드에 컴파일 타임에 묶어 Set이 아닌 타입·오타·rename에 안전하다.
 
 쓰는 쪽은 이 정적 핸들 하나로 값을 조회한다:
 
@@ -59,18 +59,27 @@ ATTRIBUTE_ACCESSORS(UMyAttributeSet, Health)  // 매크로가 접근자를 자�
 
 `ATTRIBUTE_ACCESSORS` 매크로가 `GetHealthAttribute()`(→ `FGameplayAttribute`) · `GetHealth()` · `SetHealth()` · `InitHealth()`를 **코드 생성**한다. 이 중 `GetHealthAttribute()`가 "밖에서 Health를 문자열 없이 가리키는 정적 진입점"이다.
 
-C#엔 그런 코드 생성 매크로가 없다. 그래서 그 정적 접근자를 **손으로 하나 선언**한 게 `public static readonly GameplayAttributeHandle HealthAttribute`다 — UE의 `GetHealthAttribute()`에 대응한다. `typeof`+`nameof` 바인딩으로 매크로가 주던 안전성(문자열 오타·rename 취약점 제거)을 매크로 없이 흉내 냈다.
+C#엔 그런 코드 생성 매크로가 없다. 그래서 그 정적 접근자를 **손으로 하나 선언**한 게 `public static readonly GameplayAttributeHandle HealthAttribute`다 — UE의 `GetHealthAttribute()`에 대응한다. 제네릭 Set 타입 + `nameof` 바인딩으로 매크로가 주던 안전성(문자열 오타·rename 취약점 제거)을 매크로 없이 흉내 냈다.
 
 > **대응 요약:** UE `FGameplayAttributeData Health`(값) + `GetHealthAttribute()`(정적 식별자) ↔ 여기 `AttributeData Health`(값) + `static GameplayAttributeHandle HealthAttribute`(정적 식별자).
 
 ## 참조 2분할 — 직렬화 vs 런타임
 
-위 정적 핸들(`GameplayAttributeHandle`)은 **런타임 전용**이다 — `FieldInfo`를 들어 직렬화할 수 없다. 그래서 에셋·인스펙터가 어트리뷰트를 저장·저작하려면 문자열 형태의 짝이 하나 더 필요하고, 그게 `GameplayAttribute`다. (UE는 `FGameplayAttribute` 하나가 직렬화+런타임을 겸하지만, C#의 `FieldInfo` 직렬화 불가 제약상 둘로 나뉜다.)
+위 정적 핸들(`GameplayAttributeHandle`)은 **런타임 전용**이다 — `System.Type`과 런타임마다 다른 메모리 오프셋을 들어 직렬화할 수 없다. 그래서 에셋·인스펙터가 어트리뷰트를 저장·저작하려면 문자열 형태의 짝이 하나 더 필요하고, 그게 `GameplayAttribute`다. (UE는 `FGameplayAttribute` 하나가 직렬화+런타임을 겸하지만, Unity가 `Type`을 직렬화하지 못해 둘로 나뉜다.)
 
 - **`GameplayAttribute`(직렬화):** 타입명(AQN) + 필드명 문자열 쌍. 에셋 저작용 — GE modifier 대상, 캡처 대상 등.
 - **`GameplayAttributeHandle`(런타임):** `GameplayAttribute.ToAttributeHandle()`로 문자열을 해석해 만든다. 값 동등성(`SetType`+`Name`)으로 Dictionary 키가 된다.
 
-> **왜 FieldInfo 캐싱인가:** 핸들 생성 시 Reflection을 1회로 격리하면, 매 프레임 반복되는 값 읽기/쓰기(집계·재평가)에서 문자열 필드 탐색 비용이 사라진다. 비용을 "많이 호출되는 경로"에서 "한 번 만드는 경로"로 옮긴 선택이다.
+**핸들 유효성** — 핸들은 생성 검증(`AttributeSet` 파생 타입 · 그 이름의 인스턴스 필드 · 필드 타입 `AttributeData` · 오프셋 계산)을 통과해야만 만들어진다. 그래서 무효 핸들은 `default` 하나뿐이고 `IsValid`가 이를 가른다. 생성 경로는 실패의 성격에 따라 둘이다.
+
+| 경로 | 실패 시 | 쓰는 곳 |
+|---|---|---|
+| `GameplayAttributeHandle.Create<TSet>(nameof(Field))` | 예외 — 코드 오류 | Set의 정적 핸들 (Set 타입을 컴파일 타임에 앎) |
+| `GameplayAttributeHandle.TryCreate(Type, …)` | `false` + `default` | Set 타입을 런타임에 얻는 곳 — 에셋 문자열 해석(`ToAttributeHandle`) · 필드 열거(`GetAttributesFromSetClass`) |
+
+핸들 유효성(가리키는 필드가 올바른가)과 별개로, 접근할 때는 넘겨받은 Set 인스턴스의 타입이 핸들의 `SetType`과 같은지 확인한 뒤에만 오프셋으로 읽고 쓴다.
+
+> **왜 필드 오프셋 직접 접근인가:** 핸들 생성 때 Reflection으로 필드를 찾아 객체 안 오프셋을 한 번 구해 둔다. 매 프레임 반복되는 값 읽기/쓰기(집계·재평가)는 Set 객체를 `fixed`로 고정하고 그 위치의 `BaseValue`/`CurrentValue` float 하나만 직접 읽고 쓴다 — 문자열 필드 탐색도, `FieldInfo.GetValue/SetValue`의 박싱 할당도 접근 경로에 없다. 대가로 Core 어셈블리가 unsafe 코드를 쓰고, 잘못된 메모리 접근은 런타임 예외 대신 위 '핸들 유효성'의 생성 검증과 접근 전 Set 타입 확인으로 막는다.
 
 ## 초기화 — 소유 쪽이 Set을 만들고, 초기값은 GE로
 
@@ -137,7 +146,7 @@ sequenceDiagram
 | UE GAS | 이 프로젝트 | 대응 시 판단 / Unity 제약 |
 |---|---|---|
 | `UAttributeSet` | `AttributeSet` (추상 베이스) | 채택 |
-| `FGameplayAttribute` (직렬화+런타임 겸용) | `GameplayAttribute`(직렬화) + `GameplayAttributeHandle`(런타임) | `FieldInfo` 직렬화 불가라 둘로 분리 |
+| `FGameplayAttribute` (직렬화+런타임 겸용) | `GameplayAttribute`(직렬화) + `GameplayAttributeHandle`(런타임) | 핸들이 드는 `Type`·오프셋은 직렬화할 수 없어 둘로 분리 |
 | `ATTRIBUTE_ACCESSORS` 매크로 (`GetXAttribute()`) | `static readonly GameplayAttributeHandle` (손 선언) | 코드 생성 매크로가 없어 정적 식별자를 직접 선언 |
 | `FGameplayAttributeData` | `AttributeData` (Base/Current) | 채택 |
 | Owner 서브오브젝트 Set 수집 | 소유 컴포넌트가 `AddSpawnedAttribute` | Unity엔 서브오브젝트 수집이 없어 명시 등록 |

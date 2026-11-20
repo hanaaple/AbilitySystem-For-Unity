@@ -6,10 +6,10 @@ namespace Game.Character
     /// <summary> 플레이어만 쓰는 어트리뷰트(점프·구르기·마나). 허수아비처럼 이 동작이 없는 캐릭터에는 붙이지 않는다. </summary>
     public class PlayerAttributeSet : AttributeSet
     {
-        public static readonly GameplayAttributeHandle JumpHeightAttribute   = new(typeof(PlayerAttributeSet), nameof(JumpHeight));
-        public static readonly GameplayAttributeHandle DashDistanceAttribute = new(typeof(PlayerAttributeSet), nameof(DashDistance));
-        public static readonly GameplayAttributeHandle ManaAttribute         = new(typeof(PlayerAttributeSet), nameof(Mana));
-        public static readonly GameplayAttributeHandle MaxManaAttribute      = new(typeof(PlayerAttributeSet), nameof(MaxMana));
+        public static readonly GameplayAttributeHandle JumpHeightAttribute   = GameplayAttributeHandle.Create<PlayerAttributeSet>(nameof(JumpHeight));
+        public static readonly GameplayAttributeHandle DashDistanceAttribute = GameplayAttributeHandle.Create<PlayerAttributeSet>(nameof(DashDistance));
+        public static readonly GameplayAttributeHandle ManaAttribute         = GameplayAttributeHandle.Create<PlayerAttributeSet>(nameof(Mana));
+        public static readonly GameplayAttributeHandle MaxManaAttribute      = GameplayAttributeHandle.Create<PlayerAttributeSet>(nameof(MaxMana));
 
         /// <summary> 점프 높이(m). </summary>
         public AttributeData JumpHeight;

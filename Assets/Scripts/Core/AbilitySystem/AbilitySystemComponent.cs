@@ -297,10 +297,10 @@ namespace Core.AbilitySystem
             return _spawnedAttributeSets.Values;
         }
 
-        /// <summary>핸들이 가리키는 AttributeSet 타입(<see cref="GameplayAttributeHandle.SetType"/>)의 인스턴스를 반환한다. 미등록이면 null.</summary>
+        /// <summary>핸들이 가리키는 AttributeSet 타입(<see cref="GameplayAttributeHandle.AttributeSetType"/>)의 인스턴스를 반환한다. 미등록이면 null.</summary>
         internal AttributeSet GetAttributeSet(GameplayAttributeHandle handle)
         {
-            return _spawnedAttributeSets.GetValueOrDefault(handle.SetType);
+            return _spawnedAttributeSets.GetValueOrDefault(handle.AttributeSetType);
         }
 
         public float GetAttributeBaseValue(GameplayAttributeHandle handle)
@@ -677,15 +677,9 @@ namespace Core.AbilitySystem
             _activeGameplayEffectsContainer.OnMagnitudeDependencyChange(handle, changedAggregator);
         }
 
-        internal bool TryGetAttributeData(GameplayAttributeHandle handle, out AttributeData data)
+        internal bool HasAttributeField(GameplayAttributeHandle handle)
         {
-            if (_spawnedAttributeSets.TryGetValue(handle.SetType, out AttributeSet set))
-            {
-                return handle.TryGetData(set, out data);
-            }
-
-            data = default;
-            return false;
+            return _spawnedAttributeSets.TryGetValue(handle.AttributeSetType, out AttributeSet set) && handle.CanAccess(set);
         }
 
         public bool HasAttributeSetForAttribute(GameplayAttributeHandle attributeHandle)

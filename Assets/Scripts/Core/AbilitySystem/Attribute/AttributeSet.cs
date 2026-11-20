@@ -51,7 +51,7 @@ namespace Core.AbilitySystem.Attribute
         {
         }
 
-        /// <summary>Set 타입이 가진 어트리뷰트(공개이거나 [SerializeField]인 AttributeData 필드)를 선언 순서대로 attributes에 더한다.</summary>
+        /// <summary>AttributeSet이 가진 어트리뷰트(공개이거나 [SerializeField]인 AttributeData 필드)를 선언 순서대로 attributes에 더한다.</summary>
         /// <remarks>UE: UAttributeSet::GetAttributesFromSetClass</remarks>
         public static void GetAttributesFromSetClass(Type attributeSetType, List<GameplayAttributeHandle> attributes)
         {
@@ -67,7 +67,8 @@ namespace Core.AbilitySystem.Attribute
                     .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                     .Where(field => typeof(AttributeData).IsAssignableFrom(field.FieldType) && (field.IsPublic || field.GetCustomAttribute<SerializeField>() != null))
                     .OrderBy(field => field.MetadataToken)
-                    .Select(field => new GameplayAttributeHandle(attributeSetType, field.Name))
+                    .Select(field => GameplayAttributeHandle.TryCreate(attributeSetType, field.Name, out GameplayAttributeHandle handle) ? handle : default)
+                    .Where(handle => handle.IsValid)
                     .ToArray();
                 AttributesBySetType[attributeSetType] = handles;
             }

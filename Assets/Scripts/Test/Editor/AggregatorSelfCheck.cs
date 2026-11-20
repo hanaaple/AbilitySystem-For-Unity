@@ -602,7 +602,7 @@ namespace Test.Editor
 
         private class ClampedAttributeSet : AttributeSet
         {
-            public static readonly GameplayAttributeHandle HealthAttribute = new(typeof(ClampedAttributeSet), nameof(Health));
+            public static readonly GameplayAttributeHandle HealthAttribute = GameplayAttributeHandle.Create<ClampedAttributeSet>(nameof(Health));
 
             public AttributeData Health;
 

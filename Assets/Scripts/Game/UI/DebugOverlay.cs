@@ -281,12 +281,12 @@ namespace Game.UI
                         value += $"  <color=#8A94A6>base {FormatNumber(baseValue)}</color>";
                     }
 
-                    if (IsRecentlyChanged(asc, attribute.Name, current))
+                    if (IsRecentlyChanged(asc, attribute.FieldName, current))
                     {
                         value = $"<color=#{ColorUtility.ToHtmlStringRGB(_changedColor)}>{value}</color>";
                     }
 
-                    lines.Add(attribute.Name + ColumnSeparator + value);
+                    lines.Add(attribute.FieldName + ColumnSeparator + value);
                 }
             }
         }

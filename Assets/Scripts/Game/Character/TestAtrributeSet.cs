@@ -12,8 +12,8 @@ namespace Game.Character
     {
         public const float MaxHealth = 100f;
 
-        public static readonly GameplayAttributeHandle HealthAttribute = new(typeof(TestAtrributeSet), nameof(Health));
-        public static readonly GameplayAttributeHandle DamageAttribute = new(typeof(TestAtrributeSet), nameof(Damage));
+        public static readonly GameplayAttributeHandle HealthAttribute = GameplayAttributeHandle.Create<TestAtrributeSet>(nameof(Health));
+        public static readonly GameplayAttributeHandle DamageAttribute = GameplayAttributeHandle.Create<TestAtrributeSet>(nameof(Damage));
 
         public AttributeData Health;
         public AttributeData Damage;

@@ -4,9 +4,9 @@ namespace Game
 {
     public class BoxAttributeSet : AttributeSet
     {
-        public static readonly GameplayAttributeHandle AAttribute    = new(typeof(BoxAttributeSet), nameof(A));
-        public static readonly GameplayAttributeHandle BAttribute = new(typeof(BoxAttributeSet), nameof(B));
-        public static readonly GameplayAttributeHandle CAttribute   = new(typeof(BoxAttributeSet), nameof(C));
+        public static readonly GameplayAttributeHandle AAttribute    = GameplayAttributeHandle.Create<BoxAttributeSet>(nameof(A));
+        public static readonly GameplayAttributeHandle BAttribute = GameplayAttributeHandle.Create<BoxAttributeSet>(nameof(B));
+        public static readonly GameplayAttributeHandle CAttribute   = GameplayAttributeHandle.Create<BoxAttributeSet>(nameof(C));
 
         public AttributeData A;
         public AttributeData B;
