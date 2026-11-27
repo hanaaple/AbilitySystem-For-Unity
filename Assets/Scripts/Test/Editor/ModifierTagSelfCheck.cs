@@ -491,7 +491,7 @@ namespace Test.Editor
                 ActiveGameplayEffectHandle handle = asc.ApplyGameplayEffectToSelf(targetRequire);
                 bool skippedOnApply = IsBaseAndCurrent(asc, health, 100f);
                 asc.AddLooseGameplayTag(tags.Enraged);
-                AdvanceTime(container, 1f);
+                AdvanceTime(container, 1.1f);
                 bool appliedWithTag = IsBaseAndCurrent(asc, health, 110f);
                 asc.RemoveLooseGameplayTag(tags.Enraged);
                 AdvanceTime(container, 1f);
@@ -506,7 +506,7 @@ namespace Test.Editor
             ActiveGameplayEffectHandle ignoreHandle = asc.ApplyGameplayEffectToSelf(targetIgnore);
             bool ignoreOnApply = IsBaseAndCurrent(asc, health, 110f);
             asc.AddLooseGameplayTag(tags.Stunned);
-            AdvanceTime(container, 1f);
+            AdvanceTime(container, 1.1f);
             bool ignoreBlocked = IsBaseAndCurrent(asc, health, 110f);
             asc.RemoveLooseGameplayTag(tags.Stunned);
             AdvanceTime(container, 1f);
@@ -518,7 +518,7 @@ namespace Test.Editor
 
             SetBase(asc, health, 100f);
             ActiveGameplayEffectHandle withSource = asc.ApplyGameplayEffectSpecToSelf(MakeSpecWithSourceTag(asc, sourceRequire, tags.Enraged));
-            AdvanceTime(container, 1f);
+            AdvanceTime(container, 1.1f);
             bool sourceOn = IsBaseAndCurrent(asc, health, 120f);
             asc.RemoveActiveGameplayEffect(withSource);
             check("E-13 Infinite Period 1 +10 Source Require Enraged, Spec Source에 Enraged → 적용 실행 + 주기 1회 = 120", sourceOn);
@@ -527,7 +527,7 @@ namespace Test.Editor
             GameplayEffectSpec specBeforeTag = asc.MakeOutgoingSpec(sourceRequire);
             asc.AddLooseGameplayTag(tags.Enraged);
             ActiveGameplayEffectHandle withoutSource = asc.ApplyGameplayEffectSpecToSelf(specBeforeTag);
-            AdvanceTime(container, 1f);
+            AdvanceTime(container, 1.1f);
             bool sourceOff = IsBaseAndCurrent(asc, health, 100f);
             asc.RemoveActiveGameplayEffect(withoutSource);
             asc.RemoveLooseGameplayTag(tags.Enraged);
@@ -569,10 +569,11 @@ namespace Test.Editor
         }
 
         // 에디터에선 Time.time이 흐르지 않아, 컨테이너 시계를 지금 시각 + seconds로 바꿔 끼우고 Tick한다.
+        // 주기 실행·만료는 경계 시각을 넘어야 일어나므로(UE 타이머와 같음) 경계를 확인할 땐 경계보다 조금 더 옮긴다.
         private static void AdvanceTime(ActiveGameplayEffectsContainer container, float seconds)
         {
-            float worldTime = container.GetWorldTime() + seconds;
-            Func<float> worldTimeSource = () => worldTime;
+            double worldTime = container.GetWorldTime() + seconds;
+            Func<double> worldTimeSource = () => worldTime;
             typeof(ActiveGameplayEffectsContainer).GetMethod("SetWorldTimeSource", NonPublicInstance).Invoke(container, new object[] { worldTimeSource });
             container.Tick();
         }

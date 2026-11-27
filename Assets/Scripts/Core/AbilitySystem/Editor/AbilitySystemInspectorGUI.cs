@@ -218,7 +218,7 @@ namespace Core.AbilitySystem.Editor
 
             if (def.Period > 0f)
             {
-                EditorGUILayout.LabelField("Period Timer", $"{active.PeriodTimer:0.##} / {def.Period:0.##} s");
+                EditorGUILayout.LabelField("Next Period", $"{active.NextPeriodWorldTime:0.##} s (Period {def.Period:0.##} s)");
             }
 
             DrawModifiers(active.Spec);

@@ -9,7 +9,7 @@
 
 - **`GameplayEffectAsset`(SO):** "무엇을·얼마나·어떻게" 바꿀지의 **불변 정의** — 타입·지속/주기, 스택 설정, Component 목록, Modifier 목록, Execution 목록, 메모용 설명.
 - **`GameplayEffectSpec`(런타임):** 적용 시 Asset으로부터 만드는 인스턴스 — 레벨·컨텍스트·지속 시간·캡처값·계산된 magnitude·캡처 태그. 적용 경계에서 **대상별로 복제(Clone)**돼 대상 캡처값이 섞이지 않는다.
-- **`ActiveGameplayEffect`:** 지속형 GE의 활성 상태(적용 시각·남은 시간·주기 타이머·억제 여부)를 들고 컨테이너에 등록. 핸들로 식별·해제.
+- **`ActiveGameplayEffect`:** 지속형 GE의 활성 상태(적용 시각·남은 시간·다음 주기 시각·억제 여부)를 들고 컨테이너에 등록. 핸들로 식별·해제.
 
 **왜 나누나:** 하나의 Asset을 여러 대상이 공유하므로, 런타임 가변 상태(캡처값·타이머)는 Spec 쪽에 둬야 서로 간섭하지 않는다. Execution도 같은 이유로 '데이터(SO)'가 아니라 '로직(순수 클래스)'이며 무상태다.
 
@@ -107,10 +107,10 @@ flowchart TD
 
 ## 수명 (Tick)
 
-- 적용 시각(`StartWorldTime`)을 기록하고, Tick은 GE마다 **적용(또는 지난 Tick) 뒤 흐른 시간만** 센다 — 프레임 도중에 걸린 GE가 그 프레임 시간까지 깎이지 않는다.
-- 남은 시간은 `Duration − (지금 − StartWorldTime)`으로 매번 다시 계산(float 오차가 쌓이지 않음). 만료는 Tick 때 한꺼번에 제거.
-- 주기형은 주기마다 실행(프레임이 길면 밀린 주기를 몰아 실행). Infinite는 수동 해제까지.
-- 시계는 컨테이너가 읽는 `Time.time`이라 `timeScale`을 따른다.
+- 적용 시각(`StartWorldTime`)을 기록해, 프레임 도중에 걸린 GE도 적용 뒤 흐른 시간만 센다 — 그 프레임 시간까지 깎이지 않는다.
+- 주기형은 다음 실행 시각(`NextPeriodWorldTime`)을, Duration은 끝 시각(`StartWorldTime + Duration`)을 정해 두고, Tick 때 **지금 시각이 그 시각을 넘으면** 실행·만료한다(UE: `FTimerManager`). 경계 시각에 딱 도달만 해서는 처리하지 않는다. 프레임이 길면 밀린 주기를 몰아 실행하고, 만료는 Tick 때 한꺼번에 제거. Infinite는 수동 해제까지.
+- 남은 시간은 `끝 시각 − 지금`.
+- 시계는 컨테이너가 읽는 `Time.timeAsDouble`이라 `timeScale`을 따르고, 절대 시각(적용·다음 주기·끝 시각)은 double이다. UE GAS는 이 값들을 float로 두고 타이머 내부만 double로 잰다.
 
 ## 스택 (스택 수 1)
 
@@ -120,7 +120,7 @@ flowchart TD
 | AggregateByTarget | 대상에 같은 GE가 있으면 합친다 |
 | AggregateBySource | 같은 시전자 ASC가 건 같은 GE만 합친다 |
 | `stackDurationRefreshPolicy` | 합칠 때 지속 시간을 처음부터 다시 셀지 |
-| `stackPeriodResetPolicy` | 합칠 때 주기 타이머를 리셋할지(리셋하면 "적용 시 실행"도 다시) |
+| `stackPeriodResetPolicy` | 합칠 때 주기를 지금부터 다시 셀지(리셋하면 "적용 시 실행"도 다시) |
 
 합칠 때 새 GE를 만들지 않고 **기존 GE의 시간만** 갱신한다 — Spec·modifier·부여 태그는 처음 것 그대로다. UE는 기존 Spec을 새 Spec으로 바꾸고 스택 수를 더한다. 스택 수 2 이상(상한·스택 수만큼 세기·만료 정책)은 🔜.
 
@@ -204,7 +204,7 @@ GE의 부가 동작은 `[SerializeReference]` Component 목록으로 붙인다(U
 |---|---|---|
 | `UGameplayEffect` (정의) | `GameplayEffectAsset` (ScriptableObject) | 정의를 데이터 에셋으로. 런타임 타입과 구분하려 `Asset` 접미어 |
 | `FGameplayEffectSpec` | `GameplayEffectSpec` (class) | 정의/런타임 분리 그대로. 대상별 복제는 명시적 `Clone()` |
-| `FActiveGameplayEffect` | `ActiveGameplayEffect` | 적용 시각 기반 수명. UE의 GE별 타이머 대신 컨테이너 Tick 한 루프 |
+| `FActiveGameplayEffect` | `ActiveGameplayEffect` | 적용 시각 기반 수명. UE의 GE별 타이머 대신 컨테이너 Tick 한 루프에서, 타이머처럼 예약 시각을 넘으면 실행·만료 |
 | `FGameplayModifierInfo` / `FGameplayEffectModifierMagnitude` | `GameplayModifier` / `GameplayEffectModifierMagnitude` | 연산 6종으로 축소 |
 | `UGameplayEffectExecutionCalculation` + `FGameplayEffectExecutionDefinition` | `GameplayEffectExecution` + `GameplayEffectExecutionDefinition` | SO가 임의 클래스를 못 담아 AQN으로 저장. `PassedInTags`·Conditional GE·Transient 집계기 없음 |
 | `UGameplayEffectComponent` | `GameplayEffectComponent` | 같은 훅 지점 |

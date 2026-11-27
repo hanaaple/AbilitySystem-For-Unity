@@ -579,22 +579,22 @@ namespace Core.AbilitySystem
             return _activeGameplayEffectsContainer.GetActiveEffectsTimeRemainingAndDuration(query);
         }
 
-        /// <summary>질의에 맞는 GE 중 가장 늦게 끝나는 시각(<see cref="Time.time"/> 기준).</summary>
+        /// <summary>질의에 맞는 GE 중 가장 늦게 끝나는 시각(GE 시계 <see cref="Time.timeAsDouble"/> 기준).</summary>
         /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsEndTime</remarks>
-        public float GetActiveEffectsEndTime(GameplayEffectQuery query)
+        public double GetActiveEffectsEndTime(GameplayEffectQuery query)
         {
             return _activeGameplayEffectsContainer.GetActiveEffectsEndTime(query, new List<AbilitySystemComponent>());
         }
 
         /// <summary>질의에 맞는 GE 중 가장 늦게 끝나는 시각. <paramref name="instigators"/>에 맞는 GE의 시전자를 더한다.</summary>
         /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsEndTimeWithInstigators</remarks>
-        public float GetActiveEffectsEndTimeWithInstigators(GameplayEffectQuery query, List<AbilitySystemComponent> instigators)
+        public double GetActiveEffectsEndTimeWithInstigators(GameplayEffectQuery query, List<AbilitySystemComponent> instigators)
         {
             return _activeGameplayEffectsContainer.GetActiveEffectsEndTime(query, instigators);
         }
 
         /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectsEndTimeAndDuration</remarks>
-        public bool GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery query, out float endTime, out float duration)
+        public bool GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery query, out double endTime, out float duration)
         {
             return _activeGameplayEffectsContainer.GetActiveEffectsEndTimeAndDuration(query, out endTime, out duration, new List<AbilitySystemComponent>());
         }

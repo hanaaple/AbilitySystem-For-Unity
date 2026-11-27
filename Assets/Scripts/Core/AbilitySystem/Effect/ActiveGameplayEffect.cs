@@ -10,13 +10,13 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>적용된 시각(컨테이너 시계 <see cref="ActiveGameplayEffectsContainer.GetWorldTime"/> 기준).</summary>
         /// <remarks>UE: FActiveGameplayEffect::StartWorldTime</remarks>
-        public float StartWorldTime { get; internal set; }
+        public double StartWorldTime { get; internal set; }
 
         /// <summary>Duration 타입일 때만 유효. 남은 지속 시간(초).</summary>
         public float RemainingDuration { get; set; }
 
-        /// <summary>마지막 주기 실행 이후 경과 시간(초).</summary>
-        public float PeriodTimer { get; set; }
+        /// <summary>다음 주기 실행 시각(<see cref="StartWorldTime"/>과 같은 시계). 지금 시각이 이 시각을 넘으면 실행한다. 주기 GE가 아니면 쓰지 않는다.</summary>
+        public double NextPeriodWorldTime { get; internal set; }
 
         /// <summary>꺼져 있는지. 꺼진 GE는 활성 목록에 남지만 modifier·부여 태그를 Owner에 걸지 않고 주기 실행도 하지 않는다.</summary>
         public bool IsInhibited { get; internal set; }
@@ -25,18 +25,14 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FActiveGameplayEffect::EventSet</remarks>
         public ActiveGameplayEffectEvents EventSet { get; } = new();
 
-        // 수명을 마지막으로 센 시각. 적용 시각에서 시작해 Tick은 그 뒤에 흐른 시간만 센다.
-        internal float LastTickWorldTime { get; set; }
-
-        public ActiveGameplayEffect(ActiveGameplayEffectHandle handle, GameplayEffectSpec spec, AbilitySystemComponent owner, float startWorldTime)
+        public ActiveGameplayEffect(ActiveGameplayEffectHandle handle, GameplayEffectSpec spec, AbilitySystemComponent owner, double startWorldTime)
         {
             Handle = handle;
             Spec = spec;
             Owner = owner;
             StartWorldTime = startWorldTime;
-            LastTickWorldTime = startWorldTime;
             RemainingDuration = spec.Duration;
-            PeriodTimer = 0f;
+            NextPeriodWorldTime = startWorldTime + spec.Definition.Period;
         }
 
         /// <summary>Spec의 지속시간. Duration 타입이 아니면 <see cref="GameplayEffectConstants.InfiniteDuration"/>.</summary>
@@ -55,7 +51,7 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>끝나는 시각(<see cref="StartWorldTime"/>과 같은 시계).</summary>
         /// <remarks>UE: FActiveGameplayEffect::GetEndTime</remarks>
-        public float GetEndTime()
+        public double GetEndTime()
         {
             float duration = GetDuration();
             return duration == GameplayEffectConstants.InfiniteDuration ? GameplayEffectConstants.InfiniteDuration : StartWorldTime + duration;
