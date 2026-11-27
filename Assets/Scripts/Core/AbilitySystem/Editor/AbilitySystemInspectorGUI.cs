@@ -55,9 +55,9 @@ namespace Core.AbilitySystem.Editor
                 return;
             }
 
-            foreach (AttributeSet set in spawnedSets)
+            foreach (AttributeSet attributeSet in spawnedSets)
             {
-                DrawAttributeSet(set.GetType(), set);
+                DrawAttributeSet(attributeSet.GetType(), attributeSet);
             }
 
             EditorGUI.indentLevel--;
@@ -168,7 +168,7 @@ namespace Core.AbilitySystem.Editor
             EditorGUI.indentLevel--;
         }
 
-        private static void DrawAttributeSet(Type setType, AttributeSet set)
+        private static void DrawAttributeSet(Type setType, AttributeSet attributeSet)
         {
             EditorGUILayout.LabelField(setType.Name, EditorStyles.boldLabel);
 
@@ -184,7 +184,7 @@ namespace Core.AbilitySystem.Editor
 
             foreach (FieldInfo field in fields)
             {
-                var data = (AttributeData)field.GetValue(set);
+                var data = (AttributeData)field.GetValue(attributeSet);
                 DrawAttributeData(field.Name, data);
             }
 

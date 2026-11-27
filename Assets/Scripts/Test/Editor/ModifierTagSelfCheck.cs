@@ -621,10 +621,10 @@ namespace Test.Editor
 
         private static CharacterAttributeSet AddCharacterSet(AbilitySystemComponent asc, float health)
         {
-            CharacterAttributeSet set = new CharacterAttributeSet();
-            set.Health = new AttributeData(health, health);
-            asc.AddSpawnedAttribute(set);
-            return set;
+            CharacterAttributeSet attributeSet = new CharacterAttributeSet();
+            attributeSet.Health = new AttributeData(health, health);
+            asc.AddSpawnedAttribute(attributeSet);
+            return attributeSet;
         }
 
         private static void SetBase(AbilitySystemComponent asc, GameplayAttributeHandle handle, float value)

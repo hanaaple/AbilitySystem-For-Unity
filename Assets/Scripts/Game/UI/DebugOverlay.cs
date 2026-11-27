@@ -265,9 +265,9 @@ namespace Game.UI
         private void AppendAttributes(AbilitySystemComponent asc, List<string> lines)
         {
             lines.Add(HeaderPrefix + "Attributes");
-            foreach (AttributeSet set in asc.GetSpawnedAttributes())
+            foreach (AttributeSet attributeSet in asc.GetSpawnedAttributes())
             {
-                foreach (GameplayAttributeHandle attribute in AttributeSet.GetAttributesFromSetClass(set.GetType()))
+                foreach (GameplayAttributeHandle attribute in AttributeSet.GetAttributesFromSetClass(attributeSet.GetType()))
                 {
                     float current = asc.GetAttributeCurrentValue(attribute);
                     float baseValue = asc.GetAttributeBaseValue(attribute);

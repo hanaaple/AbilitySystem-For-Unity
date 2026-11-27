@@ -507,14 +507,14 @@ namespace Test.Editor
         // Base를 [0, 100]으로 막는 Set. aggregator 없는 경로(직접 Current)와 있는 경로(aggregator base) 둘 다 본다.
         private static void RunPreAttributeBaseChangeClampChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            ClampedAttributeSet set = new ClampedAttributeSet();
-            set.Health = new AttributeData(50f, 50f);
-            asc.AddSpawnedAttribute(set);
+            ClampedAttributeSet attributeSet = new ClampedAttributeSet();
+            attributeSet.Health = new AttributeData(50f, 50f);
+            asc.AddSpawnedAttribute(attributeSet);
             GameplayAttributeHandle health = ClampedAttributeSet.HealthAttribute;
 
             SetBase(asc, health, -50f);
             check("aggregator 없음: SetBase -50 → Pre 클램프로 Base 0, Current 0", Approx(asc.GetAttributeBaseValue(health), 0f) && Approx(asc.GetAttributeCurrentValue(health), 0f));
-            check("Post가 클램프된 값 0을 받음", Approx(set.LastPostNewValue, 0f));
+            check("Post가 클램프된 값 0을 받음", Approx(attributeSet.LastPostNewValue, 0f));
 
             List<OnAttributeChangeData> events = new List<OnAttributeChangeData>();
             void OnHealthChanged(OnAttributeChangeData data)
@@ -534,11 +534,11 @@ namespace Test.Editor
             ActiveGameplayEffectHandle bonusHandle = asc.ApplyGameplayEffectToSelf(bonusGe);
             SetBase(asc, health, 200f);
             check("aggregator 있음: SetBase 200 → Base 100, Current 105(mod +5는 Base 클램프와 별개)", Approx(asc.GetAttributeBaseValue(health), 100f) && Approx(asc.GetAttributeCurrentValue(health), 105f));
-            check("aggregator 있음: Post가 클램프된 값 100을 받음", Approx(set.LastPostNewValue, 100f));
+            check("aggregator 있음: Post가 클램프된 값 100을 받음", Approx(attributeSet.LastPostNewValue, 100f));
 
             asc.GetGameplayAttributeValueChangeDelegate(health).OnValueChange -= OnHealthChanged;
             asc.RemoveActiveGameplayEffect(bonusHandle);
-            asc.RemoveAttributeSet(set);
+            asc.RemoveAttributeSet(attributeSet);
             UnityEngine.Object.DestroyImmediate(damageGe);
             UnityEngine.Object.DestroyImmediate(bonusGe);
         }
@@ -546,10 +546,10 @@ namespace Test.Editor
         // ── K. AttributeSet 훅 (TestAtrributeSet) ──
         private static void RunAttributeSetHookChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            TestAtrributeSet set = new TestAtrributeSet();
-            set.Health = new AttributeData(100f, 100f);
-            set.Damage = new AttributeData(0f, 0f);
-            asc.AddSpawnedAttribute(set);
+            TestAtrributeSet attributeSet = new TestAtrributeSet();
+            attributeSet.Health = new AttributeData(100f, 100f);
+            attributeSet.Damage = new AttributeData(0f, 0f);
+            asc.AddSpawnedAttribute(attributeSet);
             GameplayAttributeHandle health = TestAtrributeSet.HealthAttribute;
             GameplayAttributeHandle damage = TestAtrributeSet.DamageAttribute;
 
@@ -565,38 +565,38 @@ namespace Test.Editor
             GameplayEffectAsset damage30 = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(damage, GameplayModifierOperation.AddBase, 30f));
             asc.ApplyGameplayEffectToSelf(damage30);
             check("meta Damage 30 → Post가 Health 100 → 70, Damage는 0으로", Approx(asc.GetAttributeBaseValue(health), 70f) && Approx(asc.GetAttributeBaseValue(damage), 0f));
-            check("Pre가 1번 불림, Post가 받은 데미지 30", set.PreExecuteCount == 1 && Approx(set.LastExecutedDamage, 30f));
+            check("Pre가 1번 불림, Post가 받은 데미지 30", attributeSet.PreExecuteCount == 1 && Approx(attributeSet.LastExecutedDamage, 30f));
             check("Health 값 변경 이벤트 100 → 70", healthEvents.Count == 1 && Approx(healthEvents[0].OldValue, 100f) && Approx(healthEvents[0].NewValue, 70f));
 
             // Pre가 수치를 고침
-            set.DamageScale = 0.5f;
+            attributeSet.DamageScale = 0.5f;
             GameplayEffectAsset damage40 = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(damage, GameplayModifierOperation.AddBase, 40f));
             asc.ApplyGameplayEffectToSelf(damage40);
-            check("Pre가 배율 0.5 → Damage 20만 적용, Health 70 → 50", Approx(set.LastExecutedDamage, 20f) && Approx(asc.GetAttributeBaseValue(health), 50f));
-            set.DamageScale = 1f;
+            check("Pre가 배율 0.5 → Damage 20만 적용, Health 70 → 50", Approx(attributeSet.LastExecutedDamage, 20f) && Approx(asc.GetAttributeBaseValue(health), 50f));
+            attributeSet.DamageScale = 1f;
 
             // Pre가 버림
-            set.RejectExecute = true;
+            attributeSet.RejectExecute = true;
             healthEvents.Clear();
-            int preCountBeforeReject = set.PreExecuteCount;
+            int preCountBeforeReject = attributeSet.PreExecuteCount;
             asc.ApplyGameplayEffectToSelf(damage40);
-            check("Pre가 false → Pre는 불렸지만 Health 50·Damage 0 그대로, 이벤트 없음", set.PreExecuteCount == preCountBeforeReject + 1 && Approx(asc.GetAttributeBaseValue(health), 50f) && Approx(asc.GetAttributeBaseValue(damage), 0f) && healthEvents.Count == 0);
-            set.RejectExecute = false;
+            check("Pre가 false → Pre는 불렸지만 Health 50·Damage 0 그대로, 이벤트 없음", attributeSet.PreExecuteCount == preCountBeforeReject + 1 && Approx(asc.GetAttributeBaseValue(health), 50f) && Approx(asc.GetAttributeBaseValue(damage), 0f) && healthEvents.Count == 0);
+            attributeSet.RejectExecute = false;
 
             // Current 클램프 (mod 등록 — 실행이 아니라 Pre/PostGameplayEffectExecute는 안 불림)
-            int preCountBeforeBuff = set.PreExecuteCount;
+            int preCountBeforeBuff = attributeSet.PreExecuteCount;
             healthEvents.Clear();
             GameplayEffectAsset healthBuff = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 100f));
             ActiveGameplayEffectHandle buffHandle = asc.ApplyGameplayEffectToSelf(healthBuff);
             check("Infinite +100 (Base 50) → PreAttributeChange가 Current 150을 100으로, Base는 50 그대로", Approx(asc.GetAttributeCurrentValue(health), 100f) && Approx(asc.GetAttributeBaseValue(health), 50f));
-            check("PostAttributeChange가 50 → 100을 받음, 값 변경 이벤트도 100", Approx(set.LastChangeOldValue, 50f) && Approx(set.LastChangeNewValue, 100f) && healthEvents.Count == 1 && Approx(healthEvents[0].NewValue, 100f));
-            check("mod 등록엔 PreGameplayEffectExecute가 안 불림", set.PreExecuteCount == preCountBeforeBuff);
+            check("PostAttributeChange가 50 → 100을 받음, 값 변경 이벤트도 100", Approx(attributeSet.LastChangeOldValue, 50f) && Approx(attributeSet.LastChangeNewValue, 100f) && healthEvents.Count == 1 && Approx(healthEvents[0].NewValue, 100f));
+            check("mod 등록엔 PreGameplayEffectExecute가 안 불림", attributeSet.PreExecuteCount == preCountBeforeBuff);
 
             asc.RemoveActiveGameplayEffect(buffHandle);
-            check("버프 제거 → Current 50, PostAttributeChange 100 → 50", Approx(asc.GetAttributeCurrentValue(health), 50f) && Approx(set.LastChangeOldValue, 100f) && Approx(set.LastChangeNewValue, 50f));
+            check("버프 제거 → Current 50, PostAttributeChange 100 → 50", Approx(asc.GetAttributeCurrentValue(health), 50f) && Approx(attributeSet.LastChangeOldValue, 100f) && Approx(attributeSet.LastChangeNewValue, 50f));
 
             asc.GetGameplayAttributeValueChangeDelegate(health).OnValueChange -= OnHealthChanged;
-            asc.RemoveAttributeSet(set);
+            asc.RemoveAttributeSet(attributeSet);
             UnityEngine.Object.DestroyImmediate(damage30);
             UnityEngine.Object.DestroyImmediate(damage40);
             UnityEngine.Object.DestroyImmediate(healthBuff);
@@ -711,9 +711,9 @@ namespace Test.Editor
 
         private static void AddHealthSet(AbilitySystemComponent asc, float value)
         {
-            CharacterAttributeSet set = new CharacterAttributeSet();
-            set.Health = new AttributeData(value, value);
-            asc.AddSpawnedAttribute(set);
+            CharacterAttributeSet attributeSet = new CharacterAttributeSet();
+            attributeSet.Health = new AttributeData(value, value);
+            asc.AddSpawnedAttribute(attributeSet);
         }
 
         private static void SetBase(AbilitySystemComponent asc, GameplayAttributeHandle handle, float value)

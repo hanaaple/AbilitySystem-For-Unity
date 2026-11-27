@@ -274,32 +274,32 @@ namespace Core.AbilitySystem
         }
 
         /// <summary>Set을 등록한다. 이미 등록된 인스턴스이거나, 이 Set의 어트리뷰트를 이미 등록된 다른 Set이 가지고 있으면 거부하고 false.</summary>
-        public bool AddSpawnedAttribute(AttributeSet set)
+        public bool AddSpawnedAttribute(AttributeSet attributeSet)
         {
-            if (_spawnedAttributeSets.Contains(set))
+            if (_spawnedAttributeSets.Contains(attributeSet))
             {
                 return false;
             }
 
             // 핸들 하나가 두 인스턴스를 가리키면 값·aggregator가 갈린다 — 같은 타입이거나 어트리뷰트를 선언한 부모 Set을 공유하는 경우
-            foreach (GameplayAttributeHandle attribute in AttributeSet.GetAttributesFromSetClass(set.GetType()))
+            foreach (GameplayAttributeHandle attribute in AttributeSet.GetAttributesFromSetClass(attributeSet.GetType()))
             {
                 AttributeSet registered = GetAttributeSet(attribute);
                 if (registered != null)
                 {
-                    Debug.LogError($"{set.GetType().Name} 등록 거부: 어트리뷰트 {attribute}를 이미 등록된 {registered.GetType().Name}이 가지고 있다");
+                    Debug.LogError($"{attributeSet.GetType().Name} 등록 거부: 어트리뷰트 {attribute}를 이미 등록된 {registered.GetType().Name}이 가지고 있다");
                     return false;
                 }
             }
 
-            _spawnedAttributeSets.Add(set);
-            set.SetOwner(this);
+            _spawnedAttributeSets.Add(attributeSet);
+            attributeSet.SetOwner(this);
             return true;
         }
 
-        public void RemoveAttributeSet(AttributeSet set)
+        public void RemoveAttributeSet(AttributeSet attributeSet)
         {
-            _spawnedAttributeSets.Remove(set);
+            _spawnedAttributeSets.Remove(attributeSet);
         }
 
         /// <remarks>UE: UAbilitySystemComponent::GetSpawnedAttributes</remarks>
@@ -312,11 +312,11 @@ namespace Core.AbilitySystem
         /// <remarks>UE: UAbilitySystemComponent::GetAttributeSubobject</remarks>
         internal AttributeSet GetAttributeSet(GameplayAttributeHandle handle)
         {
-            foreach (AttributeSet set in _spawnedAttributeSets)
+            foreach (AttributeSet attributeSet in _spawnedAttributeSets)
             {
-                if (handle.CanAccess(set))
+                if (handle.CanAccess(attributeSet))
                 {
-                    return set;
+                    return attributeSet;
                 }
             }
 
