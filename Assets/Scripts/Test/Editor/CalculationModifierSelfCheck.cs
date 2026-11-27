@@ -103,7 +103,7 @@ namespace Test.Editor
             CallDrawer("AddScopedModifier", calculationModifiers, Array.Empty<GameplayEffectAttributeCaptureDefinition>());
             SerializedProperty noDefs = calculationModifiers.GetArrayElementAtIndex(2);
             var noDefsCapture = (GameplayEffectAttributeCaptureDefinition)noDefs.FindPropertyRelative("_capturedAttribute").boxedValue;
-            check("B-5 후보가 없을 때 추가하면 대상은 비어 있다", !noDefsCapture.Attribute.IsSet);
+            check("B-5 후보가 없을 때 추가하면 대상은 비어 있다", noDefsCapture.Attribute.IsEmpty);
             calculationModifiers.DeleteArrayElementAtIndex(2);
 
             // 두 번째 칸은 stamina(Source)를 대상으로 바꿔 둔다 — D에서 저장·다시 읽기로 본다
@@ -132,7 +132,7 @@ namespace Test.Editor
             check($"C-1 Execution 요약 = \"Speed Boost Execution — Calculation Modifiers 2\" (실제 \"{executionSummary}\")", executionSummary == "Speed Boost Execution   —   Calculation Modifiers 2");
 
             string scopedSummary = (string)CallDrawer("GetScopedModifierSummary", calculationModifiers.GetArrayElementAtIndex(0));
-            check($"C-2 Calculation Modifier 요약 = Modifier와 같은 꼴 \"CharacterAttributeSet.health (Target, Snapshot) — Multiply (Additive)\" (실제 \"{scopedSummary}\")", scopedSummary == "CharacterAttributeSet.health (Target, Snapshot)   —   Multiply (Additive)");
+            check($"C-2 Calculation Modifier 요약 = Modifier와 같은 꼴 \"CharacterAttributeSet.Health (Target, Snapshot) — Multiply (Additive)\" (실제 \"{scopedSummary}\")", scopedSummary == "CharacterAttributeSet.Health (Target, Snapshot)   —   Multiply (Additive)");
 
             // 높이: 접으면 머리 줄만, 펼치면 늘고, 칸이 접히면 줄어든다(높이 계산과 그리기가 같은 함수라 그리기도 같이 맞는다)
             execution.isExpanded = false;

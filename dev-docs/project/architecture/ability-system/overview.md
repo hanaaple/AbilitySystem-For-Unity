@@ -37,7 +37,7 @@ flowchart LR
     GEA["GameplayEffectAsset<br/>SO · 불변 정의"] -->|MakeOutgoingSpec| SPEC["GameplayEffectSpec<br/>런타임 · 대상별 Clone"]
     SPEC -->|지속형 적용| AGE2["ActiveGameplayEffect"]
     GAA["GameplayAbilityAsset<br/>SO · 런타임 클래스 원형"] -->|GiveAbility · 깊은 복사| GA["GameplayAbility 인스턴스"]
-    ATTR["GameplayAttribute<br/>직렬화(문자열 쌍)"] -->|ToAttributeHandle| HANDLE["GameplayAttributeHandle<br/>런타임(FieldInfo 캐싱)"]
+    ATTR["GameplayAttribute<br/>직렬화(문자열 쌍)"] -->|ToAttributeHandle| HANDLE["GameplayAttributeHandle<br/>런타임(필드 오프셋 직접 접근)"]
 ```
 
 - **ASC:** 수치·이펙트·태그·어빌리티의 진입점. 실제 소유·수명·집계는 컨테이너에 위임하는 얇은 래퍼.
@@ -103,7 +103,7 @@ _asc.RemoveActiveGameplayEffect(handle);
 | UE GAS | 이 프로젝트 | 상태 | 판단 |
 |---|---|---|---|
 | `UAbilitySystemComponent` | `AbilitySystemComponent` (+ 컨테이너) | ✅ | 수치·이펙트·태그·어빌리티 허브 |
-| `UAttributeSet` / `FGameplayAttribute` | `AttributeSet` / `GameplayAttribute`·`GameplayAttributeHandle` | ✅ | `FieldInfo` 직렬화 불가라 직렬화용+런타임용 둘로 분리. 훅 6종 → [attribute](attribute.md) |
+| `UAttributeSet` / `FGameplayAttribute` | `AttributeSet` / `GameplayAttribute`·`GameplayAttributeHandle` | ✅ | 핸들이 드는 `Type`·오프셋은 직렬화할 수 없어 직렬화용+런타임용 둘로 분리. 훅 6종 → [attribute](attribute.md) |
 | `FGameplayEffectSpec` / `FActiveGameplayEffect` | `GameplayEffectSpec` / `ActiveGameplayEffect` | ✅ | 정의(SO)/런타임 분리 → [gameplay-effect](gameplay-effect.md) |
 | `FGameplayModifierInfo` | `GameplayModifier` (연산 6종) | ✅ | → [gameplay-effect](gameplay-effect.md#modifier) |
 | `FAggregator` (dirty/dependents) | `AttributeAggregator` | ✅ | 어트리뷰트별 집계 + 라이브 재평가(평가 채널은 하나) → [aggregator](aggregator.md) |

@@ -784,13 +784,12 @@ namespace Core.AbilitySystem.Effect
         private void InternalExecuteMod(GameplayEffectSpec spec, GameplayModifierEvaluatedData evaluatedData)
         {
             // 존재하지 않는 어트리뷰트(무효 핸들 등)면 미러가 없으므로 건너뛴다.
-            GameplayAttributeHandle handle = evaluatedData.Handle;
-            if (!handle.IsValid || !_owner.TryGetAttributeData(handle, out _))
+            AttributeSet attributeSet = _owner.GetAttributeSet(evaluatedData.Handle);
+            if (attributeSet == null)
             {
                 return;
             }
 
-            AttributeSet attributeSet = _owner.GetAttributeSet(handle);
             GameplayEffectModCallbackData executeData = new GameplayEffectModCallbackData(spec, evaluatedData, _owner);
 
             if (!attributeSet.PreGameplayEffectExecute(executeData))
@@ -810,7 +809,7 @@ namespace Core.AbilitySystem.Effect
         private void ApplyModToAttribute(GameplayAttributeHandle gameplayAttributeHandle, GameplayModifierOperation modifierOperation, float modifierMagnitude, GameplayEffectModCallbackData modData)
         {
             // Pre가 대상을 바꿨을 수 있어 다시 거른다
-            if (!gameplayAttributeHandle.IsValid || !_owner.TryGetAttributeData(gameplayAttributeHandle, out _))
+            if (!_owner.HasAttributeSetForAttribute(gameplayAttributeHandle))
             {
                 return;
             }

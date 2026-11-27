@@ -6,14 +6,14 @@ namespace Game.Character
     public class CharacterAttributeSet : AttributeSet
     {
         // 외부에서 어트리뷰트를 식별하는 정적 핸들
-        public static readonly GameplayAttributeHandle HealthAttribute    = new(typeof(CharacterAttributeSet), nameof(Health));
-        public static readonly GameplayAttributeHandle MaxHealthAttribute = new(typeof(CharacterAttributeSet), nameof(MaxHealth));
-        public static readonly GameplayAttributeHandle StaminaAttribute   = new(typeof(CharacterAttributeSet), nameof(Stamina));
-        public static readonly GameplayAttributeHandle MaxStaminaAttribute = new(typeof(CharacterAttributeSet), nameof(MaxStamina));
-        public static readonly GameplayAttributeHandle SpeedAttribute     = new(typeof(CharacterAttributeSet), nameof(Speed));
-        public static readonly GameplayAttributeHandle AttackAttribute    = new(typeof(CharacterAttributeSet), nameof(Attack));
-        public static readonly GameplayAttributeHandle ShieldAttribute    = new(typeof(CharacterAttributeSet), nameof(Shield));
-        public static readonly GameplayAttributeHandle AttackSpeedAttribute = new(typeof(CharacterAttributeSet), nameof(AttackSpeed));
+        public static readonly GameplayAttributeHandle HealthAttribute    = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(Health));
+        public static readonly GameplayAttributeHandle MaxHealthAttribute = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(MaxHealth));
+        public static readonly GameplayAttributeHandle StaminaAttribute   = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(Stamina));
+        public static readonly GameplayAttributeHandle MaxStaminaAttribute = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(MaxStamina));
+        public static readonly GameplayAttributeHandle SpeedAttribute     = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(Speed));
+        public static readonly GameplayAttributeHandle AttackAttribute    = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(Attack));
+        public static readonly GameplayAttributeHandle ShieldAttribute    = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(Shield));
+        public static readonly GameplayAttributeHandle AttackSpeedAttribute = GameplayAttributeHandle.Create<CharacterAttributeSet>(nameof(AttackSpeed));
 
         // 공격속도가 0에 가까우면 쿨다운이 끝없이 길어지므로 하한을 둔다.
         private const float MinAttackSpeed = 0.1f;

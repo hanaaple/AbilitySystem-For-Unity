@@ -8,4 +8,4 @@
 | [`project/`](project/HARNESS.md) | **이 프로젝트** — 프로젝트 핵심 원칙(판단의 질·과설계 금지·"왜"의 근거), 코드 작성, 테스트 실행, git 세부, feature 규약, 비공개 문서(`private/`) | 코드·테스트·feature 문서를 다룰 때 |
 
 - 규약 문서 네이밍(`HARNESS.md` / `<폴더>.harness.md` / `<파일>.harness.md` / `<이름>-harness.md`)은 [project/HARNESS.md](project/HARNESS.md) '하위 문서·폴더'.
-- 재개 메모 `dev-docs/temp/NOW.md`(로컬)는 [core/HARNESS.md](core/HARNESS.md) '상태 문서'.
+- 재개 메모 `dev-docs/local/NOW.md`(로컬)는 [core/HARNESS.md](core/HARNESS.md) '상태 문서'.

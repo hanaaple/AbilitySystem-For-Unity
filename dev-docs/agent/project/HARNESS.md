@@ -19,7 +19,7 @@
 4. **"왜"의 근거는 유저 의도, 그다음 UE 원본이다.**
 
    ① 유저 의도가 최상위(지어내지 않고 묻는다 → core 원칙 8), ② 그다음 UE 원본(원문 확인 규율 → core 원칙 5). divergence는 의도된 선택일 수 있다. **"UE를 따른다"=본질·방향성이지 세부 구현 복제가 아니다** — UE 고유 제약(네트워크 복제·legacy)에서 온 구현은 그 제약이 없으면 따르지 않고, **"UE가 왜 이렇게 했는지 → 우리에게도 성립하는지"**를 먼저 판단한다.
-   - **UE 원본은 로컬에 있다: `D:\GitHub\UnrealEngine` (UE 5.6.0).** gh(`EpicGames/UnrealEngine`는 비공개)·WebFetch보다 **이 경로를 Grep/Read로 직접** 본다. 프로젝트가 미러링하는 버전이라 버전 일치도 이쪽이 정확. (예: GameplayTags → `Engine/Source/Runtime/GameplayTags/Classes/`)
+   - **UE 원본은 로컬에 있다: `D:\Epic Games\UE_5.8` (UE 5.8).** gh(`EpicGames/UnrealEngine`는 비공개)·WebFetch보다 **이 경로를 Grep/Read로 직접** 본다. 프로젝트가 미러링하는 버전이라 버전 일치도 이쪽이 정확. (예: GameplayTags → `Engine/Source/Runtime/GameplayTags/Classes/`)
    - **Lyra도 로컬에 있다: `C:\Users\Uisoo\Documents\Unreal Projects\LyraStarterGame`**(유저). 게임 쪽 GAS 사용 예(입력 처리 등)는 여기서 원문을 본다. (예: 입력 → `Source/LyraGame/AbilitySystem/LyraAbilitySystemComponent.cpp`)
 
 5. **슬라이스는 에디터에서 눈으로 확인돼야 완료다.**

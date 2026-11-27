@@ -48,7 +48,6 @@ var expr = new GameplayTagQueryExpression().AnyTagsMatch().AddTags(tags);
 - 변하기 쉬운 값(임계값·경계)을 주석에 복제하지 않는다.
 - "여길 바꾸면 저기도"인 상호 의존은 주석으로 명시한다.
 - 동작 명세는 테스트로 고정한다.
-- 공개 API는 XML 주석(`/// <summary>`).
 
 ```csharp
 // ✅ 이유(왜)를 적음
@@ -58,10 +57,6 @@ private void FixedUpdate() { }
 // ❌ 코드를 되뇜 (무엇)
 // FixedUpdate 함수
 private void FixedUpdate() { }
-
-/// <summary> 플레이어에게 데미지를 준다. </summary>
-/// <param name="damage">입힐 데미지 양</param>
-public void TakeDamage(int damage) { }
 ```
 
 ---

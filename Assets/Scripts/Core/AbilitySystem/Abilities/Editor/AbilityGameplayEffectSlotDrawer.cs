@@ -120,7 +120,7 @@ namespace Core.AbilitySystem.Abilities.Editor
             for (int i = 0; modifiers != null && i < modifiers.Count; i++)
             {
                 GameplayModifier modifier = modifiers[i];
-                if (!modifier.Attribute.IsSet)
+                if (modifier.Attribute.IsEmpty)
                 {
                     checks.Add(new Check(Verdict.Fail, $"모디파이어 {i}: 어트리뷰트 없음", "깎을 어트리뷰트를 고르지 않았다."));
                     continue;

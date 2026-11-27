@@ -56,7 +56,6 @@ namespace Game.UI
 
         private readonly Dictionary<AbilitySystemComponent, AbilitySystemDebugLog> _logs = new();
         private readonly Dictionary<(AbilitySystemComponent, string), ValueHistory> _valueHistory = new();
-        private readonly List<GameplayAttributeHandle> _attributeBuffer = new();
         private readonly List<string> _lines = new();
 
         private Mode _mode = Mode.Off;
@@ -266,11 +265,9 @@ namespace Game.UI
         private void AppendAttributes(AbilitySystemComponent asc, List<string> lines)
         {
             lines.Add(HeaderPrefix + "Attributes");
-            foreach (AttributeSet set in asc.GetSpawnedAttributes())
+            foreach (AttributeSet attributeSet in asc.GetSpawnedAttributes())
             {
-                _attributeBuffer.Clear();
-                AttributeSet.GetAttributesFromSetClass(set.GetType(), _attributeBuffer);
-                foreach (GameplayAttributeHandle attribute in _attributeBuffer)
+                foreach (GameplayAttributeHandle attribute in AttributeSet.GetAttributesFromSetClass(attributeSet.GetType()))
                 {
                     float current = asc.GetAttributeCurrentValue(attribute);
                     float baseValue = asc.GetAttributeBaseValue(attribute);
@@ -281,12 +278,12 @@ namespace Game.UI
                         value += $"  <color=#8A94A6>base {FormatNumber(baseValue)}</color>";
                     }
 
-                    if (IsRecentlyChanged(asc, attribute.Name, current))
+                    if (IsRecentlyChanged(asc, attribute.FieldName, current))
                     {
                         value = $"<color=#{ColorUtility.ToHtmlStringRGB(_changedColor)}>{value}</color>";
                     }
 
-                    lines.Add(attribute.Name + ColumnSeparator + value);
+                    lines.Add(attribute.FieldName + ColumnSeparator + value);
                 }
             }
         }

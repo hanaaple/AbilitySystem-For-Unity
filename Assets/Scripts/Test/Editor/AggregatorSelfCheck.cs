@@ -18,6 +18,7 @@ namespace Test.Editor
     // I: 어트리뷰트 값 변경 이벤트(구독·해제, Old/New, 값이 같아도 울림, 원인 GEModData 유무).
     // J: PreAttributeBaseChange에서 고친 Base 값이 Base·Current·Post·값 변경 이벤트에 그대로 쓰임.
     // K: AttributeSet 훅(TestAtrributeSet) — Pre/PostGameplayEffectExecute(수치 변경·버림·meta Damage), Pre/PostAttributeChange(Current 클램프).
+    // L: AttributeSet 상속 — 부모 필드(private 포함) 수집·순서, 부모 핸들로 파생 인스턴스 읽기/쓰기, 부모 공유 Set 등록 거부, 이름 가림.
     public static class AggregatorSelfCheck
     {
         private const float Eps = 0.001f;
@@ -62,6 +63,7 @@ namespace Test.Editor
                 RunAttributeValueChangeEventChecks(asc, Check);
                 RunPreAttributeBaseChangeClampChecks(asc, Check);
                 RunAttributeSetHookChecks(asc, Check);
+                RunAttributeSetInheritanceChecks(asc, Check);
             }
             catch (Exception e)
             {
@@ -505,14 +507,14 @@ namespace Test.Editor
         // Base를 [0, 100]으로 막는 Set. aggregator 없는 경로(직접 Current)와 있는 경로(aggregator base) 둘 다 본다.
         private static void RunPreAttributeBaseChangeClampChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            ClampedAttributeSet set = new ClampedAttributeSet();
-            set.Health = new AttributeData(50f, 50f);
-            asc.AddSpawnedAttribute(set);
+            ClampedAttributeSet attributeSet = new ClampedAttributeSet();
+            attributeSet.Health = new AttributeData(50f, 50f);
+            asc.AddSpawnedAttribute(attributeSet);
             GameplayAttributeHandle health = ClampedAttributeSet.HealthAttribute;
 
             SetBase(asc, health, -50f);
             check("aggregator 없음: SetBase -50 → Pre 클램프로 Base 0, Current 0", Approx(asc.GetAttributeBaseValue(health), 0f) && Approx(asc.GetAttributeCurrentValue(health), 0f));
-            check("Post가 클램프된 값 0을 받음", Approx(set.LastPostNewValue, 0f));
+            check("Post가 클램프된 값 0을 받음", Approx(attributeSet.LastPostNewValue, 0f));
 
             List<OnAttributeChangeData> events = new List<OnAttributeChangeData>();
             void OnHealthChanged(OnAttributeChangeData data)
@@ -532,11 +534,11 @@ namespace Test.Editor
             ActiveGameplayEffectHandle bonusHandle = asc.ApplyGameplayEffectToSelf(bonusGe);
             SetBase(asc, health, 200f);
             check("aggregator 있음: SetBase 200 → Base 100, Current 105(mod +5는 Base 클램프와 별개)", Approx(asc.GetAttributeBaseValue(health), 100f) && Approx(asc.GetAttributeCurrentValue(health), 105f));
-            check("aggregator 있음: Post가 클램프된 값 100을 받음", Approx(set.LastPostNewValue, 100f));
+            check("aggregator 있음: Post가 클램프된 값 100을 받음", Approx(attributeSet.LastPostNewValue, 100f));
 
             asc.GetGameplayAttributeValueChangeDelegate(health).OnValueChange -= OnHealthChanged;
             asc.RemoveActiveGameplayEffect(bonusHandle);
-            asc.RemoveAttributeSet(set);
+            asc.RemoveAttributeSet(attributeSet);
             UnityEngine.Object.DestroyImmediate(damageGe);
             UnityEngine.Object.DestroyImmediate(bonusGe);
         }
@@ -544,10 +546,10 @@ namespace Test.Editor
         // ── K. AttributeSet 훅 (TestAtrributeSet) ──
         private static void RunAttributeSetHookChecks(AbilitySystemComponent asc, Action<string, bool> check)
         {
-            TestAtrributeSet set = new TestAtrributeSet();
-            set.Health = new AttributeData(100f, 100f);
-            set.Damage = new AttributeData(0f, 0f);
-            asc.AddSpawnedAttribute(set);
+            TestAtrributeSet attributeSet = new TestAtrributeSet();
+            attributeSet.Health = new AttributeData(100f, 100f);
+            attributeSet.Damage = new AttributeData(0f, 0f);
+            asc.AddSpawnedAttribute(attributeSet);
             GameplayAttributeHandle health = TestAtrributeSet.HealthAttribute;
             GameplayAttributeHandle damage = TestAtrributeSet.DamageAttribute;
 
@@ -563,46 +565,132 @@ namespace Test.Editor
             GameplayEffectAsset damage30 = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(damage, GameplayModifierOperation.AddBase, 30f));
             asc.ApplyGameplayEffectToSelf(damage30);
             check("meta Damage 30 → Post가 Health 100 → 70, Damage는 0으로", Approx(asc.GetAttributeBaseValue(health), 70f) && Approx(asc.GetAttributeBaseValue(damage), 0f));
-            check("Pre가 1번 불림, Post가 받은 데미지 30", set.PreExecuteCount == 1 && Approx(set.LastExecutedDamage, 30f));
+            check("Pre가 1번 불림, Post가 받은 데미지 30", attributeSet.PreExecuteCount == 1 && Approx(attributeSet.LastExecutedDamage, 30f));
             check("Health 값 변경 이벤트 100 → 70", healthEvents.Count == 1 && Approx(healthEvents[0].OldValue, 100f) && Approx(healthEvents[0].NewValue, 70f));
 
             // Pre가 수치를 고침
-            set.DamageScale = 0.5f;
+            attributeSet.DamageScale = 0.5f;
             GameplayEffectAsset damage40 = MakeGameplayEffect(GameplayEffectType.Instant, MakeModifier(damage, GameplayModifierOperation.AddBase, 40f));
             asc.ApplyGameplayEffectToSelf(damage40);
-            check("Pre가 배율 0.5 → Damage 20만 적용, Health 70 → 50", Approx(set.LastExecutedDamage, 20f) && Approx(asc.GetAttributeBaseValue(health), 50f));
-            set.DamageScale = 1f;
+            check("Pre가 배율 0.5 → Damage 20만 적용, Health 70 → 50", Approx(attributeSet.LastExecutedDamage, 20f) && Approx(asc.GetAttributeBaseValue(health), 50f));
+            attributeSet.DamageScale = 1f;
 
             // Pre가 버림
-            set.RejectExecute = true;
+            attributeSet.RejectExecute = true;
             healthEvents.Clear();
-            int preCountBeforeReject = set.PreExecuteCount;
+            int preCountBeforeReject = attributeSet.PreExecuteCount;
             asc.ApplyGameplayEffectToSelf(damage40);
-            check("Pre가 false → Pre는 불렸지만 Health 50·Damage 0 그대로, 이벤트 없음", set.PreExecuteCount == preCountBeforeReject + 1 && Approx(asc.GetAttributeBaseValue(health), 50f) && Approx(asc.GetAttributeBaseValue(damage), 0f) && healthEvents.Count == 0);
-            set.RejectExecute = false;
+            check("Pre가 false → Pre는 불렸지만 Health 50·Damage 0 그대로, 이벤트 없음", attributeSet.PreExecuteCount == preCountBeforeReject + 1 && Approx(asc.GetAttributeBaseValue(health), 50f) && Approx(asc.GetAttributeBaseValue(damage), 0f) && healthEvents.Count == 0);
+            attributeSet.RejectExecute = false;
 
             // Current 클램프 (mod 등록 — 실행이 아니라 Pre/PostGameplayEffectExecute는 안 불림)
-            int preCountBeforeBuff = set.PreExecuteCount;
+            int preCountBeforeBuff = attributeSet.PreExecuteCount;
             healthEvents.Clear();
             GameplayEffectAsset healthBuff = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 100f));
             ActiveGameplayEffectHandle buffHandle = asc.ApplyGameplayEffectToSelf(healthBuff);
             check("Infinite +100 (Base 50) → PreAttributeChange가 Current 150을 100으로, Base는 50 그대로", Approx(asc.GetAttributeCurrentValue(health), 100f) && Approx(asc.GetAttributeBaseValue(health), 50f));
-            check("PostAttributeChange가 50 → 100을 받음, 값 변경 이벤트도 100", Approx(set.LastChangeOldValue, 50f) && Approx(set.LastChangeNewValue, 100f) && healthEvents.Count == 1 && Approx(healthEvents[0].NewValue, 100f));
-            check("mod 등록엔 PreGameplayEffectExecute가 안 불림", set.PreExecuteCount == preCountBeforeBuff);
+            check("PostAttributeChange가 50 → 100을 받음, 값 변경 이벤트도 100", Approx(attributeSet.LastChangeOldValue, 50f) && Approx(attributeSet.LastChangeNewValue, 100f) && healthEvents.Count == 1 && Approx(healthEvents[0].NewValue, 100f));
+            check("mod 등록엔 PreGameplayEffectExecute가 안 불림", attributeSet.PreExecuteCount == preCountBeforeBuff);
 
             asc.RemoveActiveGameplayEffect(buffHandle);
-            check("버프 제거 → Current 50, PostAttributeChange 100 → 50", Approx(asc.GetAttributeCurrentValue(health), 50f) && Approx(set.LastChangeOldValue, 100f) && Approx(set.LastChangeNewValue, 50f));
+            check("버프 제거 → Current 50, PostAttributeChange 100 → 50", Approx(asc.GetAttributeCurrentValue(health), 50f) && Approx(attributeSet.LastChangeOldValue, 100f) && Approx(attributeSet.LastChangeNewValue, 50f));
 
             asc.GetGameplayAttributeValueChangeDelegate(health).OnValueChange -= OnHealthChanged;
-            asc.RemoveAttributeSet(set);
+            asc.RemoveAttributeSet(attributeSet);
             UnityEngine.Object.DestroyImmediate(damage30);
             UnityEngine.Object.DestroyImmediate(damage40);
             UnityEngine.Object.DestroyImmediate(healthBuff);
         }
 
+        // ── L. AttributeSet 상속 ──
+        // 핸들은 필드를 선언한 Set을 가리키고, ASC는 그 Set이거나 파생인 등록 인스턴스에서 값을 찾는다.
+        private static void RunAttributeSetInheritanceChecks(AbilitySystemComponent asc, Action<string, bool> check)
+        {
+            ReadOnlySpan<GameplayAttributeHandle> collected = AttributeSet.GetAttributesFromSetClass(typeof(InheritChildSet));
+            check("수집 — 자식 필드 먼저, 부모 private 필드 포함: Stamina, Health, _armor", collected.Length == 3 && collected[0] == InheritChildSet.StaminaAttribute && collected[1] == InheritBaseSet.HealthAttribute && collected[2] == InheritBaseSet.ArmorAttribute);
+
+            bool resolved = GameplayAttributeHandle.TryCreate(typeof(InheritChildSet), nameof(InheritBaseSet.Health), out GameplayAttributeHandle healthFromChild);
+            check("자식 타입으로 찾은 부모 필드 핸들 == 부모 정적 핸들", resolved && healthFromChild == InheritBaseSet.HealthAttribute);
+
+            InheritChildSet child = new InheritChildSet();
+            child.Health = new AttributeData(10f, 10f);
+            check("파생 Set 등록 성공", asc.AddSpawnedAttribute(child));
+            check("부모 핸들로 파생 인스턴스 읽기 — Health 10", asc.HasAttributeSetForAttribute(InheritBaseSet.HealthAttribute) && Approx(asc.GetAttributeCurrentValue(InheritBaseSet.HealthAttribute), 10f));
+
+            SetBase(asc, InheritBaseSet.ArmorAttribute, 5f);
+            check("부모 private 필드 쓰기·읽기 — Armor Base 5, 인스턴스 필드에도 반영", Approx(asc.GetAttributeBaseValue(InheritBaseSet.ArmorAttribute), 5f) && Approx(child.GetArmor().GetBaseValue(), 5f));
+
+            InheritSiblingSet sibling = new InheritSiblingSet();
+            check("어트리뷰트를 선언한 부모를 공유하는 두 번째 Set 등록 거부(에러 로그 1줄은 의도)", !asc.AddSpawnedAttribute(sibling));
+            check("거부 뒤에도 부모 핸들은 먼저 등록된 Set을 가리킴 — Health 10", Approx(asc.GetAttributeCurrentValue(InheritBaseSet.HealthAttribute), 10f));
+
+            asc.RemoveAttributeSet(sibling);
+            check("등록 안 된 Set 해제는 등록된 Set에 영향 없음 — Health 10", asc.HasAttributeSetForAttribute(InheritBaseSet.HealthAttribute) && Approx(asc.GetAttributeCurrentValue(InheritBaseSet.HealthAttribute), 10f));
+
+            asc.RemoveAttributeSet(child);
+            check("해제 뒤 부모 핸들의 Set 없음", !asc.HasAttributeSetForAttribute(InheritBaseSet.HealthAttribute));
+            check("해제 뒤 부모를 공유하는 Set 등록 성공", asc.AddSpawnedAttribute(sibling));
+            asc.RemoveAttributeSet(sibling);
+
+            FieldlessBaseChildA fieldlessA = new FieldlessBaseChildA();
+            FieldlessBaseChildB fieldlessB = new FieldlessBaseChildB();
+            check("어트리뷰트 없는 부모를 공유하는 Set 둘 등록 성공", asc.AddSpawnedAttribute(fieldlessA) && asc.AddSpawnedAttribute(fieldlessB));
+            check("같은 인스턴스 재등록 거부", !asc.AddSpawnedAttribute(fieldlessA));
+            asc.RemoveAttributeSet(fieldlessA);
+            asc.RemoveAttributeSet(fieldlessB);
+
+            ReadOnlySpan<GameplayAttributeHandle> hidden = AttributeSet.GetAttributesFromSetClass(typeof(HidingChildSet));
+            bool hidingHealthOnly = hidden.Length == 2 && hidden[0].AttributeSetType == typeof(HidingChildSet) && hidden[0].FieldName == nameof(HidingChildSet.Health) && hidden[1] == InheritBaseSet.ArmorAttribute;
+            check("이름 가림 — 가려진 부모 Health는 빠지고 자식 Health·부모 _armor만(에러 로그 1줄은 의도)", hidingHealthOnly);
+        }
+
+        private abstract class InheritBaseSet : AttributeSet
+        {
+            public static readonly GameplayAttributeHandle HealthAttribute = GameplayAttributeHandle.Create<InheritBaseSet>(nameof(Health));
+            public static readonly GameplayAttributeHandle ArmorAttribute = GameplayAttributeHandle.Create<InheritBaseSet>(nameof(_armor));
+
+            public AttributeData Health;
+            [SerializeField] private AttributeData _armor;
+
+            public AttributeData GetArmor()
+            {
+                return _armor;
+            }
+        }
+
+        private sealed class InheritChildSet : InheritBaseSet
+        {
+            public static readonly GameplayAttributeHandle StaminaAttribute = GameplayAttributeHandle.Create<InheritChildSet>(nameof(Stamina));
+
+            public AttributeData Stamina;
+        }
+
+        private sealed class InheritSiblingSet : InheritBaseSet
+        {
+        }
+
+        private sealed class HidingChildSet : InheritBaseSet
+        {
+            public new AttributeData Health;
+        }
+
+        private abstract class FieldlessBaseSet : AttributeSet
+        {
+        }
+
+        private sealed class FieldlessBaseChildA : FieldlessBaseSet
+        {
+            public AttributeData Mana;
+        }
+
+        private sealed class FieldlessBaseChildB : FieldlessBaseSet
+        {
+            public AttributeData Rage;
+        }
+
         private class ClampedAttributeSet : AttributeSet
         {
-            public static readonly GameplayAttributeHandle HealthAttribute = new(typeof(ClampedAttributeSet), nameof(Health));
+            public static readonly GameplayAttributeHandle HealthAttribute = GameplayAttributeHandle.Create<ClampedAttributeSet>(nameof(Health));
 
             public AttributeData Health;
 
@@ -623,9 +711,9 @@ namespace Test.Editor
 
         private static void AddHealthSet(AbilitySystemComponent asc, float value)
         {
-            CharacterAttributeSet set = new CharacterAttributeSet();
-            set.Health = new AttributeData(value, value);
-            asc.AddSpawnedAttribute(set);
+            CharacterAttributeSet attributeSet = new CharacterAttributeSet();
+            attributeSet.Health = new AttributeData(value, value);
+            asc.AddSpawnedAttribute(attributeSet);
         }
 
         private static void SetBase(AbilitySystemComponent asc, GameplayAttributeHandle handle, float value)

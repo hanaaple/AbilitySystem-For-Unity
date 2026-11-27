@@ -761,7 +761,8 @@ namespace Test.Editor
             }
 
             GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
-            asc.AddSpawnedAttribute(new CharacterAttributeSet());
+            var characterSet = new CharacterAttributeSet();
+            asc.AddSpawnedAttribute(characterSet);
 
             GameplayEffectAsset costEffect = MakeInstantAddBaseEffect(stamina, -30f, created);
             GameplayEffectAsset cooldownEffect = MakeCooldownEffect(cooldownTag, 10f, created);
@@ -861,6 +862,7 @@ namespace Test.Editor
             check("L-12 Per Execution 2개 활성 — ActivationOwnedTags 2개, 모두 취소하면 0", stackedCount == 2 && asc.GetTagCount(ownedTag) == 0);
 
             asc.ClearAllAbilities();
+            asc.RemoveAttributeSet(characterSet);
         }
 
         // ── M: TestGameplayAbility 통합 ───────────────────────────────────────────
@@ -875,7 +877,8 @@ namespace Test.Editor
             GameplayTag blockedTag = BlockedTag.GetTag();
             GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
             GameplayAttributeHandle speed = CharacterAttributeSet.SpeedAttribute;
-            asc.AddSpawnedAttribute(new CharacterAttributeSet());
+            var characterSet = new CharacterAttributeSet();
+            asc.AddSpawnedAttribute(characterSet);
             asc.SetAttributeBaseValue(stamina, 50f);
             asc.SetAttributeBaseValue(speed, 0f);
 
@@ -922,6 +925,7 @@ namespace Test.Editor
 
             Tick(asc, 11f);
             asc.ClearAllAbilities();
+            asc.RemoveAttributeSet(characterSet);
         }
 
         // ── N: 커밋 경계 ──────────────────────────────────────────────────────────
@@ -933,7 +937,8 @@ namespace Test.Editor
 
             GameplayTag cooldownTag = CooldownTag.GetTag();
             GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
-            asc.AddSpawnedAttribute(new CharacterAttributeSet());
+            var characterSet = new CharacterAttributeSet();
+            asc.AddSpawnedAttribute(characterSet);
 
             GameplayEffectAsset costEffect = MakeInstantAddBaseEffect(stamina, -30f, created);
             GameplayEffectAsset cooldownEffect = MakeCooldownEffect(cooldownTag, 10f, created);
@@ -993,6 +998,7 @@ namespace Test.Editor
 
             Tick(asc, 11f);
             asc.ClearAllAbilities();
+            asc.RemoveAttributeSet(characterSet);
         }
 
         // ── O: 어빌리티 이벤트·실패 사유 ──────────────────────────────────────────
@@ -1057,10 +1063,11 @@ namespace Test.Editor
             asc.OnAbilityEnded += onEnded;
             asc.OnAbilityEndedWithData += onEndedWithData;
             asc.OnAbilityEndedWithData += onEndedHook;
+            var characterSet = new CharacterAttributeSet();
             try
             {
                 GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
-                asc.AddSpawnedAttribute(new CharacterAttributeSet());
+                asc.AddSpawnedAttribute(characterSet);
 
                 GameplayEffectAsset costEffect = MakeInstantAddBaseEffect(stamina, -30f, created);
                 GameplayEffectAsset cooldownEffect = MakeCooldownEffect(cooldownTag, 10f, created);
@@ -1179,6 +1186,7 @@ namespace Test.Editor
                 asc.OnAbilityEndedWithData -= onEndedHook;
                 settingsField.SetValue(null, previousSettings);
                 asc.ClearAllAbilities();
+                asc.RemoveAttributeSet(characterSet);
             }
         }
 
@@ -1367,6 +1375,7 @@ namespace Test.Editor
             asc.OnAbilityFailed += onFailed;
             asc.OnAbilityEnded += onEnded;
             asc.OnAbilityEndedWithData += onEndedWithData;
+            var characterSet = new CharacterAttributeSet();
             try
             {
                 // 다른 어빌리티의 활성 중 태그가 발동 조건이 된다 — 스턴(차단)·버프(필요)
@@ -1454,7 +1463,7 @@ namespace Test.Editor
 
                 // 한 발동에서 두 번 커밋 — 두 번째는 쿨다운이 막는다
                 GameplayAttributeHandle stamina = CharacterAttributeSet.StaminaAttribute;
-                asc.AddSpawnedAttribute(new CharacterAttributeSet());
+                asc.AddSpawnedAttribute(characterSet);
                 GameplayEffectAsset costEffect = MakeInstantAddBaseEffect(stamina, -30f, created);
                 GameplayEffectAsset cooldownEffect = MakeCooldownEffect(cooldownTag, 10f, created);
                 GameplayAbilityAsset commitAsset = MakeAsset("QCommit", created);
@@ -1595,6 +1604,7 @@ namespace Test.Editor
                 asc.OnAbilityEndedWithData -= onEndedWithData;
                 asc.RemoveActiveEffectsWithGrantedTags(cooldownTags);
                 asc.ClearAllAbilities();
+                asc.RemoveAttributeSet(characterSet);
             }
         }
 
