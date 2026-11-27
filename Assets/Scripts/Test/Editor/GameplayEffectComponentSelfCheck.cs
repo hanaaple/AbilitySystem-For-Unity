@@ -362,7 +362,7 @@ namespace Test.Editor
                 AdvanceTime(container, 3f);
                 ActiveGameplayEffectHandle t2 = other.ApplyGameplayEffectToTarget(byTarget, asc);
                 check("S-2 ByTarget: 다른 시전자가 다시 걸어도 같은 핸들·활성 1개", t1.Equals(t2) && CountActive(asc, byTarget) == 1);
-                check("S-3 Refresh: 다시 건 뒤 남은 시간이 처음(4초)으로", Approx(asc.GetActiveGameplayEffect(t1).GetTimeRemaining(), 4f));
+                check("S-3 Refresh: 다시 건 뒤 남은 시간이 처음(4초)으로", Approx(asc.GetActiveGameplayEffect(t1).GetTimeRemaining(container.GetWorldTime()), 4f));
                 check("S-4 modifier·부여 태그는 한 번만(Current 110, 태그 1)", Approx(asc.GetAttributeCurrentValue(health), 110f) && asc.GetTagCount(grantedTag) == 1);
                 AdvanceTime(container, 3.5f);
                 check("S-5 처음 적용 기준(6.5초)이 아니라 갱신 기준이라 아직 걸려 있음", asc.GetActiveGameplayEffect(t1) != null);
@@ -374,7 +374,7 @@ namespace Test.Editor
                 ActiveGameplayEffectHandle r1 = asc.ApplyGameplayEffectToSelf(neverRefresh);
                 AdvanceTime(container, 3f);
                 asc.ApplyGameplayEffectToSelf(neverRefresh);
-                check("S-7 NeverRefresh: 다시 걸어도 남은 시간 그대로(1초)", Approx(asc.GetActiveGameplayEffect(r1).GetTimeRemaining(), 1f) && CountActive(asc, neverRefresh) == 1);
+                check("S-7 NeverRefresh: 다시 걸어도 남은 시간 그대로(1초)", Approx(asc.GetActiveGameplayEffect(r1).GetTimeRemaining(container.GetWorldTime()), 1f) && CountActive(asc, neverRefresh) == 1);
                 asc.RemoveActiveGameplayEffect(r1);
 
                 GameplayEffectAsset bySource = MakeStackingEffect(grantedTag, health, GameplayEffectStackingType.AggregateBySource);

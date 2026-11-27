@@ -530,6 +530,13 @@ namespace Core.AbilitySystem
             return _activeGameplayEffectsContainer.GetActiveGameplayEffect(handle);
         }
 
+        /// <summary>GE 수명(적용 시각·만료·주기)을 재는 현재 시각 — <see cref="ActiveGameplayEffect.GetTimeRemaining"/>에 넘긴다.</summary>
+        /// <remarks>UE: FActiveGameplayEffectsContainer::GetWorldTime</remarks>
+        public double GetWorldTime()
+        {
+            return _activeGameplayEffectsContainer.GetWorldTime();
+        }
+
         /// <summary>핸들의 활성 GE 수명 이벤트. 활성 GE가 없으면 null.</summary>
         /// <remarks>UE: UAbilitySystemComponent::GetActiveEffectEventSet</remarks>
         public ActiveGameplayEffectEvents GetActiveEffectEventSet(ActiveGameplayEffectHandle handle)

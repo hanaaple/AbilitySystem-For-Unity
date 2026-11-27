@@ -12,9 +12,6 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FActiveGameplayEffect::StartWorldTime</remarks>
         public double StartWorldTime { get; internal set; }
 
-        /// <summary>Duration 타입일 때만 유효. 남은 지속 시간(초).</summary>
-        public float RemainingDuration { get; set; }
-
         /// <summary>다음 주기 실행 시각(<see cref="StartWorldTime"/>과 같은 시계). 지금 시각이 이 시각을 넘으면 실행한다. 주기 GE가 아니면 쓰지 않는다.</summary>
         public double NextPeriodWorldTime { get; internal set; }
 
@@ -31,7 +28,6 @@ namespace Core.AbilitySystem.Effect
             Spec = spec;
             Owner = owner;
             StartWorldTime = startWorldTime;
-            RemainingDuration = spec.Duration;
             NextPeriodWorldTime = startWorldTime + spec.Definition.Period;
         }
 
@@ -43,10 +39,13 @@ namespace Core.AbilitySystem.Effect
             return def.Type == GameplayEffectType.Duration ? Spec.Duration : GameplayEffectConstants.InfiniteDuration;
         }
 
+        /// <summary>남은 지속 시간(초). 끝나는 시간이 없으면 <see cref="GameplayEffectConstants.InfiniteDuration"/>.</summary>
+        /// <param name="worldTime">지금 시각(<see cref="StartWorldTime"/>과 같은 시계).</param>
         /// <remarks>UE: FActiveGameplayEffect::GetTimeRemaining</remarks>
-        public float GetTimeRemaining()
+        public float GetTimeRemaining(double worldTime)
         {
-            return GetDuration() == GameplayEffectConstants.InfiniteDuration ? GameplayEffectConstants.InfiniteDuration : RemainingDuration;
+            float duration = GetDuration();
+            return duration == GameplayEffectConstants.InfiniteDuration ? GameplayEffectConstants.InfiniteDuration : (float)(duration - (worldTime - StartWorldTime));
         }
 
         /// <summary>끝나는 시각(<see cref="StartWorldTime"/>과 같은 시계).</summary>

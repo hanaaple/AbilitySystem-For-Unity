@@ -102,12 +102,13 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsTimeRemaining</remarks>
         public List<float> GetActiveEffectsTimeRemaining(GameplayEffectQuery query)
         {
+            double worldTime = GetWorldTime();
             var times = new List<float>();
             foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
             {
                 if (query.Matches(effect))
                 {
-                    times.Add(effect.GetTimeRemaining());
+                    times.Add(effect.GetTimeRemaining(worldTime));
                 }
             }
 
@@ -132,12 +133,13 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsTimeRemainingAndDuration</remarks>
         public List<(float TimeRemaining, float Duration)> GetActiveEffectsTimeRemainingAndDuration(GameplayEffectQuery query)
         {
+            double worldTime = GetWorldTime();
             var results = new List<(float TimeRemaining, float Duration)>();
             foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
             {
                 if (query.Matches(effect))
                 {
-                    results.Add((effect.GetTimeRemaining(), effect.GetDuration()));
+                    results.Add((effect.GetTimeRemaining(worldTime), effect.GetDuration()));
                 }
             }
 
@@ -410,14 +412,9 @@ namespace Core.AbilitySystem.Effect
                     }
                 }
 
-                if (def.Type == GameplayEffectType.Duration)
+                if (def.Type == GameplayEffectType.Duration && worldTime > active.GetEndTime())
                 {
-                    double endTime = active.GetEndTime();
-                    active.RemainingDuration = (float)(endTime - worldTime);
-                    if (worldTime > endTime)
-                    {
-                        _expiredEffects.Add(active.Handle);
-                    }
+                    _expiredEffects.Add(active.Handle);
                 }
             }
 
@@ -625,7 +622,6 @@ namespace Core.AbilitySystem.Effect
         private void RestartActiveGameplayEffectDuration(ActiveGameplayEffect active)
         {
             active.StartWorldTime = GetWorldTime();
-            active.RemainingDuration = active.Spec.Duration;
         }
 
         /// <summary>새 활성 GE를 GE Component에 알리고, 켜져야 하는지에 따라 효과를 건다.</summary>

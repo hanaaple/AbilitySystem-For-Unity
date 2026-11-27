@@ -89,6 +89,7 @@ namespace Core.AbilitySystem.Editor
                 return;
             }
 
+            double worldTime = asc.GetWorldTime();
             int index = 0;
             foreach (ActiveGameplayEffect active in activeEffects)
             {
@@ -97,7 +98,7 @@ namespace Core.AbilitySystem.Editor
                     EditorGUILayout.Space(2f);
                 }
 
-                DrawActiveEffect(index++, active);
+                DrawActiveEffect(index++, active, worldTime);
             }
 
             EditorGUI.indentLevel--;
@@ -203,7 +204,7 @@ namespace Core.AbilitySystem.Editor
             EditorGUI.LabelField(currentRect, $"Current: {data.GetCurrentValue():0.###}");
         }
 
-        private static void DrawActiveEffect(int index, ActiveGameplayEffect active)
+        private static void DrawActiveEffect(int index, ActiveGameplayEffect active, double worldTime)
         {
             GameplayEffectAsset def = active.Spec.Definition;
 
@@ -213,7 +214,7 @@ namespace Core.AbilitySystem.Editor
 
             if (def.Type == GameplayEffectType.Duration)
             {
-                EditorGUILayout.LabelField("Remaining", $"{active.RemainingDuration:0.##} / {active.GetDuration():0.##} s");
+                EditorGUILayout.LabelField("Remaining", $"{active.GetTimeRemaining(worldTime):0.##} / {active.GetDuration():0.##} s");
             }
 
             if (def.Period > 0f)
