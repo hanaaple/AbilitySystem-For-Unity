@@ -32,7 +32,8 @@ namespace Core.AbilitySystem.Effect
         private readonly List<ActiveGameplayEffectHandle> _expiredEffects = new();
 
         // 적용 시각과 Tick 시각을 같은 시계로 재야, 프레임 도중(이 컨테이너의 Tick보다 먼저) 적용된 이펙트가 그 프레임 시간을 잃지 않는다.
-        private Func<float> _worldTimeSource = () => Time.time;
+        // 큰 시각 값에서도 주기·만료 경계가 흔들리지 않게 double로 잰다(UE FTimerManager도 double)
+        private Func<double> _worldTimeSource = () => Time.timeAsDouble;
 
         /// <summary>이 컨테이너를 가진 ASC(적용 대상).</summary>
         /// <remarks>UE: FActiveGameplayEffectsContainer::Owner</remarks>
@@ -46,15 +47,15 @@ namespace Core.AbilitySystem.Effect
             _owner = owner;
         }
 
-        /// <summary>GE 수명(적용 시각·만료·주기)을 재는 현재 시각. 기본은 <see cref="Time.time"/>.</summary>
+        /// <summary>GE 수명(적용 시각·만료·주기)을 재는 현재 시각. 기본은 <see cref="Time.timeAsDouble"/>.</summary>
         /// <remarks>UE: FActiveGameplayEffectsContainer::GetWorldTime</remarks>
-        public float GetWorldTime()
+        public double GetWorldTime()
         {
             return _worldTimeSource();
         }
 
-        /// <summary>시각을 읽는 곳을 바꾼다 — Play 모드가 아니라 <see cref="Time.time"/>이 흐르지 않는 에디터 셀프체크가 시간을 직접 흘릴 때 쓴다.</summary>
-        internal void SetWorldTimeSource(Func<float> worldTimeSource)
+        /// <summary>시각을 읽는 곳을 바꾼다 — Play 모드가 아니라 <see cref="Time.timeAsDouble"/>이 흐르지 않는 에디터 셀프체크가 시간을 직접 흘릴 때 쓴다.</summary>
+        internal void SetWorldTimeSource(Func<double> worldTimeSource)
         {
             _worldTimeSource = worldTimeSource;
         }
@@ -101,12 +102,13 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsTimeRemaining</remarks>
         public List<float> GetActiveEffectsTimeRemaining(GameplayEffectQuery query)
         {
+            double worldTime = GetWorldTime();
             var times = new List<float>();
             foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
             {
                 if (query.Matches(effect))
                 {
-                    times.Add(effect.GetTimeRemaining());
+                    times.Add(effect.GetTimeRemaining(worldTime));
                 }
             }
 
@@ -131,12 +133,13 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsTimeRemainingAndDuration</remarks>
         public List<(float TimeRemaining, float Duration)> GetActiveEffectsTimeRemainingAndDuration(GameplayEffectQuery query)
         {
+            double worldTime = GetWorldTime();
             var results = new List<(float TimeRemaining, float Duration)>();
             foreach (ActiveGameplayEffect effect in _activeGameplayEffects.Values)
             {
                 if (query.Matches(effect))
                 {
-                    results.Add((effect.GetTimeRemaining(), effect.GetDuration()));
+                    results.Add((effect.GetTimeRemaining(worldTime), effect.GetDuration()));
                 }
             }
 
@@ -149,9 +152,9 @@ namespace Core.AbilitySystem.Effect
         /// </summary>
         /// <returns>맞는 GE가 하나라도 있었는지.</returns>
         /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsEndTimeAndDuration</remarks>
-        public bool GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery query, out float endTime, out float duration, List<AbilitySystemComponent> instigators)
+        public bool GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery query, out double endTime, out float duration, List<AbilitySystemComponent> instigators)
         {
-            endTime = 0f;
+            endTime = 0d;
             duration = 0f;
             bool foundSomething = false;
 
@@ -164,7 +167,7 @@ namespace Core.AbilitySystem.Effect
 
                 foundSomething = true;
 
-                float thisEndTime = effect.GetEndTime();
+                double thisEndTime = effect.GetEndTime();
                 if (thisEndTime <= GameplayEffectConstants.InfiniteDuration)
                 {
                     endTime = GameplayEffectConstants.InfiniteDuration;
@@ -190,9 +193,9 @@ namespace Core.AbilitySystem.Effect
         }
 
         /// <remarks>UE: FActiveGameplayEffectsContainer::GetActiveEffectsEndTime</remarks>
-        public float GetActiveEffectsEndTime(GameplayEffectQuery query, List<AbilitySystemComponent> instigators)
+        public double GetActiveEffectsEndTime(GameplayEffectQuery query, List<AbilitySystemComponent> instigators)
         {
-            GetActiveEffectsEndTimeAndDuration(query, out float endTime, out _, instigators);
+            GetActiveEffectsEndTimeAndDuration(query, out double endTime, out _, instigators);
             return endTime;
         }
 
@@ -390,33 +393,28 @@ namespace Core.AbilitySystem.Effect
                 return;
             }
 
-            float worldTime = GetWorldTime();
+            double worldTime = GetWorldTime();
             _expiredEffects.Clear();
 
             foreach (ActiveGameplayEffect active in _activeGameplayEffects.Values)
             {
                 GameplayEffectAsset def = active.Spec.Definition;
-                float elapsed = Mathf.Max(0f, worldTime - active.LastTickWorldTime);
-                active.LastTickWorldTime = worldTime;
 
-                if (def.Period > 0f)
+                // 다음 실행 시각을 절대값으로 예약하고 그 시각을 넘으면 실행한다 — 경과를 쌓지 않아 경계가 오차에 흔들리지 않는다.
+                // 한 Tick에 여러 주기가 지났으면 밀린 만큼 실행한다.
+                if (def.Period > 0f && worldTime > active.NextPeriodWorldTime)
                 {
-                    active.PeriodTimer += elapsed;
-                    while (active.PeriodTimer >= def.Period)
+                    int callCount = (int)((worldTime - active.NextPeriodWorldTime) / def.Period) + 1;
+                    active.NextPeriodWorldTime += callCount * (double)def.Period;
+                    for (int i = 0; i < callCount && _activeGameplayEffects.ContainsKey(active.Handle); i++)
                     {
-                        active.PeriodTimer -= def.Period;
                         InternalExecutePeriodicGameplayEffect(active);
                     }
                 }
 
-                if (def.Type == GameplayEffectType.Duration)
+                if (def.Type == GameplayEffectType.Duration && worldTime > active.GetEndTime())
                 {
-                    // 매 Tick 경과를 빼 쌓지 않고 적용 시각에서 다시 계산한다 — 큰 시각 값의 float 오차가 누적되지 않는다.
-                    active.RemainingDuration = active.Spec.Duration - (worldTime - active.StartWorldTime);
-                    if (active.RemainingDuration <= 0f)
-                    {
-                        _expiredEffects.Add(active.Handle);
-                    }
+                    _expiredEffects.Add(active.Handle);
                 }
             }
 
@@ -603,7 +601,7 @@ namespace Core.AbilitySystem.Effect
             bool resetPeriod = def.StackPeriodResetPolicy == GameplayEffectStackingPeriodPolicy.ResetOnSuccessfulApplication && def.Period > 0f;
             if (resetPeriod)
             {
-                stackable.PeriodTimer = 0f;
+                stackable.NextPeriodWorldTime = GetWorldTime() + def.Period;
             }
 
             ActiveGameplayEffectHandle handle = stackable.Handle;
@@ -623,10 +621,7 @@ namespace Core.AbilitySystem.Effect
         /// <remarks>UE: FActiveGameplayEffectsContainer::RestartActiveGameplayEffectDuration</remarks>
         private void RestartActiveGameplayEffectDuration(ActiveGameplayEffect active)
         {
-            float now = GetWorldTime();
-            active.StartWorldTime = now;
-            active.LastTickWorldTime = now;
-            active.RemainingDuration = active.Spec.Duration;
+            active.StartWorldTime = GetWorldTime();
         }
 
         /// <summary>새 활성 GE를 GE Component에 알리고, 켜져야 하는지에 따라 효과를 건다.</summary>

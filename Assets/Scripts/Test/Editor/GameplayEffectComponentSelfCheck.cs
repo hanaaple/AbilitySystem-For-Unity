@@ -192,7 +192,7 @@ namespace Test.Editor
             check("A-9 Periodic(적용 시 실행): CanApply → Added → Applied → Executed, Base 110", IsLog(log, "R.CanApply", "R.Added", "R.Applied", "R.Executed") && IsBaseAndCurrent(asc, health, 110f));
 
             log.Clear();
-            AdvanceTime(container, 1f);
+            AdvanceTime(container, 1.1f);
             check("A-10 주기 1회: Executed만, Base 120", IsLog(log, "R.Executed") && IsBaseAndCurrent(asc, health, 120f));
 
             asc.RemoveActiveGameplayEffect(periodicHandle);
@@ -325,7 +325,7 @@ namespace Test.Editor
             check("D-1 꺼진 채 시작한 주기 GE: Applied는 부르지만 적용 시 실행은 안 함(Base 100)", IsLog(log, "D1.CanApply", "D1.Added", "D1.Applied") && IsBaseAndCurrent(asc, health, 100f));
 
             log.Clear();
-            AdvanceTime(container, 1f);
+            AdvanceTime(container, 1.1f);
             check("D-2 꺼진 동안 주기가 와도 실행 안 함(Executed 없음, Base 100)", log.Count == 0 && IsBaseAndCurrent(asc, health, 100f));
 
             asc.SetActiveGameplayEffectInhibit(handle, false);
@@ -362,7 +362,7 @@ namespace Test.Editor
                 AdvanceTime(container, 3f);
                 ActiveGameplayEffectHandle t2 = other.ApplyGameplayEffectToTarget(byTarget, asc);
                 check("S-2 ByTarget: 다른 시전자가 다시 걸어도 같은 핸들·활성 1개", t1.Equals(t2) && CountActive(asc, byTarget) == 1);
-                check("S-3 Refresh: 다시 건 뒤 남은 시간이 처음(4초)으로", Approx(asc.GetActiveGameplayEffect(t1).GetTimeRemaining(), 4f));
+                check("S-3 Refresh: 다시 건 뒤 남은 시간이 처음(4초)으로", Approx(asc.GetActiveGameplayEffect(t1).GetTimeRemaining(container.GetWorldTime()), 4f));
                 check("S-4 modifier·부여 태그는 한 번만(Current 110, 태그 1)", Approx(asc.GetAttributeCurrentValue(health), 110f) && asc.GetTagCount(grantedTag) == 1);
                 AdvanceTime(container, 3.5f);
                 check("S-5 처음 적용 기준(6.5초)이 아니라 갱신 기준이라 아직 걸려 있음", asc.GetActiveGameplayEffect(t1) != null);
@@ -374,7 +374,7 @@ namespace Test.Editor
                 ActiveGameplayEffectHandle r1 = asc.ApplyGameplayEffectToSelf(neverRefresh);
                 AdvanceTime(container, 3f);
                 asc.ApplyGameplayEffectToSelf(neverRefresh);
-                check("S-7 NeverRefresh: 다시 걸어도 남은 시간 그대로(1초)", Approx(asc.GetActiveGameplayEffect(r1).GetTimeRemaining(), 1f) && CountActive(asc, neverRefresh) == 1);
+                check("S-7 NeverRefresh: 다시 걸어도 남은 시간 그대로(1초)", Approx(asc.GetActiveGameplayEffect(r1).GetTimeRemaining(container.GetWorldTime()), 1f) && CountActive(asc, neverRefresh) == 1);
                 asc.RemoveActiveGameplayEffect(r1);
 
                 GameplayEffectAsset bySource = MakeStackingEffect(grantedTag, health, GameplayEffectStackingType.AggregateBySource);
@@ -792,9 +792,9 @@ namespace Test.Editor
             List<float> remainingA = asc.GetActiveEffectsTimeRemaining(queryA);
             check("H-14 지속시간·남은 시간: C = 100·100, 끝 없는 A = -1·-1", durationsC.Count == 1 && Approx(durationsC[0], 100f) && remainingC.Count == 1 && Approx(remainingC[0], 100f) && durationsA.Count == 1 && Approx(durationsA[0], GameplayEffectConstants.InfiniteDuration) && remainingA.Count == 1 && Approx(remainingA[0], GameplayEffectConstants.InfiniteDuration));
 
-            bool foundC = asc.GetActiveEffectsEndTimeAndDuration(queryC, out float endTimeC, out float durationC);
+            bool foundC = asc.GetActiveEffectsEndTimeAndDuration(queryC, out double endTimeC, out float durationC);
             var queryAOrC = new GameplayEffectQuery { CustomMatchDelegate = effect => effect.Handle.Equals(handleA) || effect.Handle.Equals(handleC) };
-            bool foundAOrC = asc.GetActiveEffectsEndTimeAndDuration(queryAOrC, out float endTimeAOrC, out float durationAOrC);
+            bool foundAOrC = asc.GetActiveEffectsEndTimeAndDuration(queryAOrC, out double endTimeAOrC, out float durationAOrC);
             bool foundNone = asc.GetActiveEffectsEndTimeAndDuration(GameplayEffectQuery.MakeQueryMatchAnyEffectTags(other), out _, out _);
             check("H-15 끝나는 시각: C = 지금+100, 끝 없는 A가 섞이면 -1, 맞는 GE가 없으면 false", foundC && Approx(endTimeC, GetContainer(asc).GetWorldTime() + 100f) && Approx(durationC, 100f) && foundAOrC && Approx(endTimeAOrC, GameplayEffectConstants.InfiniteDuration) && Approx(durationAOrC, GameplayEffectConstants.InfiniteDuration) && !foundNone);
 
@@ -1017,6 +1017,11 @@ namespace Test.Editor
             return Mathf.Abs(a - b) < Eps;
         }
 
+        private static bool Approx(double a, double b)
+        {
+            return Math.Abs(a - b) < Eps;
+        }
+
         // Granted Tags Component가 아직 없어 그 Component가 채울 GE 캐시에 직접 넣는다. 캐시는 OnGameplayEffectChanged에서 다시 만들어지므로 그 뒤에 부르면 사라진다
         private static void GrantTag(GameplayEffectAsset ge, GameplayTag tag)
         {
@@ -1102,10 +1107,11 @@ namespace Test.Editor
         }
 
         // 에디터에선 Time.time이 흐르지 않아, 컨테이너 시계를 지금 시각 + seconds로 바꿔 끼우고 Tick한다.
+        // 주기 실행·만료는 경계 시각을 넘어야 일어나므로(UE 타이머와 같음) 경계를 확인할 땐 경계보다 조금 더 옮긴다.
         private static void AdvanceTime(ActiveGameplayEffectsContainer container, float seconds)
         {
-            float worldTime = container.GetWorldTime() + seconds;
-            Func<float> worldTimeSource = () => worldTime;
+            double worldTime = container.GetWorldTime() + seconds;
+            Func<double> worldTimeSource = () => worldTime;
             typeof(ActiveGameplayEffectsContainer).GetMethod("SetWorldTimeSource", NonPublicInstance).Invoke(container, new object[] { worldTimeSource });
             container.Tick();
         }

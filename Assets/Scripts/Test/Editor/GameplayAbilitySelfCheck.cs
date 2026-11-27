@@ -1709,8 +1709,8 @@ namespace Test.Editor
         {
             FieldInfo containerField = typeof(AbilitySystemComponent).GetField("_activeGameplayEffectsContainer", NonPublicInstance);
             var container = (ActiveGameplayEffectsContainer)containerField.GetValue(asc);
-            float worldTime = container.GetWorldTime() + seconds;
-            Func<float> worldTimeSource = () => worldTime;
+            double worldTime = container.GetWorldTime() + seconds;
+            Func<double> worldTimeSource = () => worldTime;
             typeof(ActiveGameplayEffectsContainer).GetMethod("SetWorldTimeSource", NonPublicInstance).Invoke(container, new object[] { worldTimeSource });
             return container;
         }

@@ -386,7 +386,7 @@ namespace Test.Editor
             GameplayEffectAsset healthBoost = MakeGameplayEffect(GameplayEffectType.Infinite, MakeModifier(health, GameplayModifierOperation.AddBase, 100f));
             ActiveGameplayEffectHandle boostHandle = asc.ApplyGameplayEffectToSelf(healthBoost);
 
-            AdvanceTime(container, 1f);
+            AdvanceTime(container, 1.1f);
             check("Health 200 뒤 다음 주기 실행 → +200, Speed Base 300", Approx(asc.GetAttributeBaseValue(speed), 300f));
 
             asc.RemoveActiveGameplayEffect(periodicHandle);
@@ -787,10 +787,11 @@ namespace Test.Editor
         }
 
         // 에디터에선 Time.time이 흐르지 않아, 컨테이너 시계를 지금 시각 + seconds로 바꿔 끼우고 Tick한다.
+        // 주기 실행·만료는 경계 시각을 넘어야 일어나므로(UE 타이머와 같음) 경계를 확인할 땐 경계보다 조금 더 옮긴다.
         private static void AdvanceTime(ActiveGameplayEffectsContainer container, float seconds)
         {
-            float worldTime = container.GetWorldTime() + seconds;
-            Func<float> worldTimeSource = () => worldTime;
+            double worldTime = container.GetWorldTime() + seconds;
+            Func<double> worldTimeSource = () => worldTime;
             typeof(ActiveGameplayEffectsContainer).GetMethod("SetWorldTimeSource", NonPublicInstance).Invoke(container, new object[] { worldTimeSource });
             container.Tick();
         }

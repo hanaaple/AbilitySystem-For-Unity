@@ -292,10 +292,11 @@ namespace Game.UI
         {
             var effects = new List<ActiveGameplayEffect>(asc.GetActiveGameplayEffects());
             lines.Add($"{HeaderPrefix}Active Effects ({effects.Count})");
+            double worldTime = asc.GetWorldTime();
             foreach (ActiveGameplayEffect effect in effects)
             {
                 float duration = effect.GetDuration();
-                string time = duration < 0f ? "inf" : $"{effect.GetTimeRemaining():0.0} / {duration:0.0}s";
+                string time = duration < 0f ? "inf" : $"{effect.GetTimeRemaining(worldTime):0.0} / {duration:0.0}s";
                 string name = AbilitySystemDebugLog.EffectName(effect.Spec);
                 if (effect.IsInhibited)
                 {
