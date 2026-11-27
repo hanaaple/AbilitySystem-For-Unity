@@ -32,20 +32,13 @@ namespace Test.Editor.FieldOffset
 
         private static readonly ProfilerMarker InitFieldInfoMarker = new("FieldOffset.Init.FieldInfo");
         private static readonly ProfilerMarker InitOffsetMarker = new("FieldOffset.Init.Offset");
-        private static readonly ProfilerMarker InitPinOnceMarker = new("FieldOffset.Init.PinOnce");
         private static readonly ProfilerMarker UpdateFieldInfoMarker = new("FieldOffset.Update.FieldInfo");
         private static readonly ProfilerMarker UpdateFixedMarker = new("FieldOffset.Update.Fixed");
-        private static readonly ProfilerMarker UpdatePinPerAccessMarker = new("FieldOffset.Update.PinPerAccess");
-        private static readonly ProfilerMarker UpdatePinOnceMarker = new("FieldOffset.Update.PinOnce");
         private static readonly ProfilerMarker UpdateDirectMarker = new("FieldOffset.Update.Direct");
-        private static readonly ProfilerMarker TeardownPinOnceMarker = new("FieldOffset.Teardown.PinOnce");
 
         private static BenchSet[] Sets;
         private static FieldInfo[] Fields;
-        private static int[] Offsets;
         private static int[] RelativeOffsets;
-        private static ulong[] PinOnceHandles;
-        private static IntPtr[] PinOnceAddresses;
         private static int Frame;
         private static int FirstProfilerFrame;
         private static bool PreviousProfilerEnabled;
@@ -56,9 +49,9 @@ namespace Test.Editor.FieldOffset
 
         private static int InitFrame => ProfilerStartFrames;
 
-        private static int TeardownFrame => InitFrame + UpdateFrames + 1;
+        private static int UpdateEndFrame => InitFrame + UpdateFrames + 1;
 
-        private static int AnalyzeFrame => TeardownFrame + ProfilerFlushFrames;
+        private static int AnalyzeFrame => UpdateEndFrame + ProfilerFlushFrames;
 
         [MenuItem("Tools/Ability System/Run Field Offset Frame Benchmark")]
         public static void Run()
@@ -96,16 +89,9 @@ namespace Test.Editor.FieldOffset
                     Warmup();
                     RunInit();
                 }
-                else if (Frame > InitFrame && Frame < TeardownFrame)
+                else if (Frame > InitFrame && Frame < UpdateEndFrame)
                 {
                     RunUpdate();
-                }
-                else if (Frame == TeardownFrame)
-                {
-                    using (TeardownPinOnceMarker.Auto())
-                    {
-                        ReleasePinOnce();
-                    }
                 }
                 else if (Frame >= AnalyzeFrame)
                 {
@@ -116,7 +102,6 @@ namespace Test.Editor.FieldOffset
             catch (Exception e)
             {
                 Debug.LogError($"[FieldOffset Frame] 예외로 중단: {e}");
-                ReleasePinOnce();
                 Finish();
             }
         }
@@ -144,13 +129,9 @@ namespace Test.Editor.FieldOffset
         {
             InitFieldInfo();
             InitOffset();
-            InitPinOnce();
             UpdateFieldInfo();
             UpdateFixed();
-            UpdatePinPerAccess();
-            UpdatePinOnce();
             UpdateDirect();
-            ReleasePinOnce();
         }
 
         private static void RunInit()
@@ -162,10 +143,6 @@ namespace Test.Editor.FieldOffset
             using (InitOffsetMarker.Auto())
             {
                 InitOffset();
-            }
-            using (InitPinOnceMarker.Auto())
-            {
-                InitPinOnce();
             }
         }
 
@@ -179,14 +156,6 @@ namespace Test.Editor.FieldOffset
             {
                 UpdateFixed();
             }
-            using (UpdatePinPerAccessMarker.Auto())
-            {
-                UpdatePinPerAccess();
-            }
-            using (UpdatePinOnceMarker.Auto())
-            {
-                UpdatePinOnce();
-            }
             using (UpdateDirectMarker.Auto())
             {
                 UpdateDirect();
@@ -199,43 +168,15 @@ namespace Test.Editor.FieldOffset
             Fields = ResolveFields();
         }
 
-        // fixed·호출마다 Pin 공통 — FieldInfo 조회 + 오프셋 계산(이후엔 FieldInfo를 들고 있지 않아도 된다)
+        // FieldInfo 조회 + 오프셋 계산(이후엔 FieldInfo를 들고 있지 않아도 된다)
         private static void InitOffset()
         {
             FieldInfo[] fields = ResolveFields();
-            Offsets = new int[fields.Length];
             RelativeOffsets = new int[fields.Length];
             for (int a = 0; a < fields.Length; a++)
             {
-                Offsets[a] = UnsafeUtility.GetFieldOffset(fields[a]);
-                RelativeOffsets[a] = Offsets[a] - RawDataOffset;
+                RelativeOffsets[a] = UnsafeUtility.GetFieldOffset(fields[a]) - RawDataOffset;
             }
-        }
-
-        // Set 수명 동안 고정 — 생성 시점에 Set마다 Pin 한 번(오프셋 계산은 InitOffset 몫)
-        private static void InitPinOnce()
-        {
-            PinOnceHandles = new ulong[Sets.Length];
-            PinOnceAddresses = new IntPtr[Sets.Length];
-            for (int s = 0; s < Sets.Length; s++)
-            {
-                PinOnceAddresses[s] = (IntPtr)UnsafeUtility.PinGCObjectAndGetAddress(Sets[s], out PinOnceHandles[s]);
-            }
-        }
-
-        private static void ReleasePinOnce()
-        {
-            if (PinOnceHandles == null)
-            {
-                return;
-            }
-
-            foreach (ulong handle in PinOnceHandles)
-            {
-                UnsafeUtility.ReleaseGCObject(handle);
-            }
-            PinOnceHandles = null;
-            PinOnceAddresses = null;
         }
 
         private static FieldInfo[] ResolveFields()
@@ -273,37 +214,6 @@ namespace Test.Editor.FieldOffset
                     {
                         Touch(ref UnsafeUtility.AsRef<AttributeData>(dataStart + relativeOffset));
                     }
-                }
-            }
-        }
-
-        private static void UpdatePinPerAccess()
-        {
-            foreach (BenchSet attributeSet in Sets)
-            {
-                foreach (int offset in Offsets)
-                {
-                    byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-                    try
-                    {
-                        Touch(ref UnsafeUtility.AsRef<AttributeData>(objectStart + offset));
-                    }
-                    finally
-                    {
-                        UnsafeUtility.ReleaseGCObject(gcHandle);
-                    }
-                }
-            }
-        }
-
-        private static void UpdatePinOnce()
-        {
-            foreach (IntPtr address in PinOnceAddresses)
-            {
-                var objectStart = (byte*)address;
-                foreach (int offset in Offsets)
-                {
-                    Touch(ref UnsafeUtility.AsRef<AttributeData>(objectStart + offset));
                 }
             }
         }

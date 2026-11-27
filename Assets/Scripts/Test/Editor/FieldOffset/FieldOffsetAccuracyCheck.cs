@@ -16,8 +16,8 @@ using UnityEngine;
 
 namespace Test.Editor.FieldOffset
 {
-    // field offset 접근(fixed·Pin)의 정확도를 여러 AttributeSet 형태에서 본다(Play 모드 불필요). 기준값은 FieldInfo.GetValue/SetValue.
-    // Set마다: 오프셋 겹침 없음 / fixed 읽기(참조 변수 정적 타입 object·AttributeSet·구체 타입) / Pin 읽기 / fixed 쓰기·Pin 쓰기 후 대상만 바뀌고 나머지 그대로.
+    // field offset 접근(fixed)의 정확도를 여러 AttributeSet 형태에서 본다(Play 모드 불필요). 기준값은 FieldInfo.GetValue/SetValue.
+    // Set마다: 오프셋 겹침 없음 / fixed 읽기(참조 변수 정적 타입 object·AttributeSet·구체 타입) / fixed 쓰기 후 대상만 바뀌고 나머지 그대로.
     // 형태: 같은 어셈블리 A·B : A·C : A(형제)·BB : B(손자), 다른 asmdef의 A·B, 어셈블리를 넘는 상속, 제네릭, 실제 게임 Set, 생성 방식(Activator·생성자 없이).
     // 필드: 접근 제한자 6종, SerializeField·NonSerialized, readonly, 자동 프로퍼티 backing field, 이름 숨김(new), 사이에 낀 다른 타입 필드.
     // 마지막으로 형변환 후 안전성 — 필드 선언 타입 기준 가드가 어느 인스턴스를 허용·거부하는지.
@@ -117,7 +117,6 @@ namespace Test.Editor.FieldOffset
             AttributeSet asSet = instance;
             TSet asSelf = instance;
             var fixedMismatches = new List<string>();
-            var pinMismatches = new List<string>();
             for (int i = 0; i < fields.Count; i++)
             {
                 int relativeOffset = offsets[i] - RawDataOffset;
@@ -126,14 +125,9 @@ namespace Test.Editor.FieldOffset
                 {
                     fixedMismatches.Add(FieldLabel(fields[i]));
                 }
-                if (!Same(ReadPin(instance, offsets[i]), reflected))
-                {
-                    pinMismatches.Add(FieldLabel(fields[i]));
-                }
             }
             Report(check, $"{label} — fixed 읽기(object·AttributeSet·{typeof(TSet).Name} 참조) {fields.Count}개", fixedMismatches);
-            Report(check, $"{label} — Pin 읽기 {fields.Count}개", pinMismatches);
-            if (fixedMismatches.Count > 0 || pinMismatches.Count > 0)
+            if (fixedMismatches.Count > 0)
             {
                 return;
             }
@@ -147,15 +141,6 @@ namespace Test.Editor.FieldOffset
                 CollectStateMismatches(instance, fields, expected, $"fixed 쓰기 {FieldLabel(fields[i])} 후", fixedWriteMismatches);
             }
             Report(check, $"{label} — fixed 쓰기 {fields.Count}개(대상만 바뀌고 나머지 그대로)", fixedWriteMismatches);
-
-            var pinWriteMismatches = new List<string>();
-            for (int i = 0; i < fields.Count; i++)
-            {
-                WritePinBase(instance, offsets[i], 2000f + i);
-                expected[i].SetBaseValue(2000f + i);
-                CollectStateMismatches(instance, fields, expected, $"Pin 쓰기 {FieldLabel(fields[i])} 후", pinWriteMismatches);
-            }
-            Report(check, $"{label} — Pin 쓰기 {fields.Count}개(대상만 바뀌고 나머지 그대로)", pinWriteMismatches);
         }
 
         // 필드 수집이 기대한 것을 담는지 — static 제외, 숨긴 필드는 둘 다, 자동 프로퍼티 backing field 포함, 부모 private은 부모를 따라 올라가야 보임
@@ -192,10 +177,6 @@ namespace Test.Editor.FieldOffset
             var downcast = (LocalGrandChildSet)asSet;
             long[] starts = { DataStart(ref asObject), DataStart(ref asSet), DataStart(ref asBase), DataStart(ref asMiddle), DataStart(ref asInterface), DataStart(ref downcast) };
             check("형변환 — object·AttributeSet·A·B·인터페이스·다운캐스트 참조 모두 같은 데이터 시작 주소", starts.Distinct().Count() == 1);
-
-            byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(asInterface, out ulong gcHandle);
-            UnsafeUtility.ReleaseGCObject(gcHandle);
-            check("형변환 — 인터페이스로 받은 참조를 Pin해도 주소 + 16 == 데이터 시작 주소", (long)(objectStart + RawDataOffset) == starts[0]);
 
             FieldInfo baseSerialized = FindFieldInHierarchy(typeof(LocalGrandChildSet), LocalBaseSet.SerializedPrivateFieldName);
             baseSerialized.SetValue(derived, new AttributeData(31f, 32f));
@@ -264,32 +245,6 @@ namespace Test.Editor.FieldOffset
             fixed (byte* dataStart = &raw.Data)
             {
                 UnsafeUtility.AsRef<AttributeData>(dataStart + relativeOffset).SetCurrentValue(value);
-            }
-        }
-
-        private static AttributeData ReadPin(AttributeSet attributeSet, int offset)
-        {
-            byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-            try
-            {
-                return UnsafeUtility.AsRef<AttributeData>(objectStart + offset);
-            }
-            finally
-            {
-                UnsafeUtility.ReleaseGCObject(gcHandle);
-            }
-        }
-
-        private static void WritePinBase(AttributeSet attributeSet, int offset, float value)
-        {
-            byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-            try
-            {
-                UnsafeUtility.AsRef<AttributeData>(objectStart + offset).SetBaseValue(value);
-            }
-            finally
-            {
-                UnsafeUtility.ReleaseGCObject(gcHandle);
             }
         }
 

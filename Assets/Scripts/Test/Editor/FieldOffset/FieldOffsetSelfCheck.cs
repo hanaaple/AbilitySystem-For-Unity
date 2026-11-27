@@ -13,9 +13,7 @@ namespace Test.Editor.FieldOffset
 {
     // GameplayAttributeHandle의 FieldInfo boxing을 field offset 접근으로 대체할 수 있는지 보는 에디터 전용 셀프체크(Play 모드 불필요).
     // fixed: 객체 참조를 RawData로 재해석해 fixed (byte* p = &raw.Data)로 데이터 시작 주소를 얻고, 필드 주소 = p + (필드 오프셋 - RawData.Data 오프셋).
-    // Pin: PinGCObjectAndGetAddress가 준 객체 주소 + 필드 오프셋(GetFieldOffset은 헤더 포함).
-    // A: 두 방식의 주소가 실제 필드를 가리키는가(부모 선언 필드 포함). B: 접근 방식별 1회당 시간·managed 할당·측정 중 GC 횟수.
-    // C: 고정 핸들을 오래 들고 있을 때 GC.Collect 시간(관측).
+    // A: fixed 주소가 실제 필드를 가리키는가(부모 선언 필드 포함). B: 접근 방식별 1회당 시간·managed 할당·측정 중 GC 횟수.
     // 시간은 에디터 Mono·현재 코드 최적화 모드 기준이라 IL2CPP 플레이어 수치와 다르다 — 방식 간 상대 비교로만 본다.
     public static unsafe class FieldOffsetSelfCheck
     {
@@ -23,10 +21,7 @@ namespace Test.Editor.FieldOffset
         private const int WarmupIterations = 10_000;
         private const int AllocationIterations = 10_000;
         private const int ShortIterations = 100_000;
-        private const int CollectRepeats = 5;
         private const BindingFlags InstanceFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-        private static readonly int[] PinnedHandleCounts = { 100, 10_000 };
 
         private static FieldInfo HealthField;
         private static int HealthOffset;
@@ -63,7 +58,6 @@ namespace Test.Editor.FieldOffset
             if (addressValid)
             {
                 RunCostChecks(Check);
-                LogPinnedGcCost();
             }
             else
             {
@@ -80,12 +74,10 @@ namespace Test.Editor.FieldOffset
             Debug.Log($"[FieldOffset INFO] offset RawData.Data={RawDataOffset} Health={HealthOffset} Mana={manaOffset} Stamina={staminaOffset} / IntPtr.Size={IntPtr.Size} / sizeof(AttributeData)={UnsafeUtility.SizeOf<AttributeData>()}");
 
             OffsetTestSet attributeSet = new DerivedOffsetTestSet { Health = new AttributeData(11f, 12f), Mana = new AttributeData(21f, 22f), Stamina = new AttributeData(31f, 32f) };
-            long fixedDataStart;
 
             ref RawData raw = ref UnsafeUtility.As<OffsetTestSet, RawData>(ref attributeSet);
             fixed (byte* dataStart = &raw.Data)
             {
-                fixedDataStart = (long)dataStart;
                 ref AttributeData health = ref UnsafeUtility.AsRef<AttributeData>(dataStart + (HealthOffset - RawDataOffset));
                 ref AttributeData mana = ref UnsafeUtility.AsRef<AttributeData>(dataStart + (manaOffset - RawDataOffset));
                 ref AttributeData stamina = ref UnsafeUtility.AsRef<AttributeData>(dataStart + (staminaOffset - RawDataOffset));
@@ -108,33 +100,10 @@ namespace Test.Editor.FieldOffset
             var derived = (DerivedOffsetTestSet)attributeSet;
             check("fixed 쓰기 — 포인터로 쓴 값이 C# 필드에 그대로 보인다", derived.Health.GetCurrentValue() == 99f && derived.Health.GetBaseValue() == 11f);
             check("fixed 쓰기 — 이웃 필드(Mana·Stamina)는 그대로", Matches(derived.Mana, 21f, 22f) && Matches(derived.Stamina, 31f, 32f));
-
-            byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-            try
-            {
-                ref AttributeData pinnedHealth = ref UnsafeUtility.AsRef<AttributeData>(objectStart + HealthOffset);
-                ref AttributeData pinnedStamina = ref UnsafeUtility.AsRef<AttributeData>(objectStart + staminaOffset);
-
-                bool pinRead = Matches(pinnedHealth, 11f, 99f) && Matches(pinnedStamina, 31f, 32f);
-                check("Pin 읽기 — 객체 주소 + 오프셋(헤더 포함)으로 부모·파생 선언 필드", pinRead);
-                check("Pin 주소 + RawData 오프셋 == fixed로 얻은 데이터 시작 주소", (long)(objectStart + RawDataOffset) == fixedDataStart);
-                if (!pinRead)
-                {
-                    return false;
-                }
-
-                pinnedHealth.SetCurrentValue(77f);
-            }
-            finally
-            {
-                UnsafeUtility.ReleaseGCObject(gcHandle);
-            }
-
-            check("Pin 쓰기 — 포인터로 쓴 값이 C# 필드에 그대로 보이고 이웃 필드는 그대로", derived.Health.GetCurrentValue() == 77f && Matches(derived.Mana, 21f, 22f));
             return true;
         }
 
-        // B : A : AttributeSet — A·B 각각의 public 필드와 [SerializeField] private 필드를 B 인스턴스에서 fixed·Pin·FieldInfo로 읽고 쓴다.
+        // B : A : AttributeSet — A·B 각각의 public 필드와 [SerializeField] private 필드를 B 인스턴스에서 fixed·FieldInfo로 읽고 쓴다.
         // A의 private 필드는 B 타입 GetField로 안 보여 부모를 따라 올라가 찾는다(GameplayAttributeHandle.FindField와 같은 방식).
         private static bool RunInheritanceChecks(Action<string, bool> check)
         {
@@ -187,33 +156,6 @@ namespace Test.Editor.FieldOffset
             }
             check("상속 fixed 쓰기 — 4개 필드 모두 C# 필드에 보이고 Base는 그대로", Matches(derived.Health, 1f, 100f) && Matches(derived.ArmorRef(), 3f, 101f) && Matches(derived.Stamina, 5f, 102f) && Matches(derived.ShieldRef(), 7f, 103f));
 
-            bool pinRead = true;
-            byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-            try
-            {
-                for (int i = 0; i < offsets.Length; i++)
-                {
-                    pinRead &= Matches(UnsafeUtility.AsRef<AttributeData>(objectStart + offsets[i]), i * 2 + 1f, 100f + i);
-                }
-                check("상속 Pin 읽기 — A·B의 public·private 필드 4개", pinRead);
-                if (pinRead)
-                {
-                    for (int i = 0; i < offsets.Length; i++)
-                    {
-                        UnsafeUtility.AsRef<AttributeData>(objectStart + offsets[i]).SetBaseValue(200f + i);
-                    }
-                }
-            }
-            finally
-            {
-                UnsafeUtility.ReleaseGCObject(gcHandle);
-            }
-            if (!pinRead)
-            {
-                return false;
-            }
-            check("상속 Pin 쓰기 — 4개 필드 모두 C# 필드에 보인다", Matches(derived.Health, 200f, 100f) && Matches(derived.ArmorRef(), 201f, 101f) && Matches(derived.Stamina, 202f, 102f) && Matches(derived.ShieldRef(), 203f, 103f));
-
             // A 인스턴스(B 아님)에서도 A 필드 오프셋은 그대로 맞는다
             AttributeSet baseOnly = new InheritBaseSet { Health = new AttributeData(9f, 10f) };
             ref RawData baseRaw = ref UnsafeUtility.As<AttributeSet, RawData>(ref baseOnly);
@@ -231,16 +173,13 @@ namespace Test.Editor.FieldOffset
         private static void RunInheritanceCost(Action<string, bool> check, InheritDerivedSet derived, FieldInfo field, string label)
         {
             AttributeSet attributeSet = derived;
-            int offset = UnsafeUtility.GetFieldOffset(field);
-            int relativeOffset = offset - RawDataOffset;
+            int relativeOffset = UnsafeUtility.GetFieldOffset(field) - RawDataOffset;
 
             long fieldInfoAlloc = MeasureShort($"상속 {label} FieldInfo", count => InheritFieldInfoLoop(attributeSet, field, count));
             long fixedAlloc = MeasureShort($"상속 {label} fixed", count => InheritFixedLoop(attributeSet, relativeOffset, count));
-            long pinAlloc = MeasureShort($"상속 {label} Pin 매 접근", count => InheritPinLoop(attributeSet, offset, count));
-            long pinOnceAlloc = MeasureShort($"상속 {label} Pin 1회", count => InheritPinOnceLoop(attributeSet, offset, count));
             MeasureShort("상속 B.Stamina 직접 (기준선)", count => InheritDirectLoop(derived, count));
 
-            check($"상속 {label} — FieldInfo만 할당, fixed·Pin은 할당 0", fieldInfoAlloc > 0 && fixedAlloc == 0 && pinAlloc == 0 && pinOnceAlloc == 0);
+            check($"상속 {label} — FieldInfo만 할당, fixed는 할당 0", fieldInfoAlloc > 0 && fixedAlloc == 0);
         }
 
         private static long MeasureShort(string label, Func<int, float> loop)
@@ -289,46 +228,6 @@ namespace Test.Editor.FieldOffset
                     data.SetCurrentValue(i);
                     sink += data.GetBaseValue();
                 }
-            }
-            return sink;
-        }
-
-        private static float InheritPinLoop(AttributeSet attributeSet, int offset, int count)
-        {
-            float sink = 0f;
-            for (int i = 0; i < count; i++)
-            {
-                byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-                try
-                {
-                    ref AttributeData data = ref UnsafeUtility.AsRef<AttributeData>(objectStart + offset);
-                    data.SetCurrentValue(i);
-                    sink += data.GetBaseValue();
-                }
-                finally
-                {
-                    UnsafeUtility.ReleaseGCObject(gcHandle);
-                }
-            }
-            return sink;
-        }
-
-        private static float InheritPinOnceLoop(AttributeSet attributeSet, int offset, int count)
-        {
-            float sink = 0f;
-            byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-            try
-            {
-                for (int i = 0; i < count; i++)
-                {
-                    ref AttributeData data = ref UnsafeUtility.AsRef<AttributeData>(objectStart + offset);
-                    data.SetCurrentValue(i);
-                    sink += data.GetBaseValue();
-                }
-            }
-            finally
-            {
-                UnsafeUtility.ReleaseGCObject(gcHandle);
             }
             return sink;
         }
@@ -393,16 +292,10 @@ namespace Test.Editor.FieldOffset
 
             (long fieldInfoAlloc, _) = Measure("FieldInfo Get+Set (현재 방식)", FieldInfoLoop, attributeSet);
             (long fixedAlloc, int fixedGc) = Measure("호출마다 fixed+오프셋 접근", FixedOffsetLoop, attributeSet);
-            (long pinPerAccessAlloc, int pinPerAccessGc) = Measure("호출마다 Pin+접근+Release", PinPerAccessLoop, attributeSet);
-            (long pinOnlyAlloc, int pinOnlyGc) = Measure("Pin+Release만 (접근 없음)", PinOnlyLoop, attributeSet);
-            (long pinOnceAlloc, int pinOnceGc) = Measure("Pin 1회 후 포인터 접근", PinOnceLoop, attributeSet);
             Measure("직접 필드 접근 (기준선)", DirectFieldLoop, attributeSet);
 
             check("측정 수단 유효 — FieldInfo 방식에서 할당이 잡힌다(boxing)", fieldInfoAlloc > 0);
             check("fixed+오프셋 — managed 할당 0, 측정 중 GC 0회", fixedAlloc == 0 && fixedGc == 0);
-            check("호출마다 Pin — managed 할당 0, 측정 중 GC 0회", pinPerAccessAlloc == 0 && pinPerAccessGc == 0);
-            check("Pin+Release만 — managed 할당 0, 측정 중 GC 0회", pinOnlyAlloc == 0 && pinOnlyGc == 0);
-            check("Pin 1회 — managed 할당 0, 측정 중 GC 0회", pinOnceAlloc == 0 && pinOnceGc == 0);
         }
 
         // 반환: (managed 할당 바이트 — 무효면 -1, 시간 측정 중 일어난 GC 횟수)
@@ -434,54 +327,6 @@ namespace Test.Editor.FieldOffset
             return (allocated, gcDuringTiming);
         }
 
-        // 판정 아닌 관측: 고정 핸들을 오래 들고 있으면(Set 수명 동안 Pin) GC 한 번이 느려지는지. 고정 없음은 앞뒤로 재서 편차를 본다.
-        private static void LogPinnedGcCost()
-        {
-            foreach (int count in PinnedHandleCounts)
-            {
-                var sets = new OffsetTestSet[count];
-                for (int i = 0; i < count; i++)
-                {
-                    sets[i] = new OffsetTestSet();
-                }
-
-                double unpinnedBeforeMs = MeasureCollectMs();
-                var handles = new ulong[count];
-                double pinnedMs;
-                for (int i = 0; i < count; i++)
-                {
-                    UnsafeUtility.PinGCObjectAndGetAddress(sets[i], out handles[i]);
-                }
-                try
-                {
-                    pinnedMs = MeasureCollectMs();
-                }
-                finally
-                {
-                    for (int i = 0; i < count; i++)
-                    {
-                        UnsafeUtility.ReleaseGCObject(handles[i]);
-                    }
-                }
-                double unpinnedAfterMs = MeasureCollectMs();
-
-                Debug.Log($"[FieldOffset GC] 고정 핸들 {count}개 유지 중 GC.Collect 평균 {pinnedMs:F2} ms / 고정 없음 {unpinnedBeforeMs:F2} ms(전)·{unpinnedAfterMs:F2} ms(후), {CollectRepeats}회 평균");
-                GC.KeepAlive(sets);
-            }
-        }
-
-        private static double MeasureCollectMs()
-        {
-            GC.Collect();
-            var stopwatch = Stopwatch.StartNew();
-            for (int i = 0; i < CollectRepeats; i++)
-            {
-                GC.Collect();
-            }
-            stopwatch.Stop();
-            return stopwatch.Elapsed.TotalMilliseconds / CollectRepeats;
-        }
-
         private static float FieldInfoLoop(OffsetTestSet attributeSet, int count)
         {
             float sink = 0f;
@@ -509,60 +354,6 @@ namespace Test.Editor.FieldOffset
                     data.SetCurrentValue(i);
                     sink += data.GetBaseValue();
                 }
-            }
-            return sink;
-        }
-
-        // 실제 핸들에서 쓸 모양 그대로 — 접근 1회마다 Pin·Release 한 쌍
-        private static float PinPerAccessLoop(OffsetTestSet attributeSet, int count)
-        {
-            float sink = 0f;
-            for (int i = 0; i < count; i++)
-            {
-                byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-                try
-                {
-                    ref AttributeData data = ref UnsafeUtility.AsRef<AttributeData>(objectStart + HealthOffset);
-                    data.SetCurrentValue(i);
-                    sink += data.GetBaseValue();
-                }
-                finally
-                {
-                    UnsafeUtility.ReleaseGCObject(gcHandle);
-                }
-            }
-            return sink;
-        }
-
-        private static float PinOnlyLoop(OffsetTestSet attributeSet, int count)
-        {
-            float sink = 0f;
-            for (int i = 0; i < count; i++)
-            {
-                void* objectStart = UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-                sink += objectStart != null ? 1f : 0f;
-                UnsafeUtility.ReleaseGCObject(gcHandle);
-            }
-            return sink;
-        }
-
-        // Set 수명 동안 고정해 두는 경우 — 고정은 루프 밖 한 번
-        private static float PinOnceLoop(OffsetTestSet attributeSet, int count)
-        {
-            float sink = 0f;
-            byte* objectStart = (byte*)UnsafeUtility.PinGCObjectAndGetAddress(attributeSet, out ulong gcHandle);
-            try
-            {
-                for (int i = 0; i < count; i++)
-                {
-                    ref AttributeData data = ref UnsafeUtility.AsRef<AttributeData>(objectStart + HealthOffset);
-                    data.SetCurrentValue(i);
-                    sink += data.GetBaseValue();
-                }
-            }
-            finally
-            {
-                UnsafeUtility.ReleaseGCObject(gcHandle);
             }
             return sink;
         }
