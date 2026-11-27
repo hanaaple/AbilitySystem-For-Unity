@@ -1,6 +1,7 @@
 using Core.AbilitySystem;
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Character
 {
@@ -12,22 +13,22 @@ namespace Game.Character
     {
         private static readonly int AlphaId = Shader.PropertyToID("_Alpha");
 
-        [SerializeField] private AbilitySystemComponent abilitySystemComponent;
+        [SerializeField] [FormerlySerializedAs("abilitySystemComponent")] private AbilitySystemComponent _abilitySystemComponent;
         [Tooltip("실드가 켜져 있는 동안 붙는 태그. 실드 어빌리티의 Activation Owned Tags와 같아야 한다.")]
-        [SerializeField] private GameplayTag shieldTag;
+        [SerializeField] [FormerlySerializedAs("shieldTag")] private GameplayTag _shieldTag;
         [Tooltip("막 렌더러. 재질에 투명도 속성(_Alpha)이 있어야 한다.")]
-        [SerializeField] private Renderer bubbleRenderer;
+        [SerializeField] [FormerlySerializedAs("bubbleRenderer")] private Renderer _bubbleRenderer;
 
         [Tooltip("이 실드량일 때 가장 진하다. 0이면 실드량과 상관없이 같은 진하기.")]
-        [Min(0f)] [SerializeField] private float fullShieldAmount;
+        [Min(0f)] [SerializeField] [FormerlySerializedAs("fullShieldAmount")] private float _fullShieldAmount;
         [Tooltip("다 찬 뒤 깎일 때 이 비율 아래로는 옅어지지 않는다 — 깨지는 순간이 보이게.")]
-        [Range(0f, 1f)] [SerializeField] private float minDamagedAlpha = 0.35f;
+        [Range(0f, 1f)] [SerializeField] [FormerlySerializedAs("minDamagedAlpha")] private float _minDamagedAlpha = 0.35f;
 
-        [SerializeField] private float fadeInDuration = 0.15f;
+        [SerializeField] [FormerlySerializedAs("fadeInDuration")] private float _fadeInDuration = 0.15f;
         [Tooltip("시간이 다 돼 사라질 때 걸리는 시간(초).")]
-        [SerializeField] private float fadeOutDuration = 0.8f;
+        [SerializeField] [FormerlySerializedAs("fadeOutDuration")] private float _fadeOutDuration = 0.8f;
         [Tooltip("깨질 때 사라지는 데 걸리는 시간(초).")]
-        [SerializeField] private float breakDuration = 0.25f;
+        [SerializeField] [FormerlySerializedAs("breakDuration")] private float _breakDuration = 0.25f;
 
         private Material _material;
         private bool _isShielded;
@@ -38,29 +39,29 @@ namespace Game.Character
 
         private void Awake()
         {
-            _material = bubbleRenderer.material;
-            bubbleRenderer.enabled = false;
+            _material = _bubbleRenderer.material;
+            _bubbleRenderer.enabled = false;
         }
 
         private void Start()
         {
-            _isShielded = abilitySystemComponent.HasMatchingGameplayTag(shieldTag);
-            abilitySystemComponent.RegisterGameplayTagEvent(shieldTag, OnTagCountChanged);
+            _isShielded = _abilitySystemComponent.HasMatchingGameplayTag(_shieldTag);
+            _abilitySystemComponent.RegisterGameplayTagEvent(_shieldTag, OnTagCountChanged);
         }
 
         private void Update()
         {
             _weight = Mathf.MoveTowards(_weight, _isShielded ? 1f : 0f, _fadeSpeed * Time.deltaTime);
             float alpha = _isShielded ? GetShieldAlpha() : _endAlpha;
-            bubbleRenderer.enabled = _weight > 0f;
+            _bubbleRenderer.enabled = _weight > 0f;
             _material.SetFloat(AlphaId, alpha * _weight);
         }
 
         private void OnDestroy()
         {
-            if (abilitySystemComponent != null)
+            if (_abilitySystemComponent != null)
             {
-                abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, shieldTag);
+                _abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, _shieldTag);
             }
 
             Destroy(_material);
@@ -68,18 +69,18 @@ namespace Game.Character
 
         private float GetShieldAlpha()
         {
-            if (fullShieldAmount <= 0f)
+            if (_fullShieldAmount <= 0f)
             {
                 return 1f;
             }
 
-            float ratio = Mathf.Clamp01(abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.Shield) / fullShieldAmount);
+            float ratio = Mathf.Clamp01(_abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.ShieldAttribute) / _fullShieldAmount);
             if (ratio >= 1f)
             {
                 _hasFilled = true;
             }
 
-            return _hasFilled ? Mathf.Lerp(minDamagedAlpha, 1f, ratio) : ratio;
+            return _hasFilled ? Mathf.Lerp(_minDamagedAlpha, 1f, ratio) : ratio;
         }
 
         private void OnTagCountChanged(GameplayTag changedTag, int newCount)
@@ -93,15 +94,15 @@ namespace Game.Character
             if (isShielded)
             {
                 _hasFilled = false;
-                _fadeSpeed = 1f / Mathf.Max(fadeInDuration, 0.01f);
+                _fadeSpeed = 1f / Mathf.Max(_fadeInDuration, 0.01f);
                 _isShielded = true;
                 return;
             }
 
             // 실드를 비우기 전(시간 만료)이나 0이 된 직후(깨짐)의 진하기에서 사라지기 시작한다
             _endAlpha = GetShieldAlpha();
-            bool isBroken = abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.Shield) <= 0f;
-            _fadeSpeed = 1f / Mathf.Max(isBroken ? breakDuration : fadeOutDuration, 0.01f);
+            bool isBroken = _abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.ShieldAttribute) <= 0f;
+            _fadeSpeed = 1f / Mathf.Max(isBroken ? _breakDuration : _fadeOutDuration, 0.01f);
             _isShielded = false;
         }
     }

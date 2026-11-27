@@ -9,6 +9,12 @@ namespace Core.AbilitySystem.Tag
         /// <summary>Resources 기준 고정 경로. 이 경로의 에셋 하나만 정의 출처로 삼아 로드 지점을 단일화한다.</summary>
         public const string ResourcesPath = "AbilitySystem/GameplayTagRegistry";
 
+#if UNITY_EDITOR
+        // 생성은 에디터에서만 가능(AssetDatabase는 빌드에 없음). 에디터 로드 시점에 이 경로의 에셋을
+        // 보장해 두면 빌드는 Load()로 읽기만 하면 된다.
+        private const string EditorAssetPath = "Assets/Resources/" + ResourcesPath + ".asset";
+#endif
+
         // 태그 관리 UI가 이 직렬화 필드 이름으로 편집한다. 이름을 바꾸면 GameplayTagRegistryEditing도 바꿔야 한다.
         [SerializeField] private List<string> _tags = new();
 
@@ -21,10 +27,6 @@ namespace Core.AbilitySystem.Tag
         }
 
 #if UNITY_EDITOR
-        // 생성은 에디터에서만 가능(AssetDatabase는 빌드에 없음). 에디터 로드 시점에 이 경로의 에셋을
-        // 보장해 두면 빌드는 Load()로 읽기만 하면 된다.
-        private const string EditorAssetPath = "Assets/Resources/" + ResourcesPath + ".asset";
-
         /// <summary>에디터 전용: 고정 경로의 레지스트리를 로드하고, 없으면 그 자리에 생성해 돌려준다.</summary>
         public static GameplayTagRegistryAsset LoadOrCreate()
         {

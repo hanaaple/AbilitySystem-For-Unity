@@ -6,14 +6,14 @@ namespace Game.Character
     public class CharacterAttributeSet : AttributeSet
     {
         // 외부에서 어트리뷰트를 식별하는 정적 핸들
-        public static readonly GameplayAttributeHandle Health    = new(typeof(CharacterAttributeSet), nameof(health));
-        public static readonly GameplayAttributeHandle MaxHealth = new(typeof(CharacterAttributeSet), nameof(maxHealth));
-        public static readonly GameplayAttributeHandle Stamina   = new(typeof(CharacterAttributeSet), nameof(stamina));
-        public static readonly GameplayAttributeHandle MaxStamina = new(typeof(CharacterAttributeSet), nameof(maxStamina));
-        public static readonly GameplayAttributeHandle Speed     = new(typeof(CharacterAttributeSet), nameof(speed));
-        public static readonly GameplayAttributeHandle Attack    = new(typeof(CharacterAttributeSet), nameof(attack));
-        public static readonly GameplayAttributeHandle Shield    = new(typeof(CharacterAttributeSet), nameof(shield));
-        public static readonly GameplayAttributeHandle AttackSpeed = new(typeof(CharacterAttributeSet), nameof(attackSpeed));
+        public static readonly GameplayAttributeHandle HealthAttribute    = new(typeof(CharacterAttributeSet), nameof(Health));
+        public static readonly GameplayAttributeHandle MaxHealthAttribute = new(typeof(CharacterAttributeSet), nameof(MaxHealth));
+        public static readonly GameplayAttributeHandle StaminaAttribute   = new(typeof(CharacterAttributeSet), nameof(Stamina));
+        public static readonly GameplayAttributeHandle MaxStaminaAttribute = new(typeof(CharacterAttributeSet), nameof(MaxStamina));
+        public static readonly GameplayAttributeHandle SpeedAttribute     = new(typeof(CharacterAttributeSet), nameof(Speed));
+        public static readonly GameplayAttributeHandle AttackAttribute    = new(typeof(CharacterAttributeSet), nameof(Attack));
+        public static readonly GameplayAttributeHandle ShieldAttribute    = new(typeof(CharacterAttributeSet), nameof(Shield));
+        public static readonly GameplayAttributeHandle AttackSpeedAttribute = new(typeof(CharacterAttributeSet), nameof(AttackSpeed));
 
         // 공격속도가 0에 가까우면 쿨다운이 끝없이 길어지므로 하한을 둔다.
         private const float MinAttackSpeed = 0.1f;
@@ -22,19 +22,19 @@ namespace Game.Character
         // 연습 모드엔 죽음이 없다 — 체력은 이 값 아래로 내려가지 않는다.
         private const float MinHealth = 1f;
 
-        public AttributeData health;
-        public AttributeData maxHealth;
-        public AttributeData stamina;
-        public AttributeData maxStamina;
+        public AttributeData Health;
+        public AttributeData MaxHealth;
+        public AttributeData Stamina;
+        public AttributeData MaxStamina;
         /// <summary> 이동 속도(m/s). 달리기·조준 등은 이 값을 바꾸는 GE로 나타난다. </summary>
-        public AttributeData speed;
-        public AttributeData attack;
+        public AttributeData Speed;
+        public AttributeData Attack;
 
         /// <summary> 체력보다 먼저 피해를 받아 내는 양. 피해 계산(DamageExecution)이 이것부터 깎는다. </summary>
-        public AttributeData shield;
+        public AttributeData Shield;
 
         /// <summary> 공격 속도 배율(1 = 기본). 공격속도를 따르는 어빌리티는 쿨다운을 이 값으로 나눈다. </summary>
-        public AttributeData attackSpeed;
+        public AttributeData AttackSpeed;
 
         // Instant·주기 데미지는 Base를, Duration/Infinite mod는 Current만 바꾸므로 두 경로 모두 막는다.
         public override void PreAttributeBaseChange(GameplayAttributeHandle attributeHandle, ref float newValue)
@@ -55,13 +55,13 @@ namespace Game.Character
 
         private void ClampHealth(GameplayAttributeHandle attributeHandle, ref float newValue)
         {
-            if (attributeHandle != Health)
+            if (attributeHandle != HealthAttribute)
             {
                 return;
             }
 
             // maxHealth를 초기화하지 않은 데이터(0)에선 상한을 걸지 않는다 — 걸면 체력이 0으로 눌린다.
-            float max = maxHealth.GetCurrentValue();
+            float max = MaxHealth.GetCurrentValue();
             if (max > 0f)
             {
                 newValue = Mathf.Min(newValue, max);
@@ -73,7 +73,7 @@ namespace Game.Character
         // 감속이 겹쳐도 뒤로 걷지 않게 0 아래를 막는다.
         private void ClampNonNegative(GameplayAttributeHandle attributeHandle, ref float newValue)
         {
-            if (attributeHandle != Speed)
+            if (attributeHandle != SpeedAttribute)
             {
                 return;
             }
@@ -83,7 +83,7 @@ namespace Game.Character
 
         private void ClampShield(GameplayAttributeHandle attributeHandle, ref float newValue)
         {
-            if (attributeHandle != Shield)
+            if (attributeHandle != ShieldAttribute)
             {
                 return;
             }
@@ -93,7 +93,7 @@ namespace Game.Character
 
         private void ClampAttackSpeed(GameplayAttributeHandle attributeHandle, ref float newValue)
         {
-            if (attributeHandle != AttackSpeed)
+            if (attributeHandle != AttackSpeedAttribute)
             {
                 return;
             }

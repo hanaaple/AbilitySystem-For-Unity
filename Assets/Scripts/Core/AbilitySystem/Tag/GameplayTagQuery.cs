@@ -20,6 +20,17 @@ namespace Core.AbilitySystem.Tag
         [SerializeField] private string _userDescription;
         [SerializeField] private string _autoDescription;
 
+        public override bool Equals(object obj)
+        {
+            return obj is GameplayTagQuery other && Equals(other);
+        }
+
+        // 빈 목록과 null을 같게 보는 Equals와 맞추려고 개수와 설명만으로 만든다
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(_tagDictionary?.Count ?? 0, _queryTokenStream?.Count ?? 0, GetDescription());
+        }
+
         /// <remarks>UE: FGameplayTagQuery::operator==</remarks>
         public static bool operator ==(GameplayTagQuery left, GameplayTagQuery right)
         {
@@ -39,17 +50,6 @@ namespace Core.AbilitySystem.Tag
             return _tokenStreamVersion == other._tokenStreamVersion && ListEquals(_tagDictionary, other._tagDictionary) && ListEquals(_queryTokenStream, other._queryTokenStream) && (_userDescription ?? string.Empty) == (other._userDescription ?? string.Empty) && (_autoDescription ?? string.Empty) == (other._autoDescription ?? string.Empty);
         }
 
-        public override bool Equals(object obj)
-        {
-            return obj is GameplayTagQuery other && Equals(other);
-        }
-
-        // 빈 목록과 null을 같게 보는 Equals와 맞추려고 개수와 설명만으로 만든다
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(_tagDictionary?.Count ?? 0, _queryTokenStream?.Count ?? 0, GetDescription());
-        }
-
         /// <summary>주어진 루트 식으로 질의를 만든다.</summary>
         /// <remarks>UE: FGameplayTagQuery::BuildQuery</remarks>
         public static GameplayTagQuery BuildQuery(GameplayTagQueryExpression rootQueryExpr, string description = "")
@@ -61,28 +61,28 @@ namespace Core.AbilitySystem.Tag
 
         /// <summary>임의의 태그가 대상과 겹치면 매칭되는 질의를 만든다.</summary>
         /// <remarks>UE: FGameplayTagQuery::MakeQuery_MatchAnyTags</remarks>
-        public static GameplayTagQuery MakeQuery_MatchAnyTags(GameplayTagContainer inTags)
+        public static GameplayTagQuery MakeQueryMatchAnyTags(GameplayTagContainer inTags)
         {
             return BuildQuery(new GameplayTagQueryExpression().AnyTagsMatch().AddTags(inTags));
         }
 
         /// <summary>모든 태그를 대상이 가지면 매칭되는 질의를 만든다.</summary>
         /// <remarks>UE: FGameplayTagQuery::MakeQuery_MatchAllTags</remarks>
-        public static GameplayTagQuery MakeQuery_MatchAllTags(GameplayTagContainer inTags)
+        public static GameplayTagQuery MakeQueryMatchAllTags(GameplayTagContainer inTags)
         {
             return BuildQuery(new GameplayTagQueryExpression().AllTagsMatch().AddTags(inTags));
         }
 
         /// <summary>어느 태그도 대상에 없으면 매칭되는 질의를 만든다.</summary>
         /// <remarks>UE: FGameplayTagQuery::MakeQuery_MatchNoTags</remarks>
-        public static GameplayTagQuery MakeQuery_MatchNoTags(GameplayTagContainer inTags)
+        public static GameplayTagQuery MakeQueryMatchNoTags(GameplayTagContainer inTags)
         {
             return BuildQuery(new GameplayTagQueryExpression().NoTagsMatch().AddTags(inTags));
         }
 
         /// <summary>단일 태그를 대상이 가지면 매칭되는 질의를 만든다.</summary>
         /// <remarks>UE: FGameplayTagQuery::MakeQuery_MatchTag</remarks>
-        public static GameplayTagQuery MakeQuery_MatchTag(GameplayTag inTag)
+        public static GameplayTagQuery MakeQueryMatchTag(GameplayTag inTag)
         {
             return BuildQuery(new GameplayTagQueryExpression().AllTagsMatch().AddTag(inTag));
         }

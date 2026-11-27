@@ -12,48 +12,22 @@ namespace Core.AbilitySystem.Editor
         private bool _showOwnedTags = true;
         private Vector2 _scroll;
 
-        /// <summary>ASC 인스펙터 창을 연다(없으면 새로 만들고, 있으면 포커스). 메뉴와 컴포넌트 버튼이 공유한다.</summary>
-        [MenuItem("Window/Ability System/ASC Inspector")]
-        public static void Open()
-        {
-            GetWindow<AbilitySystemComponentWindow>("ASC Inspector");
-        }
-
         private void OnEnable()
         {
             // 선택이 바뀌면 대상 ASC가 달라지므로 다시 그린다.
             Selection.selectionChanged += Repaint;
         }
 
-        private void OnDisable()
-        {
-            Selection.selectionChanged -= Repaint;
-        }
-
-        private void OnInspectorUpdate()
-        {
-            // Play 모드에서 어트리뷰트·Active Effect 값이 매 프레임 변하므로 주기적으로 갱신한다.
-            if (Application.isPlaying)
-            {
-                Repaint();
-            }
-        }
-
         private void OnGUI()
         {
             AbilitySystemComponent asc = ResolveSelectedAsc();
 
-            EditorGUILayout.LabelField(
-                "Target",
-                Selection.activeGameObject != null ? Selection.activeGameObject.name : "(none)",
-                EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Target", Selection.activeGameObject != null ? Selection.activeGameObject.name : "(none)", EditorStyles.boldLabel);
 
             if (asc == null)
             {
                 EditorGUILayout.Space(4f);
-                EditorGUILayout.HelpBox(
-                    "선택된 GameObject에 AbilitySystemComponent가 없습니다.",
-                    MessageType.Info);
+                EditorGUILayout.HelpBox("선택된 GameObject에 AbilitySystemComponent가 없습니다.", MessageType.Info);
                 return;
             }
 
@@ -67,6 +41,27 @@ namespace Core.AbilitySystem.Editor
             EditorGUILayout.Space(4f);
             AbilitySystemInspectorGUI.DrawOwnedTags(asc, ref _showOwnedTags);
             EditorGUILayout.EndScrollView();
+        }
+
+        private void OnInspectorUpdate()
+        {
+            // Play 모드에서 어트리뷰트·Active Effect 값이 매 프레임 변하므로 주기적으로 갱신한다.
+            if (Application.isPlaying)
+            {
+                Repaint();
+            }
+        }
+
+        private void OnDisable()
+        {
+            Selection.selectionChanged -= Repaint;
+        }
+
+        /// <summary>ASC 인스펙터 창을 연다(없으면 새로 만들고, 있으면 포커스). 메뉴와 컴포넌트 버튼이 공유한다.</summary>
+        [MenuItem("Window/Ability System/ASC Inspector")]
+        public static void Open()
+        {
+            GetWindow<AbilitySystemComponentWindow>("ASC Inspector");
         }
 
         /// <summary>선택된 GameObject의 ASC. 선택이 없거나 ASC가 없으면 null.</summary>

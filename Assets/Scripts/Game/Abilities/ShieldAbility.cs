@@ -4,6 +4,7 @@ using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Effect;
 using Game.Character;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Abilities
 {
@@ -12,17 +13,17 @@ namespace Game.Abilities
     /// 실드가 피해로 0이 되면 유지 GE를 지워 깨지고, 유지 GE가 끝나면 남은 실드를 비운다.
     /// </summary>
     /// <remarks>
-    /// 실드량은 어트리뷰트(<see cref="CharacterAttributeSet.Shield"/>)라 피해 계산이 깎고, 유지 시간은 GE가 잰다 — 이 어빌리티는 둘을 묶어 함께 끝낸다.
+    /// 실드량은 어트리뷰트(<see cref="CharacterAttributeSet.ShieldAttribute"/>)라 피해 계산이 깎고, 유지 시간은 GE가 잰다 — 이 어빌리티는 둘을 묶어 함께 끝낸다.
     /// </remarks>
     [Serializable]
     public sealed class ShieldAbility : CharacterGameplayAbility
     {
         [Tooltip("실드량을 채우는 GE. 한 번에 채우면 Instant(Override), 천천히 채우면 주기형 Duration — 차는 도중 실드가 끝나면 함께 지운다.")]
-        [SerializeField] private GameplayEffectAsset shieldAmountEffect;
+        [SerializeField] [FormerlySerializedAs("shieldAmountEffect")] private GameplayEffectAsset _shieldAmountEffect;
         [Tooltip("실드 유지 시간을 재는 GE(Duration). 이 GE가 끝나면 실드도 끝난다. Infinite면 깨질 때까지 유지한다.")]
-        [SerializeField] private GameplayEffectAsset durationEffect;
+        [SerializeField] [FormerlySerializedAs("durationEffect")] private GameplayEffectAsset _durationEffect;
         [Tooltip("시간이 다 돼 끝날 때 남은 실드를 비우는 GE(Instant, Override 0).")]
-        [SerializeField] private GameplayEffectAsset clearEffect;
+        [SerializeField] [FormerlySerializedAs("clearEffect")] private GameplayEffectAsset _clearEffect;
 
         private GameplayAbilitySpecHandle _handle;
         private GameplayAbilityGameObjectInfo _gameObjectInfo;
@@ -33,7 +34,7 @@ namespace Game.Abilities
 
         public override void ActivateAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo)
         {
-            if (durationEffect == null || !CommitAbility(handle, gameObjectInfo))
+            if (_durationEffect == null || !CommitAbility(handle, gameObjectInfo))
             {
                 EndAbility(handle, gameObjectInfo, true);
                 return;
@@ -44,10 +45,10 @@ namespace Game.Abilities
             _isBroken = false;
 
             float level = GetAbilityLevel(handle, gameObjectInfo);
-            _amountHandle = shieldAmountEffect != null ? ApplyGameplayEffectToOwner(handle, gameObjectInfo, shieldAmountEffect, level) : ActiveGameplayEffectHandle.Invalid;
+            _amountHandle = _shieldAmountEffect != null ? ApplyGameplayEffectToOwner(handle, gameObjectInfo, _shieldAmountEffect, level) : ActiveGameplayEffectHandle.Invalid;
 
             AbilitySystemComponent abilitySystemComponent = gameObjectInfo.AbilitySystemComponent;
-            _durationHandle = ApplyGameplayEffectToOwner(handle, gameObjectInfo, durationEffect, level);
+            _durationHandle = ApplyGameplayEffectToOwner(handle, gameObjectInfo, _durationEffect, level);
             _durationEvents = abilitySystemComponent.GetActiveEffectEventSet(_durationHandle);
             if (_durationEvents == null)
             {
@@ -56,7 +57,7 @@ namespace Game.Abilities
             }
 
             _durationEvents.OnEffectRemoved += OnDurationRemoved;
-            abilitySystemComponent.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Shield).OnValueChange += OnShieldChanged;
+            abilitySystemComponent.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.ShieldAttribute).OnValueChange += OnShieldChanged;
         }
 
         public override void EndAbility(GameplayAbilitySpecHandle handle, GameplayAbilityGameObjectInfo gameObjectInfo, bool wasCancelled)
@@ -68,7 +69,7 @@ namespace Game.Abilities
 
             // 유지 GE를 지우면 OnDurationRemoved가 다시 이리로 오므로 구독부터 끊는다
             AbilitySystemComponent abilitySystemComponent = gameObjectInfo.AbilitySystemComponent;
-            abilitySystemComponent.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Shield).OnValueChange -= OnShieldChanged;
+            abilitySystemComponent.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.ShieldAttribute).OnValueChange -= OnShieldChanged;
             if (_durationEvents != null)
             {
                 _durationEvents.OnEffectRemoved -= OnDurationRemoved;
@@ -85,9 +86,9 @@ namespace Game.Abilities
             base.EndAbility(handle, gameObjectInfo, wasCancelled);
 
             // 태그가 빠진 뒤에 비운다 — 연출이 태그가 빠지는 순간 남은 실드로 깨짐(0)과 시간 만료(>0)를 가른다
-            if (!_isBroken && clearEffect != null)
+            if (!_isBroken && _clearEffect != null)
             {
-                ApplyGameplayEffectToOwner(handle, gameObjectInfo, clearEffect, GetAbilityLevel(handle, gameObjectInfo));
+                ApplyGameplayEffectToOwner(handle, gameObjectInfo, _clearEffect, GetAbilityLevel(handle, gameObjectInfo));
             }
         }
 

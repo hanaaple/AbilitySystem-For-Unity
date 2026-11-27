@@ -26,10 +26,10 @@ namespace Core.AbilitySystem.Abilities.Editor
         {
             serializedObject.Update();
 
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("description"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("_description"));
             GUILayout.Space(SectionGap);
 
-            SerializedProperty template = serializedObject.FindProperty("abilityTemplate");
+            SerializedProperty template = serializedObject.FindProperty("_abilityTemplate");
             Rect selectorRect = EditorGUILayout.GetControlRect();
             SubclassSelectorDrawer.DrawManagedReferenceSelector(selectorRect, template, typeof(GameplayAbility), null, new GUIContent(template.displayName, template.tooltip));
 

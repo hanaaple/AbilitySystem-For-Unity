@@ -19,39 +19,38 @@ namespace Core.AbilitySystem.Effect.Editor
     [CustomEditor(typeof(GameplayEffectAsset))]
     public sealed class GameplayEffectAssetDrawer : UnityEditor.Editor
     {
-        private const string DescriptionPropertyName = "description";
-        private const string TypePropertyName = "type";
-        private const string DurationPropertyName = "duration";
-        private const string PeriodPropertyName = "period";
-        private const string ExecuteOnApplicationPropertyName = "executePeriodicEffectOnApplication";
-        private const string StackingTypePropertyName = "stackingType";
-        private const string StackDurationRefreshPolicyPropertyName = "stackDurationRefreshPolicy";
-        private const string StackPeriodResetPolicyPropertyName = "stackPeriodResetPolicy";
-        private const string ModifiersPropertyName = "modifiers";
-        private const string ExecutionsPropertyName = "executions";
-        private const string ComponentsPropertyName = "gameplayEffectComponents";
+        private const string DescriptionPropertyName = "_description";
+        private const string TypePropertyName = "_type";
+        private const string DurationPropertyName = "_duration";
+        private const string PeriodPropertyName = "_period";
+        private const string ExecuteOnApplicationPropertyName = "_executePeriodicEffectOnApplication";
+        private const string StackingTypePropertyName = "_stackingType";
+        private const string StackDurationRefreshPolicyPropertyName = "_stackDurationRefreshPolicy";
+        private const string StackPeriodResetPolicyPropertyName = "_stackPeriodResetPolicy";
+        private const string ModifiersPropertyName = "_modifiers";
+        private const string ExecutionsPropertyName = "_executions";
+        private const string ComponentsPropertyName = "_gameplayEffectComponents";
         private const string ComponentClassSuffix = "GameplayEffectComponent";
 
         // GameplayModifier 필드. 대상 어트리뷰트(GameplayAttribute)의 Set/Attribute 팝업은 그 전용 드로어가 그리고, 여기선 요약을 위해 중첩 경로로 읽는다.
-        private const string AttributePropertyName = "attribute";
-        private const string AttributeSetTypeNamePropertyName = "attribute.attributeSetTypeName";
-        private const string FieldNamePropertyName = "attribute.fieldName";
-        private const string OperationPropertyName = "operation";
+        private const string AttributePropertyName = "_attribute";
+        private const string AttributeSetTypeNamePropertyName = "_attribute._attributeSetTypeName";
+        private const string FieldNamePropertyName = "_attribute._fieldName";
+        private const string OperationPropertyName = "_operation";
 
         // Execution 정의(GameplayEffectExecutionDefinition)와 그 Calculation Modifier(GameplayEffectExecutionScopedModifierInfo) 필드.
-        private const string CalculationClassPropertyName = "calculationClass";
-        private const string CalculationModifiersPropertyName = "calculationModifiers";
-        private const string CapturedAttributePropertyName = "capturedAttribute";
-        private const string ModifierOpPropertyName = "modifierOp";
+        private const string CalculationClassPropertyName = "_calculationClass";
+        private const string CalculationModifiersPropertyName = "_calculationModifiers";
+        private const string CapturedAttributePropertyName = "_capturedAttribute";
+        private const string ModifierOpPropertyName = "_modifierOp";
 
         // Modifier와 Calculation Modifier가 같은 이름으로 가진 필드. Magnitude·태그 조건은 각자의 전용 드로어가 그린다.
-        private const string ModifierMagnitudePropertyName = "modifierMagnitude";
-        private const string AttributeBasedMagnitudePropertyName = "modifierMagnitude.attributeBasedMagnitude";
-        private const string CoefficientPropertyName = "modifierMagnitude.attributeBasedMagnitude.coefficient";
-        private const string SourceTagsPropertyName = "sourceTags";
-        private const string TargetTagsPropertyName = "targetTags";
+        private const string ModifierMagnitudePropertyName = "_modifierMagnitude";
+        private const string AttributeBasedMagnitudePropertyName = "_modifierMagnitude._attributeBasedMagnitude";
+        private const string CoefficientPropertyName = "_modifierMagnitude._attributeBasedMagnitude._coefficient";
+        private const string SourceTagsPropertyName = "_sourceTags";
+        private const string TargetTagsPropertyName = "_targetTags";
 
-        // ── 공통 규격 ──
         private const float LineGap = 4f;                 // 본문 줄 사이
         private const float SectionGap = 8f;              // 묶음(대상 / Magnitude / Tags) 사이
         private const float ElementVerticalPadding = 6f;  // 요소 위아래 여백
@@ -76,9 +75,9 @@ namespace Core.AbilitySystem.Effect.Editor
         private static readonly Color NestedOutlineColor = new(0.5f, 0.5f, 0.5f, 0.8f);
 
         // Execution 클래스별 캡처 정의(Defs) 캐시. 타입이 키라 목록 순서가 바뀌어도 안전하다.
-        private static readonly Dictionary<Type, GameplayEffectAttributeCaptureDefinition[]> _captureDefinitionsByExecution = new();
+        private static readonly Dictionary<Type, GameplayEffectAttributeCaptureDefinition[]> CaptureDefinitionsByExecution = new();
 
-        private static readonly Dictionary<GameplayModifierOperation, string> _operationDisplayNames = new()
+        private static readonly Dictionary<GameplayModifierOperation, string> OperationDisplayNames = new()
         {
             { GameplayModifierOperation.AddBase,          "Add (Base)"          },
             { GameplayModifierOperation.MultiplyAdditive, "Multiply (Additive)" },
@@ -88,11 +87,11 @@ namespace Core.AbilitySystem.Effect.Editor
             { GameplayModifierOperation.Override,         "Override"            },
         };
 
-        private static readonly GameplayModifierOperation[] _operationValues =
-            (GameplayModifierOperation[])Enum.GetValues(typeof(GameplayModifierOperation));
+        private static readonly GameplayModifierOperation[] OperationValues = (GameplayModifierOperation[])Enum.GetValues(typeof(GameplayModifierOperation));
 
-        private static readonly string[] _operationPopupOptions =
-            _operationValues.Select(op => _operationDisplayNames[op]).ToArray();
+        private static readonly string[] OperationPopupOptions = OperationValues.Select(op => OperationDisplayNames[op]).ToArray();
+
+        private const string SummarySeparator = "   —   ";
 
         private SerializedProperty _description;
         private SerializedProperty _type;
@@ -201,8 +200,6 @@ namespace Core.AbilitySystem.Effect.Editor
             EditorGUI.indentLevel--;
         }
 
-        // ── 목록 공통 ────────────────────────────────────────────────────────────
-
         /// <summary>접힘 상태면 ReorderableList 대신 헤더만 그린다(ReorderableList엔 내장 foldout이 없다). 접힘 상태는 SerializedProperty.isExpanded에 저장돼 선택을 옮겨도 유지된다.</summary>
         private static void DrawCollapsibleList(ReorderableList list, SerializedProperty elements, string title)
         {
@@ -257,8 +254,6 @@ namespace Core.AbilitySystem.Effect.Editor
             EditorGUI.DrawRect(new Rect(rect.x, rect.y, 1f, rect.height), color);
             EditorGUI.DrawRect(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), color);
         }
-
-        // ── Modifiers ───────────────────────────────────────────────────────────
 
         private void BuildModifierList()
         {
@@ -332,21 +327,11 @@ namespace Core.AbilitySystem.Effect.Editor
             return y + ElementVerticalPadding - rect.y;
         }
 
-        // ── Executions ──────────────────────────────────────────────────────────
-
         // Execution은 계산 클래스를 골라 추가하는 게 자연스러워 AttributeSet 리스트와 같은 검색형 Add(TypeChoiceList)를 쓴다.
         // (New Script는 GameplayEffectExecution의 abstract Execute 때문에 빈 템플릿이 컴파일되지 않아 제외 — 필요하면 override 스텁 생성이 선행돼야 한다.)
         private void BuildExecutionList()
         {
-            _executionList = TypeChoiceList.Create(
-                serializedObject,
-                _executions,
-                "Executions",
-                GetAddableExecutions,
-                AddExecution,
-                "추가 가능한 Execution 없음",
-                drawElement: DrawExecutionElement,
-                elementHeight: index => LayoutExecutionElement(new Rect(0f, 0f, 0f, 0f), _executions.GetArrayElementAtIndex(index), false));
+            _executionList = TypeChoiceList.Create(serializedObject, _executions, "Executions", GetAddableExecutions, AddExecution, "추가 가능한 Execution 없음", drawElement: DrawExecutionElement, elementHeight: index => LayoutExecutionElement(new Rect(0f, 0f, 0f, 0f), _executions.GetArrayElementAtIndex(index), false));
 
             // Modifiers와 같은 머리 줄(접기 + 개수)
             _executionList.drawHeaderCallback = rect => DrawListHeader(rect, _executions, "Executions");
@@ -431,8 +416,7 @@ namespace Core.AbilitySystem.Effect.Editor
             if (draw)
             {
                 Rect foldoutRect = new Rect(rect.x + FoldoutIndent, y, rect.width - FoldoutIndent, lineH);
-                calculationModifiers.isExpanded = EditorGUI.Foldout(foldoutRect, calculationModifiers.isExpanded,
-                    $"Calculation Modifiers ({calculationModifiers.arraySize})", toggleOnLabelClick: true);
+                calculationModifiers.isExpanded = EditorGUI.Foldout(foldoutRect, calculationModifiers.isExpanded, $"Calculation Modifiers ({calculationModifiers.arraySize})", toggleOnLabelClick: true);
             }
 
             y += lineH;
@@ -536,38 +520,6 @@ namespace Core.AbilitySystem.Effect.Editor
             }
         }
 
-        /// <returns>칸 높이. 머리 줄 오른쪽 − 를 누르면 <paramref name="removeClicked"/>.</returns>
-        private static float LayoutScopedModifier(float x, float top, float width, float labelWidth, SerializedProperty scopedModifier, GameplayEffectAttributeCaptureDefinition[] captureDefinitions, bool draw, out bool removeClicked)
-        {
-            removeClicked = false;
-            float lineH = EditorGUIUtility.singleLineHeight;
-            SerializedProperty capturedAttribute = scopedModifier.FindPropertyRelative(CapturedAttributePropertyName);
-            float y = top;
-
-            if (draw)
-            {
-                DrawElementHeader(new Rect(x, y, width - RemoveButtonWidth, lineH), scopedModifier, GetScopedModifierSummary(scopedModifier));
-                removeClicked = GUI.Button(new Rect(x + width - RemoveButtonWidth, y, RemoveButtonWidth, lineH), "−", EditorStyles.miniButton);
-            }
-
-            y += lineH;
-            if (!scopedModifier.isExpanded)
-            {
-                return y - top;
-            }
-
-            // 대상: Backing Data — 이 Execution 클래스가 Defs()로 선언한 캡처 중에서만 고른다(UE와 같음).
-            y += LineGap;
-            if (draw)
-            {
-                WithLabelWidth(labelWidth, () => DrawBackingDataPopup(new Rect(x, y, width, lineH), capturedAttribute, captureDefinitions));
-            }
-
-            y += lineH + LineGap;
-            y = LayoutModifierBody(x, y, width, scopedModifier, ModifierOpPropertyName, draw, labelWidth);
-            return y - top;
-        }
-
         private static void DrawBackingDataPopup(Rect rect, SerializedProperty capturedAttribute, GameplayEffectAttributeCaptureDefinition[] captureDefinitions)
         {
             if (captureDefinitions.Length == 0)
@@ -603,30 +555,20 @@ namespace Core.AbilitySystem.Effect.Editor
                 return Array.Empty<GameplayEffectAttributeCaptureDefinition>();
             }
 
-            if (!_captureDefinitionsByExecution.TryGetValue(type, out GameplayEffectAttributeCaptureDefinition[] definitions))
+            if (!CaptureDefinitionsByExecution.TryGetValue(type, out GameplayEffectAttributeCaptureDefinition[] definitions))
             {
                 var execution = (GameplayEffectExecution)Activator.CreateInstance(type);
                 definitions = execution.Defs().ToArray();
-                _captureDefinitionsByExecution[type] = definitions;
+                CaptureDefinitionsByExecution[type] = definitions;
             }
 
             return definitions;
         }
 
-        // ── Components ──────────────────────────────────────────────────────────
-
         // Component는 [SerializeReference]라 타입을 골라 인스턴스를 넣는다(ItemData 모듈 목록과 같은 방식).
         private void BuildComponentList()
         {
-            _componentList = TypeChoiceList.Create(
-                serializedObject,
-                _components,
-                "Components",
-                GetAddableComponents,
-                AddComponent,
-                "추가 가능한 Component 없음",
-                drawElement: DrawComponentElement,
-                elementHeight: index => LayoutComponentElement(new Rect(0f, 0f, 0f, 0f), _components.GetArrayElementAtIndex(index), false));
+            _componentList = TypeChoiceList.Create(serializedObject, _components, "Components", GetAddableComponents, AddComponent, "추가 가능한 Component 없음", drawElement: DrawComponentElement, elementHeight: index => LayoutComponentElement(new Rect(0f, 0f, 0f, 0f), _components.GetArrayElementAtIndex(index), false));
 
             _componentList.drawHeaderCallback = rect => DrawListHeader(rect, _components, "Components");
         }
@@ -696,8 +638,7 @@ namespace Core.AbilitySystem.Effect.Editor
             if (draw)
             {
                 float classY = y;
-                WithLabelWidth(LabelWidth, () => SubclassSelectorDrawer.DrawManagedReferenceSelector(
-                    new Rect(rect.x, classY, rect.width, lineH), component, typeof(GameplayEffectComponent), usedByOthers, new GUIContent("Component Class")));
+                WithLabelWidth(LabelWidth, () => SubclassSelectorDrawer.DrawManagedReferenceSelector(new Rect(rect.x, classY, rect.width, lineH), component, typeof(GameplayEffectComponent), usedByOthers, new GUIContent("Component Class")));
             }
 
             y += lineH;
@@ -735,8 +676,6 @@ namespace Core.AbilitySystem.Effect.Editor
             return ObjectNames.NicifyVariableName(typeName);
         }
 
-        // ── Modifier·Calculation Modifier 공통 본문 ─────────────────────────────
-
         /// <summary>대상 줄 다음부터: Modifier Op → Modifier Magnitude → Source/Target Tags. 두 목록이 같은 순서·간격으로 그린다.</summary>
         /// <param name="labelWidth">라벨 폭. 안쪽 목록은 들여쓴 만큼 줄여 값 열(x + 라벨 폭)이 바깥 목록과 같은 x에 오게 한다.</param>
         /// <returns>본문 끝 y(마지막 묶음 아래 여백 포함).</returns>
@@ -751,9 +690,9 @@ namespace Core.AbilitySystem.Effect.Editor
                 WithLabelWidth(labelWidth, () =>
                 {
                     var currentOp = (GameplayModifierOperation)operation.enumValueIndex;
-                    int opPopupIndex = Array.IndexOf(_operationValues, currentOp);
-                    int newOpPopupIndex = EditorGUI.Popup(new Rect(x, y, width, lineH), "Modifier Op", opPopupIndex, _operationPopupOptions);
-                    operation.enumValueIndex = (int)_operationValues[newOpPopupIndex];
+                    int opPopupIndex = Array.IndexOf(OperationValues, currentOp);
+                    int newOpPopupIndex = EditorGUI.Popup(new Rect(x, y, width, lineH), "Modifier Op", opPopupIndex, OperationPopupOptions);
+                    operation.enumValueIndex = (int)OperationValues[newOpPopupIndex];
                 });
             }
 
@@ -831,15 +770,9 @@ namespace Core.AbilitySystem.Effect.Editor
             EditorGUIUtility.labelWidth = prevLabelWidth;
         }
 
-        // ── 요약 문구 — 세 목록이 같은 "대상   —   부가 정보" 꼴 ─────────────────
-
-        private const string SummarySeparator = "   —   ";
-
         private static string GetModifierSummary(SerializedProperty modifier)
         {
-            string attributeLabel = GetAttributeLabel(
-                modifier.FindPropertyRelative(AttributeSetTypeNamePropertyName).stringValue,
-                modifier.FindPropertyRelative(FieldNamePropertyName).stringValue);
+            string attributeLabel = GetAttributeLabel(modifier.FindPropertyRelative(AttributeSetTypeNamePropertyName).stringValue, modifier.FindPropertyRelative(FieldNamePropertyName).stringValue);
             var op = (GameplayModifierOperation)modifier.FindPropertyRelative(OperationPropertyName).enumValueIndex;
             return attributeLabel + SummarySeparator + GetOperationLabel(op);
         }
@@ -858,7 +791,7 @@ namespace Core.AbilitySystem.Effect.Editor
             return $"{classLabel}{SummarySeparator}Calculation Modifiers {calculationModifiers.arraySize}";
         }
 
-        // 예: "CharacterAttributeSet.health". 비었거나 못 찾으면 그 사실을 표시한다.
+        // 예: "CharacterAttributeSet.Health". 비었거나 못 찾으면 그 사실을 표시한다.
         private static string GetAttributeLabel(string attributeSetTypeName, string fieldName)
         {
             if (string.IsNullOrEmpty(attributeSetTypeName))
@@ -872,7 +805,7 @@ namespace Core.AbilitySystem.Effect.Editor
             return $"{setLabel}.{fieldLabel}";
         }
 
-        // 예: "CharacterAttributeSet.health (Target, Snapshot)". Modifier 요약과 같은 어트리뷰트 표기에 캡처 출처를 붙인다.
+        // 예: "CharacterAttributeSet.Health (Target, Snapshot)". Modifier 요약과 같은 어트리뷰트 표기에 캡처 출처를 붙인다.
         private static string GetCaptureLabel(GameplayEffectAttributeCaptureDefinition definition)
         {
             GameplayAttribute attribute = definition.Attribute;
@@ -887,7 +820,39 @@ namespace Core.AbilitySystem.Effect.Editor
 
         private static string GetOperationLabel(GameplayModifierOperation op)
         {
-            return _operationDisplayNames.TryGetValue(op, out string display) ? display : op.ToString();
+            return OperationDisplayNames.TryGetValue(op, out string display) ? display : op.ToString();
+        }
+
+        /// <returns>칸 높이. 머리 줄 오른쪽 − 를 누르면 <paramref name="removeClicked"/>.</returns>
+        private static float LayoutScopedModifier(float x, float top, float width, float labelWidth, SerializedProperty scopedModifier, GameplayEffectAttributeCaptureDefinition[] captureDefinitions, bool draw, out bool removeClicked)
+        {
+            removeClicked = false;
+            float lineH = EditorGUIUtility.singleLineHeight;
+            SerializedProperty capturedAttribute = scopedModifier.FindPropertyRelative(CapturedAttributePropertyName);
+            float y = top;
+
+            if (draw)
+            {
+                DrawElementHeader(new Rect(x, y, width - RemoveButtonWidth, lineH), scopedModifier, GetScopedModifierSummary(scopedModifier));
+                removeClicked = GUI.Button(new Rect(x + width - RemoveButtonWidth, y, RemoveButtonWidth, lineH), "−", EditorStyles.miniButton);
+            }
+
+            y += lineH;
+            if (!scopedModifier.isExpanded)
+            {
+                return y - top;
+            }
+
+            // 대상: Backing Data — 이 Execution 클래스가 Defs()로 선언한 캡처 중에서만 고른다(UE와 같음).
+            y += LineGap;
+            if (draw)
+            {
+                WithLabelWidth(labelWidth, () => DrawBackingDataPopup(new Rect(x, y, width, lineH), capturedAttribute, captureDefinitions));
+            }
+
+            y += lineH + LineGap;
+            y = LayoutModifierBody(x, y, width, scopedModifier, ModifierOpPropertyName, draw, labelWidth);
+            return y - top;
         }
     }
 }

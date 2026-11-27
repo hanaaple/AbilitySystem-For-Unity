@@ -10,21 +10,21 @@ namespace Core.AbilitySystem.Attribute.Editor
 {
     public static class AttributeReflectionUtility
     {
-        private static Type[] _attributeSetTypeCache;
-        private static readonly Dictionary<Type, FieldInfo[]> _fieldCache = new();
+        private static Type[] AttributeSetTypeCache;
+        private static readonly Dictionary<Type, FieldInfo[]> FieldCache = new();
 
         public static Type[] GetAttributeSetTypes()
         {
-            if (_attributeSetTypeCache == null)
+            if (AttributeSetTypeCache == null)
             {
-                _attributeSetTypeCache = TypeCache
+                AttributeSetTypeCache = TypeCache
                     .GetTypesDerivedFrom<AttributeSet>()
                     .Where(t => !t.IsAbstract)
                     .OrderBy(t => t.Name)
                     .ToArray();
             }
 
-            return _attributeSetTypeCache;
+            return AttributeSetTypeCache;
         }
 
         public static FieldInfo[] GetAttributeDataFields(Type attributeSetType)
@@ -34,21 +34,18 @@ namespace Core.AbilitySystem.Attribute.Editor
                 return Array.Empty<FieldInfo>();
             }
 
-            if (_fieldCache.TryGetValue(attributeSetType, out FieldInfo[] cached))
+            if (FieldCache.TryGetValue(attributeSetType, out FieldInfo[] cached))
             {
                 return cached;
             }
 
             FieldInfo[] fields = attributeSetType
-                .GetFields(
-                    BindingFlags.Instance |
-                    BindingFlags.Public |
-                    BindingFlags.NonPublic)
+                .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 .Where(IsAttributeDataField)
                 .OrderBy(f => f.MetadataToken)
                 .ToArray();
 
-            _fieldCache[attributeSetType] = fields;
+            FieldCache[attributeSetType] = fields;
             return fields;
         }
 

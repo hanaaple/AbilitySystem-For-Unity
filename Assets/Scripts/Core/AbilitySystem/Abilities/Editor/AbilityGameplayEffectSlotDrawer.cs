@@ -113,7 +113,7 @@ namespace Core.AbilitySystem.Abilities.Editor
                 : new Check(Verdict.Fail, $"Instant가 아님({effect.Type})", "코스트는 Instant여야 한다. Duration·Infinite는 Base가 아니라 현재값만 바꿔 GE가 끝나면 되돌아오고, 주기(Period)가 있으면 주기마다 반복해서 깎인다."));
 
             var serializedEffect = new SerializedObject(effect);
-            SerializedProperty modifiersProperty = serializedEffect.FindProperty("modifiers");
+            SerializedProperty modifiersProperty = serializedEffect.FindProperty("_modifiers");
 
             int costModifierCount = 0;
             IReadOnlyList<GameplayModifier> modifiers = effect.Modifiers;
@@ -141,7 +141,7 @@ namespace Core.AbilitySystem.Abilities.Editor
                     continue;
                 }
 
-                float magnitude = modifiersProperty.GetArrayElementAtIndex(i).FindPropertyRelative("modifierMagnitude.scalableFloatMagnitude").floatValue;
+                float magnitude = modifiersProperty.GetArrayElementAtIndex(i).FindPropertyRelative("_modifierMagnitude._scalableFloatMagnitude").floatValue;
                 checks.Add(magnitude < 0f
                     ? new Check(Verdict.Pass, $"{name} {magnitude:0.##}", $"발동 전엔 현재값 + ({magnitude:0.##}) ≥ 0인지 보고, 커밋 때 Base에 더한다.")
                     : new Check(Verdict.Fail, $"{name} {magnitude:+0.##;-0.##;0} — 음수가 아님", "AddBase 수치가 0 이상이면 자원을 깎지 않는다(양수면 오히려 늘어난다). 코스트 확인도 늘 통과한다."));

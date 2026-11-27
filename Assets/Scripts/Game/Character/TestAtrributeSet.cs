@@ -12,11 +12,11 @@ namespace Game.Character
     {
         public const float MaxHealth = 100f;
 
-        public static readonly GameplayAttributeHandle Health = new(typeof(TestAtrributeSet), nameof(health));
-        public static readonly GameplayAttributeHandle Damage = new(typeof(TestAtrributeSet), nameof(damage));
+        public static readonly GameplayAttributeHandle HealthAttribute = new(typeof(TestAtrributeSet), nameof(Health));
+        public static readonly GameplayAttributeHandle DamageAttribute = new(typeof(TestAtrributeSet), nameof(Damage));
 
-        public AttributeData health;
-        public AttributeData damage;
+        public AttributeData Health;
+        public AttributeData Damage;
 
         /// <summary>true면 <see cref="PreGameplayEffectExecute"/>가 모든 실행을 버린다.</summary>
         public bool RejectExecute { get; set; }
@@ -39,7 +39,7 @@ namespace Game.Character
             }
 
             GameplayModifierEvaluatedData evaluated = data.EvaluatedData;
-            if (evaluated.Handle.Equals(Damage))
+            if (evaluated.Handle.Equals(DamageAttribute))
             {
                 data.EvaluatedData = new GameplayModifierEvaluatedData(evaluated.Handle, evaluated.Magnitude * DamageScale, evaluated.Operation);
             }
@@ -50,21 +50,21 @@ namespace Game.Character
         public override void PostGameplayEffectExecute(GameplayEffectModCallbackData data)
         {
             GameplayModifierEvaluatedData evaluated = data.EvaluatedData;
-            if (!evaluated.Handle.Equals(Damage))
+            if (!evaluated.Handle.Equals(DamageAttribute))
             {
                 return;
             }
 
-            float damageDone = damage.GetBaseValue();
+            float damageDone = Damage.GetBaseValue();
             LastExecutedDamage = damageDone;
 
-            SetBaseValue(Damage, 0f);
-            SetBaseValue(Health, health.GetBaseValue() - damageDone);
+            SetBaseValue(DamageAttribute, 0f);
+            SetBaseValue(HealthAttribute, Health.GetBaseValue() - damageDone);
         }
 
         public override void PreAttributeChange(GameplayAttributeHandle attributeHandle, ref float newValue)
         {
-            if (attributeHandle.Equals(Health))
+            if (attributeHandle.Equals(HealthAttribute))
             {
                 newValue = Mathf.Clamp(newValue, 0f, MaxHealth);
             }
@@ -72,7 +72,7 @@ namespace Game.Character
 
         public override void PostAttributeChange(GameplayAttributeHandle attributeHandle, float oldValue, float newValue)
         {
-            if (attributeHandle.Equals(Health))
+            if (attributeHandle.Equals(HealthAttribute))
             {
                 LastChangeOldValue = oldValue;
                 LastChangeNewValue = newValue;

@@ -3,6 +3,7 @@ using Core.AbilitySystem;
 using Core.AbilitySystem.Effect;
 using Game.Character;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Game.UI
@@ -10,31 +11,31 @@ namespace Game.UI
     /// <summary>허수아비 머리 위 체력 바. 맞을 때마다 깎인 구간이 하얀 조각으로 남았다가 조각마다 잠시 뒤 줄어들고, 옆에 피해량·초당 피해량·누적 피해량을 띄운다. 실드가 있으면 체력 끝에 파란 칸으로 이어 붙인다. 항상 카메라를 본다.</summary>
     public class TrainingDummyHealthBar : MonoBehaviour
     {
-        [SerializeField] private TrainingDummy dummy;
+        [SerializeField] [FormerlySerializedAs("dummy")] private TrainingDummy _dummy;
 
         [Header("Bar")]
         [Tooltip("체력 비율만큼 오른쪽 끝(anchorMax.x)이 움직인다.")]
-        [SerializeField] private RectTransform healthFill;
+        [SerializeField] [FormerlySerializedAs("healthFill")] private RectTransform _healthFill;
         [Tooltip("체력 끝에서 실드 비율만큼 이어지는 칸(anchorMin.x·anchorMax.x가 움직인다). 비우면 실드를 그리지 않는다.")]
-        [SerializeField] private RectTransform shieldFill;
+        [SerializeField] [FormerlySerializedAs("shieldFill")] private RectTransform _shieldFill;
         [Tooltip("healthFill 뒤에 깔리는 칸. 깎일 때마다 그 구간의 하얀 조각을 이 아래에 만든다.")]
-        [SerializeField] private RectTransform damageTrailContainer;
-        [SerializeField] private Color damageTrailColor = Color.white;
+        [SerializeField] [FormerlySerializedAs("damageTrailContainer")] private RectTransform _damageTrailContainer;
+        [SerializeField] [FormerlySerializedAs("damageTrailColor")] private Color _damageTrailColor = Color.white;
         [Tooltip("조각마다, 생긴 뒤 줄어들기 시작할 때까지(초).")]
-        [Min(0f)] [SerializeField] private float trailHoldTime = 0.6f;
+        [Min(0f)] [SerializeField] [FormerlySerializedAs("trailHoldTime")] private float _trailHoldTime = 0.6f;
         [Tooltip("조각이 줄어드는 속도(바 전체 길이 / 초).")]
-        [Min(0.01f)] [SerializeField] private float trailShrinkSpeed = 1.5f;
+        [Min(0.01f)] [SerializeField] [FormerlySerializedAs("trailShrinkSpeed")] private float _trailShrinkSpeed = 1.5f;
 
         [Header("Ticks")]
-        [SerializeField] private RectTransform tickContainer;
-        [Min(1f)] [SerializeField] private float tickInterval = 100f;
-        [SerializeField] private float tickWidth = 2f;
-        [SerializeField] private Color tickColor = new(0f, 0f, 0f, 0.6f);
+        [SerializeField] [FormerlySerializedAs("tickContainer")] private RectTransform _tickContainer;
+        [Min(1f)] [SerializeField] [FormerlySerializedAs("tickInterval")] private float _tickInterval = 100f;
+        [SerializeField] [FormerlySerializedAs("tickWidth")] private float _tickWidth = 2f;
+        [SerializeField] [FormerlySerializedAs("tickColor")] private Color _tickColor = new(0f, 0f, 0f, 0.6f);
 
         [Header("Text")]
-        [SerializeField] private Text damageText;
-        [SerializeField] private Text dpsText;
-        [SerializeField] private Text totalText;
+        [SerializeField] [FormerlySerializedAs("damageText")] private Text _damageText;
+        [SerializeField] [FormerlySerializedAs("dpsText")] private Text _dpsText;
+        [SerializeField] [FormerlySerializedAs("totalText")] private Text _totalText;
 
         private readonly List<RectTransform> _trailChunkRects = new();
         private HealthTrail _trail;
@@ -47,23 +48,23 @@ namespace Game.UI
 
         private void Start()
         {
-            _trail = new HealthTrail(trailHoldTime, trailShrinkSpeed);
-            _asc = dummy.AbilitySystemComponent;
-            _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Health).OnValueChange += OnHealthChanged;
-            dummy.OnDamaged += OnDummyDamaged;
+            _trail = new HealthTrail(_trailHoldTime, _trailShrinkSpeed);
+            _asc = _dummy.AbilitySystemComponent;
+            _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.HealthAttribute).OnValueChange += OnHealthChanged;
+            _dummy.OnDamaged += OnDummyDamaged;
             RefreshTexts();
         }
 
         private void LateUpdate()
         {
-            float maxHealth = _asc.GetAttributeCurrentValue(CharacterAttributeSet.MaxHealth);
+            float maxHealth = _asc.GetAttributeCurrentValue(CharacterAttributeSet.MaxHealthAttribute);
             if (maxHealth <= 0f)
             {
                 return;
             }
 
-            float health = _asc.GetAttributeCurrentValue(CharacterAttributeSet.Health);
-            float shield = _asc.GetAttributeCurrentValue(CharacterAttributeSet.Shield);
+            float health = _asc.GetAttributeCurrentValue(CharacterAttributeSet.HealthAttribute);
+            float shield = _asc.GetAttributeCurrentValue(CharacterAttributeSet.ShieldAttribute);
             _barScale = Mathf.Max(maxHealth, health + shield);
             if (!Mathf.Approximately(_barScale, _tickedBarScale))
             {
@@ -71,11 +72,11 @@ namespace Game.UI
             }
 
             float healthRatio = Mathf.Clamp01(health / _barScale);
-            SetRightEdge(healthFill, healthRatio);
-            if (shieldFill != null)
+            SetRightEdge(_healthFill, healthRatio);
+            if (_shieldFill != null)
             {
-                shieldFill.gameObject.SetActive(shield > 0f);
-                SetSpan(shieldFill, healthRatio, Mathf.Clamp01((health + shield) / _barScale));
+                _shieldFill.gameObject.SetActive(shield > 0f);
+                SetSpan(_shieldFill, healthRatio, Mathf.Clamp01((health + shield) / _barScale));
             }
             _trail.Tick(Time.deltaTime);
             SyncTrailChunks();
@@ -88,12 +89,12 @@ namespace Game.UI
         {
             if (_asc != null)
             {
-                _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Health).OnValueChange -= OnHealthChanged;
+                _asc.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.HealthAttribute).OnValueChange -= OnHealthChanged;
             }
 
-            if (dummy != null)
+            if (_dummy != null)
             {
-                dummy.OnDamaged -= OnDummyDamaged;
+                _dummy.OnDamaged -= OnDummyDamaged;
             }
         }
 
@@ -128,10 +129,10 @@ namespace Game.UI
         {
             var chunk = new GameObject("TrailChunk", typeof(RectTransform), typeof(Image));
             var rect = (RectTransform)chunk.transform;
-            rect.SetParent(damageTrailContainer, false);
+            rect.SetParent(_damageTrailContainer, false);
 
             var image = chunk.GetComponent<Image>();
-            image.color = damageTrailColor;
+            image.color = _damageTrailColor;
             image.raycastTarget = false;
             return rect;
         }
@@ -140,13 +141,13 @@ namespace Game.UI
         private void RebuildTicks(float barScale)
         {
             _tickedBarScale = barScale;
-            for (int i = tickContainer.childCount - 1; i >= 0; i--)
+            for (int i = _tickContainer.childCount - 1; i >= 0; i--)
             {
-                Destroy(tickContainer.GetChild(i).gameObject);
+                Destroy(_tickContainer.GetChild(i).gameObject);
             }
 
             // 끝과 겹치는 눈금은 테두리와 겹치므로 그리지 않는다
-            for (float value = tickInterval; value < barScale; value += tickInterval)
+            for (float value = _tickInterval; value < barScale; value += _tickInterval)
             {
                 CreateTick(value / barScale);
             }
@@ -156,13 +157,13 @@ namespace Game.UI
         {
             var tick = new GameObject("Tick", typeof(RectTransform), typeof(Image));
             var rect = (RectTransform)tick.transform;
-            rect.SetParent(tickContainer, false);
+            rect.SetParent(_tickContainer, false);
             rect.anchorMin = new Vector2(ratio, 0f);
             rect.anchorMax = new Vector2(ratio, 1f);
-            rect.sizeDelta = new Vector2(tickWidth, 0f);
+            rect.sizeDelta = new Vector2(_tickWidth, 0f);
 
             var image = tick.GetComponent<Image>();
-            image.color = tickColor;
+            image.color = _tickColor;
             image.raycastTarget = false;
         }
 
@@ -184,9 +185,9 @@ namespace Game.UI
 
         private void RefreshTexts()
         {
-            damageText.text = $"피해량 {dummy.LastDamage:N0}";
-            dpsText.text = $"초당 피해량 {dummy.DamagePerSecond:N0}";
-            totalText.text = $"누적 피해량 {dummy.TotalDamage:N0}";
+            _damageText.text = $"피해량 {_dummy.LastDamage:N0}";
+            _dpsText.text = $"초당 피해량 {_dummy.DamagePerSecond:N0}";
+            _totalText.text = $"누적 피해량 {_dummy.TotalDamage:N0}";
         }
 
         private static void SetRightEdge(RectTransform rect, float ratio)

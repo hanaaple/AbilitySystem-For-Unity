@@ -8,12 +8,6 @@ namespace Game
 
         public CharacterBase PossessedCharacter => _possessedCharacter;
 
-        // TODO: 멀티플레이 확장 시 구현
-        protected bool HasAuthority()
-        {
-            return true;
-        }
-
         public virtual void Possess(CharacterBase character)
         {
             if (_possessedCharacter != null)
@@ -41,6 +35,12 @@ namespace Game
         protected virtual void OnPossessedCharacterDied(CharacterBase character)
         {
             UnPossess();
+        }
+
+        // TODO: 멀티플레이 확장 시 구현
+        protected bool HasAuthority()
+        {
+            return true;
         }
     }
 }

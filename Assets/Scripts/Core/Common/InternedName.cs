@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.Common
 {
@@ -7,20 +8,14 @@ namespace Core.Common
     [Serializable]
     public struct InternedName : IEquatable<InternedName>, ISerializationCallbackReceiver
     {
-        [SerializeField] private string name;
+        [SerializeField] [FormerlySerializedAs("name")] private string _name;
 
         [NonSerialized] private int _hash;
 
         public InternedName(string inName)
         {
-            name = Intern(inName);
-            _hash = ComputeHash(name);
-        }
-
-        public bool Equals(InternedName other)
-        {
-            // 생성·역직렬화 모든 경로에서 인터닝을 보장하므로 같은 내용은 같은 인스턴스 → 참조 비교로 충분하다.
-            return ReferenceEquals(name, other.name);
+            _name = Intern(inName);
+            _hash = ComputeHash(_name);
         }
 
         public override bool Equals(object inName)
@@ -35,19 +30,25 @@ namespace Core.Common
 
         public override string ToString()
         {
-            return name;
+            return _name;
+        }
+
+        public bool Equals(InternedName other)
+        {
+            // 생성·역직렬화 모든 경로에서 인터닝을 보장하므로 같은 내용은 같은 인스턴스 → 참조 비교로 충분하다.
+            return ReferenceEquals(_name, other._name);
         }
 
         public bool IsNullOrEmpty()
         {
-            return string.IsNullOrEmpty(name);
+            return string.IsNullOrEmpty(_name);
         }
 
         // Unity 역직렬화는 생성자를 우회하고 필드를 직접 채우므로, 로드 직후 다시 인터닝해야 참조 비교가 성립하고 해시도 채워진다.
         void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
-            name = Intern(name);
-            _hash = ComputeHash(name);
+            _name = Intern(_name);
+            _hash = ComputeHash(_name);
         }
 
         void ISerializationCallbackReceiver.OnBeforeSerialize()

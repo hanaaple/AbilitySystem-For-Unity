@@ -44,11 +44,11 @@ namespace Test
             }
 
             _asc = gameObject.AddComponent<AbilitySystemComponent>();
-            _asc.AddSpawnedAttribute(new CharacterAttributeSet { stamina = new AttributeData(50f, 50f), speed = new AttributeData(0f, 0f) });
+            _asc.AddSpawnedAttribute(new CharacterAttributeSet { Stamina = new AttributeData(50f, 50f), Speed = new AttributeData(0f, 0f) });
 
-            GameplayEffectAsset costEffect = MakeInstantEffect(CharacterAttributeSet.Stamina, -30f);
+            GameplayEffectAsset costEffect = MakeInstantEffect(CharacterAttributeSet.StaminaAttribute, -30f);
             GameplayEffectAsset cooldownEffect = MakeCooldownEffect(cooldownTag);
-            GameplayEffectAsset speedEffect = MakeInstantEffect(CharacterAttributeSet.Speed, 5f);
+            GameplayEffectAsset speedEffect = MakeInstantEffect(CharacterAttributeSet.SpeedAttribute, 5f);
             GameplayAbilityAsset asset = MakeTestAbilityAsset(costEffect, cooldownEffect, speedEffect);
 
             var spec = new GameplayAbilitySpec(asset);
@@ -77,7 +77,7 @@ namespace Test
             yield return new WaitForSeconds(CooldownDuration);
             Check("P-4 쿨다운 Duration이 지나면 프레임 Tick으로 쿨다운 태그가 빠지고 남은 쿨다운 0", !_asc.HasMatchingGameplayTag(cooldownTag) && Approx(template.GetCooldownTimeRemaining(_asc.AbilityGameObjectInfo), 0f));
 
-            _asc.SetAttributeBaseValue(CharacterAttributeSet.Stamina, 50f);
+            _asc.SetAttributeBaseValue(CharacterAttributeSet.StaminaAttribute, 50f);
             bool reactivated = _asc.TryActivateAbility(handle);
             Check("P-5 쿨다운이 끝나면 다시 발동 — Stamina 20, Speed 10", reactivated && Approx(Stamina(), 20f) && Approx(Speed(), 10f));
 
@@ -95,29 +95,29 @@ namespace Test
 
         private float Stamina()
         {
-            return _asc.GetAttributeCurrentValue(CharacterAttributeSet.Stamina);
+            return _asc.GetAttributeCurrentValue(CharacterAttributeSet.StaminaAttribute);
         }
 
         private float Speed()
         {
-            return _asc.GetAttributeCurrentValue(CharacterAttributeSet.Speed);
+            return _asc.GetAttributeCurrentValue(CharacterAttributeSet.SpeedAttribute);
         }
 
         private GameplayEffectAsset MakeInstantEffect(GameplayAttributeHandle attribute, float magnitude)
         {
             var ge = ScriptableObject.CreateInstance<GameplayEffectAsset>();
-            SetPrivateField(ge, "type", GameplayEffectType.Instant);
+            SetPrivateField(ge, "_type", GameplayEffectType.Instant);
 
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "_scalableFloatMagnitude", magnitude);
 
             object modifierBoxed = default(GameplayModifier);
-            SetPrivateField(modifierBoxed, "attribute", new GameplayAttribute(attribute));
-            SetPrivateField(modifierBoxed, "operation", GameplayModifierOperation.AddBase);
-            SetPrivateField(modifierBoxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(modifierBoxed, "_attribute", new GameplayAttribute(attribute));
+            SetPrivateField(modifierBoxed, "_operation", GameplayModifierOperation.AddBase);
+            SetPrivateField(modifierBoxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
 
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier> { (GameplayModifier)modifierBoxed });
+            SetPrivateField(ge, "_modifiers", new List<GameplayModifier> { (GameplayModifier)modifierBoxed });
             ge.OnGameplayEffectChanged();
 
             _created.Add(ge);
@@ -127,13 +127,13 @@ namespace Test
         private GameplayEffectAsset MakeCooldownEffect(GameplayTag cooldownTag)
         {
             var ge = ScriptableObject.CreateInstance<GameplayEffectAsset>();
-            SetPrivateField(ge, "type", GameplayEffectType.Duration);
-            SetPrivateField(ge, "duration", CooldownDuration);
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier>());
+            SetPrivateField(ge, "_type", GameplayEffectType.Duration);
+            SetPrivateField(ge, "_duration", CooldownDuration);
+            SetPrivateField(ge, "_modifiers", new List<GameplayModifier>());
 
             var grant = new TargetTagsGameplayEffectComponent();
             grant.GetConfiguredTargetTagChanges().AddTag(cooldownTag);
-            SetPrivateField(ge, "gameplayEffectComponents", new List<GameplayEffectComponent> { grant });
+            SetPrivateField(ge, "_gameplayEffectComponents", new List<GameplayEffectComponent> { grant });
             ge.OnGameplayEffectChanged();
 
             _created.Add(ge);
@@ -143,12 +143,12 @@ namespace Test
         private GameplayAbilityAsset MakeTestAbilityAsset(GameplayEffectAsset costEffect, GameplayEffectAsset cooldownEffect, GameplayEffectAsset testEffect)
         {
             var ability = new TestGameplayAbility();
-            SetPrivateField(ability, "costGameplayEffect", costEffect);
-            SetPrivateField(ability, "cooldownGameplayEffect", cooldownEffect);
+            SetPrivateField(ability, "_costGameplayEffect", costEffect);
+            SetPrivateField(ability, "_cooldownGameplayEffect", cooldownEffect);
             SetPrivateField(ability, "_testEffect", testEffect);
 
             var asset = ScriptableObject.CreateInstance<GameplayAbilityAsset>();
-            SetPrivateField(asset, "abilityTemplate", ability);
+            SetPrivateField(asset, "_abilityTemplate", ability);
 
             _created.Add(asset);
             return asset;

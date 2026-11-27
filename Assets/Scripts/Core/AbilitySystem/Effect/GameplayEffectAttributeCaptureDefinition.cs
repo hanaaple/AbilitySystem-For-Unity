@@ -1,6 +1,7 @@
 using System;
 using Core.AbilitySystem.Attribute;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.Effect
 {
@@ -11,40 +12,29 @@ namespace Core.AbilitySystem.Effect
     [Serializable]
     public struct GameplayEffectAttributeCaptureDefinition : IEquatable<GameplayEffectAttributeCaptureDefinition>
     {
-        [SerializeField] private AttributeCaptureSource captureSource;
-        [SerializeField] private GameplayAttribute attribute;
+        [SerializeField] [FormerlySerializedAs("captureSource")] private AttributeCaptureSource _captureSource;
+        [SerializeField] [FormerlySerializedAs("attribute")] private GameplayAttribute _attribute;
 
         // 스냅샷: true면 Spec 생성 시점의 값을 한 번 캡처해 고정(예: 시전 순간의 공격력).
         // false면 캡처가 필요한 시점(적용/Execution 실행)에 재조회(예: 매 틱 현재 방어력).
-        [SerializeField] private bool snapshot;
+        [SerializeField] [FormerlySerializedAs("snapshot")] private bool _snapshot;
 
-        public AttributeCaptureSource CaptureSource => captureSource;
-        public GameplayAttribute Attribute => attribute;
-        public bool Snapshot => snapshot;
+        public AttributeCaptureSource CaptureSource => _captureSource;
+        public GameplayAttribute Attribute => _attribute;
+        public bool Snapshot => _snapshot;
 
         public GameplayEffectAttributeCaptureDefinition(GameplayAttribute attribute, AttributeCaptureSource captureSource, bool snapshot)
         {
-            this.attribute = attribute;
-            this.captureSource = captureSource;
-            this.snapshot = snapshot;
+            _attribute = attribute;
+            _captureSource = captureSource;
+            _snapshot = snapshot;
         }
+
         public GameplayEffectAttributeCaptureDefinition(GameplayAttributeHandle gameplayAttributeHandle, AttributeCaptureSource captureSource, bool snapshot)
         {
-            this.attribute = new GameplayAttribute(gameplayAttributeHandle);
-            this.captureSource = captureSource;
-            this.snapshot = snapshot;
-        }
-
-        /// <summary>캡처 대상 핸들로 해석한다. 해석 실패 시 default(무효).</summary>
-        public GameplayAttributeHandle ToResolvedAttribute()
-        {
-            return attribute.ToAttributeHandle();
-        }
-
-        // 캡처 컨테이너에서 "같은 대상을 두 번 캡처하지 않게" 하는 키로 쓰이므로 값 동등성을 정의한다.
-        public bool Equals(GameplayEffectAttributeCaptureDefinition other)
-        {
-            return captureSource == other.captureSource && attribute.Equals(other.attribute) && snapshot == other.snapshot;
+            _attribute = new GameplayAttribute(gameplayAttributeHandle);
+            _captureSource = captureSource;
+            _snapshot = snapshot;
         }
 
         public override bool Equals(object obj)
@@ -54,12 +44,24 @@ namespace Core.AbilitySystem.Effect
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(captureSource, attribute, snapshot);
+            return HashCode.Combine(_captureSource, _attribute, _snapshot);
         }
 
         public override string ToString()
         {
-            return $"{captureSource}:{attribute}{(snapshot ? " (snapshot)" : "")}";
+            return $"{_captureSource}:{_attribute}{(_snapshot ? " (snapshot)" : "")}";
+        }
+
+        /// <summary>캡처 대상 핸들로 해석한다. 해석 실패 시 default(무효).</summary>
+        public GameplayAttributeHandle ToResolvedAttribute()
+        {
+            return _attribute.ToAttributeHandle();
+        }
+
+        // 캡처 컨테이너에서 "같은 대상을 두 번 캡처하지 않게" 하는 키로 쓰이므로 값 동등성을 정의한다.
+        public bool Equals(GameplayEffectAttributeCaptureDefinition other)
+        {
+            return _captureSource == other._captureSource && _attribute.Equals(other._attribute) && _snapshot == other._snapshot;
         }
     }
 }

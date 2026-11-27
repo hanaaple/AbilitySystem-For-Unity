@@ -9,7 +9,7 @@ namespace Core.AbilitySystem.Tag.Editor
         private const string WindowTitle = "Gameplay Tag Manager";
         private const string SettingsName = "Manager";
 
-        private static readonly Vector2 _defaultWindowSize = new(800f, 800f);
+        private static readonly Vector2 DefaultWindowSize = new(800f, 800f);
 
         [SerializeField] private string _filter = string.Empty;
 
@@ -21,15 +21,15 @@ namespace Core.AbilitySystem.Tag.Editor
             CreateTagWidget();
         }
 
+        private void OnGUI()
+        {
+            _tagWidget.OnGUI(new Rect(0f, 0f, position.width, position.height));
+        }
+
         private void OnDisable()
         {
             _tagWidget?.Dispose();
             _tagWidget = null;
-        }
-
-        private void OnGUI()
-        {
-            _tagWidget.OnGUI(new Rect(0f, 0f, position.width, position.height));
         }
 
         /// <summary>관리 창을 열고 검색창에 포커스를 준다. 이미 열려 있으면 그 창을 그대로 쓴다(필터도 유지).</summary>
@@ -52,7 +52,7 @@ namespace Core.AbilitySystem.Tag.Editor
         {
             _filter = filter ?? string.Empty;
             Rect windowPosition = position;
-            position = new Rect(windowPosition.x, windowPosition.y, _defaultWindowSize.x, _defaultWindowSize.y);
+            position = new Rect(windowPosition.x, windowPosition.y, DefaultWindowSize.x, DefaultWindowSize.y);
             CreateTagWidget();
         }
 

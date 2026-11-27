@@ -91,7 +91,7 @@ _asc.AbilityLocalInputPressed(0);
 
 // GE 적용·조회·제거
 ActiveGameplayEffectHandle handle = _asc.ApplyGameplayEffectToSelf(buffEffect);
-float hp = _asc.GetAttributeCurrentValue(CharacterAttributeSet.Health);
+float hp = _asc.GetAttributeCurrentValue(CharacterAttributeSet.HealthAttribute);
 bool stunned = _asc.HasMatchingGameplayTag(stunTag);
 _asc.RemoveActiveGameplayEffect(handle);
 ```

@@ -22,17 +22,11 @@ namespace Test.Editor
         {
             EnsureFolder();
 
-            GameplayEffectAsset defaultAttributes = CreateGe($"{Folder}/GE_DefaultAttributes_PlayModeTest.asset", GameplayEffectType.Instant,
-                MakeModifier(CharacterAttributeSet.Health, GameplayModifierOperation.Override, 100f),
-                MakeModifier(CharacterAttributeSet.Speed, GameplayModifierOperation.Override, 0f));
-            GameplayEffectAsset healthBoost = CreateGe($"{Folder}/GE_HealthBoost.asset", GameplayEffectType.Infinite,
-                MakeModifier(CharacterAttributeSet.Health, GameplayModifierOperation.AddBase, 100f));
-            GameplayEffectAsset speedLive = CreateGe($"{Folder}/GE_SpeedFromHealth_Live.asset", GameplayEffectType.Infinite,
-                MakeAttributeBasedModifier(CharacterAttributeSet.Speed, CharacterAttributeSet.Health, snapshot: false, coefficient: 0.5f));
-            GameplayEffectAsset speedSnap = CreateGe($"{Folder}/GE_SpeedFromHealth_Snapshot.asset", GameplayEffectType.Infinite,
-                MakeAttributeBasedModifier(CharacterAttributeSet.Speed, CharacterAttributeSet.Health, snapshot: true, coefficient: 0.5f));
-            GameplayEffectAsset instantHeal = CreateGe($"{Folder}/GE_InstantHeal.asset", GameplayEffectType.Instant,
-                MakeModifier(CharacterAttributeSet.Health, GameplayModifierOperation.AddBase, 30f));
+            GameplayEffectAsset defaultAttributes = CreateGe($"{Folder}/GE_DefaultAttributes_PlayModeTest.asset", GameplayEffectType.Instant, MakeModifier(CharacterAttributeSet.HealthAttribute, GameplayModifierOperation.Override, 100f), MakeModifier(CharacterAttributeSet.SpeedAttribute, GameplayModifierOperation.Override, 0f));
+            GameplayEffectAsset healthBoost = CreateGe($"{Folder}/GE_HealthBoost.asset", GameplayEffectType.Infinite, MakeModifier(CharacterAttributeSet.HealthAttribute, GameplayModifierOperation.AddBase, 100f));
+            GameplayEffectAsset speedLive = CreateGe($"{Folder}/GE_SpeedFromHealth_Live.asset", GameplayEffectType.Infinite, MakeAttributeBasedModifier(CharacterAttributeSet.SpeedAttribute, CharacterAttributeSet.HealthAttribute, snapshot: false, coefficient: 0.5f));
+            GameplayEffectAsset speedSnap = CreateGe($"{Folder}/GE_SpeedFromHealth_Snapshot.asset", GameplayEffectType.Infinite, MakeAttributeBasedModifier(CharacterAttributeSet.SpeedAttribute, CharacterAttributeSet.HealthAttribute, snapshot: true, coefficient: 0.5f));
+            GameplayEffectAsset instantHeal = CreateGe($"{Folder}/GE_InstantHeal.asset", GameplayEffectType.Instant, MakeModifier(CharacterAttributeSet.HealthAttribute, GameplayModifierOperation.AddBase, 30f));
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -43,8 +37,7 @@ namespace Test.Editor
         }
 
         // ── 씬 배선 ──
-        private static void WireScene(GameplayEffectAsset defaultAttributes, GameplayEffectAsset healthBoost,
-            GameplayEffectAsset speedLive, GameplayEffectAsset speedSnap, GameplayEffectAsset instantHeal)
+        private static void WireScene(GameplayEffectAsset defaultAttributes, GameplayEffectAsset healthBoost, GameplayEffectAsset speedLive, GameplayEffectAsset speedSnap, GameplayEffectAsset instantHeal)
         {
             const string goName = "AggregatorPlayModeTest";
 
@@ -59,11 +52,11 @@ namespace Test.Editor
             go.AddComponent<AbilitySystemComponent>();
             AggregatorPlayModeTest test = go.AddComponent<AggregatorPlayModeTest>();
 
-            SetSerializedRef(test, "geDefaultAttributes", defaultAttributes);
-            SetSerializedRef(test, "geHealthBoost", healthBoost);
-            SetSerializedRef(test, "geSpeedFromHealthLive", speedLive);
-            SetSerializedRef(test, "geSpeedFromHealthSnapshot", speedSnap);
-            SetSerializedRef(test, "geInstantHeal", instantHeal);
+            SetSerializedRef(test, "_geDefaultAttributes", defaultAttributes);
+            SetSerializedRef(test, "_geHealthBoost", healthBoost);
+            SetSerializedRef(test, "_geSpeedFromHealthLive", speedLive);
+            SetSerializedRef(test, "_geSpeedFromHealthSnapshot", speedSnap);
+            SetSerializedRef(test, "_geInstantHeal", instantHeal);
 
             EditorSceneManager.MarkSceneDirty(go.scene);
             EditorSceneManager.SaveOpenScenes();
@@ -87,8 +80,8 @@ namespace Test.Editor
         private static GameplayEffectAsset CreateGe(string path, GameplayEffectType type, params GameplayModifier[] modifiers)
         {
             GameplayEffectAsset ge = LoadOrCreate<GameplayEffectAsset>(path);
-            SetPrivateField(ge, "type", type);
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier>(modifiers));
+            SetPrivateField(ge, "_type", type);
+            SetPrivateField(ge, "_modifiers", new List<GameplayModifier>(modifiers));
             EditorUtility.SetDirty(ge);
             return ge;
         }
@@ -96,34 +89,33 @@ namespace Test.Editor
         private static GameplayModifier MakeModifier(GameplayAttributeHandle target, GameplayModifierOperation op, float magnitude)
         {
             object boxed = default(GameplayModifier);
-            SetPrivateField(boxed, "attribute", new GameplayAttribute(target));
-            SetPrivateField(boxed, "operation", op);
+            SetPrivateField(boxed, "_attribute", new GameplayAttribute(target));
+            SetPrivateField(boxed, "_operation", op);
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
-            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "_scalableFloatMagnitude", magnitude);
+            SetPrivateField(boxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 
         private static GameplayModifier MakeAttributeBasedModifier(GameplayAttributeHandle target, GameplayAttributeHandle captured, bool snapshot, float coefficient)
         {
-            GameplayEffectAttributeCaptureDefinition captureDef =
-                new GameplayEffectAttributeCaptureDefinition(captured, AttributeCaptureSource.Source, snapshot);
+            GameplayEffectAttributeCaptureDefinition captureDef = new GameplayEffectAttributeCaptureDefinition(captured, AttributeCaptureSource.Source, snapshot);
 
             AttributeBasedMagnitude attributeBased = new AttributeBasedMagnitude();
-            SetPrivateField(attributeBased, "backingAttribute", captureDef);
-            SetPrivateField(attributeBased, "captureValueType", AttributeCaptureValueType.CurrentValue);
-            SetPrivateField(attributeBased, "coefficient", coefficient);
-            SetPrivateField(attributeBased, "preMultiplyAdditive", 0f);
-            SetPrivateField(attributeBased, "postMultiplyAdditive", 0f);
+            SetPrivateField(attributeBased, "_backingAttribute", captureDef);
+            SetPrivateField(attributeBased, "_captureValueType", AttributeCaptureValueType.CurrentValue);
+            SetPrivateField(attributeBased, "_coefficient", coefficient);
+            SetPrivateField(attributeBased, "_preMultiplyAdditive", 0f);
+            SetPrivateField(attributeBased, "_postMultiplyAdditive", 0f);
 
             object boxed = default(GameplayModifier);
-            SetPrivateField(boxed, "attribute", new GameplayAttribute(target));
-            SetPrivateField(boxed, "operation", GameplayModifierOperation.AddBase);
+            SetPrivateField(boxed, "_attribute", new GameplayAttribute(target));
+            SetPrivateField(boxed, "_operation", GameplayModifierOperation.AddBase);
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
-            SetPrivateField(magnitudeBoxed, "attributeBasedMagnitude", attributeBased);
-            SetPrivateField(boxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
+            SetPrivateField(magnitudeBoxed, "_attributeBasedMagnitude", attributeBased);
+            SetPrivateField(boxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
             return (GameplayModifier)boxed;
         }
 

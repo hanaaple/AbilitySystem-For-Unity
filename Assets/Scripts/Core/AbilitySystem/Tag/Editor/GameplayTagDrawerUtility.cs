@@ -10,18 +10,18 @@ namespace Core.AbilitySystem.Tag.Editor
     internal static class GameplayTagDrawerUtility
     {
         // 질의 편집 창의 편집용 오브젝트 → 원래 Query 필드의 Categories. 창 안 컨테이너 필드는 자기 fieldInfo에 속성이 없어 여기서 돌려받는다
-        private static readonly Dictionary<Object, string> _categoriesOverrides = new();
+        private static readonly Dictionary<Object, string> CategoriesOverrides = new();
 
         /// <summary><paramref name="target"/> 아래 필드에 <see cref="GameplayTagCategoriesAttribute"/>가 없으면 <paramref name="categories"/>를 쓰게 한다.</summary>
         /// <remarks>UE: SGameplayTagQueryWidget::OnGetCategoriesMetaFromPropertyHandle</remarks>
         public static void SetCategoriesOverride(Object target, string categories)
         {
-            _categoriesOverrides[target] = categories;
+            CategoriesOverrides[target] = categories;
         }
 
         public static void RemoveCategoriesOverride(Object target)
         {
-            _categoriesOverrides.Remove(target);
+            CategoriesOverrides.Remove(target);
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Core.AbilitySystem.Tag.Editor
             if (categories == null)
             {
                 SerializedObject serializedObject = property.serializedObject;
-                _categoriesOverrides.TryGetValue(serializedObject.targetObject, out categories);
+                CategoriesOverrides.TryGetValue(serializedObject.targetObject, out categories);
             }
 
             propertyHandle = new GameplayTagPropertyHandle(property, isContainer, categories);

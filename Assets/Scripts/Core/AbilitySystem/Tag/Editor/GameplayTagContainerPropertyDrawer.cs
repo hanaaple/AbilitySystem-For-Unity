@@ -17,17 +17,17 @@ namespace Core.AbilitySystem.Tag.Editor
         private const float ArrowWidth = 14f;
         private const float EmptyTextIndent = 4f;
 
-        private static readonly GUIContent _emptyContent = new("Empty", "Empty Gameplay Tag container");
-        private static readonly GUIContent _arrowContent = new("▾");
+        private static readonly GUIContent EmptyContent = new("Empty", "Empty Gameplay Tag container");
+        private static readonly GUIContent ArrowContent = new("▾");
 
-        private static GUIStyle _arrowStyle;
-        private static GUIStyle _emptyStyle;
+        private static GUIStyle CachedArrowStyle;
+        private static GUIStyle CachedEmptyStyle;
 
         private readonly Dictionary<string, GameplayTagPropertyHandle> _propertyHandles = new();
 
-        private static GUIStyle ArrowStyle => _arrowStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
+        private static GUIStyle ArrowStyle => CachedArrowStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
 
-        private static GUIStyle EmptyStyle => _emptyStyle ??= new GUIStyle(EditorStyles.label) { normal = { textColor = Color.gray } };
+        private static GUIStyle EmptyStyle => CachedEmptyStyle ??= new GUIStyle(EditorStyles.label) { normal = { textColor = Color.gray } };
 
         // 높이와 그리기가 같은 목록(GetTagsToEdit)에서 줄 수를 정해야 칩과 영역이 어긋나지 않는다
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -87,7 +87,7 @@ namespace Core.AbilitySystem.Tag.Editor
             if (tagsToEdit.Count == 0)
             {
                 var emptyRect = new Rect(boxRect.x + BoxPadding + EmptyTextIndent, boxRect.y + BoxPadding, boxRect.width - BoxPadding * 2f - EmptyTextIndent, lineHeight);
-                EditorGUI.LabelField(emptyRect, _emptyContent, EmptyStyle);
+                EditorGUI.LabelField(emptyRect, EmptyContent, EmptyStyle);
 
                 if (currentEvent.type == EventType.ContextClick && boxRect.Contains(currentEvent.mousePosition))
                 {
@@ -130,7 +130,7 @@ namespace Core.AbilitySystem.Tag.Editor
             }
 
             string tagToHilight = tagsToEdit.Count > 0 ? tagsToEdit[0].TagName : null;
-            if (EditorGUI.DropdownButton(arrowRect, _arrowContent, FocusType.Keyboard, ArrowStyle))
+            if (EditorGUI.DropdownButton(arrowRect, ArrowContent, FocusType.Keyboard, ArrowStyle))
             {
                 GameplayTagDrawerUtility.OpenPicker(rect, propertyHandle, tagToHilight);
             }

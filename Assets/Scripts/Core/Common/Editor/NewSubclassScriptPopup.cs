@@ -16,20 +16,6 @@ namespace Core.Common.Editor
         private string _folder;
         private bool _focusPending;
 
-        // onCreated: 스크립트 생성 직후(리로드 전) 호출된다. 인자는 (만든 클래스명, 생성된 .cs 경로).
-        public static void Show(Rect activatorScreenRect, Type baseType, Action<string, string> onCreated)
-        {
-            var window = CreateInstance<NewSubclassScriptPopup>();
-            window._baseType = baseType;
-            window._onCreated = onCreated;
-            window._className = SubclassScriptTemplate.SuggestClassName(baseType);
-            window._folder = DefaultFolder;
-            window._focusPending = true;
-
-            float width = Mathf.Max(activatorScreenRect.width, 320f);
-            window.ShowAsDropDown(activatorScreenRect, new Vector2(width, 128f));
-        }
-
         private void OnGUI()
         {
             EditorGUILayout.LabelField($"New {_baseType.Name} Script", EditorStyles.boldLabel);
@@ -63,6 +49,20 @@ namespace Core.Common.Editor
             {
                 CreateAndClose();
             }
+        }
+
+        // onCreated: 스크립트 생성 직후(리로드 전) 호출된다. 인자는 (만든 클래스명, 생성된 .cs 경로).
+        public static void Show(Rect activatorScreenRect, Type baseType, Action<string, string> onCreated)
+        {
+            var window = CreateInstance<NewSubclassScriptPopup>();
+            window._baseType = baseType;
+            window._onCreated = onCreated;
+            window._className = SubclassScriptTemplate.SuggestClassName(baseType);
+            window._folder = DefaultFolder;
+            window._focusPending = true;
+
+            float width = Mathf.Max(activatorScreenRect.width, 320f);
+            window.ShowAsDropDown(activatorScreenRect, new Vector2(width, 128f));
         }
 
         private void CreateAndClose()

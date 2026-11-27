@@ -38,7 +38,7 @@ MonoBehaviour:
         attribute:
           attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
             Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-          fieldName: attack
+          fieldName: Attack
         snapshot: 1
       modifierOp: 1
       modifierMagnitude:

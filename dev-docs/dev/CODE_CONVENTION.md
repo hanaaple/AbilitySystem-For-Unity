@@ -17,9 +17,9 @@ Unity C# 코드 **스타일** 규약(네이밍·포맷팅·멤버 순서). `.edi
 | 메서드 | PascalCase | `TakeDamage()` |
 | 프로퍼티 | PascalCase | `IsGrounded` |
 | public 필드 | PascalCase | `MoveSpeed` |
-| 정적 필드 | PascalCase | `InstanceCount` |
+| 정적 필드 (private 포함) | PascalCase | `InstanceCount` |
 | 상수 | PascalCase | `MaxHealth` |
-| private 필드 | `_` + camelCase | `_health` |
+| private 필드 (인스턴스) | `_` + camelCase | `_health` |
 | 지역 변수 / 매개 변수 | camelCase | `deltaTime` |
 | 이벤트 | `On` + PascalCase | `OnDeath` |
 
@@ -123,7 +123,7 @@ this._health = 100;
 
 ### 긴 줄 — 한 줄 유지
 
-길이가 길어도 한 줄로 유지한다(시그니처·호출·조건식 전반). 예외: LINQ류 쿼리 메서드 체인만 줄을 나눈다. (연쇄 호출 자체의 규칙은 코드 작성 규약 '연쇄 호출' 참고.)
+길이가 길어도 한 줄로 유지한다(시그니처·호출·조건식 전반). 예외: LINQ류 쿼리 메서드 체인, 길어진 삼항 연산자(`?`·`:` 앞에서 줄 나눔)만 줄을 나눈다. (연쇄 호출 자체의 규칙은 코드 작성 규약 '연쇄 호출' 참고.)
 
 ```csharp
 // ✅ 길어도 한 줄
@@ -135,6 +135,11 @@ private void Apply(GameplayEffectSpec spec, AttributeAggregator agg, GameplayTag
 var actives = effects
     .Where(e => e.IsActive)
     .Select(e => e.Handle);
+
+// ✅ 예외 — 길어진 삼항 연산자는 ? · : 앞에서 줄 나눔 허용
+float value = valueType == AttributeCaptureValueType.BaseValue
+    ? aggregator.GetBaseValue()
+    : aggregator.Evaluate(parameters);
 ```
 
 ### switch

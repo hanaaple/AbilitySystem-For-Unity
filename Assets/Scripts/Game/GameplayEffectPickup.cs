@@ -4,6 +4,7 @@ using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Effect;
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game
 {
@@ -12,39 +13,39 @@ namespace Game
     [RequireComponent(typeof(Collider))]
     public class GameplayEffectPickup : MonoBehaviour, IDebugOverlayTarget
     {
-        [SerializeField] private GameplayEffectAsset effect;
-        [SerializeField] private float level = 1f;
+        [SerializeField] [FormerlySerializedAs("effect")] private GameplayEffectAsset _effect;
+        [SerializeField] [FormerlySerializedAs("level")] private float _level = 1f;
 
         // Instant GE는 태그를 부여할 수 없어, 먹은 순간의 연출 태그 같은 것은 따로 거는 지속형 GE로 준다
         [Tooltip("effect와 함께 같은 대상에게 거는 GE들(예: 잠깐 연출 태그를 주는 지속형 GE).")]
-        [SerializeField] private List<GameplayEffectAsset> additionalEffects = new();
+        [SerializeField] [FormerlySerializedAs("additionalEffects")] private List<GameplayEffectAsset> _additionalEffects = new();
 
         [Tooltip("먹은 대상에게 바로 발동하는 GA. 대상에게 없으면 부여한 뒤 발동하고, 다음에 또 먹을 때 쓰도록 부여한 채 둔다.")]
-        [SerializeField] private GameplayAbilityAsset ability;
+        [SerializeField] [FormerlySerializedAs("ability")] private GameplayAbilityAsset _ability;
 
         [Tooltip("디버그 오버레이에서 겨눴을 때 보일 썸네일.")]
-        [SerializeField] private Texture2D debugThumbnail;
+        [SerializeField] [FormerlySerializedAs("debugThumbnail")] private Texture2D _debugThumbnail;
 
         // 끄면 반복 적용 테스트용으로 남는다(트리거를 다시 밟을 때마다 적용).
         [Tooltip("재생성 쿨다운 GE가 비었을 때만 쓴다.")]
-        [SerializeField] private bool destroyOnPickup = true;
+        [SerializeField] [FormerlySerializedAs("destroyOnPickup")] private bool _destroyOnPickup = true;
 
         [Header("Respawn")]
         [Tooltip("픽업 자신의 ASC에 거는 Duration GE. 이 GE가 주는 태그가 붙어 있는 동안 숨고, 빠지면 다시 나타난다. 비우면 재생성하지 않는다.")]
-        [SerializeField] private GameplayEffectAsset respawnCooldownEffect;
+        [SerializeField] [FormerlySerializedAs("respawnCooldownEffect")] private GameplayEffectAsset _respawnCooldownEffect;
 
         [Tooltip("재생성 쿨다운 GE가 주는 태그. 그 GE의 부여 태그와 같아야 한다.")]
-        [SerializeField] private GameplayTag respawnCooldownTag;
+        [SerializeField] [FormerlySerializedAs("respawnCooldownTag")] private GameplayTag _respawnCooldownTag;
 
         [Tooltip("쿨다운 동안 숨기는 겉모습.")]
-        [SerializeField] private GameObject visual;
+        [SerializeField] [FormerlySerializedAs("visual")] private GameObject _visual;
 
         [Tooltip("겉모습이 도는 속도(도/초).")]
-        [SerializeField] private float rotationSpeed = 90f;
+        [SerializeField] [FormerlySerializedAs("rotationSpeed")] private float _rotationSpeed = 90f;
 
         [Tooltip("겉모습이 위아래로 떠오르는 폭(m)과 속도(회/초).")]
-        [SerializeField] private float bobHeight = 0.1f;
-        [SerializeField] private float bobSpeed = 0.6f;
+        [SerializeField] [FormerlySerializedAs("bobHeight")] private float _bobHeight = 0.1f;
+        [SerializeField] [FormerlySerializedAs("bobSpeed")] private float _bobSpeed = 0.6f;
 
         // 같은 프레임에 같은 액터가 중복 적용되는 것을 막는다.
         // OnTriggerEnter는 **콜라이더 단위**로 오므로, 한 액터에 콜라이더가 여러 개면
@@ -57,20 +58,23 @@ namespace Game
         private Collider _trigger;
         private Vector3 _visualBasePosition;
 
-        private bool UsesRespawn => respawnCooldownEffect != null && _selfAbilitySystem != null;
+        private bool UsesRespawn => _respawnCooldownEffect != null && _selfAbilitySystem != null;
 
         public string DebugName => name;
 
-        public Texture2D DebugThumbnail => debugThumbnail;
+        public Texture2D DebugThumbnail => _debugThumbnail;
 
         // 픽업 자신의 ASC — 재생성 쿨다운 GE가 여기 걸린다
         public AbilitySystemComponent DebugAbilitySystem => _selfAbilitySystem;
 
-        public void AppendDebugLines(List<string> lines)
+        private void Awake()
         {
-            lines.Add("Grants\t" + (ability != null ? ability.name : effect != null ? effect.name : "-"));
-            bool isAvailable = !UsesRespawn || !_selfAbilitySystem.HasMatchingGameplayTag(respawnCooldownTag);
-            lines.Add("State\t" + (isAvailable ? "<color=#7CFC9A>available</color>" : "<color=#FFB86B>respawning</color>"));
+            _trigger = GetComponent<Collider>();
+            _selfAbilitySystem = GetComponent<AbilitySystemComponent>();
+            if (_visual != null)
+            {
+                _visualBasePosition = _visual.transform.localPosition;
+            }
         }
 
         private void Reset()
@@ -79,39 +83,11 @@ namespace Game
             GetComponent<Collider>().isTrigger = true;
         }
 
-        private void Awake()
-        {
-            _trigger = GetComponent<Collider>();
-            _selfAbilitySystem = GetComponent<AbilitySystemComponent>();
-            if (visual != null)
-            {
-                _visualBasePosition = visual.transform.localPosition;
-            }
-        }
-
         private void Start()
         {
             if (UsesRespawn)
             {
-                _selfAbilitySystem.RegisterGameplayTagEvent(respawnCooldownTag, OnRespawnCooldownChanged);
-            }
-        }
-
-        private void Update()
-        {
-            if (visual != null)
-            {
-                visual.transform.Rotate(0f, rotationSpeed * Time.deltaTime, 0f, Space.World);
-                float bob = Mathf.Sin(Time.time * bobSpeed * Mathf.PI * 2f) * bobHeight;
-                visual.transform.localPosition = _visualBasePosition + Vector3.up * bob;
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (UsesRespawn)
-            {
-                _selfAbilitySystem.UnregisterGameplayTagEvent(OnRespawnCooldownChanged, respawnCooldownTag);
+                _selfAbilitySystem.RegisterGameplayTagEvent(_respawnCooldownTag, OnRespawnCooldownChanged);
             }
         }
 
@@ -120,14 +96,39 @@ namespace Game
             TryPickUp(other);
         }
 
+        private void Update()
+        {
+            if (_visual != null)
+            {
+                _visual.transform.Rotate(0f, _rotationSpeed * Time.deltaTime, 0f, Space.World);
+                float bob = Mathf.Sin(Time.time * _bobSpeed * Mathf.PI * 2f) * _bobHeight;
+                _visual.transform.localPosition = _visualBasePosition + Vector3.up * bob;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (UsesRespawn)
+            {
+                _selfAbilitySystem.UnregisterGameplayTagEvent(OnRespawnCooldownChanged, _respawnCooldownTag);
+            }
+        }
+
+        public void AppendDebugLines(List<string> lines)
+        {
+            lines.Add("Grants\t" + (_ability != null ? _ability.name : _effect != null ? _effect.name : "-"));
+            bool isAvailable = !UsesRespawn || !_selfAbilitySystem.HasMatchingGameplayTag(_respawnCooldownTag);
+            lines.Add("State\t" + (isAvailable ? "<color=#7CFC9A>available</color>" : "<color=#FFB86B>respawning</color>"));
+        }
+
         private void TryPickUp(Collider other)
         {
-            if (effect == null && ability == null)
+            if (_effect == null && _ability == null)
             {
                 return;
             }
 
-            if (UsesRespawn && _selfAbilitySystem.HasMatchingGameplayTag(respawnCooldownTag))
+            if (UsesRespawn && _selfAbilitySystem.HasMatchingGameplayTag(_respawnCooldownTag))
             {
                 return;
             }
@@ -147,20 +148,20 @@ namespace Game
             _lastTarget = asc;
             _lastFrame = Time.frameCount;
 
-            if (effect != null)
+            if (_effect != null)
             {
-                asc.ApplyGameplayEffectToSelf(effect, default, level);
+                asc.ApplyGameplayEffectToSelf(_effect, default, _level);
             }
 
-            foreach (GameplayEffectAsset additionalEffect in additionalEffects)
+            foreach (GameplayEffectAsset additionalEffect in _additionalEffects)
             {
                 if (additionalEffect != null)
                 {
-                    asc.ApplyGameplayEffectToSelf(additionalEffect, default, level);
+                    asc.ApplyGameplayEffectToSelf(additionalEffect, default, _level);
                 }
             }
 
-            if (ability != null)
+            if (_ability != null)
             {
                 ActivateAbility(asc);
             }
@@ -169,11 +170,11 @@ namespace Game
 
             if (UsesRespawn)
             {
-                _selfAbilitySystem.ApplyGameplayEffectToSelf(respawnCooldownEffect);
+                _selfAbilitySystem.ApplyGameplayEffectToSelf(_respawnCooldownEffect);
                 return;
             }
 
-            if (destroyOnPickup)
+            if (_destroyOnPickup)
             {
                 Destroy(gameObject);
             }
@@ -181,8 +182,8 @@ namespace Game
 
         private void ActivateAbility(AbilitySystemComponent asc)
         {
-            GameplayAbilitySpec spec = asc.FindAbilitySpecFromAsset(ability);
-            GameplayAbilitySpecHandle handle = spec != null ? spec.Handle : asc.GiveAbility(new GameplayAbilitySpec(ability));
+            GameplayAbilitySpec spec = asc.FindAbilitySpecFromAsset(_ability);
+            GameplayAbilitySpecHandle handle = spec != null ? spec.Handle : asc.GiveAbility(new GameplayAbilitySpec(_ability));
             asc.TryActivateAbility(handle);
         }
 
@@ -200,9 +201,9 @@ namespace Game
         private void OnRespawnCooldownChanged(GameplayTag changedTag, int newCount)
         {
             bool isAvailable = newCount == 0;
-            if (visual != null)
+            if (_visual != null)
             {
-                visual.SetActive(isAvailable);
+                _visual.SetActive(isAvailable);
             }
 
             if (isAvailable)

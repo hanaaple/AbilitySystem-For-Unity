@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Abilities
 {
@@ -13,7 +14,7 @@ namespace Game.Abilities
     public sealed class HoldInputAbility : CharacterGameplayAbility
     {
         [Tooltip("활성인 동안 소유자에게 걸어 두고 끝날 때 지우는 GE(Infinite).")]
-        [SerializeField] private List<GameplayEffectAsset> whileActiveEffects = new();
+        [SerializeField] [FormerlySerializedAs("whileActiveEffects")] private List<GameplayEffectAsset> _whileActiveEffects = new();
 
         private readonly List<ActiveGameplayEffectHandle> _activeHandles = new();
 
@@ -26,7 +27,7 @@ namespace Game.Abilities
             }
 
             float level = GetAbilityLevel(handle, gameObjectInfo);
-            foreach (GameplayEffectAsset effect in whileActiveEffects)
+            foreach (GameplayEffectAsset effect in _whileActiveEffects)
             {
                 if (effect != null)
                 {

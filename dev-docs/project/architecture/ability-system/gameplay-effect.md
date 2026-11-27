@@ -143,7 +143,7 @@ flowchart TD
 public sealed class DamageExecution : GameplayEffectExecution
 {
     private static readonly GameplayEffectAttributeCaptureDefinition AttackDef =
-        new(CharacterAttributeSet.Attack, AttributeCaptureSource.Source, true);
+        new(CharacterAttributeSet.AttackAttribute, AttributeCaptureSource.Source, true);
     private static readonly GameplayEffectAttributeCaptureDefinition[] CaptureDefs = { AttackDef };
 
     public override ReadOnlySpan<GameplayEffectAttributeCaptureDefinition> Defs()
@@ -158,7 +158,7 @@ public sealed class DamageExecution : GameplayEffectExecution
             return;
         }
 
-        output.AddOutputModifier(CharacterAttributeSet.Health, -attack, GameplayModifierOperation.AddBase);
+        output.AddOutputModifier(CharacterAttributeSet.HealthAttribute, -attack, GameplayModifierOperation.AddBase);
     }
 }
 ```

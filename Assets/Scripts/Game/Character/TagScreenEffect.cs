@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace Game.Character
 {
@@ -12,10 +13,10 @@ namespace Game.Character
     public class TagScreenEffect : TagFadeEffect
     {
         // 후처리 항목 종류 → 그 항목을 덮어쓰는 효과
-        private static readonly Dictionary<Type, TagScreenEffect> _ownersByComponent = new();
+        private static readonly Dictionary<Type, TagScreenEffect> OwnersByComponent = new();
 
         [Tooltip("weight 0에서 시작하는 전역 Volume.")]
-        [SerializeField] private Volume volume;
+        [SerializeField] [FormerlySerializedAs("volume")] private Volume _volume;
 
         protected override void Start()
         {
@@ -28,16 +29,16 @@ namespace Game.Character
             base.OnDestroy();
             foreach (VolumeComponent component in GetOverriddenComponents())
             {
-                if (_ownersByComponent.TryGetValue(component.GetType(), out TagScreenEffect owner) && owner == this)
+                if (OwnersByComponent.TryGetValue(component.GetType(), out TagScreenEffect owner) && owner == this)
                 {
-                    _ownersByComponent.Remove(component.GetType());
+                    OwnersByComponent.Remove(component.GetType());
                 }
             }
         }
 
         protected override void ApplyWeight(float weight)
         {
-            volume.weight = weight;
+            _volume.weight = weight;
         }
 
         private void ClaimComponents()
@@ -45,24 +46,24 @@ namespace Game.Character
             foreach (VolumeComponent component in GetOverriddenComponents())
             {
                 Type type = component.GetType();
-                if (_ownersByComponent.TryGetValue(type, out TagScreenEffect owner) && owner != null && owner != this)
+                if (OwnersByComponent.TryGetValue(type, out TagScreenEffect owner) && owner != null && owner != this)
                 {
                     Debug.LogWarning($"TagScreenEffect: '{name}'과 '{owner.name}'이 같은 후처리 항목 {type.Name}을 덮어써 동시에 켜지면 섞입니다. 항목을 나누거나 TagScreenOverlay를 쓰세요.", this);
                     continue;
                 }
 
-                _ownersByComponent[type] = this;
+                OwnersByComponent[type] = this;
             }
         }
 
         private IEnumerable<VolumeComponent> GetOverriddenComponents()
         {
-            if (volume == null || volume.sharedProfile == null)
+            if (_volume == null || _volume.sharedProfile == null)
             {
                 yield break;
             }
 
-            foreach (VolumeComponent component in volume.sharedProfile.components)
+            foreach (VolumeComponent component in _volume.sharedProfile.components)
             {
                 if (component.active && component.AnyPropertiesIsOverridden())
                 {

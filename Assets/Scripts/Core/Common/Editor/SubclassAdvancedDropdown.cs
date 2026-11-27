@@ -24,15 +24,7 @@ namespace Core.Common.Editor
         // 후보가 하나도 없을 때 보여줄 비활성 안내(무반응처럼 보이지 않게). null이면 표시 안 함.
         private readonly string _emptyMessage;
 
-        public SubclassAdvancedDropdown(
-            string title,
-            IReadOnlyList<Type> types,
-            bool includeNone,
-            Action<Type> onSelected,
-            Action onNewScript,
-            string emptyMessage,
-            AdvancedDropdownState state)
-            : base(state)
+        public SubclassAdvancedDropdown(string title, IReadOnlyList<Type> types, bool includeNone, Action<Type> onSelected, Action onNewScript, string emptyMessage, AdvancedDropdownState state) : base(state)
         {
             _title = title;
             _types = types;
@@ -49,19 +41,19 @@ namespace Core.Common.Editor
         {
             public readonly Type Type;
 
-            public TypeItem(string name, Type type, int id) : base(name)
+            public TypeItem(string name, Type type, int itemId) : base(name)
             {
                 Type = type;
-                this.id = id;
+                id = itemId;
             }
         }
 
         // "New Script..." 전용 마커 항목. 타입 선택이 아니라 새 스크립트 생성 흐름으로 분기시킨다.
         private sealed class NewScriptItem : AdvancedDropdownItem
         {
-            public NewScriptItem(string name, int id) : base(name)
+            public NewScriptItem(string name, int itemId) : base(name)
             {
-                this.id = id;
+                id = itemId;
             }
         }
 

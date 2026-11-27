@@ -10,6 +10,17 @@ namespace Core.Common.Editor
     /// <summary>baseType을 상속하는 새 서브클래스 .cs를 만드는 순수 저작 로직. UI(EditorWindow)·배정(SessionState/리로드)과 분리 — 여기는 "무슨 소스를, 어디에, 유효하게" 쓰나만 안다. (Unity ScriptTemplates .txt 대신 타입 정보로 소스를 조립해 상속 대상을 코드로 보장.)</summary>
     internal static class SubclassScriptTemplate
     {
+        private static readonly HashSet<string> Keywords = new()
+        {
+            "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const",
+            "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event", "explicit", "extern",
+            "false", "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit", "in", "int", "interface",
+            "internal", "is", "lock", "long", "namespace", "new", "null", "object", "operator", "out", "override",
+            "params", "private", "protected", "public", "readonly", "ref", "return", "sbyte", "sealed", "short",
+            "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true", "try", "typeof",
+            "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
+        };
+
         // 기본 클래스명 제안: "New" + baseType 이름.
         public static string SuggestClassName(Type baseType)
         {
@@ -65,7 +76,7 @@ namespace Core.Common.Editor
         // 선행 "Assets"·"Scripts"는 루트 취급해 떼어낸다. 남는 게 없으면 전역 네임스페이스.
         private static string DeriveNamespace(string folder)
         {
-            var parts = folder.Replace('\\', '/').Split('/').Where(part => part.Length > 0).ToList();
+            List<string> parts = folder.Replace('\\', '/').Split('/').Where(part => part.Length > 0).ToList();
 
             if (parts.Count > 0 && parts[0] == "Assets")
             {
@@ -125,18 +136,7 @@ namespace Core.Common.Editor
                 }
             }
 
-            return !_keywords.Contains(name);
+            return !Keywords.Contains(name);
         }
-
-        private static readonly HashSet<string> _keywords = new()
-        {
-            "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const",
-            "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event", "explicit", "extern",
-            "false", "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit", "in", "int", "interface",
-            "internal", "is", "lock", "long", "namespace", "new", "null", "object", "operator", "out", "override",
-            "params", "private", "protected", "public", "readonly", "ref", "return", "sbyte", "sealed", "short",
-            "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true", "try", "typeof",
-            "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
-        };
     }
 }

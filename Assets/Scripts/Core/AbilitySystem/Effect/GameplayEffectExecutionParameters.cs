@@ -11,6 +11,10 @@ namespace Core.AbilitySystem.Effect
     /// <remarks>UE: FGameplayEffectCustomExecutionParameters</remarks>
     public readonly struct GameplayEffectExecutionParameters
     {
+        // Calculation Modifier가 걸린 캡처 어트리뷰트별 aggregator 사본. 캡처 aggregator를 복사한 뒤 modifier를 더해, 실제 캐릭터 값은 그대로다.
+        // Calculation Modifier가 없으면 null.
+        private readonly Dictionary<GameplayEffectAttributeCaptureDefinition, AttributeAggregator> _scopedModifierAggregators;
+
         /// <summary>GE를 받는 대상 ASC.</summary>
         public AbilitySystemComponent TargetAsc { get; }
 
@@ -18,10 +22,6 @@ namespace Core.AbilitySystem.Effect
         public AbilitySystemComponent SourceAsc { get; }
 
         public GameplayEffectSpec Spec { get; }
-
-        // Calculation Modifier가 걸린 캡처 어트리뷰트별 aggregator 사본. 캡처 aggregator를 복사한 뒤 modifier를 더해, 실제 캐릭터 값은 그대로다.
-        // Calculation Modifier가 없으면 null.
-        private readonly Dictionary<GameplayEffectAttributeCaptureDefinition, AttributeAggregator> _scopedModifierAggregators;
 
         /// <param name="scopedModifiers">이 Execution 정의의 Calculation Modifier들.</param>
         /// <remarks>UE: FGameplayEffectCustomExecutionParameters::FGameplayEffectCustomExecutionParameters</remarks>
@@ -31,43 +31,6 @@ namespace Core.AbilitySystem.Effect
             SourceAsc = spec.Context.GetInstigator();
             Spec = spec;
             _scopedModifierAggregators = BuildScopedModifierAggregators(spec, scopedModifiers);
-        }
-
-        private static Dictionary<GameplayEffectAttributeCaptureDefinition, AttributeAggregator> BuildScopedModifierAggregators(GameplayEffectSpec spec, IReadOnlyList<GameplayEffectExecutionScopedModifierInfo> scopedModifiers)
-        {
-            if (scopedModifiers == null || scopedModifiers.Count == 0)
-            {
-                return null;
-            }
-
-            var scopedModifierAggregators = new Dictionary<GameplayEffectAttributeCaptureDefinition, AttributeAggregator>();
-            GameplayEffectAttributeCaptureSpecContainer capturedRelevantAttributes = spec.CapturedRelevantAttributes;
-            foreach (GameplayEffectExecutionScopedModifierInfo scopedModifier in scopedModifiers)
-            {
-                GameplayEffectAttributeCaptureDefinition capturedAttribute = scopedModifier.CapturedAttribute;
-                if (!scopedModifierAggregators.TryGetValue(capturedAttribute, out AttributeAggregator scopedAggregator))
-                {
-                    GameplayEffectAttributeCaptureSpec captureSpec = capturedRelevantAttributes.FindCaptureSpecByDefinition(capturedAttribute, true);
-                    var snapshotAggregator = new AttributeAggregator();
-                    if (captureSpec.AttemptGetAttributeAggregatorSnapshot(snapshotAggregator))
-                    {
-                        scopedAggregator = snapshotAggregator;
-                        scopedModifierAggregators.Add(capturedAttribute, scopedAggregator);
-                    }
-                }
-
-                GameplayEffectModifierMagnitude modifierMagnitude = scopedModifier.ModifierMagnitude;
-                if (scopedAggregator != null && modifierMagnitude.AttemptCalculateMagnitude(spec, out float modifierValue))
-                {
-                    scopedAggregator.AddAggregatorMod(default, scopedModifier.ModifierOp, modifierValue, scopedModifier.SourceTags, scopedModifier.TargetTags);
-                }
-                else
-                {
-                    Debug.LogWarning($"[GEExecution] '{spec.Definition.name}'의 Calculation Modifier({capturedAttribute})를 계산하지 못해 건너뜀 — 대상이 캡처되지 않았거나 magnitude 계산에 필요한 값이 없다.");
-                }
-            }
-
-            return scopedModifierAggregators;
         }
 
         /// <summary>
@@ -123,6 +86,43 @@ namespace Core.AbilitySystem.Effect
         public bool AttemptGetCapturedAttributeAggregatorSnapshot(GameplayEffectAttributeCaptureDefinition captureDefinition, AttributeAggregator outSnapshottedAggregator)
         {
             throw new NotImplementedException();
+        }
+
+        private static Dictionary<GameplayEffectAttributeCaptureDefinition, AttributeAggregator> BuildScopedModifierAggregators(GameplayEffectSpec spec, IReadOnlyList<GameplayEffectExecutionScopedModifierInfo> scopedModifiers)
+        {
+            if (scopedModifiers == null || scopedModifiers.Count == 0)
+            {
+                return null;
+            }
+
+            var scopedModifierAggregators = new Dictionary<GameplayEffectAttributeCaptureDefinition, AttributeAggregator>();
+            GameplayEffectAttributeCaptureSpecContainer capturedRelevantAttributes = spec.CapturedRelevantAttributes;
+            foreach (GameplayEffectExecutionScopedModifierInfo scopedModifier in scopedModifiers)
+            {
+                GameplayEffectAttributeCaptureDefinition capturedAttribute = scopedModifier.CapturedAttribute;
+                if (!scopedModifierAggregators.TryGetValue(capturedAttribute, out AttributeAggregator scopedAggregator))
+                {
+                    GameplayEffectAttributeCaptureSpec captureSpec = capturedRelevantAttributes.FindCaptureSpecByDefinition(capturedAttribute, true);
+                    var snapshotAggregator = new AttributeAggregator();
+                    if (captureSpec.AttemptGetAttributeAggregatorSnapshot(snapshotAggregator))
+                    {
+                        scopedAggregator = snapshotAggregator;
+                        scopedModifierAggregators.Add(capturedAttribute, scopedAggregator);
+                    }
+                }
+
+                GameplayEffectModifierMagnitude modifierMagnitude = scopedModifier.ModifierMagnitude;
+                if (scopedAggregator != null && modifierMagnitude.AttemptCalculateMagnitude(spec, out float modifierValue))
+                {
+                    scopedAggregator.AddAggregatorMod(default, scopedModifier.ModifierOp, modifierValue, scopedModifier.SourceTags, scopedModifier.TargetTags);
+                }
+                else
+                {
+                    Debug.LogWarning($"[GEExecution] '{spec.Definition.name}'의 Calculation Modifier({capturedAttribute})를 계산하지 못해 건너뜀 — 대상이 캡처되지 않았거나 magnitude 계산에 필요한 값이 없다.");
+                }
+            }
+
+            return scopedModifierAggregators;
         }
 
         // TODO 미구현 — UE AttemptGatherAttributeMods(캡처 정의의 mod 목록을 채널별로 돌려줌)·ForEachQualifiedAttributeMod(자격 있는 mod마다 콜백).

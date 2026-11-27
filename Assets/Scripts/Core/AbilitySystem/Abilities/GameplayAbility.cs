@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Core.AbilitySystem.Effect;
 using Core.AbilitySystem.Tag;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.Abilities
 {
@@ -11,33 +12,33 @@ namespace Core.AbilitySystem.Abilities
     [Serializable]
     public abstract class GameplayAbility
     {
-        [SerializeField] private GameplayAbilityInstancingPolicy instancingPolicy = GameplayAbilityInstancingPolicy.InstancedPerExecution;
+        [SerializeField] [FormerlySerializedAs("instancingPolicy")] private GameplayAbilityInstancingPolicy _instancingPolicy = GameplayAbilityInstancingPolicy.InstancedPerExecution;
 
         [Tooltip("커밋 때 Owner에 적용하는 코스트 GE(마나·스태미나 등). 발동 전엔 감당 가능한지(AddBase 모디파이어 결과가 음수가 아닌지)만 본다.")]
         [AbilityGameplayEffectSlot(AbilityGameplayEffectSlot.Cost)]
-        [SerializeField] private GameplayEffectAsset costGameplayEffect;
+        [SerializeField] [FormerlySerializedAs("costGameplayEffect")] private GameplayEffectAsset _costGameplayEffect;
 
         [Tooltip("커밋 때 Owner에 적용하는 쿨다운 GE(Duration). 이 GE가 부여하는 태그가 Owner에 있는 동안 발동할 수 없다.")]
         [AbilityGameplayEffectSlot(AbilityGameplayEffectSlot.Cooldown)]
-        [SerializeField] private GameplayEffectAsset cooldownGameplayEffect;
+        [SerializeField] [FormerlySerializedAs("cooldownGameplayEffect")] private GameplayEffectAsset _cooldownGameplayEffect;
 
         [Tooltip("이 어빌리티를 가리키는 태그. 다른 어빌리티의 차단·취소 태그가 이 태그로 이 어빌리티를 찾는다.")]
-        [SerializeField] private GameplayTagContainer assetTags = new();
+        [SerializeField] [FormerlySerializedAs("assetTags")] private GameplayTagContainer _assetTags = new();
 
         [Tooltip("발동할 때 이 태그를 가진 활성 어빌리티를 취소한다.")]
-        [SerializeField] private GameplayTagContainer cancelAbilitiesWithTag = new();
+        [SerializeField] [FormerlySerializedAs("cancelAbilitiesWithTag")] private GameplayTagContainer _cancelAbilitiesWithTag = new();
 
         [Tooltip("활성인 동안 이 태그를 가진 어빌리티의 발동을 막는다.")]
-        [SerializeField] private GameplayTagContainer blockAbilitiesWithTag = new();
+        [SerializeField] [FormerlySerializedAs("blockAbilitiesWithTag")] private GameplayTagContainer _blockAbilitiesWithTag = new();
 
         [Tooltip("활성인 동안 Owner에 붙는 태그.")]
-        [SerializeField] private GameplayTagContainer activationOwnedTags = new();
+        [SerializeField] [FormerlySerializedAs("activationOwnedTags")] private GameplayTagContainer _activationOwnedTags = new();
 
         [Tooltip("Owner가 이 태그를 모두 가져야 발동할 수 있다.")]
-        [SerializeField] private GameplayTagContainer activationRequiredTags = new();
+        [SerializeField] [FormerlySerializedAs("activationRequiredTags")] private GameplayTagContainer _activationRequiredTags = new();
 
         [Tooltip("Owner가 이 태그 중 하나라도 가지면 발동할 수 없다.")]
-        [SerializeField] private GameplayTagContainer activationBlockedTags = new();
+        [SerializeField] [FormerlySerializedAs("activationBlockedTags")] private GameplayTagContainer _activationBlockedTags = new();
 
         private bool _isActive;
         private bool _isBlockingOtherAbilities;
@@ -46,31 +47,31 @@ namespace Core.AbilitySystem.Abilities
         private bool _isInstantiated;
 
         /// <remarks>UE: UGameplayAbility::GetInstancingPolicy</remarks>
-        public GameplayAbilityInstancingPolicy InstancingPolicy => instancingPolicy;
+        public GameplayAbilityInstancingPolicy InstancingPolicy => _instancingPolicy;
 
         /// <summary>이 어빌리티를 가리키는 태그. 수정하지 않는다.</summary>
         /// <remarks>UE: UGameplayAbility::GetAssetTags</remarks>
-        public GameplayTagContainer AssetTags => assetTags;
+        public GameplayTagContainer AssetTags => _assetTags;
 
         /// <summary>발동할 때 취소하는 어빌리티 태그. 수정하지 않는다.</summary>
         /// <remarks>UE: UGameplayAbility::CancelAbilitiesWithTag</remarks>
-        public GameplayTagContainer CancelAbilitiesWithTag => cancelAbilitiesWithTag;
+        public GameplayTagContainer CancelAbilitiesWithTag => _cancelAbilitiesWithTag;
 
         /// <summary>활성인 동안 막는 어빌리티 태그. 수정하지 않는다.</summary>
         /// <remarks>UE: UGameplayAbility::BlockAbilitiesWithTag</remarks>
-        public GameplayTagContainer BlockAbilitiesWithTag => blockAbilitiesWithTag;
+        public GameplayTagContainer BlockAbilitiesWithTag => _blockAbilitiesWithTag;
 
         /// <summary>활성인 동안 Owner에 붙는 태그. 수정하지 않는다.</summary>
         /// <remarks>UE: UGameplayAbility::ActivationOwnedTags</remarks>
-        public GameplayTagContainer ActivationOwnedTags => activationOwnedTags;
+        public GameplayTagContainer ActivationOwnedTags => _activationOwnedTags;
 
         /// <summary>발동에 필요한 Owner 태그(모두). 수정하지 않는다.</summary>
         /// <remarks>UE: UGameplayAbility::ActivationRequiredTags</remarks>
-        public GameplayTagContainer ActivationRequiredTags => activationRequiredTags;
+        public GameplayTagContainer ActivationRequiredTags => _activationRequiredTags;
 
         /// <summary>발동을 막는 Owner 태그(하나라도). 수정하지 않는다.</summary>
         /// <remarks>UE: UGameplayAbility::ActivationBlockedTags</remarks>
-        public GameplayTagContainer ActivationBlockedTags => activationBlockedTags;
+        public GameplayTagContainer ActivationBlockedTags => _activationBlockedTags;
 
         /// <summary>발동 중인지. 발동(<see cref="PreActivate"/>) 때 켜지고 <see cref="EndAbility"/>에서 꺼진다. 원형은 항상 false.</summary>
         /// <remarks>UE: UGameplayAbility::IsActive</remarks>
@@ -137,11 +138,11 @@ namespace Core.AbilitySystem.Abilities
             SetCurrentGameObjectInfo(handle, gameObjectInfo);
 
             AbilitySystemComponent abilitySystemComponent = gameObjectInfo.AbilitySystemComponent;
-            abilitySystemComponent.AddLooseGameplayTags(activationOwnedTags);
+            abilitySystemComponent.AddLooseGameplayTags(_activationOwnedTags);
             abilitySystemComponent.NotifyAbilityActivated(handle, this);
 
             // 활성 횟수는 취소 뒤에 올린다 — 먼저 올리면 발동 중인 자기 Spec이 취소 대상으로 잡힐 수 있다.
-            abilitySystemComponent.ApplyAbilityBlockAndCancelTags(assetTags, this, true, blockAbilitiesWithTag, true, cancelAbilitiesWithTag);
+            abilitySystemComponent.ApplyAbilityBlockAndCancelTags(_assetTags, this, true, _blockAbilitiesWithTag, true, _cancelAbilitiesWithTag);
 
             GameplayAbilitySpec spec = abilitySystemComponent.FindAbilitySpecFromHandle(handle);
             if (spec == null)
@@ -174,12 +175,12 @@ namespace Core.AbilitySystem.Abilities
             _isActive = false;
 
             AbilitySystemComponent abilitySystemComponent = gameObjectInfo.AbilitySystemComponent;
-            abilitySystemComponent.RemoveLooseGameplayTags(activationOwnedTags);
+            abilitySystemComponent.RemoveLooseGameplayTags(_activationOwnedTags);
 
             // 활성 중에 차단을 꺼 뒀으면 이미 풀린 상태라 다시 풀지 않는다.
             if (IsBlockingOtherAbilities())
             {
-                abilitySystemComponent.ApplyAbilityBlockAndCancelTags(assetTags, this, false, blockAbilitiesWithTag, false, cancelAbilitiesWithTag);
+                abilitySystemComponent.ApplyAbilityBlockAndCancelTags(_assetTags, this, false, _blockAbilitiesWithTag, false, _cancelAbilitiesWithTag);
             }
 
             abilitySystemComponent.NotifyAbilityEnded(handle, this, wasCancelled);
@@ -414,13 +415,13 @@ namespace Core.AbilitySystem.Abilities
         /// <remarks>UE: UGameplayAbility::GetCooldownGameplayEffect</remarks>
         public virtual GameplayEffectAsset GetCooldownGameplayEffect()
         {
-            return cooldownGameplayEffect;
+            return _cooldownGameplayEffect;
         }
 
         /// <remarks>UE: UGameplayAbility::GetCostGameplayEffect</remarks>
         public virtual GameplayEffectAsset GetCostGameplayEffect()
         {
-            return costGameplayEffect;
+            return _costGameplayEffect;
         }
 
         /// <summary>이 어빌리티를 쿨다운에 넣는 태그 = 쿨다운 GE가 부여하는 태그. 쿨다운 GE가 없으면 null. 수정하지 않는다.</summary>
@@ -442,7 +443,7 @@ namespace Core.AbilitySystem.Abilities
                 return 0f;
             }
 
-            GameplayEffectQuery query = GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(cooldownTags);
+            GameplayEffectQuery query = GameplayEffectQuery.MakeQueryMatchAnyOwningTags(cooldownTags);
             List<float> timesRemaining = abilitySystemComponent.GetActiveEffectsTimeRemaining(query);
             float longest = 0f;
             foreach (float timeRemaining in timesRemaining)
@@ -467,7 +468,7 @@ namespace Core.AbilitySystem.Abilities
                 return;
             }
 
-            GameplayEffectQuery query = GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(cooldownTags);
+            GameplayEffectQuery query = GameplayEffectQuery.MakeQueryMatchAnyOwningTags(cooldownTags);
             List<(float TimeRemaining, float Duration)> durations = abilitySystemComponent.GetActiveEffectsTimeRemainingAndDuration(query);
             foreach ((float remaining, float duration) in durations)
             {
@@ -510,15 +511,15 @@ namespace Core.AbilitySystem.Abilities
             }
 
             // 차단과 필요를 둘 다 따져 실패 사유를 모두 모은다. 차단을 먼저 봐서 사유에 차단 쪽이 앞에 온다.
-            CheckForBlocked(assetTags, abilitySystemComponent.GetBlockedAbilityTags());
-            CheckForBlocked(ownedTags, activationBlockedTags);
+            CheckForBlocked(_assetTags, abilitySystemComponent.GetBlockedAbilityTags());
+            CheckForBlocked(ownedTags, _activationBlockedTags);
 
-            bool missing = !activationRequiredTags.IsEmpty() && !ownedTags.HasAll(activationRequiredTags);
+            bool missing = !_activationRequiredTags.IsEmpty() && !ownedTags.HasAll(_activationRequiredTags);
             if (missing && optionalRelevantTags != null)
             {
                 GameplayAbilitiesSettings settings = GameplayAbilitiesSettings.Get();
                 AddFailureTag(optionalRelevantTags, settings.ActivateFailTagsMissingTag);
-                var missingTags = new GameplayTagContainer(activationRequiredTags);
+                var missingTags = new GameplayTagContainer(_activationRequiredTags);
                 missingTags.RemoveTags(ownedTags.GetGameplayTagParents());
                 optionalRelevantTags.AppendTags(missingTags);
             }
@@ -526,7 +527,7 @@ namespace Core.AbilitySystem.Abilities
             // ASC가 AreAbilityTagsBlocked를 재정의해 막으면 어느 태그인지 알 수 없어 차단 실패 태그만 붙인다.
             if (!blocked && !missing)
             {
-                blocked = abilitySystemComponent.AreAbilityTagsBlocked(assetTags);
+                blocked = abilitySystemComponent.AreAbilityTagsBlocked(_assetTags);
                 if (blocked && optionalRelevantTags != null)
                 {
                     GameplayAbilitiesSettings settings = GameplayAbilitiesSettings.Get();
@@ -558,7 +559,7 @@ namespace Core.AbilitySystem.Abilities
             AbilitySystemComponent abilitySystemComponent = GetAbilitySystemComponentFromInfo();
             if (abilitySystemComponent != null)
             {
-                abilitySystemComponent.ApplyAbilityBlockAndCancelTags(assetTags, this, _isBlockingOtherAbilities, blockAbilitiesWithTag, false, cancelAbilitiesWithTag);
+                abilitySystemComponent.ApplyAbilityBlockAndCancelTags(_assetTags, this, _isBlockingOtherAbilities, _blockAbilitiesWithTag, false, _cancelAbilitiesWithTag);
             }
         }
 

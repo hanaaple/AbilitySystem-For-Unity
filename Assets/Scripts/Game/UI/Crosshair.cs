@@ -3,6 +3,7 @@ using Core.AbilitySystem.Tag;
 using Game.Character;
 using Game.Settings;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 namespace Game.UI
@@ -11,28 +12,28 @@ namespace Game.UI
     [RequireComponent(typeof(UIDocument))]
     public class Crosshair : MonoBehaviour
     {
-        [SerializeField] private PlayerCharacter player;
-        [SerializeField] private AbilitySystemComponent abilitySystemComponent;
-        [SerializeField] private GameplayTag aimingTag;
+        [SerializeField] [FormerlySerializedAs("player")] private PlayerCharacter _player;
+        [SerializeField] [FormerlySerializedAs("abilitySystemComponent")] private AbilitySystemComponent _abilitySystemComponent;
+        [SerializeField] [FormerlySerializedAs("aimingTag")] private GameplayTag _aimingTag;
         [Tooltip("이 태그의 부위(HitZone)를 가리키면 headColor로 바뀐다.")]
-        [SerializeField] private GameplayTag headZoneTag;
+        [SerializeField] [FormerlySerializedAs("headZoneTag")] private GameplayTag _headZoneTag;
 
         // 패널 기준 해상도(1920×1080)의 픽셀. 화면이 작으면 함께 줄어든다.
         [Header("Shape (px)")]
-        [SerializeField] private float lineLength = 16f;
-        [SerializeField] private float thickness = 4f;
+        [SerializeField] [FormerlySerializedAs("lineLength")] private float _lineLength = 16f;
+        [SerializeField] [FormerlySerializedAs("thickness")] private float _thickness = 4f;
         [Tooltip("선 바깥에 두르는 테두리 두께. 선 두께에 더해진다.")]
-        [SerializeField] private float outlineWidth = 1f;
-        [SerializeField] private float idleGap = 14f;
-        [SerializeField] private float aimGap = 6f;
+        [SerializeField] [FormerlySerializedAs("outlineWidth")] private float _outlineWidth = 1f;
+        [SerializeField] [FormerlySerializedAs("idleGap")] private float _idleGap = 14f;
+        [SerializeField] [FormerlySerializedAs("aimGap")] private float _aimGap = 6f;
 
         [Header("Color")]
-        [SerializeField] private Color idleColor = new(1f, 1f, 1f, 0.75f);
-        [SerializeField] private Color aimColor = new(1f, 1f, 1f, 1f);
-        [SerializeField] private Color headColor = new(1f, 0.1f, 0.1f, 1f);
+        [SerializeField] [FormerlySerializedAs("idleColor")] private Color _idleColor = new(1f, 1f, 1f, 0.75f);
+        [SerializeField] [FormerlySerializedAs("aimColor")] private Color _aimColor = new(1f, 1f, 1f, 1f);
+        [SerializeField] [FormerlySerializedAs("headColor")] private Color _headColor = new(1f, 0.1f, 0.1f, 1f);
         [Tooltip("밝은 배경에서도 보이게 두르는 테두리.")]
-        [SerializeField] private Color outlineColor = new(0f, 0f, 0f, 0.6f);
-        [SerializeField] private float blendSpeed = 10f;
+        [SerializeField] [FormerlySerializedAs("outlineColor")] private Color _outlineColor = new(0f, 0f, 0f, 0.6f);
+        [SerializeField] [FormerlySerializedAs("blendSpeed")] private float _blendSpeed = 10f;
 
         // 위·아래·왼쪽·오른쪽 순서
         private readonly VisualElement[] _lines = new VisualElement[4];
@@ -49,21 +50,21 @@ namespace Game.UI
 
         private void Start()
         {
-            _isAiming = abilitySystemComponent.HasMatchingGameplayTag(aimingTag);
-            abilitySystemComponent.RegisterGameplayTagEvent(aimingTag, OnTagCountChanged);
+            _isAiming = _abilitySystemComponent.HasMatchingGameplayTag(_aimingTag);
+            _abilitySystemComponent.RegisterGameplayTagEvent(_aimingTag, OnTagCountChanged);
         }
 
         private void Update()
         {
-            _weight = Mathf.MoveTowards(_weight, _isAiming ? 1f : 0f, blendSpeed * Time.unscaledDeltaTime);
-            float gap = Mathf.Lerp(idleGap, aimGap, _weight);
+            _weight = Mathf.MoveTowards(_weight, _isAiming ? 1f : 0f, _blendSpeed * Time.unscaledDeltaTime);
+            float gap = Mathf.Lerp(_idleGap, _aimGap, _weight);
             // 머리 위를 지나는 순간을 놓치지 않게 섞지 않고 바로 바꾼다
-            Color color = IsAimingAtHead() ? headColor : Color.Lerp(idleColor, aimColor, _weight);
+            Color color = IsAimingAtHead() ? _headColor : Color.Lerp(_idleColor, _aimColor, _weight);
 
-            PlaceLine(_lines[0], -thickness / 2f, -gap - lineLength, thickness, lineLength);
-            PlaceLine(_lines[1], -thickness / 2f, gap, thickness, lineLength);
-            PlaceLine(_lines[2], -gap - lineLength, -thickness / 2f, lineLength, thickness);
-            PlaceLine(_lines[3], gap, -thickness / 2f, lineLength, thickness);
+            PlaceLine(_lines[0], -_thickness / 2f, -gap - _lineLength, _thickness, _lineLength);
+            PlaceLine(_lines[1], -_thickness / 2f, gap, _thickness, _lineLength);
+            PlaceLine(_lines[2], -gap - _lineLength, -_thickness / 2f, _lineLength, _thickness);
+            PlaceLine(_lines[3], gap, -_thickness / 2f, _lineLength, _thickness);
 
             foreach (VisualElement line in _lines)
             {
@@ -80,9 +81,9 @@ namespace Game.UI
 
         private void OnDestroy()
         {
-            if (abilitySystemComponent != null)
+            if (_abilitySystemComponent != null)
             {
-                abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, aimingTag);
+                _abilitySystemComponent.UnregisterGameplayTagEvent(OnTagCountChanged, _aimingTag);
             }
         }
 
@@ -105,21 +106,21 @@ namespace Game.UI
             }
 
             _dot = MakePart();
-            PlaceLine(_dot, -thickness / 2f, -thickness / 2f, thickness, thickness);
+            PlaceLine(_dot, -_thickness / 2f, -_thickness / 2f, _thickness, _thickness);
         }
 
         private VisualElement MakePart()
         {
             var part = new VisualElement { pickingMode = PickingMode.Ignore };
             part.style.position = Position.Absolute;
-            part.style.borderTopWidth = outlineWidth;
-            part.style.borderBottomWidth = outlineWidth;
-            part.style.borderLeftWidth = outlineWidth;
-            part.style.borderRightWidth = outlineWidth;
-            part.style.borderTopColor = outlineColor;
-            part.style.borderBottomColor = outlineColor;
-            part.style.borderLeftColor = outlineColor;
-            part.style.borderRightColor = outlineColor;
+            part.style.borderTopWidth = _outlineWidth;
+            part.style.borderBottomWidth = _outlineWidth;
+            part.style.borderLeftWidth = _outlineWidth;
+            part.style.borderRightWidth = _outlineWidth;
+            part.style.borderTopColor = _outlineColor;
+            part.style.borderBottomColor = _outlineColor;
+            part.style.borderLeftColor = _outlineColor;
+            part.style.borderRightColor = _outlineColor;
             _root.Add(part);
             return part;
         }
@@ -127,31 +128,31 @@ namespace Game.UI
         // 테두리는 요소 안쪽을 차지하므로 그만큼 바깥으로 넓혀 선 두께를 지킨다
         private void PlaceLine(VisualElement line, float left, float top, float width, float height)
         {
-            line.style.left = left - outlineWidth;
-            line.style.top = top - outlineWidth;
-            line.style.width = width + outlineWidth * 2f;
-            line.style.height = height + outlineWidth * 2f;
+            line.style.left = left - _outlineWidth;
+            line.style.top = top - _outlineWidth;
+            line.style.width = width + _outlineWidth * 2f;
+            line.style.height = height + _outlineWidth * 2f;
         }
 
         private bool IsAimingAtHead()
         {
-            if (player == null || !headZoneTag.IsValid())
+            if (_player == null || !_headZoneTag.IsValid())
             {
                 return false;
             }
 
-            HitZone zone = player.FindAimedHitZone();
-            return zone != null && zone.ZoneTag.MatchesTag(headZoneTag);
-        }
-
-        private void SetHidden(bool isHidden)
-        {
-            _root.style.display = isHidden ? DisplayStyle.None : DisplayStyle.Flex;
+            HitZone zone = _player.FindAimedHitZone();
+            return zone != null && zone.ZoneTag.MatchesTag(_headZoneTag);
         }
 
         private void OnTagCountChanged(GameplayTag changedTag, int newCount)
         {
             _isAiming = newCount > 0;
+        }
+
+        private void SetHidden(bool isHidden)
+        {
+            _root.style.display = isHidden ? DisplayStyle.None : DisplayStyle.Flex;
         }
     }
 }

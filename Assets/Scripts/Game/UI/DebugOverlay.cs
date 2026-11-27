@@ -7,6 +7,7 @@ using Core.AbilitySystem.Tag;
 using Game.Settings;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 namespace Game.UI
@@ -29,29 +30,29 @@ namespace Game.UI
             Full,
         }
 
-        [SerializeField] private PlayerCharacter player;
-        [SerializeField] private Key toggleKey = Key.F1;
+        [SerializeField] [FormerlySerializedAs("player")] private PlayerCharacter _player;
+        [SerializeField] [FormerlySerializedAs("toggleKey")] private Key _toggleKey = Key.F1;
 
         [Header("Target")]
-        [SerializeField] private float targetDistance = 60f;
-        [SerializeField] private LayerMask targetLayers = ~0;
+        [SerializeField] [FormerlySerializedAs("targetDistance")] private float _targetDistance = 60f;
+        [SerializeField] [FormerlySerializedAs("targetLayers")] private LayerMask _targetLayers = ~0;
 
         // 패널 기준 해상도(1920×1080)의 픽셀. 화면이 작으면 함께 줄어든다.
         [Header("Look (px)")]
-        [SerializeField] private float panelWidth = 440f;
+        [SerializeField] [FormerlySerializedAs("panelWidth")] private float _panelWidth = 440f;
         [Tooltip("이보다 길면 아래를 자른다 — 왼쪽 아래 체력 HUD를 가리지 않게.")]
-        [SerializeField] private float maxPanelHeight = 820f;
-        [SerializeField] private float screenMargin = 16f;
-        [SerializeField] private float fontSize = 14f;
-        [SerializeField] private float thumbnailSize = 72f;
-        [SerializeField] private Color panelColor = new(0.04f, 0.05f, 0.08f, 0.78f);
-        [SerializeField] private Color headerColor = new(1f, 0.82f, 0.35f, 1f);
-        [SerializeField] private Color textColor = new(0.92f, 0.94f, 0.97f, 1f);
+        [SerializeField] [FormerlySerializedAs("maxPanelHeight")] private float _maxPanelHeight = 820f;
+        [SerializeField] [FormerlySerializedAs("screenMargin")] private float _screenMargin = 16f;
+        [SerializeField] [FormerlySerializedAs("fontSize")] private float _fontSize = 14f;
+        [SerializeField] [FormerlySerializedAs("thumbnailSize")] private float _thumbnailSize = 72f;
+        [SerializeField] [FormerlySerializedAs("panelColor")] private Color _panelColor = new(0.04f, 0.05f, 0.08f, 0.78f);
+        [SerializeField] [FormerlySerializedAs("headerColor")] private Color _headerColor = new(1f, 0.82f, 0.35f, 1f);
+        [SerializeField] [FormerlySerializedAs("textColor")] private Color _textColor = new(0.92f, 0.94f, 0.97f, 1f);
         [Tooltip("값이 바뀐 어트리뷰트를 잠깐 칠하는 색.")]
-        [SerializeField] private Color changedColor = new(1f, 0.9f, 0.25f, 1f);
-        [SerializeField] private float changedHighlightDuration = 0.6f;
+        [SerializeField] [FormerlySerializedAs("changedColor")] private Color _changedColor = new(1f, 0.9f, 0.25f, 1f);
+        [SerializeField] [FormerlySerializedAs("changedHighlightDuration")] private float _changedHighlightDuration = 0.6f;
         [Tooltip("패널 내용을 다시 만드는 간격(초).")]
-        [SerializeField] private float refreshInterval = 0.1f;
+        [SerializeField] [FormerlySerializedAs("refreshInterval")] private float _refreshInterval = 0.1f;
 
         private readonly Dictionary<AbilitySystemComponent, AbilitySystemDebugLog> _logs = new();
         private readonly Dictionary<(AbilitySystemComponent, string), ValueHistory> _valueHistory = new();
@@ -79,7 +80,7 @@ namespace Game.UI
 
         private void Start()
         {
-            _playerAsc = player.GetComponent<AbilitySystemComponent>();
+            _playerAsc = _player.GetComponent<AbilitySystemComponent>();
             GetLog(_playerAsc);
             ApplyMode();
         }
@@ -87,7 +88,7 @@ namespace Game.UI
         private void Update()
         {
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard[toggleKey].wasPressedThisFrame)
+            if (keyboard != null && keyboard[_toggleKey].wasPressedThisFrame)
             {
                 _mode = (Mode)(((int)_mode + 1) % 3);
                 ApplyMode();
@@ -107,7 +108,7 @@ namespace Game.UI
                 return;
             }
 
-            _refreshTimer = refreshInterval;
+            _refreshTimer = _refreshInterval;
             RefreshPlayerPanel();
             RefreshTargetPanel();
         }
@@ -145,13 +146,13 @@ namespace Game.UI
 
             Ray ray = viewCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             // 카메라와 캐릭터 사이에 걸린 것은 겨눈 것이 아니다
-            float minDistance = Vector3.Dot(player.transform.position + Vector3.up - ray.origin, ray.direction) - 0.5f;
-            RaycastHit[] hits = Physics.RaycastAll(ray, targetDistance, targetLayers, QueryTriggerInteraction.Collide);
+            float minDistance = Vector3.Dot(_player.transform.position + Vector3.up - ray.origin, ray.direction) - 0.5f;
+            RaycastHit[] hits = Physics.RaycastAll(ray, _targetDistance, _targetLayers, QueryTriggerInteraction.Collide);
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
             foreach (RaycastHit hit in hits)
             {
                 Collider hitCollider = hit.collider;
-                if (hit.distance < minDistance || hitCollider.transform.IsChildOf(player.transform))
+                if (hit.distance < minDistance || hitCollider.transform.IsChildOf(_player.transform))
                 {
                     continue;
                 }
@@ -282,7 +283,7 @@ namespace Game.UI
 
                     if (IsRecentlyChanged(asc, attribute.Name, current))
                     {
-                        value = $"<color=#{ColorUtility.ToHtmlStringRGB(changedColor)}>{value}</color>";
+                        value = $"<color=#{ColorUtility.ToHtmlStringRGB(_changedColor)}>{value}</color>";
                     }
 
                     lines.Add(attribute.Name + ColumnSeparator + value);
@@ -375,7 +376,7 @@ namespace Game.UI
             if (!Mathf.Approximately(history.Value, value))
             {
                 history.Value = value;
-                history.ChangedUntil = Time.time + changedHighlightDuration;
+                history.ChangedUntil = Time.time + _changedHighlightDuration;
             }
 
             _valueHistory[key] = history;
@@ -402,8 +403,8 @@ namespace Game.UI
             _modeLabel.style.right = 0f;
             _modeLabel.style.top = 6f;
             _modeLabel.style.unityTextAlign = TextAnchor.UpperCenter;
-            _modeLabel.style.fontSize = fontSize;
-            _modeLabel.style.color = headerColor;
+            _modeLabel.style.fontSize = _fontSize;
+            _modeLabel.style.color = _headerColor;
             _modeLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
             _modeLabel.style.textShadow = new TextShadow { offset = new Vector2(1f, 1f), blurRadius = 2f, color = Color.black };
             root.Add(_modeLabel);
@@ -416,7 +417,7 @@ namespace Game.UI
         {
             bool isVisible = _mode != Mode.Off && !_isSettingsOpen;
             _root.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
-            _modeLabel.text = $"GAS DEBUG · {_mode}  <color=#9AA4B0>[{toggleKey}]</color>";
+            _modeLabel.text = $"GAS DEBUG · {_mode}  <color=#9AA4B0>[{_toggleKey}]</color>";
         }
 
         private void OnSettingsOpenChanged(bool isOpen)
@@ -445,20 +446,20 @@ namespace Game.UI
                 _owner = owner;
                 var panel = new VisualElement { pickingMode = PickingMode.Ignore };
                 panel.style.position = Position.Absolute;
-                panel.style.top = owner.screenMargin + owner.fontSize * 2f;
+                panel.style.top = owner._screenMargin + owner._fontSize * 2f;
                 if (isLeft)
                 {
-                    panel.style.left = owner.screenMargin;
+                    panel.style.left = owner._screenMargin;
                 }
                 else
                 {
-                    panel.style.right = owner.screenMargin;
+                    panel.style.right = owner._screenMargin;
                 }
 
-                panel.style.width = owner.panelWidth;
-                panel.style.maxHeight = owner.maxPanelHeight;
+                panel.style.width = owner._panelWidth;
+                panel.style.maxHeight = owner._maxPanelHeight;
                 panel.style.overflow = Overflow.Hidden;
-                panel.style.backgroundColor = owner.panelColor;
+                panel.style.backgroundColor = owner._panelColor;
                 panel.style.paddingLeft = 12f;
                 panel.style.paddingRight = 12f;
                 panel.style.paddingTop = 8f;
@@ -478,8 +479,8 @@ namespace Game.UI
                 panel.Add(header);
 
                 _thumbnail = new VisualElement { pickingMode = PickingMode.Ignore };
-                _thumbnail.style.width = owner.thumbnailSize;
-                _thumbnail.style.height = owner.thumbnailSize;
+                _thumbnail.style.width = owner._thumbnailSize;
+                _thumbnail.style.height = owner._thumbnailSize;
                 _thumbnail.style.marginRight = 10f;
                 _thumbnail.style.backgroundColor = new Color(1f, 1f, 1f, 0.06f);
                 _thumbnail.style.borderTopLeftRadius = 6f;
@@ -489,7 +490,7 @@ namespace Game.UI
                 _thumbnail.style.display = DisplayStyle.None;
                 header.Add(_thumbnail);
 
-                _title = MakeLabel(owner.fontSize * 1.1f, owner.textColor);
+                _title = MakeLabel(owner._fontSize * 1.1f, owner._textColor);
                 _title.style.flexShrink = 1;
                 header.Add(_title);
 
@@ -527,7 +528,7 @@ namespace Game.UI
                     int separator = line.IndexOf(ColumnSeparator);
                     left.text = separator >= 0 ? line.Substring(0, separator) : line;
                     right.text = separator >= 0 ? line.Substring(separator + 1) : string.Empty;
-                    left.style.color = isHeader ? _owner.headerColor : _owner.textColor;
+                    left.style.color = isHeader ? _owner._headerColor : _owner._textColor;
                     left.style.unityFontStyleAndWeight = isHeader ? FontStyle.Bold : FontStyle.Normal;
                     left.style.paddingLeft = isHeader ? 0f : 10f;
                     row.style.marginTop = isHeader && i > 0 ? 6f : 0f;
@@ -539,12 +540,12 @@ namespace Game.UI
                 var row = new VisualElement { pickingMode = PickingMode.Ignore };
                 row.style.flexDirection = FlexDirection.Row;
                 row.style.justifyContent = Justify.SpaceBetween;
-                Label left = MakeLabel(_owner.fontSize, _owner.textColor);
+                Label left = MakeLabel(_owner._fontSize, _owner._textColor);
                 // 왼쪽이 길면 말줄임으로 자르고, 값(오른쪽)은 줄어들지 않게 한다
                 left.style.flexShrink = 1;
                 left.style.overflow = Overflow.Hidden;
                 left.style.textOverflow = TextOverflow.Ellipsis;
-                Label right = MakeLabel(_owner.fontSize, _owner.textColor);
+                Label right = MakeLabel(_owner._fontSize, _owner._textColor);
                 right.style.flexShrink = 0;
                 right.style.unityTextAlign = TextAnchor.UpperRight;
                 right.style.marginLeft = 12f;

@@ -19,14 +19,14 @@ namespace Core.AbilitySystem.Tag.Editor
         private const float HorizontalPadding = 6f;
         private const float UnselectedAlpha = 0.5f;
 
-        private static readonly GUIContent _clearContent = new("×", "Clear Tag");
+        private static readonly GUIContent ClearContent = new("×", "Clear Tag");
 
-        private static GUIStyle _textStyle;
-        private static GUIStyle _clearButtonStyle;
+        private static GUIStyle CachedTextStyle;
+        private static GUIStyle CachedClearButtonStyle;
 
-        private static GUIStyle TextStyle => _textStyle ??= new GUIStyle(EditorStyles.label) { padding = new RectOffset((int)HorizontalPadding, 2, 0, 0), alignment = TextAnchor.MiddleLeft, clipping = TextClipping.Clip };
+        private static GUIStyle TextStyle => CachedTextStyle ??= new GUIStyle(EditorStyles.label) { padding = new RectOffset((int)HorizontalPadding, 2, 0, 0), alignment = TextAnchor.MiddleLeft, clipping = TextClipping.Clip };
 
-        private static GUIStyle ClearButtonStyle => _clearButtonStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
+        private static GUIStyle ClearButtonStyle => CachedClearButtonStyle ??= new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
 
         /// <summary>칩이 글자를 감싸는 데 필요한 너비.</summary>
         public static float GetWidth(GUIContent content, bool showClearButton)
@@ -72,7 +72,7 @@ namespace Core.AbilitySystem.Tag.Editor
                 var clearRect = new Rect(bodyRect.xMax, rect.y, ClearButtonWidth, rect.height);
 
                 // 본문 버튼보다 먼저 그려야 × 영역의 클릭을 먼저 가져간다
-                if (GUI.Button(clearRect, _clearContent, ClearButtonStyle))
+                if (GUI.Button(clearRect, ClearContent, ClearButtonStyle))
                 {
                     action = ChipAction.Clear;
                 }

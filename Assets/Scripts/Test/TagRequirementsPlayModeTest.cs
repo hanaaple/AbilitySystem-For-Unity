@@ -42,7 +42,7 @@ namespace Test
             }
 
             _asc = gameObject.AddComponent<AbilitySystemComponent>();
-            _asc.AddSpawnedAttribute(new CharacterAttributeSet { health = new AttributeData(100f, 100f) });
+            _asc.AddSpawnedAttribute(new CharacterAttributeSet { Health = new AttributeData(100f, 100f) });
 
             yield return ExpiringGrantTurnsDependentOff(grantedTag);
             yield return InhibitedPeriodicDoesNotExecute(grantedTag);
@@ -82,21 +82,21 @@ namespace Test
             ActiveGameplayEffectHandle handle = _asc.ApplyGameplayEffectToSelf(periodic);
 
             yield return new WaitForSeconds(0.45f);
-            Check("P-3 꺼진 주기 GE(0.1초): 0.45초 동안 실행 없음(Base 100)", Approx(_asc.GetAttributeBaseValue(CharacterAttributeSet.Health), 100f) && IsInhibited(handle));
+            Check("P-3 꺼진 주기 GE(0.1초): 0.45초 동안 실행 없음(Base 100)", Approx(_asc.GetAttributeBaseValue(CharacterAttributeSet.HealthAttribute), 100f) && IsInhibited(handle));
 
             _asc.AddLooseGameplayTag(grantedTag);
             yield return new WaitForSeconds(0.45f);
-            float baseAfterOn = _asc.GetAttributeBaseValue(CharacterAttributeSet.Health);
+            float baseAfterOn = _asc.GetAttributeBaseValue(CharacterAttributeSet.HealthAttribute);
             Check($"P-4 태그 생겨 켜진 뒤 0.45초: 주기 실행 재개(Base > 100, 실제 {baseAfterOn})", baseAfterOn > 100f + Eps && !IsInhibited(handle));
 
             _asc.RemoveLooseGameplayTag(grantedTag);
             yield return null;
-            float baseWhenOff = _asc.GetAttributeBaseValue(CharacterAttributeSet.Health);
+            float baseWhenOff = _asc.GetAttributeBaseValue(CharacterAttributeSet.HealthAttribute);
             yield return new WaitForSeconds(0.45f);
-            Check("P-5 태그 없어져 다시 꺼진 뒤 0.45초: 더 실행 안 됨", Approx(_asc.GetAttributeBaseValue(CharacterAttributeSet.Health), baseWhenOff) && IsInhibited(handle));
+            Check("P-5 태그 없어져 다시 꺼진 뒤 0.45초: 더 실행 안 됨", Approx(_asc.GetAttributeBaseValue(CharacterAttributeSet.HealthAttribute), baseWhenOff) && IsInhibited(handle));
 
             _asc.RemoveActiveGameplayEffect(handle);
-            _asc.SetAttributeBaseValue(CharacterAttributeSet.Health, 100f);
+            _asc.SetAttributeBaseValue(CharacterAttributeSet.HealthAttribute, 100f);
         }
 
         // Tick이 도는 중에 Removal 조건을 맞추면 제거되고, 그 뒤 Tick이 문제없이 돈다
@@ -109,12 +109,12 @@ namespace Test
             _asc.AddLooseGameplayTag(removalTag);
             Check("P-6 주기 GE가 도는 중 Removal 태그 생김 → 즉시 제거", !IsActive(handle));
 
-            float baseAfterRemoval = _asc.GetAttributeBaseValue(CharacterAttributeSet.Health);
+            float baseAfterRemoval = _asc.GetAttributeBaseValue(CharacterAttributeSet.HealthAttribute);
             yield return new WaitForSeconds(0.3f);
-            Check("P-7 제거 뒤 Tick이 돌아도 더 실행 안 됨", Approx(_asc.GetAttributeBaseValue(CharacterAttributeSet.Health), baseAfterRemoval));
+            Check("P-7 제거 뒤 Tick이 돌아도 더 실행 안 됨", Approx(_asc.GetAttributeBaseValue(CharacterAttributeSet.HealthAttribute), baseAfterRemoval));
 
             _asc.RemoveLooseGameplayTag(removalTag);
-            _asc.SetAttributeBaseValue(CharacterAttributeSet.Health, 100f);
+            _asc.SetAttributeBaseValue(CharacterAttributeSet.HealthAttribute, 100f);
         }
 
         // 꺼진 Duration GE도 시간이 다 되면 만료돼 제거된다(꺼짐은 수명을 멈추지 않는다)
@@ -132,7 +132,7 @@ namespace Test
 
         private float Health()
         {
-            return _asc.GetAttributeCurrentValue(CharacterAttributeSet.Health);
+            return _asc.GetAttributeCurrentValue(CharacterAttributeSet.HealthAttribute);
         }
 
         // ASC가 컨테이너를 공개하지 않아 셀프체크들처럼 리플렉션으로 연다
@@ -184,22 +184,22 @@ namespace Test
         private GameplayEffectAsset MakeEffect(GameplayEffectType type, float duration, float period, float magnitude, GameplayEffectComponent component)
         {
             var ge = ScriptableObject.CreateInstance<GameplayEffectAsset>();
-            SetPrivateField(ge, "type", type);
-            SetPrivateField(ge, "duration", duration);
-            SetPrivateField(ge, "period", period);
-            SetPrivateField(ge, "executePeriodicEffectOnApplication", false);
+            SetPrivateField(ge, "_type", type);
+            SetPrivateField(ge, "_duration", duration);
+            SetPrivateField(ge, "_period", period);
+            SetPrivateField(ge, "_executePeriodicEffectOnApplication", false);
 
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "_scalableFloatMagnitude", magnitude);
 
             object modifierBoxed = default(GameplayModifier);
-            SetPrivateField(modifierBoxed, "attribute", new GameplayAttribute(CharacterAttributeSet.Health));
-            SetPrivateField(modifierBoxed, "operation", GameplayModifierOperation.AddBase);
-            SetPrivateField(modifierBoxed, "modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
+            SetPrivateField(modifierBoxed, "_attribute", new GameplayAttribute(CharacterAttributeSet.HealthAttribute));
+            SetPrivateField(modifierBoxed, "_operation", GameplayModifierOperation.AddBase);
+            SetPrivateField(modifierBoxed, "_modifierMagnitude", (GameplayEffectModifierMagnitude)magnitudeBoxed);
 
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier> { (GameplayModifier)modifierBoxed });
-            SetPrivateField(ge, "gameplayEffectComponents", new List<GameplayEffectComponent> { component });
+            SetPrivateField(ge, "_modifiers", new List<GameplayModifier> { (GameplayModifier)modifierBoxed });
+            SetPrivateField(ge, "_gameplayEffectComponents", new List<GameplayEffectComponent> { component });
             ge.OnGameplayEffectChanged();
 
             _created.Add(ge);

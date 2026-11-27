@@ -10,8 +10,8 @@ namespace Core.AbilitySystem.Tag.Editor
     /// <summary>태그 에디터 UI(드로어·피커)가 함께 쓰는 조회·클립보드·정렬 헬퍼.</summary>
     internal static class GameplayTagEditorUtility
     {
-        private static readonly Regex _tagNamePattern = new("TagName\\s*=\\s*\"([^\"]*)\"");
-        private static readonly char[] _tagListSeparators = { ',', '\n', '\r' };
+        private static readonly Regex TagNamePattern = new("TagName\\s*=\\s*\"([^\"]*)\"");
+        private static readonly char[] TagListSeparators = { ',', '\n', '\r' };
 
         /// <summary>현재 트리에 등록된 태그 이름인지.</summary>
         public static bool IsRegisteredTag(string tagName)
@@ -56,7 +56,7 @@ namespace Core.AbilitySystem.Tag.Editor
             }
 
             string trimmedText = text.Trim();
-            MatchCollection matches = _tagNamePattern.Matches(trimmedText);
+            MatchCollection matches = TagNamePattern.Matches(trimmedText);
             string candidate;
             if (matches.Count == 0)
             {
@@ -90,7 +90,7 @@ namespace Core.AbilitySystem.Tag.Editor
                 return false;
             }
 
-            MatchCollection matches = _tagNamePattern.Matches(text);
+            MatchCollection matches = TagNamePattern.Matches(text);
             if (matches.Count > 0)
             {
                 foreach (Match match in matches)
@@ -100,7 +100,7 @@ namespace Core.AbilitySystem.Tag.Editor
             }
             else
             {
-                foreach (string part in text.Split(_tagListSeparators, StringSplitOptions.RemoveEmptyEntries))
+                foreach (string part in text.Split(TagListSeparators, StringSplitOptions.RemoveEmptyEntries))
                 {
                     string trimmedPart = part.Trim();
                     AddRegisteredTag(outTagNames, trimmedPart.Trim('"'));

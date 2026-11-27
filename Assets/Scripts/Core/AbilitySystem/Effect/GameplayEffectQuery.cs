@@ -219,65 +219,65 @@ namespace Core.AbilitySystem.Effect
 
         /// <summary>Owning 태그(Asset+Granted)와 하나라도 겹치는 GE를 고른다.</summary>
         /// <remarks>UE: FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags</remarks>
-        public static GameplayEffectQuery MakeQuery_MatchAnyOwningTags(GameplayTagContainer inTags)
+        public static GameplayEffectQuery MakeQueryMatchAnyOwningTags(GameplayTagContainer inTags)
         {
-            return new GameplayEffectQuery { _owningTagQuery = GameplayTagQuery.MakeQuery_MatchAnyTags(inTags) };
+            return new GameplayEffectQuery { _owningTagQuery = GameplayTagQuery.MakeQueryMatchAnyTags(inTags) };
         }
 
         /// <summary>Owning 태그(Asset+Granted)가 주어진 태그를 모두 가진 GE를 고른다.</summary>
         /// <remarks>UE: FGameplayEffectQuery::MakeQuery_MatchAllOwningTags</remarks>
-        public static GameplayEffectQuery MakeQuery_MatchAllOwningTags(GameplayTagContainer inTags)
+        public static GameplayEffectQuery MakeQueryMatchAllOwningTags(GameplayTagContainer inTags)
         {
-            return new GameplayEffectQuery { _owningTagQuery = GameplayTagQuery.MakeQuery_MatchAllTags(inTags) };
+            return new GameplayEffectQuery { _owningTagQuery = GameplayTagQuery.MakeQueryMatchAllTags(inTags) };
         }
 
         /// <summary>Owning 태그(Asset+Granted)와 하나도 겹치지 않는 GE를 고른다.</summary>
         /// <remarks>UE: FGameplayEffectQuery::MakeQuery_MatchNoOwningTags</remarks>
-        public static GameplayEffectQuery MakeQuery_MatchNoOwningTags(GameplayTagContainer inTags)
+        public static GameplayEffectQuery MakeQueryMatchNoOwningTags(GameplayTagContainer inTags)
         {
-            return new GameplayEffectQuery { _owningTagQuery = GameplayTagQuery.MakeQuery_MatchNoTags(inTags) };
+            return new GameplayEffectQuery { _owningTagQuery = GameplayTagQuery.MakeQueryMatchNoTags(inTags) };
         }
 
         /// <summary>Asset Tags와 하나라도 겹치는 GE를 고른다.</summary>
         /// <remarks>UE: FGameplayEffectQuery::MakeQuery_MatchAnyEffectTags</remarks>
-        public static GameplayEffectQuery MakeQuery_MatchAnyEffectTags(GameplayTagContainer inTags)
+        public static GameplayEffectQuery MakeQueryMatchAnyEffectTags(GameplayTagContainer inTags)
         {
-            return new GameplayEffectQuery { _effectTagQuery = GameplayTagQuery.MakeQuery_MatchAnyTags(inTags) };
+            return new GameplayEffectQuery { _effectTagQuery = GameplayTagQuery.MakeQueryMatchAnyTags(inTags) };
         }
 
         /// <summary>Asset Tags가 주어진 태그를 모두 가진 GE를 고른다.</summary>
         /// <remarks>UE: FGameplayEffectQuery::MakeQuery_MatchAllEffectTags</remarks>
-        public static GameplayEffectQuery MakeQuery_MatchAllEffectTags(GameplayTagContainer inTags)
+        public static GameplayEffectQuery MakeQueryMatchAllEffectTags(GameplayTagContainer inTags)
         {
-            return new GameplayEffectQuery { _effectTagQuery = GameplayTagQuery.MakeQuery_MatchAllTags(inTags) };
+            return new GameplayEffectQuery { _effectTagQuery = GameplayTagQuery.MakeQueryMatchAllTags(inTags) };
         }
 
         /// <summary>Asset Tags와 하나도 겹치지 않는 GE를 고른다.</summary>
         /// <remarks>UE: FGameplayEffectQuery::MakeQuery_MatchNoEffectTags</remarks>
-        public static GameplayEffectQuery MakeQuery_MatchNoEffectTags(GameplayTagContainer inTags)
+        public static GameplayEffectQuery MakeQueryMatchNoEffectTags(GameplayTagContainer inTags)
         {
-            return new GameplayEffectQuery { _effectTagQuery = GameplayTagQuery.MakeQuery_MatchNoTags(inTags) };
+            return new GameplayEffectQuery { _effectTagQuery = GameplayTagQuery.MakeQueryMatchNoTags(inTags) };
         }
 
         /// <summary>시전자 Spec 태그와 하나라도 겹치는 GE를 고른다.</summary>
         /// <remarks>UE: FGameplayEffectQuery::MakeQuery_MatchAnySourceSpecTags</remarks>
-        public static GameplayEffectQuery MakeQuery_MatchAnySourceSpecTags(GameplayTagContainer inTags)
+        public static GameplayEffectQuery MakeQueryMatchAnySourceSpecTags(GameplayTagContainer inTags)
         {
-            return new GameplayEffectQuery { _sourceTagQuery = GameplayTagQuery.MakeQuery_MatchAnyTags(inTags) };
+            return new GameplayEffectQuery { _sourceTagQuery = GameplayTagQuery.MakeQueryMatchAnyTags(inTags) };
         }
 
         /// <summary>시전자 Spec 태그가 주어진 태그를 모두 가진 GE를 고른다.</summary>
         /// <remarks>UE: FGameplayEffectQuery::MakeQuery_MatchAllSourceSpecTags</remarks>
-        public static GameplayEffectQuery MakeQuery_MatchAllSourceSpecTags(GameplayTagContainer inTags)
+        public static GameplayEffectQuery MakeQueryMatchAllSourceSpecTags(GameplayTagContainer inTags)
         {
-            return new GameplayEffectQuery { _sourceTagQuery = GameplayTagQuery.MakeQuery_MatchAllTags(inTags) };
+            return new GameplayEffectQuery { _sourceTagQuery = GameplayTagQuery.MakeQueryMatchAllTags(inTags) };
         }
 
         /// <summary>시전자 Spec 태그와 하나도 겹치지 않는 GE를 고른다.</summary>
         /// <remarks>UE: FGameplayEffectQuery::MakeQuery_MatchNoSourceSpecTags</remarks>
-        public static GameplayEffectQuery MakeQuery_MatchNoSourceSpecTags(GameplayTagContainer inTags)
+        public static GameplayEffectQuery MakeQueryMatchNoSourceSpecTags(GameplayTagContainer inTags)
         {
-            return new GameplayEffectQuery { _sourceTagQuery = GameplayTagQuery.MakeQuery_MatchNoTags(inTags) };
+            return new GameplayEffectQuery { _sourceTagQuery = GameplayTagQuery.MakeQueryMatchNoTags(inTags) };
         }
 
         private static bool ModifiesAttribute(GameplayEffectSpec spec, GameplayAttribute attribute)

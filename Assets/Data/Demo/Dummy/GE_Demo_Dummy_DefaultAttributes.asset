@@ -23,7 +23,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: maxHealth
+      fieldName: MaxHealth
     operation: 5
     modifierMagnitude:
       magnitudeCalculationType: 0
@@ -64,7 +64,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: health
+      fieldName: Health
     operation: 5
     modifierMagnitude:
       magnitudeCalculationType: 0
@@ -105,7 +105,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: maxStamina
+      fieldName: MaxStamina
     operation: 5
     modifierMagnitude:
       magnitudeCalculationType: 0
@@ -146,7 +146,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: stamina
+      fieldName: Stamina
     operation: 5
     modifierMagnitude:
       magnitudeCalculationType: 0
@@ -187,7 +187,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: speed
+      fieldName: Speed
     operation: 5
     modifierMagnitude:
       magnitudeCalculationType: 0
@@ -228,7 +228,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: attack
+      fieldName: Attack
     operation: 5
     modifierMagnitude:
       magnitudeCalculationType: 0
@@ -269,7 +269,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: attackSpeed
+      fieldName: AttackSpeed
     operation: 5
     modifierMagnitude:
       magnitudeCalculationType: 0

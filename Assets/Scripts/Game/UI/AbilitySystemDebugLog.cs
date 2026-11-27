@@ -20,6 +20,9 @@ namespace Game.UI
         private readonly AbilitySystemComponent _asc;
         private readonly List<Entry> _entries = new();
 
+        /// <summary>최신이 앞.</summary>
+        public IReadOnlyList<Entry> Entries => _entries;
+
         public AbilitySystemDebugLog(AbilitySystemComponent asc)
         {
             _asc = asc;
@@ -30,9 +33,6 @@ namespace Game.UI
             _asc.OnAbilityFailed += OnAbilityFailed;
             _asc.OnAbilityEndedWithData += OnAbilityEnded;
         }
-
-        /// <summary>최신이 앞.</summary>
-        public IReadOnlyList<Entry> Entries => _entries;
 
         public void Dispose()
         {
@@ -47,6 +47,28 @@ namespace Game.UI
             _asc.OnAbilityActivated -= OnAbilityActivated;
             _asc.OnAbilityFailed -= OnAbilityFailed;
             _asc.OnAbilityEndedWithData -= OnAbilityEnded;
+        }
+
+        public static string EffectName(GameplayEffectSpec spec)
+        {
+            return spec != null && spec.Definition != null ? spec.Definition.name : "(null)";
+        }
+
+        public static string TagsText(GameplayTagContainer tags)
+        {
+            if (tags == null)
+            {
+                return string.Empty;
+            }
+
+            IReadOnlyList<GameplayTag> list = tags.GetGameplayTagArray();
+            var names = new string[list.Count];
+            for (int i = 0; i < list.Count; i++)
+            {
+                names[i] = list[i].ToString();
+            }
+
+            return string.Join(", ", names);
         }
 
         private void Add(string text)
@@ -72,6 +94,33 @@ namespace Game.UI
             {
                 _entries.RemoveAt(_entries.Count - 1);
             }
+        }
+
+        private string FromText(AbilitySystemComponent source)
+        {
+            return source != null && source != _asc ? $"  <color=#9AA4B0>from {source.name}</color>" : string.Empty;
+        }
+
+        // 실행 중인 GA는 에셋을 들고 있지 않아, 그 인스턴스를 가진 Spec에서 에셋 이름을 찾는다
+        private string AbilityName(GameplayAbility ability)
+        {
+            foreach (GameplayAbilitySpec spec in _asc.GetActivatableAbilities())
+            {
+                if (spec.Ability == null)
+                {
+                    continue;
+                }
+
+                foreach (GameplayAbility instance in spec.GetAbilityInstances())
+                {
+                    if (instance == ability)
+                    {
+                        return spec.Ability.name;
+                    }
+                }
+            }
+
+            return ability != null ? ability.GetType().Name : "(null)";
         }
 
         private void OnEffectApplied(AbilitySystemComponent source, GameplayEffectSpec spec, ActiveGameplayEffectHandle handle)
@@ -106,55 +155,6 @@ namespace Game.UI
             GameplayAbilitySpec spec = _asc.FindAbilitySpecFromHandle(data.AbilitySpecHandle);
             string name = spec != null && spec.Ability != null ? spec.Ability.name : AbilityName(data.AbilityThatEnded);
             Add($"<color=#9AA4B0>GA.</color> {name}{(data.WasCancelled ? " (cancelled)" : "")}");
-        }
-
-        private string FromText(AbilitySystemComponent source)
-        {
-            return source != null && source != _asc ? $"  <color=#9AA4B0>from {source.name}</color>" : string.Empty;
-        }
-
-        // 실행 중인 GA는 에셋을 들고 있지 않아, 그 인스턴스를 가진 Spec에서 에셋 이름을 찾는다
-        private string AbilityName(GameplayAbility ability)
-        {
-            foreach (GameplayAbilitySpec spec in _asc.GetActivatableAbilities())
-            {
-                if (spec.Ability == null)
-                {
-                    continue;
-                }
-
-                foreach (GameplayAbility instance in spec.GetAbilityInstances())
-                {
-                    if (instance == ability)
-                    {
-                        return spec.Ability.name;
-                    }
-                }
-            }
-
-            return ability != null ? ability.GetType().Name : "(null)";
-        }
-
-        public static string EffectName(GameplayEffectSpec spec)
-        {
-            return spec != null && spec.Definition != null ? spec.Definition.name : "(null)";
-        }
-
-        public static string TagsText(GameplayTagContainer tags)
-        {
-            if (tags == null)
-            {
-                return string.Empty;
-            }
-
-            IReadOnlyList<GameplayTag> list = tags.GetGameplayTagArray();
-            var names = new string[list.Count];
-            for (int i = 0; i < list.Count; i++)
-            {
-                names[i] = list[i].ToString();
-            }
-
-            return string.Join(", ", names);
         }
 
         public sealed class Entry

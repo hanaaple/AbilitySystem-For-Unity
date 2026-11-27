@@ -4,6 +4,7 @@ using Core.AbilitySystem.Effect;
 using Core.AbilitySystem.Tag;
 using Game.Character;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 namespace Game.UI
@@ -12,52 +13,52 @@ namespace Game.UI
     [RequireComponent(typeof(UIDocument))]
     public class PlayerHealthHud : MonoBehaviour
     {
-        [SerializeField] private AbilitySystemComponent abilitySystemComponent;
-        [SerializeField] private Texture2D portrait;
+        [SerializeField] [FormerlySerializedAs("abilitySystemComponent")] private AbilitySystemComponent _abilitySystemComponent;
+        [SerializeField] [FormerlySerializedAs("portrait")] private Texture2D _portrait;
 
         // 패널 기준 해상도(1920×1080)의 픽셀. 화면이 작으면 함께 줄어든다.
         [Header("Layout (px)")]
-        [SerializeField] private float screenMargin = 32f;
-        [SerializeField] private float portraitSize = 88f;
-        [SerializeField] private float barWidth = 360f;
-        [SerializeField] private float barHeight = 16f;
-        [SerializeField] private float valueFontSize = 20f;
+        [SerializeField] [FormerlySerializedAs("screenMargin")] private float _screenMargin = 32f;
+        [SerializeField] [FormerlySerializedAs("portraitSize")] private float _portraitSize = 88f;
+        [SerializeField] [FormerlySerializedAs("barWidth")] private float _barWidth = 360f;
+        [SerializeField] [FormerlySerializedAs("barHeight")] private float _barHeight = 16f;
+        [SerializeField] [FormerlySerializedAs("valueFontSize")] private float _valueFontSize = 20f;
         [Tooltip("줄 앞의 이름(HP·MP) 글자 크기와 칸 너비. 너비가 같아야 두 바의 시작이 맞는다.")]
-        [SerializeField] private float resourceNameFontSize = 16f;
-        [SerializeField] private float resourceNameWidth = 30f;
+        [SerializeField] [FormerlySerializedAs("resourceNameFontSize")] private float _resourceNameFontSize = 16f;
+        [SerializeField] [FormerlySerializedAs("resourceNameWidth")] private float _resourceNameWidth = 30f;
 
         [Header("Bar")]
-        [SerializeField] private Color fillColor = Color.white;
-        [SerializeField] private Color barBackgroundColor = new(0f, 0f, 0f, 0.75f);
+        [SerializeField] [FormerlySerializedAs("fillColor")] private Color _fillColor = Color.white;
+        [SerializeField] [FormerlySerializedAs("barBackgroundColor")] private Color _barBackgroundColor = new(0f, 0f, 0f, 0.75f);
         [Tooltip("깎인 구간 조각 색. 바가 흰색이라 어둡게 두되, 빈 칸(barBackgroundColor)과는 구분되게 한다.")]
-        [SerializeField] private Color trailColor = new(0.45f, 0.45f, 0.45f, 1f);
+        [SerializeField] [FormerlySerializedAs("trailColor")] private Color _trailColor = new(0.45f, 0.45f, 0.45f, 1f);
         [Tooltip("조각마다, 생긴 뒤 줄어들기 시작할 때까지(초).")]
-        [Min(0f)] [SerializeField] private float trailHoldTime = 0.6f;
+        [Min(0f)] [SerializeField] [FormerlySerializedAs("trailHoldTime")] private float _trailHoldTime = 0.6f;
         [Tooltip("조각이 줄어드는 속도(바 전체 길이 / 초).")]
-        [Min(0.01f)] [SerializeField] private float trailShrinkSpeed = 1.5f;
-        [SerializeField] private Color shieldColor = new(0.3f, 0.65f, 1f, 1f);
+        [Min(0.01f)] [SerializeField] [FormerlySerializedAs("trailShrinkSpeed")] private float _trailShrinkSpeed = 1.5f;
+        [SerializeField] [FormerlySerializedAs("shieldColor")] private Color _shieldColor = new(0.3f, 0.65f, 1f, 1f);
 
         [Header("Mana")]
-        [SerializeField] private float manaBarHeight = 8f;
-        [SerializeField] private float manaFontSize = 15f;
+        [SerializeField] [FormerlySerializedAs("manaBarHeight")] private float _manaBarHeight = 8f;
+        [SerializeField] [FormerlySerializedAs("manaFontSize")] private float _manaFontSize = 15f;
         [Tooltip("실드(파랑)와 구분되게 보라 쪽으로 둔다.")]
-        [SerializeField] private Color manaColor = new(0.55f, 0.45f, 1f, 1f);
+        [SerializeField] [FormerlySerializedAs("manaColor")] private Color _manaColor = new(0.55f, 0.45f, 1f, 1f);
 
         [Header("Ticks")]
-        [Min(1f)] [SerializeField] private float tickInterval = 100f;
+        [Min(1f)] [SerializeField] [FormerlySerializedAs("tickInterval")] private float _tickInterval = 100f;
         [Tooltip("화면이 기준보다 작으면 함께 줄어드는데, 2px 이하면 위치에 따라 0px로 반올림돼 사라진다.")]
-        [SerializeField] private float tickWidth = 3f;
-        [SerializeField] private Color tickColor = new(0f, 0f, 0f, 0.5f);
+        [SerializeField] [FormerlySerializedAs("tickWidth")] private float _tickWidth = 3f;
+        [SerializeField] [FormerlySerializedAs("tickColor")] private Color _tickColor = new(0f, 0f, 0f, 0.5f);
 
         [Header("Status")]
         [Tooltip("걸려 있으면 체력 바 색을 바꾸고 바 위에 아이콘·남은 시간을 띄우는 상태들. 여럿이면 목록 앞쪽의 색을 쓴다.")]
-        [SerializeField] private List<StatusDisplay> statuses = new();
-        [SerializeField] private float statusIconSize = 36f;
+        [SerializeField] [FormerlySerializedAs("statuses")] private List<StatusDisplay> _statuses = new();
+        [SerializeField] [FormerlySerializedAs("statusIconSize")] private float _statusIconSize = 36f;
         [Tooltip("이 태그 아래 상태는 버프, 나머지는 디버프로 보인다.")]
-        [SerializeField] private GameplayTag buffParentTag;
+        [SerializeField] [FormerlySerializedAs("buffParentTag")] private GameplayTag _buffParentTag;
         [Tooltip("버프 아이콘 테두리. 디버프와 색·모서리로 구분한다.")]
-        [SerializeField] private Color buffBorderColor = new(0.45f, 0.85f, 1f, 1f);
-        [SerializeField] private Color debuffBorderColor = new(0.95f, 0.15f, 0.1f, 1f);
+        [SerializeField] [FormerlySerializedAs("buffBorderColor")] private Color _buffBorderColor = new(0.45f, 0.85f, 1f, 1f);
+        [SerializeField] [FormerlySerializedAs("debuffBorderColor")] private Color _debuffBorderColor = new(0.95f, 0.15f, 0.1f, 1f);
 
         private readonly List<VisualElement> _trailChunkElements = new();
         private readonly List<StatusIcon> _statusIcons = new();
@@ -78,26 +79,26 @@ namespace Game.UI
 
         private void OnEnable()
         {
-            _trail = new HealthTrail(trailHoldTime, trailShrinkSpeed);
+            _trail = new HealthTrail(_trailHoldTime, _trailShrinkSpeed);
             BuildLayout(GetComponent<UIDocument>().rootVisualElement);
         }
 
         // 값 변경 이벤트는 ASC Awake에서 만든 GE 컨테이너에 있어 Start에서 구독한다
         private void Start()
         {
-            abilitySystemComponent.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Health).OnValueChange += OnHealthChanged;
+            _abilitySystemComponent.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.HealthAttribute).OnValueChange += OnHealthChanged;
         }
 
         private void Update()
         {
-            float maxHealth = abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.MaxHealth);
+            float maxHealth = _abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.MaxHealthAttribute);
             if (maxHealth <= 0f)
             {
                 return;
             }
 
-            float health = abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.Health);
-            float shield = abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.Shield);
+            float health = _abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.HealthAttribute);
+            float shield = _abilitySystemComponent.GetAttributeCurrentValue(CharacterAttributeSet.ShieldAttribute);
             _barScale = Mathf.Max(maxHealth, health + shield);
             if (!Mathf.Approximately(_barScale, _tickedBarScale))
             {
@@ -122,9 +123,9 @@ namespace Game.UI
 
         private void OnDestroy()
         {
-            if (abilitySystemComponent != null)
+            if (_abilitySystemComponent != null)
             {
-                abilitySystemComponent.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.Health).OnValueChange -= OnHealthChanged;
+                _abilitySystemComponent.GetGameplayAttributeValueChangeDelegate(CharacterAttributeSet.HealthAttribute).OnValueChange -= OnHealthChanged;
             }
         }
 
@@ -136,18 +137,18 @@ namespace Game.UI
 
             var hud = new VisualElement { pickingMode = PickingMode.Ignore };
             hud.style.position = Position.Absolute;
-            hud.style.left = screenMargin;
-            hud.style.bottom = screenMargin;
+            hud.style.left = _screenMargin;
+            hud.style.bottom = _screenMargin;
             hud.style.flexDirection = FlexDirection.Row;
             hud.style.alignItems = Align.FlexEnd;
             root.Add(hud);
 
             var portraitFrame = new VisualElement { pickingMode = PickingMode.Ignore };
-            portraitFrame.style.width = portraitSize;
-            portraitFrame.style.height = portraitSize;
-            portraitFrame.style.backgroundColor = barBackgroundColor;
-            portraitFrame.style.backgroundImage = portrait;
-            SetBorder(portraitFrame, 2f, fillColor);
+            portraitFrame.style.width = _portraitSize;
+            portraitFrame.style.height = _portraitSize;
+            portraitFrame.style.backgroundColor = _barBackgroundColor;
+            portraitFrame.style.backgroundImage = _portrait;
+            SetBorder(portraitFrame, 2f, _fillColor);
             hud.Add(portraitFrame);
 
             var column = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -156,16 +157,16 @@ namespace Game.UI
             column.Add(BuildStatusRow());
 
             // 체력·마나 줄은 같은 모양 — 숫자가 어느 바의 것인지 헷갈리지 않게 값을 바 바로 오른쪽에 둔다
-            VisualElement healthRow = MakeResourceRow("HP", fillColor);
+            VisualElement healthRow = MakeResourceRow("HP", _fillColor);
             column.Add(healthRow);
 
             var bar = new VisualElement { pickingMode = PickingMode.Ignore };
-            bar.style.width = barWidth;
-            bar.style.height = barHeight;
-            bar.style.backgroundColor = barBackgroundColor;
+            bar.style.width = _barWidth;
+            bar.style.height = _barHeight;
+            bar.style.backgroundColor = _barBackgroundColor;
             healthRow.Add(bar);
 
-            _valueLabel = MakeValueLabel(valueFontSize, fillColor);
+            _valueLabel = MakeValueLabel(_valueFontSize, _fillColor);
             healthRow.Add(_valueLabel);
 
             // 조각은 체력 칸 오른쪽(깎인 자리)에 생기므로 그리는 순서는 상관없지만, 겹치는 순간에도 체력이 위로 보이게 먼저 깐다
@@ -175,16 +176,16 @@ namespace Game.UI
             _fill.style.left = 0f;
             _fill.style.top = 0f;
             _fill.style.bottom = 0f;
-            _fill.style.backgroundColor = fillColor;
+            _fill.style.backgroundColor = _fillColor;
             bar.Add(_fill);
 
             _shieldFill = new VisualElement { pickingMode = PickingMode.Ignore };
             _shieldFill.style.position = Position.Absolute;
             _shieldFill.style.top = 0f;
             _shieldFill.style.bottom = 0f;
-            _shieldFill.style.backgroundColor = shieldColor;
+            _shieldFill.style.backgroundColor = _shieldColor;
             bar.Add(_shieldFill);
-            _shieldColorHex = ColorUtility.ToHtmlStringRGB(shieldColor);
+            _shieldColorHex = ColorUtility.ToHtmlStringRGB(_shieldColor);
 
             _tickLayer = MakeFullLayer(bar);
             column.Add(BuildManaRow());
@@ -193,13 +194,13 @@ namespace Game.UI
         // 체력 줄과 같은 모양. 체력보다 덜 중요해 바와 숫자를 조금 작게 둔다.
         private VisualElement BuildManaRow()
         {
-            _manaRow = MakeResourceRow("MP", manaColor);
+            _manaRow = MakeResourceRow("MP", _manaColor);
             _manaRow.style.marginTop = 6f;
 
             var manaBar = new VisualElement { pickingMode = PickingMode.Ignore };
-            manaBar.style.width = barWidth;
-            manaBar.style.height = manaBarHeight;
-            manaBar.style.backgroundColor = barBackgroundColor;
+            manaBar.style.width = _barWidth;
+            manaBar.style.height = _manaBarHeight;
+            manaBar.style.backgroundColor = _barBackgroundColor;
             _manaRow.Add(manaBar);
 
             _manaFill = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -207,10 +208,10 @@ namespace Game.UI
             _manaFill.style.left = 0f;
             _manaFill.style.top = 0f;
             _manaFill.style.bottom = 0f;
-            _manaFill.style.backgroundColor = manaColor;
+            _manaFill.style.backgroundColor = _manaColor;
             manaBar.Add(_manaFill);
 
-            _manaLabel = MakeValueLabel(manaFontSize, manaColor);
+            _manaLabel = MakeValueLabel(_manaFontSize, _manaColor);
             _manaRow.Add(_manaLabel);
             return _manaRow;
         }
@@ -223,8 +224,8 @@ namespace Game.UI
             row.style.alignItems = Align.Center;
 
             var nameLabel = new Label(resourceName) { pickingMode = PickingMode.Ignore };
-            nameLabel.style.width = resourceNameWidth;
-            nameLabel.style.fontSize = resourceNameFontSize;
+            nameLabel.style.width = _resourceNameWidth;
+            nameLabel.style.fontSize = _resourceNameFontSize;
             nameLabel.style.color = color;
             nameLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
             nameLabel.style.paddingLeft = 0f;
@@ -251,14 +252,14 @@ namespace Game.UI
         // 최대 마나가 없는 캐릭터면 줄째 숨긴다
         private void UpdateMana()
         {
-            float maxMana = abilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.MaxMana);
+            float maxMana = _abilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.MaxManaAttribute);
             _manaRow.style.display = maxMana > 0f ? DisplayStyle.Flex : DisplayStyle.None;
             if (maxMana <= 0f)
             {
                 return;
             }
 
-            float mana = abilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.Mana);
+            float mana = _abilitySystemComponent.GetAttributeCurrentValue(PlayerAttributeSet.ManaAttribute);
             _manaFill.style.width = Length.Percent(Mathf.Clamp01(mana / maxMana) * 100f);
             // 코스트를 낼 수 있는지 숫자로 바로 보이게 내림한다(29.6이면 30이 아니라 29)
             _manaLabel.text = $"{Mathf.FloorToInt(mana)} / {Mathf.CeilToInt(maxMana)}";
@@ -298,7 +299,7 @@ namespace Game.UI
                 element.style.position = Position.Absolute;
                 element.style.top = 0f;
                 element.style.bottom = 0f;
-                element.style.backgroundColor = trailColor;
+                element.style.backgroundColor = _trailColor;
                 _trailLayer.Add(element);
                 _trailChunkElements.Add(element);
             }
@@ -325,28 +326,18 @@ namespace Game.UI
             _tickLayer.Clear();
 
             // 끝과 겹치는 눈금은 그리지 않는다
-            for (float value = tickInterval; value < barScale; value += tickInterval)
+            for (float value = _tickInterval; value < barScale; value += _tickInterval)
             {
                 var tick = new VisualElement { pickingMode = PickingMode.Ignore };
                 tick.style.position = Position.Absolute;
                 tick.style.left = Length.Percent(value / barScale * 100f);
                 tick.style.top = 0f;
                 tick.style.bottom = 0f;
-                tick.style.width = tickWidth;
-                tick.style.marginLeft = -tickWidth / 2f;
-                tick.style.backgroundColor = tickColor;
+                tick.style.width = _tickWidth;
+                tick.style.marginLeft = -_tickWidth / 2f;
+                tick.style.backgroundColor = _tickColor;
                 _tickLayer.Add(tick);
             }
-        }
-
-        private void OnHealthChanged(OnAttributeChangeData data)
-        {
-            if (_barScale <= 0f)
-            {
-                return;
-            }
-
-            _trail.OnHealthRatioChanged(data.OldValue / _barScale, data.NewValue / _barScale);
         }
 
         private VisualElement BuildStatusRow()
@@ -355,39 +346,39 @@ namespace Game.UI
             row.style.flexDirection = FlexDirection.Row;
             row.style.marginBottom = 4f;
 
-            foreach (StatusDisplay status in statuses)
+            foreach (StatusDisplay status in _statuses)
             {
                 var frame = new VisualElement { pickingMode = PickingMode.Ignore };
-                frame.style.width = statusIconSize;
-                frame.style.height = statusIconSize;
+                frame.style.width = _statusIconSize;
+                frame.style.height = _statusIconSize;
                 frame.style.marginRight = 4f;
-                frame.style.backgroundImage = status.icon;
+                frame.style.backgroundImage = status.Icon;
                 frame.style.justifyContent = Justify.FlexEnd;
                 frame.style.alignItems = Align.FlexEnd;
                 frame.style.overflow = Overflow.Hidden;
                 // 버프는 둥근 하늘색, 디버프는 각진 빨강 — 아이콘 그림과 상관없이 한눈에 갈린다
-                bool isBuff = buffParentTag.IsValid() && status.tag.MatchesTag(buffParentTag);
-                SetBorder(frame, 3f, isBuff ? buffBorderColor : debuffBorderColor);
-                float radius = isBuff ? statusIconSize * 0.3f : 0f;
+                bool isBuff = _buffParentTag.IsValid() && status.Tag.MatchesTag(_buffParentTag);
+                SetBorder(frame, 3f, isBuff ? _buffBorderColor : _debuffBorderColor);
+                float radius = isBuff ? _statusIconSize * 0.3f : 0f;
                 frame.style.borderTopLeftRadius = radius;
                 frame.style.borderTopRightRadius = radius;
                 frame.style.borderBottomLeftRadius = radius;
                 frame.style.borderBottomRightRadius = radius;
-                if (status.icon == null)
+                if (status.Icon == null)
                 {
-                    frame.style.backgroundColor = status.barColor;
+                    frame.style.backgroundColor = status.BarColor;
                 }
                 row.Add(frame);
 
                 var timeLabel = new Label { pickingMode = PickingMode.Ignore };
-                timeLabel.style.fontSize = statusIconSize * 0.4f;
+                timeLabel.style.fontSize = _statusIconSize * 0.4f;
                 timeLabel.style.color = Color.white;
                 timeLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
                 timeLabel.style.paddingRight = 2f;
                 timeLabel.style.textShadow = new TextShadow { offset = new Vector2(1f, 1f), blurRadius = 2f, color = Color.black };
                 var tags = new GameplayTagContainer();
-                tags.AddTag(status.tag);
-                var icon = new StatusIcon(frame, timeLabel, GameplayEffectQuery.MakeQuery_MatchAnyOwningTags(tags));
+                tags.AddTag(status.Tag);
+                var icon = new StatusIcon(frame, timeLabel, GameplayEffectQuery.MakeQueryMatchAnyOwningTags(tags));
 
                 // 지난 시간만큼 어두운 부채꼴이 12시부터 시계 방향으로 차오른다. 시간 숫자가 덮개 위에 오게 먼저 깐다.
                 var clock = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -410,22 +401,22 @@ namespace Game.UI
         // 체력 바 색은 걸린 상태 중 목록 앞쪽 것을, 아이콘은 걸린 상태마다 남은 시간과 함께 보인다
         private void UpdateStatuses()
         {
-            Color barColor = fillColor;
+            Color barColor = _fillColor;
             bool hasBarColor = false;
-            for (int i = 0; i < statuses.Count; i++)
+            for (int i = 0; i < _statuses.Count; i++)
             {
-                StatusDisplay status = statuses[i];
+                StatusDisplay status = _statuses[i];
                 StatusIcon icon = _statusIcons[i];
-                bool isActive = abilitySystemComponent.HasMatchingGameplayTag(status.tag);
+                bool isActive = _abilitySystemComponent.HasMatchingGameplayTag(status.Tag);
                 icon.Frame.style.display = isActive ? DisplayStyle.Flex : DisplayStyle.None;
                 if (!isActive)
                 {
                     continue;
                 }
 
-                if (!hasBarColor && status.tintsHealthBar)
+                if (!hasBarColor && status.TintsHealthBar)
                 {
-                    barColor = status.barColor;
+                    barColor = status.BarColor;
                     hasBarColor = true;
                 }
 
@@ -441,7 +432,7 @@ namespace Game.UI
             float longest = 0f;
             float duration = 0f;
             bool isInfinite = false;
-            foreach ((float remaining, float total) in abilitySystemComponent.GetActiveEffectsTimeRemainingAndDuration(icon.Query))
+            foreach ((float remaining, float total) in _abilitySystemComponent.GetActiveEffectsTimeRemainingAndDuration(icon.Query))
             {
                 if (Mathf.Approximately(remaining, GameplayEffectConstants.InfiniteDuration))
                 {
@@ -466,14 +457,24 @@ namespace Game.UI
             }
         }
 
+        private void OnHealthChanged(OnAttributeChangeData data)
+        {
+            if (_barScale <= 0f)
+            {
+                return;
+            }
+
+            _trail.OnHealthRatioChanged(data.OldValue / _barScale, data.NewValue / _barScale);
+        }
+
         [System.Serializable]
         private class StatusDisplay
         {
-            public GameplayTag tag;
+            [FormerlySerializedAs("tag")] public GameplayTag Tag;
             [Tooltip("걸려 있는 동안 체력 칸을 barColor로 칠한다. 끄면 아이콘만 띄운다(아이콘 그림이 없으면 barColor 칸).")]
-            public bool tintsHealthBar = true;
-            public Color barColor = new(1f, 0.45f, 0.1f, 1f);
-            public Texture2D icon;
+            [FormerlySerializedAs("tintsHealthBar")] public bool TintsHealthBar = true;
+            [FormerlySerializedAs("barColor")] public Color BarColor = new(1f, 0.45f, 0.1f, 1f);
+            [FormerlySerializedAs("icon")] public Texture2D Icon;
         }
 
         private class StatusIcon

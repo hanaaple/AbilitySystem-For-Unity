@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.Effect
 {
@@ -9,18 +10,18 @@ namespace Core.AbilitySystem.Effect
     [Serializable]
     public struct GameplayEffectModifierMagnitude
     {
-        [SerializeField] private MagnitudeCalculationType magnitudeCalculationType;
+        [SerializeField] [FormerlySerializedAs("magnitudeCalculationType")] private MagnitudeCalculationType _magnitudeCalculationType;
 
         // ScalableFloat 전용. TODO Level 기반 커브 테이블로 교체 예정. 현재는 고정 float.
-        [SerializeField] private float scalableFloatMagnitude;
+        [SerializeField] [FormerlySerializedAs("scalableFloatMagnitude")] private float _scalableFloatMagnitude;
 
         // AttributeBased 전용. 캡처 어트리뷰트 기반 magnitude 계산 정의.
-        [SerializeField] private AttributeBasedMagnitude attributeBasedMagnitude;
+        [SerializeField] [FormerlySerializedAs("attributeBasedMagnitude")] private AttributeBasedMagnitude _attributeBasedMagnitude;
 
-        public MagnitudeCalculationType MagnitudeCalculationType => magnitudeCalculationType;
+        public MagnitudeCalculationType MagnitudeCalculationType => _magnitudeCalculationType;
 
         /// <summary>AttributeBased 계산 정의. <see cref="MagnitudeCalculationType"/>가 AttributeBased일 때만 의미가 있다.</summary>
-        public AttributeBasedMagnitude AttributeBasedMagnitude => attributeBasedMagnitude;
+        public AttributeBasedMagnitude AttributeBasedMagnitude => _attributeBasedMagnitude;
 
         /// <summary>최종 magnitude를 계산한다 — ScalableFloat이면 고정값, AttributeBased면 spec 캡처값으로. 캡처(Source 생성 시·Target 적용 시) 이후에 호출해야 한다.</summary>
         /// <remarks>UE: FGameplayEffectModifierMagnitude::AttemptCalculateMagnitude</remarks>
@@ -30,17 +31,17 @@ namespace Core.AbilitySystem.Effect
 
             if (bCanCalc)
             {
-                switch (magnitudeCalculationType)
+                switch (_magnitudeCalculationType)
                 {
                     case MagnitudeCalculationType.ScalableFloat:
                     {
-                        outCalculatedMagnitude = scalableFloatMagnitude;
+                        outCalculatedMagnitude = _scalableFloatMagnitude;
                         break;
                     }
 
                     case MagnitudeCalculationType.AttributeBased:
                     {
-                        outCalculatedMagnitude = attributeBasedMagnitude.Evaluate(spec);
+                        outCalculatedMagnitude = _attributeBasedMagnitude.Evaluate(spec);
                         break;
                     }
 
@@ -103,11 +104,11 @@ namespace Core.AbilitySystem.Effect
         public List<GameplayEffectAttributeCaptureDefinition> GetAttributeCaptureDefinitions()
         {
             List<GameplayEffectAttributeCaptureDefinition> outCaptureDefs = new();
-            switch (magnitudeCalculationType)
+            switch (_magnitudeCalculationType)
             {
                 case MagnitudeCalculationType.AttributeBased:
                 {
-                    outCaptureDefs.Add(attributeBasedMagnitude.BackingAttribute);
+                    outCaptureDefs.Add(_attributeBasedMagnitude.BackingAttribute);
                     break;
                 }
             }

@@ -26,65 +26,65 @@ namespace Game
         private static readonly int JumpHash = Animator.StringToHash("Jump");
         private static readonly int RollMotionSpeedHash = Animator.StringToHash("RollMotionSpeed");
 
-        [SerializeField] private Transform model;
-        [SerializeField] private Animator animator;
-        [SerializeField] private OrientationWarping orientationWarping;
+        [SerializeField] [FormerlySerializedAs("model")] private Transform _model;
+        [SerializeField] [FormerlySerializedAs("animator")] private Animator _animator;
+        [SerializeField] [FormerlySerializedAs("orientationWarping")] private OrientationWarping _orientationWarping;
         [Tooltip("시작할 때 자신에게 적용하는 초기 스탯 GE(Instant, Override).")]
-        [SerializeField] private GameplayEffectAsset defaultAttributes;
-        [SerializeField] private GameplayEffectAsset possessEffect;
+        [SerializeField] [FormerlySerializedAs("defaultAttributes")] private GameplayEffectAsset _defaultAttributes;
+        [SerializeField] [FormerlySerializedAs("possessEffect")] private GameplayEffectAsset _possessEffect;
         [Tooltip("초기 스탯 다음에 자신에게 거는 지속 GE들(마나 재생 등). 계속 걸려 있어야 하므로 Infinite로 만든다.")]
-        [SerializeField] private List<GameplayEffectAsset> passiveEffects = new();
+        [SerializeField] [FormerlySerializedAs("passiveEffects")] private List<GameplayEffectAsset> _passiveEffects = new();
 
         [Header("Ability")]
         [Tooltip("모델 안에서의 시전 지점(높이·앞 거리). 쏠 때 몸이 아직 덜 돌았어도 겨누는 방향으로 돌린 이 위치에서 나간다.")]
-        [SerializeField] private Transform castPoint;
+        [SerializeField] [FormerlySerializedAs("castPoint")] private Transform _castPoint;
         [FormerlySerializedAs("ability1")]
-        [SerializeField] private GameplayAbilityAsset normalAttackAbility;
+        [SerializeField] [FormerlySerializedAs("normalAttackAbility")] private GameplayAbilityAsset _normalAttackAbility;
         [Tooltip("키 1 스킬.")]
-        [SerializeField] private GameplayAbilityAsset skillAbility;
-        [SerializeField] private GameplayAbilityAsset ability2;
-        [SerializeField] private GameplayAbilityAsset jumpAbility;
-        [SerializeField] private GameplayAbilityAsset sprintAbility;
-        [SerializeField] private GameplayAbilityAsset aimAbility;
+        [SerializeField] [FormerlySerializedAs("skillAbility")] private GameplayAbilityAsset _skillAbility;
+        [SerializeField] [FormerlySerializedAs("ability2")] private GameplayAbilityAsset _ability2;
+        [SerializeField] [FormerlySerializedAs("jumpAbility")] private GameplayAbilityAsset _jumpAbility;
+        [SerializeField] [FormerlySerializedAs("sprintAbility")] private GameplayAbilityAsset _sprintAbility;
+        [SerializeField] [FormerlySerializedAs("aimAbility")] private GameplayAbilityAsset _aimAbility;
 
         [Tooltip("이 태그가 있는 동안 달리기 애니메이션을 쓴다(속도 자체는 달리기 어빌리티의 GE가 speed 어트리뷰트로 바꾼다). 달리기 어빌리티의 Activation Owned Tags와 같아야 한다.")]
-        [SerializeField] private GameplayTag sprintingTag;
+        [SerializeField] [FormerlySerializedAs("sprintingTag")] private GameplayTag _sprintingTag;
 
         [Tooltip("이 중 하나라도 있으면 카메라 방향을 보고 옆·뒤로 걷는다(조준, 쏜 직후 전투 자세). 조준 어빌리티의 Activation Owned Tags·전투 자세 GE의 부여 태그와 같아야 한다.")]
-        [SerializeField] private GameplayTagContainer faceViewTags;
+        [SerializeField] [FormerlySerializedAs("faceViewTags")] private GameplayTagContainer _faceViewTags;
 
         [Header("Aim")]
         [Tooltip("화면 가운데로 쏜 조준 레이가 아무것도 맞히지 않을 때 겨누는 거리.")]
-        [SerializeField] private float aimDistance = 100f;
-        [SerializeField] private LayerMask aimLayers = ~0;
+        [SerializeField] [FormerlySerializedAs("aimDistance")] private float _aimDistance = 100f;
+        [SerializeField] [FormerlySerializedAs("aimLayers")] private LayerMask _aimLayers = ~0;
 
         // 이동 속도는 speed 어트리뷰트가 정한다. 아래 두 값은 애니메이션 블렌드 트리의 걷기·달리기 기준값이다(클립에 맞춘 값이라 속도와 따로 둔다).
         [Header("Move")]
         [FormerlySerializedAs("walkSpeed")]
-        [SerializeField] private float walkAnimationSpeed = 2f;
+        [SerializeField] [FormerlySerializedAs("walkAnimationSpeed")] private float _walkAnimationSpeed = 2f;
         [FormerlySerializedAs("runSpeed")]
-        [SerializeField] private float runAnimationSpeed = 5.335f;
-        [Range(0f, 0.3f)] [SerializeField] private float rotationSmoothTime = 0.12f;
+        [SerializeField] [FormerlySerializedAs("runAnimationSpeed")] private float _runAnimationSpeed = 5.335f;
+        [Range(0f, 0.3f)] [SerializeField] [FormerlySerializedAs("rotationSmoothTime")] private float _rotationSmoothTime = 0.12f;
         [Tooltip("카메라 방향을 볼 때(조준·전투 자세)의 회전 시간. 쏘는 순간 뒤를 보고 있었으면 이 시간에 걸쳐 돌아선다.")]
-        [Range(0f, 0.3f)] [SerializeField] private float viewRotationSmoothTime = 0.05f;
-        [SerializeField] private float speedChangeRate = 10f;
+        [Range(0f, 0.3f)] [SerializeField] [FormerlySerializedAs("viewRotationSmoothTime")] private float _viewRotationSmoothTime = 0.05f;
+        [SerializeField] [FormerlySerializedAs("speedChangeRate")] private float _speedChangeRate = 10f;
 
         [Header("Jump · Gravity")]
-        [SerializeField] private float jumpTimeout = 0.2f;
-        [SerializeField] private float gravity = -15f;
-        [SerializeField] private float fallTimeout = 0.15f;
-        [SerializeField] private LayerMask groundLayers = 1;
+        [SerializeField] [FormerlySerializedAs("jumpTimeout")] private float _jumpTimeout = 0.2f;
+        [SerializeField] [FormerlySerializedAs("gravity")] private float _gravity = -15f;
+        [SerializeField] [FormerlySerializedAs("fallTimeout")] private float _fallTimeout = 0.15f;
+        [SerializeField] [FormerlySerializedAs("groundLayers")] private LayerMask _groundLayers = 1;
 
         [Header("Dash")]
         [Tooltip("구르기 애니메이션에서 구르는 동작이 1배속으로 걸리는 시간. 돌진 시간에 맞춰 재생 속도를 이 비율로 바꾼다. Roll 클립에서 일어서기까지의 길이와 같아야 한다.")]
-        [SerializeField] private float rollAnimationDuration = 1.25f;
+        [SerializeField] [FormerlySerializedAs("rollAnimationDuration")] private float _rollAnimationDuration = 1.25f;
 
         // 둘 중 하나만 늘 붙어 있다. Animator는 GameplayTagAnimatorParameterMap이 이 태그로 갱신한다.
         [Header("Movement Mode Tags")]
         [Tooltip("땅에 있는 동안 붙는 태그.")]
-        [SerializeField] private GameplayTag walkingModeTag;
+        [SerializeField] [FormerlySerializedAs("walkingModeTag")] private GameplayTag _walkingModeTag;
         [Tooltip("공중에 있는 동안(점프·낙하) 붙는 태그.")]
-        [SerializeField] private GameplayTag fallingModeTag;
+        [SerializeField] [FormerlySerializedAs("fallingModeTag")] private GameplayTag _fallingModeTag;
 
         private AbilitySystemComponent _asc;
         private CharacterController _characterController;
@@ -115,19 +115,8 @@ namespace Game
         private Action _onDashFinished;
         private Action _onLanded;
 
-        protected virtual void Awake()
-        {
-            _asc = GetComponent<AbilitySystemComponent>();
-            _characterController = GetComponent<CharacterController>();
-            _asc.AddSpawnedAttribute(new CharacterAttributeSet());
-            _asc.AddSpawnedAttribute(new PlayerAttributeSet());
-
-            _targetRotation = model.eulerAngles.y;
-            _viewCamera = Camera.main;
-            _cameraBrain = _viewCamera != null ? _viewCamera.GetComponent<CinemachineBrain>() : null;
-            _jumpTimeoutDelta = jumpTimeout;
-            _fallTimeoutDelta = fallTimeout;
-        }
+        /// <summary>캐릭터에 걸리는 중력 가속도(음수).</summary>
+        public float Gravity => _gravity;
 
         private void OnEnable()
         {
@@ -137,12 +126,12 @@ namespace Game
         private void Start()
         {
             // GE 컨테이너가 ASC Awake에서 만들어지므로 Start에서 적용한다
-            if (defaultAttributes != null)
+            if (_defaultAttributes != null)
             {
-                _asc.ApplyGameplayEffectToSelf(defaultAttributes);
+                _asc.ApplyGameplayEffectToSelf(_defaultAttributes);
             }
 
-            foreach (GameplayEffectAsset passiveEffect in passiveEffects)
+            foreach (GameplayEffectAsset passiveEffect in _passiveEffects)
             {
                 if (passiveEffect != null)
                 {
@@ -150,12 +139,12 @@ namespace Game
                 }
             }
 
-            GiveInputAbility(normalAttackAbility, AbilityInputID.NormalAttack);
-            GiveInputAbility(skillAbility, AbilityInputID.Ability1);
-            GiveInputAbility(ability2, AbilityInputID.Ability2);
-            GiveInputAbility(jumpAbility, AbilityInputID.Jump);
-            GiveInputAbility(sprintAbility, AbilityInputID.Sprint);
-            GiveInputAbility(aimAbility, AbilityInputID.Aim);
+            GiveInputAbility(_normalAttackAbility, AbilityInputID.NormalAttack);
+            GiveInputAbility(_skillAbility, AbilityInputID.Ability1);
+            GiveInputAbility(_ability2, AbilityInputID.Ability2);
+            GiveInputAbility(_jumpAbility, AbilityInputID.Jump);
+            GiveInputAbility(_sprintAbility, AbilityInputID.Sprint);
+            GiveInputAbility(_aimAbility, AbilityInputID.Aim);
         }
 
         private void Update()
@@ -169,13 +158,27 @@ namespace Game
             _pendingLaunches.Clear();
         }
 
+        protected virtual void Awake()
+        {
+            _asc = GetComponent<AbilitySystemComponent>();
+            _characterController = GetComponent<CharacterController>();
+            _asc.AddSpawnedAttribute(new CharacterAttributeSet());
+            _asc.AddSpawnedAttribute(new PlayerAttributeSet());
+
+            _targetRotation = _model.eulerAngles.y;
+            _viewCamera = Camera.main;
+            _cameraBrain = _viewCamera != null ? _viewCamera.GetComponent<CinemachineBrain>() : null;
+            _jumpTimeoutDelta = _jumpTimeout;
+            _fallTimeoutDelta = _fallTimeout;
+        }
+
         public override void OnPossessed(ControllerBase controller)
         {
             base.OnPossessed(controller);
 
-            if (possessEffect != null)
+            if (_possessEffect != null)
             {
-                _possessEffectHandle = _asc.ApplyGameplayEffectToSelf(possessEffect);
+                _possessEffectHandle = _asc.ApplyGameplayEffectToSelf(_possessEffect);
             }
         }
 
@@ -217,7 +220,7 @@ namespace Game
         public Vector3 GetMoveIntentDirection()
         {
             // _moveWorldDirection은 입력을 떼도 마지막 방향이 남으므로, 지금 입력 중인지는 _moveInputDirection으로 본다
-            Vector3 direction = _moveInputDirection.sqrMagnitude > 0.01f ? _moveInputDirection : model.forward;
+            Vector3 direction = _moveInputDirection.sqrMagnitude > 0.01f ? _moveInputDirection : _model.forward;
             direction.y = 0f;
             return direction.normalized;
         }
@@ -234,13 +237,13 @@ namespace Game
             {
                 _targetRotation = Mathf.Atan2(velocity.x, velocity.z) * Mathf.Rad2Deg;
                 _rotationVelocity = 0f;
-                model.rotation = Quaternion.Euler(0f, _targetRotation, 0f);
+                _model.rotation = Quaternion.Euler(0f, _targetRotation, 0f);
             }
 
             // 구르기 애니메이션은 돌진 어빌리티 태그로 켜고 끈다(GameplayTagAnimatorParameterMap). 여기선 그 길이에 맞게 재생 속도만 맞춘다
-            if (animator != null)
+            if (_animator != null)
             {
-                animator.SetFloat(RollMotionSpeedHash, rollAnimationDuration / duration);
+                _animator.SetFloat(RollMotionSpeedHash, _rollAnimationDuration / duration);
             }
         }
 
@@ -270,9 +273,6 @@ namespace Game
             return _isGrounded && _jumpTimeoutDelta <= 0f;
         }
 
-        /// <summary>캐릭터에 걸리는 중력 가속도(음수).</summary>
-        public float Gravity => gravity;
-
         /// <summary>위로 띄운다(점프 높이 계산은 점프 어빌리티가 한다). 착지하면 onLanded를 부른다. 땅에 있는지는 <see cref="CanJump"/>로 먼저 확인한다.</summary>
         public void Launch(float verticalVelocity, Action onLanded)
         {
@@ -280,91 +280,10 @@ namespace Game
             _isGrounded = false;
             _verticalVelocity = verticalVelocity;
 
-            if (animator != null)
+            if (_animator != null)
             {
-                animator.SetTrigger(JumpHash);
+                _animator.SetTrigger(JumpHash);
             }
-        }
-
-        private void Locomote(Vector3 direction, float delta)
-        {
-            _moveInputDirection = direction;
-            CheckGrounded();
-            CheckLanded();
-            ApplyGravity(delta);
-
-            if (_dashRemainingTime > 0f)
-            {
-                TickDash(delta);
-                UpdateAnimator();
-                return;
-            }
-
-            bool hasInput = direction.sqrMagnitude > 0.01f;
-            float targetSpeed = hasInput ? _asc.GetAttributeCurrentValue(CharacterAttributeSet.Speed) : 0f;
-            bool isSprinting = _asc.HasMatchingGameplayTag(sprintingTag);
-            float targetBlend = hasInput ? (isSprinting ? runAnimationSpeed : walkAnimationSpeed) : 0f;
-
-            UpdateAnimationBlend(targetBlend, delta);
-            UpdateMoveSpeed(targetSpeed, delta);
-
-            if (_asc.HasAnyMatchingGameplayTags(faceViewTags))
-            {
-                LocomoteFacingView(direction, hasInput);
-            }
-            else if (hasInput)
-            {
-                LocomoteFacingMove(direction);
-            }
-            else
-            {
-                UpdateMoveDirection(Vector2.zero);
-                SetWarpAngle(0f);
-            }
-
-            Translate(delta);
-            UpdateAnimator();
-        }
-
-        // 몸이 이동 방향으로 돌아 앞으로 걷거나 달린다. 카메라는 따로 돌려도 된다.
-        private void LocomoteFacingMove(Vector3 direction)
-        {
-            RotateTo(Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg, rotationSmoothTime);
-            _moveWorldDirection = direction.normalized;
-            UpdateMoveDirection(Vector2.up);
-            SetWarpAngle(0f);
-        }
-
-        // 몸은 카메라 방향에 고정하고, 입력 방향으로 옆·뒤 걸음을 섞어 움직인다
-        private void LocomoteFacingView(Vector3 direction, bool hasInput)
-        {
-            RotateTo(_viewYaw, viewRotationSmoothTime);
-            if (hasInput)
-            {
-                _moveWorldDirection = direction.normalized;
-                Vector3 local = Quaternion.Euler(0f, -_viewYaw, 0f) * _moveWorldDirection;
-                float moveAngle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
-                float cardinalAngle = ToCardinalAngle(moveAngle);
-                UpdateMoveDirection(new Vector2(Mathf.Sin(cardinalAngle * Mathf.Deg2Rad), Mathf.Cos(cardinalAngle * Mathf.Deg2Rad)));
-                SetWarpAngle(Mathf.DeltaAngle(cardinalAngle, moveAngle));
-            }
-            else
-            {
-                UpdateMoveDirection(Vector2.zero);
-                SetWarpAngle(0f);
-            }
-        }
-
-        // 몸은 바로 돌리지 않고(홱 돌지 않게) 전투 자세로 빠르게 돌아서게 둔다.
-        // 그래서 나갈 위치는 지금 몸 방향이 아니라 겨누는 방향으로 돌린 시전 지점이다 — 뒤를 보고 있어도 몸 앞에서 나간다.
-        private void Launch(Action<Vector3, Vector3> launch)
-        {
-            Vector3 aimPoint = FindAimPoint();
-            Vector3 toAim = aimPoint - model.position;
-            toAim.y = 0f;
-            float aimYaw = toAim.sqrMagnitude > 0.0001f ? Mathf.Atan2(toAim.x, toAim.z) * Mathf.Rad2Deg : model.eulerAngles.y;
-            Vector3 origin = model.position + Quaternion.Euler(0f, aimYaw, 0f) * castPoint.localPosition;
-            launch(origin, aimPoint);
         }
 
         /// <summary>십자선이 가리키는 캐릭터 부위(머리 등). 캐릭터가 아니거나 부위가 없는 곳을 가리키면 null.</summary>
@@ -405,24 +324,105 @@ namespace Game
             return closestZone;
         }
 
+        private void Locomote(Vector3 direction, float delta)
+        {
+            _moveInputDirection = direction;
+            CheckGrounded();
+            CheckLanded();
+            ApplyGravity(delta);
+
+            if (_dashRemainingTime > 0f)
+            {
+                TickDash(delta);
+                UpdateAnimator();
+                return;
+            }
+
+            bool hasInput = direction.sqrMagnitude > 0.01f;
+            float targetSpeed = hasInput ? _asc.GetAttributeCurrentValue(CharacterAttributeSet.SpeedAttribute) : 0f;
+            bool isSprinting = _asc.HasMatchingGameplayTag(_sprintingTag);
+            float targetBlend = hasInput ? (isSprinting ? _runAnimationSpeed : _walkAnimationSpeed) : 0f;
+
+            UpdateAnimationBlend(targetBlend, delta);
+            UpdateMoveSpeed(targetSpeed, delta);
+
+            if (_asc.HasAnyMatchingGameplayTags(_faceViewTags))
+            {
+                LocomoteFacingView(direction, hasInput);
+            }
+            else if (hasInput)
+            {
+                LocomoteFacingMove(direction);
+            }
+            else
+            {
+                UpdateMoveDirection(Vector2.zero);
+                SetWarpAngle(0f);
+            }
+
+            Translate(delta);
+            UpdateAnimator();
+        }
+
+        // 몸이 이동 방향으로 돌아 앞으로 걷거나 달린다. 카메라는 따로 돌려도 된다.
+        private void LocomoteFacingMove(Vector3 direction)
+        {
+            RotateTo(Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg, _rotationSmoothTime);
+            _moveWorldDirection = direction.normalized;
+            UpdateMoveDirection(Vector2.up);
+            SetWarpAngle(0f);
+        }
+
+        // 몸은 카메라 방향에 고정하고, 입력 방향으로 옆·뒤 걸음을 섞어 움직인다
+        private void LocomoteFacingView(Vector3 direction, bool hasInput)
+        {
+            RotateTo(_viewYaw, _viewRotationSmoothTime);
+            if (hasInput)
+            {
+                _moveWorldDirection = direction.normalized;
+                Vector3 local = Quaternion.Euler(0f, -_viewYaw, 0f) * _moveWorldDirection;
+                float moveAngle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
+                float cardinalAngle = ToCardinalAngle(moveAngle);
+                UpdateMoveDirection(new Vector2(Mathf.Sin(cardinalAngle * Mathf.Deg2Rad), Mathf.Cos(cardinalAngle * Mathf.Deg2Rad)));
+                SetWarpAngle(Mathf.DeltaAngle(cardinalAngle, moveAngle));
+            }
+            else
+            {
+                UpdateMoveDirection(Vector2.zero);
+                SetWarpAngle(0f);
+            }
+        }
+
+        // 몸은 바로 돌리지 않고(홱 돌지 않게) 전투 자세로 빠르게 돌아서게 둔다.
+        // 그래서 나갈 위치는 지금 몸 방향이 아니라 겨누는 방향으로 돌린 시전 지점이다 — 뒤를 보고 있어도 몸 앞에서 나간다.
+        private void Launch(Action<Vector3, Vector3> launch)
+        {
+            Vector3 aimPoint = FindAimPoint();
+            Vector3 toAim = aimPoint - _model.position;
+            toAim.y = 0f;
+            float aimYaw = toAim.sqrMagnitude > 0.0001f ? Mathf.Atan2(toAim.x, toAim.z) * Mathf.Rad2Deg : _model.eulerAngles.y;
+            Vector3 origin = _model.position + Quaternion.Euler(0f, aimYaw, 0f) * _castPoint.localPosition;
+            launch(origin, aimPoint);
+        }
+
         // 화면 가운데로 레이를 쏴 처음 맞는 곳
         private Vector3 FindAimPoint()
         {
             if (_viewCamera == null)
             {
-                return castPoint.position + model.forward * aimDistance;
+                return _castPoint.position + _model.forward * _aimDistance;
             }
 
             RaycastHit[] hits = CastAimRay(QueryTriggerInteraction.Ignore, out Ray ray, out float minDistance);
-            return TryFindAimBlocker(hits, minDistance, out RaycastHit blocker) ? blocker.point : ray.GetPoint(aimDistance);
+            return TryFindAimBlocker(hits, minDistance, out RaycastHit blocker) ? blocker.point : ray.GetPoint(_aimDistance);
         }
 
         // minDistance — 카메라~시전 지점 거리. 이보다 가까운 것(카메라와 캐릭터 사이)은 겨눌 대상이 아니다.
         private RaycastHit[] CastAimRay(QueryTriggerInteraction triggerInteraction, out Ray ray, out float minDistance)
         {
             ray = _viewCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            minDistance = Vector3.Dot(castPoint.position - ray.origin, ray.direction);
-            return Physics.RaycastAll(ray, aimDistance, aimLayers, triggerInteraction);
+            minDistance = Vector3.Dot(_castPoint.position - ray.origin, ray.direction);
+            return Physics.RaycastAll(ray, _aimDistance, _aimLayers, triggerInteraction);
         }
 
         // 트리거·자기 몸·카메라~캐릭터 사이에 걸린 것을 건너뛴 가장 가까운 충돌
@@ -451,7 +451,7 @@ namespace Game
         {
             Vector3 center = _characterController.center;
             Vector3 spherePosition = transform.position + new Vector3(center.x, center.y - _characterController.height / 2f - _characterController.radius, center.z);
-            _isGrounded = Physics.CheckSphere(spherePosition, _characterController.radius, groundLayers, QueryTriggerInteraction.Ignore);
+            _isGrounded = Physics.CheckSphere(spherePosition, _characterController.radius, _groundLayers, QueryTriggerInteraction.Ignore);
             UpdateMovementModeTag();
         }
 
@@ -476,7 +476,7 @@ namespace Game
         /// <remarks>UE(Lyra): ALyraCharacter::SetMovementModeTag</remarks>
         private void SetMovementModeTag(bool isGrounded, bool isTagEnabled)
         {
-            GameplayTag movementModeTag = isGrounded ? walkingModeTag : fallingModeTag;
+            GameplayTag movementModeTag = isGrounded ? _walkingModeTag : _fallingModeTag;
             if (movementModeTag.IsValid())
             {
                 _asc.SetLooseGameplayTagCount(movementModeTag, isTagEnabled ? 1 : 0);
@@ -529,7 +529,7 @@ namespace Game
                     _verticalVelocity = GroundedVerticalVelocity;
                 }
 
-                _fallTimeoutDelta = fallTimeout;
+                _fallTimeoutDelta = _fallTimeout;
                 _isFreeFalling = false;
 
                 if (_jumpTimeoutDelta >= 0f)
@@ -539,8 +539,8 @@ namespace Game
             }
             else
             {
-                _verticalVelocity += gravity * delta;
-                _jumpTimeoutDelta = jumpTimeout;
+                _verticalVelocity += _gravity * delta;
+                _jumpTimeoutDelta = _jumpTimeout;
 
                 // 계단·턱처럼 잠깐 뜨는 경우엔 낙하 모션으로 넘어가지 않게 유예를 둔다
                 if (_fallTimeoutDelta >= 0f)
@@ -556,7 +556,7 @@ namespace Game
 
         private void UpdateAnimationBlend(float targetBlend, float delta)
         {
-            _animationBlend = Mathf.Lerp(_animationBlend, targetBlend, delta * speedChangeRate);
+            _animationBlend = Mathf.Lerp(_animationBlend, targetBlend, delta * _speedChangeRate);
 
             if (_animationBlend < 0.01f)
             {
@@ -571,7 +571,7 @@ namespace Game
 
             if (Mathf.Abs(currentHorizontalSpeed - targetSpeed) > SpeedOffset)
             {
-                _moveSpeed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed, delta * speedChangeRate);
+                _moveSpeed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed, delta * _speedChangeRate);
                 _moveSpeed = Mathf.Round(_moveSpeed * 1000f) / 1000f;
             }
             else
@@ -617,17 +617,17 @@ namespace Game
 
         private void SetWarpAngle(float angle)
         {
-            if (orientationWarping != null)
+            if (_orientationWarping != null)
             {
-                orientationWarping.SetTargetAngle(angle);
+                _orientationWarping.SetTargetAngle(angle);
             }
         }
 
         private void RotateTo(float yaw, float smoothTime)
         {
             _targetRotation = yaw;
-            float rotation = Mathf.SmoothDampAngle(model.eulerAngles.y, _targetRotation, ref _rotationVelocity, smoothTime);
-            model.rotation = Quaternion.Euler(0f, rotation, 0f);
+            float rotation = Mathf.SmoothDampAngle(_model.eulerAngles.y, _targetRotation, ref _rotationVelocity, smoothTime);
+            _model.rotation = Quaternion.Euler(0f, rotation, 0f);
         }
 
         // 회전이 다 돌기 전에도 입력 방향으로 바로 움직인다. 입력이 끊겨 감속하는 동안은 마지막 방향을 유지한다.
@@ -657,16 +657,16 @@ namespace Game
         private void UpdateAnimator()
         {
             // 기존 Player 프리팹처럼 Animator를 연결하지 않은 캐릭터도 있다
-            if (animator == null)
+            if (_animator == null)
             {
                 return;
             }
 
-            animator.SetFloat(SpeedHash, _animationBlend);
-            animator.SetFloat(MoveDirectionXHash, _moveDirection.x);
-            animator.SetFloat(MoveDirectionZHash, _moveDirection.y);
+            _animator.SetFloat(SpeedHash, _animationBlend);
+            _animator.SetFloat(MoveDirectionXHash, _moveDirection.x);
+            _animator.SetFloat(MoveDirectionZHash, _moveDirection.y);
             // 땅·공중은 이동 모드 태그로 넘긴다. FreeFall은 공중에 잠깐 뜬 것(계단·턱)을 거르는 시간 판정이라 모드가 아니어서 여기서 직접 넣는다
-            animator.SetBool(FreeFallHash, _isFreeFalling);
+            _animator.SetBool(FreeFallHash, _isFreeFalling);
         }
 
         private void OnCameraUpdated(CinemachineBrain brain)

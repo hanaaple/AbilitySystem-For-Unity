@@ -69,9 +69,7 @@ namespace Core.Common
                 return false;
             }
 
-            return field.IsPublic
-                || field.IsDefined(typeof(SerializeField), false)
-                || field.IsDefined(typeof(SerializeReference), false);
+            return field.IsPublic || field.IsDefined(typeof(SerializeField), false) || field.IsDefined(typeof(SerializeReference), false);
         }
 
         private static object CopyValue(object value, bool byReference, Dictionary<object, object> copies)

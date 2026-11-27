@@ -8,17 +8,19 @@ namespace Game.Character
     {
         private const float SpeedBonus = 10f;
 
-        public static readonly GameplayEffectAttributeCaptureDefinition[] defs = {
-            new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.Health, AttributeCaptureSource.Target, true),
-            new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.Stamina, AttributeCaptureSource.Source, false)
+        public static readonly GameplayEffectAttributeCaptureDefinition[] CaptureDefinitions =
+        {
+            new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.HealthAttribute, AttributeCaptureSource.Target, true),
+            new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.StaminaAttribute, AttributeCaptureSource.Source, false)
         };
 
-        private GameplayEffectAttributeCaptureDefinition A => defs[0];
-        private GameplayEffectAttributeCaptureDefinition B = defs[1];
+        private GameplayEffectAttributeCaptureDefinition _b = CaptureDefinitions[1];
+
+        private GameplayEffectAttributeCaptureDefinition A => CaptureDefinitions[0];
 
         public override ReadOnlySpan<GameplayEffectAttributeCaptureDefinition> Defs()
         {
-            return defs;
+            return CaptureDefinitions;
         }
 
         public override void Execute(GameplayEffectExecutionParameters parameters, GameplayEffectExecutionOutput output)
@@ -31,14 +33,14 @@ namespace Game.Character
 
             float result;
             parameters.AttemptCalculateCapturedAttributeMagnitude(A, evaluationParameters, out float health);
-            parameters.AttemptCalculateCapturedAttributeMagnitude(B, evaluationParameters, out float stamina);
+            parameters.AttemptCalculateCapturedAttributeMagnitude(_b, evaluationParameters, out float stamina);
 
             result = health + stamina;
             result = result * 0.01f + SpeedBonus;
 
             Debug.Log($"{health} * {stamina} * 0.01 + {SpeedBonus} = {result}");
 
-            output.AddOutputModifier(CharacterAttributeSet.Speed, result, GameplayModifierOperation.AddBase);
+            output.AddOutputModifier(CharacterAttributeSet.SpeedAttribute, result, GameplayModifierOperation.AddBase);
         }
     }
 }

@@ -7,10 +7,9 @@ namespace Game
     {
         protected ControllerBase _controller;
 
+        public event Action<CharacterBase> OnDeath;
 
         public bool IsAlive { get; private set; } = true;
-
-        public event Action<CharacterBase> OnDeath;
 
         public abstract void MoveDelta(Vector3 normailizedDirection, float delta);
         public abstract void StopMoving();

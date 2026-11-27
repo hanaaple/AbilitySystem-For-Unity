@@ -22,7 +22,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: health
+      fieldName: Health
     operation: 0
     modifierMagnitude:
       magnitudeCalculationType: 0

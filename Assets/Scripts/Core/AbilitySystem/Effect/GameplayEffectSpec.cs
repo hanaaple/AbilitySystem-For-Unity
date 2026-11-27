@@ -93,6 +93,77 @@ namespace Core.AbilitySystem.Effect
             Context = newContext;
         }
 
+        /// <summary>레벨만 바꾼다. magnitude 재계산은 호출부가 한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::SetLevel</remarks>
+        internal void SetLevel(float level)
+        {
+            Level = level;
+        }
+
+        /// <summary>
+        /// 각 슬롯 magnitude를 현재 캡처 기준으로 제자리 재계산한다. AttributeBased가 캡처값에 의존하므로
+        /// 적용 때 Target 캡처 직후 부르고, 주기 실행마다 컨테이너도 부른다(non-snapshot 캡처가 지금 값을 따르게). 슬롯 배열은 <see cref="BuildModifierSpecs"/>가 준비.
+        /// </summary>
+        /// <remarks>UE: FGameplayEffectSpec::CalculateModifierMagnitudes</remarks>
+        internal void CalculateModifierMagnitudes()
+        {
+            for (int i = 0; i < Modifiers.Length; i++)
+            {
+                GameplayModifier modifier = Definition.Modifiers[i];
+                GameplayEffectModifierMagnitude modifierMagnitude = modifier.ModifierMagnitude;
+                if (modifierMagnitude.AttemptCalculateMagnitude(this, out float evaluatedMagnitude))
+                {
+                    Modifiers[i].EvaluatedMagnitude = evaluatedMagnitude;
+                }
+                else
+                {
+                    Modifiers[i].EvaluatedMagnitude = 0;
+                    Debug.LogWarning($"[GESpec] '{Definition.name}'의 {i}번 modifier magnitude Calculation Failed - falling back to 0.");
+                }
+            }
+        }
+
+        /// <summary>이 Spec이 대상에게 부여하는 태그(GE 에셋의 Granted Tags)를 <paramref name="outContainer"/>에 더한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::GetAllGrantedTags</remarks>
+        public void GetAllGrantedTags(GameplayTagContainer outContainer)
+        {
+            // TODO Spec 동적 Granted Tags(DynamicGrantedTags)가 생기면 여기서 함께 더한다.
+            outContainer.AppendTags(Definition.GetGrantedTags());
+        }
+
+        /// <summary>이 Spec의 Asset Tags(GE 에셋의 태그)를 <paramref name="outContainer"/>에 더한다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::GetAllAssetTags</remarks>
+        public void GetAllAssetTags(GameplayTagContainer outContainer)
+        {
+            // TODO Spec 동적 Asset Tags(DynamicAssetTags)가 생기면 여기서 함께 더한다.
+            outContainer.AppendTags(Definition.GetAssetTags());
+        }
+
+        /// <summary>Source 액터 태그를 Instigator의 지금 소유 태그로 다시 채운다.</summary>
+        /// <remarks>UE: FGameplayEffectSpec::RecaptureSourceActorTags</remarks>
+        public void RecaptureSourceActorTags()
+        {
+            GameplayTagContainer actorTags = CapturedSourceTags.GetActorTags();
+            GameplayTagContainer specTags = CapturedSourceTags.GetSpecTags();
+            actorTags.Reset();
+            Context.GetOwnedGameplayTags(actorTags, specTags);
+        }
+
+        /// <summary>
+        /// 적용 시점에 Target 어트리뷰트를 대상 ASC로 캡처한다. 호출부가 대상별 <see cref="Clone"/> 복사본에 부르므로 섞이지 않는다.
+        /// 캡처 직후 <see cref="CalculateModifierMagnitudes"/>로 재계산 — AttributeBased modifier가 최신 대상 값을 반영하게.
+        /// </summary>
+        public void CaptureAttributeDataFromTarget(AbilitySystemComponent target)
+        {
+            CapturedRelevantAttributes.CaptureAttributes(target, AttributeCaptureSource.Target);
+            CalculateModifierMagnitudes();
+        }
+
+        public bool HasValidCapturedAttributes(IReadOnlyList<GameplayEffectAttributeCaptureDefinition> reqCaptureDefs)
+        {
+            return CapturedRelevantAttributes.HasValidCapturedAttributes(reqCaptureDefs);
+        }
+
         /// <summary>멤버 세팅 후 초기화 — Modifier·Execution 변환과 어트리뷰트 캡처. 생성자가 확정한 Definition·Context·Level에 의존.</summary>
         private void Initialize()
         {
@@ -124,38 +195,7 @@ namespace Core.AbilitySystem.Effect
             {
                 if (!defs[i].ToResolvedAttribute().IsValid)
                 {
-                    Debug.LogWarning(
-                        $"[GESpec] GameplayAttributeHandle 해석 실패 — '{Definition.name}' 의 {i}번 modifier는 적용 시 반영되지 않는다.");
-                }
-            }
-        }
-
-        /// <summary>레벨만 바꾼다. magnitude 재계산은 호출부가 한다.</summary>
-        /// <remarks>UE: FGameplayEffectSpec::SetLevel</remarks>
-        internal void SetLevel(float level)
-        {
-            Level = level;
-        }
-
-        /// <summary>
-        /// 각 슬롯 magnitude를 현재 캡처 기준으로 제자리 재계산한다. AttributeBased가 캡처값에 의존하므로
-        /// 적용 때 Target 캡처 직후 부르고, 주기 실행마다 컨테이너도 부른다(non-snapshot 캡처가 지금 값을 따르게). 슬롯 배열은 <see cref="BuildModifierSpecs"/>가 준비.
-        /// </summary>
-        /// <remarks>UE: FGameplayEffectSpec::CalculateModifierMagnitudes</remarks>
-        internal void CalculateModifierMagnitudes()
-        {
-            for (int i = 0; i < Modifiers.Length; i++)
-            {
-                GameplayModifier modifier = Definition.Modifiers[i];
-                GameplayEffectModifierMagnitude modifierMagnitude = modifier.ModifierMagnitude;
-                if (modifierMagnitude.AttemptCalculateMagnitude(this, out float evaluatedMagnitude))
-                {
-                    Modifiers[i].EvaluatedMagnitude = evaluatedMagnitude;
-                }
-                else
-                {
-                    Modifiers[i].EvaluatedMagnitude = 0;
-                    Debug.LogWarning($"[GESpec] '{Definition.name}'의 {i}번 modifier magnitude Calculation Failed - falling back to 0.");
+                    Debug.LogWarning($"[GESpec] GameplayAttributeHandle 해석 실패 — '{Definition.name}' 의 {i}번 modifier는 적용 시 반영되지 않는다.");
                 }
             }
         }
@@ -207,42 +247,6 @@ namespace Core.AbilitySystem.Effect
             CapturedRelevantAttributes.CaptureAttributes(Context.GetInstigator(), AttributeCaptureSource.Source);
         }
 
-        /// <summary>이 Spec이 대상에게 부여하는 태그(GE 에셋의 Granted Tags)를 <paramref name="outContainer"/>에 더한다.</summary>
-        /// <remarks>UE: FGameplayEffectSpec::GetAllGrantedTags</remarks>
-        public void GetAllGrantedTags(GameplayTagContainer outContainer)
-        {
-            // TODO Spec 동적 Granted Tags(DynamicGrantedTags)가 생기면 여기서 함께 더한다.
-            outContainer.AppendTags(Definition.GetGrantedTags());
-        }
-
-        /// <summary>이 Spec의 Asset Tags(GE 에셋의 태그)를 <paramref name="outContainer"/>에 더한다.</summary>
-        /// <remarks>UE: FGameplayEffectSpec::GetAllAssetTags</remarks>
-        public void GetAllAssetTags(GameplayTagContainer outContainer)
-        {
-            // TODO Spec 동적 Asset Tags(DynamicAssetTags)가 생기면 여기서 함께 더한다.
-            outContainer.AppendTags(Definition.GetAssetTags());
-        }
-
-        /// <summary>Source 액터 태그를 Instigator의 지금 소유 태그로 다시 채운다.</summary>
-        /// <remarks>UE: FGameplayEffectSpec::RecaptureSourceActorTags</remarks>
-        public void RecaptureSourceActorTags()
-        {
-            GameplayTagContainer actorTags = CapturedSourceTags.GetActorTags();
-            GameplayTagContainer specTags = CapturedSourceTags.GetSpecTags();
-            actorTags.Reset();
-            Context.GetOwnedGameplayTags(actorTags, specTags);
-        }
-
-        /// <summary>
-        /// 적용 시점에 Target 어트리뷰트를 대상 ASC로 캡처한다. 호출부가 대상별 <see cref="Clone"/> 복사본에 부르므로 섞이지 않는다.
-        /// 캡처 직후 <see cref="CalculateModifierMagnitudes"/>로 재계산 — AttributeBased modifier가 최신 대상 값을 반영하게.
-        /// </summary>
-        public void CaptureAttributeDataFromTarget(AbilitySystemComponent target)
-        {
-            CapturedRelevantAttributes.CaptureAttributes(target, AttributeCaptureSource.Target);
-            CalculateModifierMagnitudes();
-        }
-
         /// <summary>Execution 정의의 계산 클래스(AQN)를 Execution 인스턴스 목록으로 변환한다. resolve 실패는 경고 후 건너뛴다.</summary>
         /// <param name="outResolvedDefinitions">반환 목록과 평행한, resolve에 성공한 정의들.</param>
         private static IReadOnlyList<GameplayEffectExecution> ResolveExecutions(GameplayEffectAsset definition, out IReadOnlyList<GameplayEffectExecutionDefinition> outResolvedDefinitions)
@@ -277,11 +281,6 @@ namespace Core.AbilitySystem.Effect
 
             outResolvedDefinitions = resolvedDefinitions;
             return executions;
-        }
-
-        public bool HasValidCapturedAttributes(IReadOnlyList<GameplayEffectAttributeCaptureDefinition> reqCaptureDefs)
-        {
-            return CapturedRelevantAttributes.HasValidCapturedAttributes(reqCaptureDefs);
         }
     }
 }

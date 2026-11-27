@@ -23,7 +23,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: attackSpeed
+      fieldName: AttackSpeed
     operation: 0
     modifierMagnitude:
       magnitudeCalculationType: 0
@@ -64,7 +64,7 @@ MonoBehaviour:
   - attribute:
       attributeSetTypeName: Game.Character.CharacterAttributeSet, Game,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      fieldName: attack
+      fieldName: Attack
     operation: 1
     modifierMagnitude:
       magnitudeCalculationType: 0

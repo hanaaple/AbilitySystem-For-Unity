@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Core.Common;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.Tag
 {
@@ -13,13 +14,30 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: FGameplayTag::EmptyTag</remarks>
         public static readonly GameplayTag EmptyTag = default;
 
-        // 에디터 드로어가 직렬화 경로 "name.name"(이 필드 → InternedName.name)으로 읽고 쓴다. 이름을 바꾸면 GameplayTagPropertyHandle도 바꿔야 한다.
-        [SerializeField] private InternedName name;
+        // 에디터 드로어가 직렬화 경로 "_name._name"(이 필드 → InternedName._name)으로 읽고 쓴다. 이름을 바꾸면 GameplayTagPropertyHandle도 바꿔야 한다.
+        [SerializeField] [FormerlySerializedAs("name")] private InternedName _name;
 
         /// <remarks>UE: FGameplayTag::FGameplayTag</remarks>
         private GameplayTag(InternedName name)
         {
-            this.name = name;
+            _name = name;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is GameplayTag other && Equals(other);
+        }
+
+        /// <remarks>UE: GetTypeHash(const FGameplayTag&)</remarks>
+        public override int GetHashCode()
+        {
+            return _name.GetHashCode();
+        }
+
+        /// <remarks>UE: FGameplayTag::ToString</remarks>
+        public override string ToString()
+        {
+            return _name.ToString() ?? string.Empty;
         }
 
         /// <remarks>UE: FGameplayTag::operator==</remarks>
@@ -50,31 +68,14 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: FGameplayTag::operator==</remarks>
         public bool Equals(GameplayTag other)
         {
-            return name.Equals(other.name);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is GameplayTag other && Equals(other);
-        }
-
-        /// <remarks>UE: GetTypeHash(const FGameplayTag&)</remarks>
-        public override int GetHashCode()
-        {
-            return name.GetHashCode();
-        }
-
-        /// <remarks>UE: FGameplayTag::ToString</remarks>
-        public override string ToString()
-        {
-            return name.ToString() ?? string.Empty;
+            return _name.Equals(other._name);
         }
 
         /// <summary>태그 이름.</summary>
         /// <remarks>UE: FGameplayTag::GetTagName</remarks>
         public InternedName GetTagName()
         {
-            return name;
+            return _name;
         }
 
         /// <summary>이름으로 등록된 태그를 찾는다. 미등록이면 빈 태그(default)를 돌려준다.</summary>
@@ -115,7 +116,7 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: FGameplayTag::IsValid</remarks>
         public bool IsValid()
         {
-            return !name.IsNullOrEmpty();
+            return !_name.IsNullOrEmpty();
         }
 
         /// <summary>이 태그가 대상 태그이거나 그 자식인지. <c>"A.1".MatchesTag("A")</c>는 true, 반대는 false.</summary>
@@ -213,7 +214,7 @@ namespace Core.AbilitySystem.Tag
         public void ParseParentTags(List<GameplayTag> uniqueParentTags)
         {
             // 노드 캐시의 부모 순서(바로 위 부모 먼저)와 같아야 ExtractParentTags 결과와 일치한다
-            string rawTag = name.ToString();
+            string rawTag = _name.ToString();
             if (rawTag == null)
             {
                 return;
@@ -237,14 +238,14 @@ namespace Core.AbilitySystem.Tag
         /// <remarks>UE: FGameplayTag::GetTagLeafName</remarks>
         public InternedName GetTagLeafName()
         {
-            string rawTag = name.ToString();
+            string rawTag = _name.ToString();
             if (rawTag == null)
             {
-                return name;
+                return _name;
             }
 
             int dotIndex = rawTag.LastIndexOf('.');
-            return dotIndex < 0 ? name : new InternedName(rawTag.Substring(dotIndex + 1));
+            return dotIndex < 0 ? _name : new InternedName(rawTag.Substring(dotIndex + 1));
         }
 
         // 등록 여부를 확인하지 않는 생성 통로라 매니저(트리 구성·조회)만 쓴다.

@@ -13,12 +13,12 @@ namespace Core.AbilitySystem.Attribute.Editor
     [CustomPropertyDrawer(typeof(GameplayAttribute))]
     public sealed class GameplayAttributeDrawer : PropertyDrawer
     {
-        private const string AttributeSetTypeNameName = "attributeSetTypeName";
-        private const string FieldNameName = "fieldName";
+        private const string AttributeSetTypeNameName = "_attributeSetTypeName";
+        private const string FieldNameName = "_fieldName";
         private const float RowGap = 2f;
 
-        private static string[] _setDisplayNames;
-        private static readonly Dictionary<Type, string[]> _fieldNameCache = new();
+        private static string[] SetDisplayNames;
+        private static readonly Dictionary<Type, string[]> FieldNameCache = new();
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -66,7 +66,7 @@ namespace Core.AbilitySystem.Attribute.Editor
 
         private static string[] GetSetDisplayNames(Type[] setTypes)
         {
-            return _setDisplayNames ??= new[] { "None" }.Concat(setTypes.Select(t => t.Name)).ToArray();
+            return SetDisplayNames ??= new[] { "None" }.Concat(setTypes.Select(t => t.Name)).ToArray();
         }
 
         private static int GetSetPopupIndex(Type[] setTypes, string assemblyQualifiedName)
@@ -88,7 +88,7 @@ namespace Core.AbilitySystem.Attribute.Editor
 
         private static string[] GetFieldNames(Type setType)
         {
-            if (_fieldNameCache.TryGetValue(setType, out string[] cached))
+            if (FieldNameCache.TryGetValue(setType, out string[] cached))
             {
                 return cached;
             }
@@ -97,7 +97,7 @@ namespace Core.AbilitySystem.Attribute.Editor
                 .Select(f => f.Name)
                 .ToArray();
 
-            _fieldNameCache[setType] = names;
+            FieldNameCache[setType] = names;
             return names;
         }
     }

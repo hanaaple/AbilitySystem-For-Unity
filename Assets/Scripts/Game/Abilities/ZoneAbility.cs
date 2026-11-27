@@ -4,6 +4,7 @@ using Core.AbilitySystem;
 using Core.AbilitySystem.Abilities;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Abilities
 {
@@ -17,9 +18,9 @@ namespace Game.Abilities
     public sealed class ZoneAbility : CharacterGameplayAbility
     {
         [Tooltip("안에 있는 동안 걸어 두는 GE(Infinite). 끝날 때 지운다.")]
-        [SerializeField] private List<GameplayEffectAsset> insideEffects = new();
+        [SerializeField] [FormerlySerializedAs("insideEffects")] private List<GameplayEffectAsset> _insideEffects = new();
         [Tooltip("나갈 때 거는 GE. 나와도 잠시 남는 디버프(Duration)용.")]
-        [SerializeField] private List<GameplayEffectAsset> exitEffects = new();
+        [SerializeField] [FormerlySerializedAs("exitEffects")] private List<GameplayEffectAsset> _exitEffects = new();
 
         private readonly List<ActiveGameplayEffectHandle> _insideHandles = new();
 
@@ -32,7 +33,7 @@ namespace Game.Abilities
             }
 
             float level = GetAbilityLevel(handle, gameObjectInfo);
-            foreach (GameplayEffectAsset effect in insideEffects)
+            foreach (GameplayEffectAsset effect in _insideEffects)
             {
                 _insideHandles.Add(ApplyGameplayEffectToOwner(handle, gameObjectInfo, effect, level));
             }
@@ -54,7 +55,7 @@ namespace Game.Abilities
             _insideHandles.Clear();
 
             float level = GetAbilityLevel(handle, gameObjectInfo);
-            foreach (GameplayEffectAsset effect in exitEffects)
+            foreach (GameplayEffectAsset effect in _exitEffects)
             {
                 ApplyGameplayEffectToOwner(handle, gameObjectInfo, effect, level);
             }

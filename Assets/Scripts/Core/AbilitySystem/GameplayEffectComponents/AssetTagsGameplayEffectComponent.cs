@@ -1,6 +1,7 @@
 using System;
 using Core.AbilitySystem.Effect;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core.AbilitySystem.GameplayEffectComponents
 {
@@ -10,30 +11,30 @@ namespace Core.AbilitySystem.GameplayEffectComponents
     public sealed class AssetTagsGameplayEffectComponent : GameplayEffectComponent
     {
         [Tooltip("이 GE가 가지는 태그. 대상에게 주지 않는다.")]
-        [SerializeField] private InheritedTagContainer inheritableAssetTags = new();
-
-        /// <summary>설정된 Asset Tags 묶음.</summary>
-        /// <remarks>UE: UAssetTagsGameplayEffectComponent::GetConfiguredAssetTagChanges</remarks>
-        public InheritedTagContainer GetConfiguredAssetTagChanges()
-        {
-            return inheritableAssetTags;
-        }
+        [SerializeField] [FormerlySerializedAs("inheritableAssetTags")] private InheritedTagContainer _inheritableAssetTags = new();
 
         /// <remarks>UE: UAssetTagsGameplayEffectComponent::OnGameplayEffectChanged</remarks>
         public override void OnGameplayEffectChanged()
         {
             base.OnGameplayEffectChanged();
-            SetAndApplyAssetTagChanges(inheritableAssetTags);
+            SetAndApplyAssetTagChanges(_inheritableAssetTags);
+        }
+
+        /// <summary>설정된 Asset Tags 묶음.</summary>
+        /// <remarks>UE: UAssetTagsGameplayEffectComponent::GetConfiguredAssetTagChanges</remarks>
+        public InheritedTagContainer GetConfiguredAssetTagChanges()
+        {
+            return _inheritableAssetTags;
         }
 
         /// <summary>Asset Tags 묶음을 바꾸고 GE의 Asset Tags에 반영한다.</summary>
         /// <remarks>UE: UAssetTagsGameplayEffectComponent::SetAndApplyAssetTagChanges</remarks>
         public void SetAndApplyAssetTagChanges(InheritedTagContainer tagContainerMods)
         {
-            inheritableAssetTags = tagContainerMods;
+            _inheritableAssetTags = tagContainerMods;
 
             // GE 에셋에는 부모 GE가 없어 물려받는 태그가 없다
-            inheritableAssetTags.UpdateInheritedTagProperties(null);
+            _inheritableAssetTags.UpdateInheritedTagProperties(null);
 
             ApplyAssetTagChanges();
         }
@@ -42,7 +43,7 @@ namespace Core.AbilitySystem.GameplayEffectComponents
         private void ApplyAssetTagChanges()
         {
             GameplayEffectAsset owner = GetOwner();
-            inheritableAssetTags.ApplyTo(owner.CachedAssetTags);
+            _inheritableAssetTags.ApplyTo(owner.CachedAssetTags);
         }
     }
 }

@@ -57,21 +57,19 @@ namespace Test
             Debug.Log($"[LifecyclePlayMode Self-Check] passed {_passed} / failed {_failed}");
         }
 
-        // ── C: 복제 ──────────────────────────────────────────────────────────────
-
         private IEnumerator CloneKeepsConfigOnly(GameplayTag looseTag)
         {
-            GameplayEffectAsset defaultAttributes = MakeEffect(GameplayEffectType.Instant, MakeModifier(CharacterAttributeSet.Stamina, 50f), MakeModifier(CharacterAttributeSet.Speed, 10f));
+            GameplayEffectAsset defaultAttributes = MakeEffect(GameplayEffectType.Instant, MakeModifier(CharacterAttributeSet.StaminaAttribute, 50f), MakeModifier(CharacterAttributeSet.SpeedAttribute, 10f));
             AbilitySystemComponent source = MakeDummy("Lifecycle_Source", defaultAttributes);
 
             // 초기 스탯 GE는 Start에서 적용된다
             yield return null;
             Check("C-0 원본은 초기 스탯 GE로 초기화(Stamina 50, Speed 10)", Approx(Stamina(source), 50f) && Approx(Speed(source), 10f));
 
-            source.SetAttributeBaseValue(CharacterAttributeSet.Stamina, 33f);
+            source.SetAttributeBaseValue(CharacterAttributeSet.StaminaAttribute, 33f);
             source.AddLooseGameplayTag(looseTag);
             source.GiveAbility(new GameplayAbilitySpec(MakeAbilityAsset(new LingeringAbility { Name = "CloneSource" })));
-            source.ApplyGameplayEffectToSelf(MakeEffect(GameplayEffectType.Infinite, MakeModifier(CharacterAttributeSet.Speed, 5f)));
+            source.ApplyGameplayEffectToSelf(MakeEffect(GameplayEffectType.Infinite, MakeModifier(CharacterAttributeSet.SpeedAttribute, 5f)));
 
             GameObject cloneObject = Instantiate(source.gameObject);
             cloneObject.name = "Lifecycle_Clone";
@@ -81,18 +79,16 @@ namespace Test
             Check("C-1 복제본 어트리뷰트는 원본 현재값(33·15)이 아니라 설정 초기값(Stamina 50, Speed 10)", Approx(Stamina(clone), 50f) && Approx(Speed(clone), 10f) && Approx(Stamina(source), 33f) && Approx(Speed(source), 15f));
             Check("C-2 복제본엔 어빌리티·태그·GE가 없음", clone.GetActivatableAbilities().Count == 0 && clone.GetTagCount(looseTag) == 0 && source.GetActivatableAbilities().Count == 1 && source.GetTagCount(looseTag) == 1);
             Check("C-3 복제본 GameObject 정보는 자기 자신(Owner·Avatar·ASC)", clone.AbilityGameObjectInfo.OwnerGameObject == cloneObject && clone.AbilityGameObjectInfo.AvatarGameObject == cloneObject && clone.AbilityGameObjectInfo.AbilitySystemComponent == clone);
-            Check("C-4 설정(초기 스탯 GE)은 같은 에셋을 가리킴", GetPrivateField(cloneObject.GetComponent<TrainingDummy>(), "defaultAttributes") == (object)defaultAttributes);
+            Check("C-4 설정(초기 스탯 GE)은 같은 에셋을 가리킴", GetPrivateField(cloneObject.GetComponent<TrainingDummy>(), "_defaultAttributes") == (object)defaultAttributes);
 
-            clone.SetAttributeBaseValue(CharacterAttributeSet.Stamina, 1f);
-            clone.ApplyGameplayEffectToSelf(MakeEffect(GameplayEffectType.Infinite, MakeModifier(CharacterAttributeSet.Speed, 100f)));
+            clone.SetAttributeBaseValue(CharacterAttributeSet.StaminaAttribute, 1f);
+            clone.ApplyGameplayEffectToSelf(MakeEffect(GameplayEffectType.Infinite, MakeModifier(CharacterAttributeSet.SpeedAttribute, 100f)));
             Check("C-5 복제본을 바꿔도 원본은 그대로(Stamina 33, Speed 15)", Approx(Stamina(source), 33f) && Approx(Speed(source), 15f) && Approx(Stamina(clone), 1f) && Approx(Speed(clone), 110f));
 
             Destroy(source.gameObject);
             Destroy(cloneObject);
             yield return null;
         }
-
-        // ── D: 파괴 ──────────────────────────────────────────────────────────────
 
         private IEnumerator DestroyCancelsAndClearsAbilities()
         {
@@ -117,32 +113,28 @@ namespace Test
             Check("D-4 취소 콜백 안에서 Owner를 다시 파괴해도 에러 없이 한 번만 정리", Count("Reentrant.Cancel") == 1 && Count("Reentrant.OnRemove") == 1 && _errorLogs == errorsBefore);
         }
 
-        // ── X: ASC 간 연결 ───────────────────────────────────────────────────────
-
         private IEnumerator DestroyedPeerIsDroppedFromLiveCapture()
         {
             AbilitySystemComponent source = MakeAsc("Lifecycle_LiveSource");
             AbilitySystemComponent target = MakeAsc("Lifecycle_LiveTarget");
-            source.SetAttributeBaseValue(CharacterAttributeSet.Health, 100f);
+            source.SetAttributeBaseValue(CharacterAttributeSet.HealthAttribute, 100f);
 
             // 대상 Speed += Source Health(라이브) — Source가 바뀌면 대상 GE가 다시 계산된다
-            var liveCapture = new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.Health, AttributeCaptureSource.Source, false);
-            GameplayEffectAsset liveEffect = MakeEffect(GameplayEffectType.Infinite, MakeAttributeBasedModifier(CharacterAttributeSet.Speed, liveCapture));
+            var liveCapture = new GameplayEffectAttributeCaptureDefinition(CharacterAttributeSet.HealthAttribute, AttributeCaptureSource.Source, false);
+            GameplayEffectAsset liveEffect = MakeEffect(GameplayEffectType.Infinite, MakeAttributeBasedModifier(CharacterAttributeSet.SpeedAttribute, liveCapture));
             source.ApplyGameplayEffectToTarget(liveEffect, target, source.MakeEffectContext());
-            source.SetAttributeBaseValue(CharacterAttributeSet.Health, 150f);
+            source.SetAttributeBaseValue(CharacterAttributeSet.HealthAttribute, 150f);
             Check("X-1 라이브 캡처 연결 — Source Health 100 → 150이면 대상 Speed 150", Approx(Speed(target), 150f));
 
             int errorsBefore = _errorLogs;
             Destroy(target.gameObject);
             yield return null;
-            source.SetAttributeBaseValue(CharacterAttributeSet.Health, 200f);
-            Check("X-2 대상 ASC가 파괴된 뒤 Source 값이 바뀌어도 에러 없음(죽은 의존자는 빠짐)", _errorLogs == errorsBefore && Approx(source.GetAttributeCurrentValue(CharacterAttributeSet.Health), 200f));
+            source.SetAttributeBaseValue(CharacterAttributeSet.HealthAttribute, 200f);
+            Check("X-2 대상 ASC가 파괴된 뒤 Source 값이 바뀌어도 에러 없음(죽은 의존자는 빠짐)", _errorLogs == errorsBefore && Approx(source.GetAttributeCurrentValue(CharacterAttributeSet.HealthAttribute), 200f));
 
             Destroy(source.gameObject);
             yield return null;
         }
-
-        // ── 도우미 ────────────────────────────────────────────────────────────────
 
         // 취소·종료·해제를 기록하고, 발동 뒤 스스로 끝나지 않고 활성으로 남는 테스트 어빌리티
         [Serializable]
@@ -178,17 +170,6 @@ namespace Test
             return LingeringAbility.Log.FindAll(logged => logged == entry).Count;
         }
 
-        private void CountErrorLogs(string message, string stackTrace, LogType type)
-        {
-            if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
-            {
-                if (!message.Contains("[LifecyclePlayMode FAIL]"))
-                {
-                    _errorLogs++;
-                }
-            }
-        }
-
         private static AbilitySystemComponent MakeAsc(string name)
         {
             var asc = new GameObject(name).AddComponent<AbilitySystemComponent>();
@@ -203,17 +184,17 @@ namespace Test
             go.SetActive(false);
             var asc = go.AddComponent<AbilitySystemComponent>();
             var dummy = go.AddComponent<TrainingDummy>();
-            SetPrivateField(dummy, "defaultAttributes", defaultAttributes);
+            SetPrivateField(dummy, "_defaultAttributes", defaultAttributes);
             go.SetActive(true);
             return asc;
         }
 
         private GameplayAbilityAsset MakeAbilityAsset(GameplayAbility template, GameplayAbilityInstancingPolicy policy = GameplayAbilityInstancingPolicy.InstancedPerExecution)
         {
-            SetPrivateField(template, "instancingPolicy", policy);
+            SetPrivateField(template, "_instancingPolicy", policy);
 
             var asset = ScriptableObject.CreateInstance<GameplayAbilityAsset>();
-            SetPrivateField(asset, "abilityTemplate", template);
+            SetPrivateField(asset, "_abilityTemplate", template);
 
             _created.Add(asset);
             return asset;
@@ -222,8 +203,8 @@ namespace Test
         private GameplayEffectAsset MakeEffect(GameplayEffectType type, params GameplayModifier[] modifiers)
         {
             var ge = ScriptableObject.CreateInstance<GameplayEffectAsset>();
-            SetPrivateField(ge, "type", type);
-            SetPrivateField(ge, "modifiers", new List<GameplayModifier>(modifiers));
+            SetPrivateField(ge, "_type", type);
+            SetPrivateField(ge, "_modifiers", new List<GameplayModifier>(modifiers));
             ge.OnGameplayEffectChanged();
 
             _created.Add(ge);
@@ -233,41 +214,41 @@ namespace Test
         private static GameplayModifier MakeModifier(GameplayAttributeHandle attribute, float magnitude)
         {
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
-            SetPrivateField(magnitudeBoxed, "scalableFloatMagnitude", magnitude);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.ScalableFloat);
+            SetPrivateField(magnitudeBoxed, "_scalableFloatMagnitude", magnitude);
             return MakeModifier(attribute, (GameplayEffectModifierMagnitude)magnitudeBoxed);
         }
 
         private static GameplayModifier MakeAttributeBasedModifier(GameplayAttributeHandle attribute, GameplayEffectAttributeCaptureDefinition captureDefinition)
         {
             var attributeBased = new AttributeBasedMagnitude();
-            SetPrivateField(attributeBased, "backingAttribute", captureDefinition);
-            SetPrivateField(attributeBased, "captureValueType", AttributeCaptureValueType.CurrentValue);
-            SetPrivateField(attributeBased, "coefficient", 1f);
+            SetPrivateField(attributeBased, "_backingAttribute", captureDefinition);
+            SetPrivateField(attributeBased, "_captureValueType", AttributeCaptureValueType.CurrentValue);
+            SetPrivateField(attributeBased, "_coefficient", 1f);
 
             object magnitudeBoxed = default(GameplayEffectModifierMagnitude);
-            SetPrivateField(magnitudeBoxed, "magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
-            SetPrivateField(magnitudeBoxed, "attributeBasedMagnitude", attributeBased);
+            SetPrivateField(magnitudeBoxed, "_magnitudeCalculationType", MagnitudeCalculationType.AttributeBased);
+            SetPrivateField(magnitudeBoxed, "_attributeBasedMagnitude", attributeBased);
             return MakeModifier(attribute, (GameplayEffectModifierMagnitude)magnitudeBoxed);
         }
 
         private static GameplayModifier MakeModifier(GameplayAttributeHandle attribute, GameplayEffectModifierMagnitude magnitude)
         {
             object modifierBoxed = default(GameplayModifier);
-            SetPrivateField(modifierBoxed, "attribute", new GameplayAttribute(attribute));
-            SetPrivateField(modifierBoxed, "operation", GameplayModifierOperation.AddBase);
-            SetPrivateField(modifierBoxed, "modifierMagnitude", magnitude);
+            SetPrivateField(modifierBoxed, "_attribute", new GameplayAttribute(attribute));
+            SetPrivateField(modifierBoxed, "_operation", GameplayModifierOperation.AddBase);
+            SetPrivateField(modifierBoxed, "_modifierMagnitude", magnitude);
             return (GameplayModifier)modifierBoxed;
         }
 
         private static float Stamina(AbilitySystemComponent asc)
         {
-            return asc.GetAttributeCurrentValue(CharacterAttributeSet.Stamina);
+            return asc.GetAttributeCurrentValue(CharacterAttributeSet.StaminaAttribute);
         }
 
         private static float Speed(AbilitySystemComponent asc)
         {
-            return asc.GetAttributeCurrentValue(CharacterAttributeSet.Speed);
+            return asc.GetAttributeCurrentValue(CharacterAttributeSet.SpeedAttribute);
         }
 
         // 기반 클래스의 private 필드(GameplayAbility의 정책 칸)도 찾도록 상속 계층을 올라간다.
@@ -311,6 +292,17 @@ namespace Test
             {
                 _failed++;
                 Debug.LogError($"[LifecyclePlayMode FAIL] {label}");
+            }
+        }
+
+        private void CountErrorLogs(string message, string stackTrace, LogType type)
+        {
+            if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
+            {
+                if (!message.Contains("[LifecyclePlayMode FAIL]"))
+                {
+                    _errorLogs++;
+                }
             }
         }
     }
