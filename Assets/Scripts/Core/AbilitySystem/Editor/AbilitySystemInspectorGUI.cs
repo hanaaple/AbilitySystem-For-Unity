@@ -174,7 +174,7 @@ namespace Core.AbilitySystem.Editor
 
             EditorGUI.indentLevel++;
 
-            FieldInfo[] fields = AttributeReflectionUtility.GetAttributeDataFields(setType);
+            FieldInfo[] fields = AttributeSet.GetAttributeDataFields(setType);
             if (fields.Length == 0)
             {
                 EditorGUILayout.LabelField("No AttributeData fields.");

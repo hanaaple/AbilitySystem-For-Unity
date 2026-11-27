@@ -18,6 +18,7 @@ namespace Test.Editor
     // I: 어트리뷰트 값 변경 이벤트(구독·해제, Old/New, 값이 같아도 울림, 원인 GEModData 유무).
     // J: PreAttributeBaseChange에서 고친 Base 값이 Base·Current·Post·값 변경 이벤트에 그대로 쓰임.
     // K: AttributeSet 훅(TestAtrributeSet) — Pre/PostGameplayEffectExecute(수치 변경·버림·meta Damage), Pre/PostAttributeChange(Current 클램프).
+    // L: AttributeSet 상속 — 부모 필드(private 포함) 수집·순서, 부모 핸들로 파생 인스턴스 읽기/쓰기, 부모 공유 Set 등록 거부, 이름 가림.
     public static class AggregatorSelfCheck
     {
         private const float Eps = 0.001f;
@@ -62,6 +63,7 @@ namespace Test.Editor
                 RunAttributeValueChangeEventChecks(asc, Check);
                 RunPreAttributeBaseChangeClampChecks(asc, Check);
                 RunAttributeSetHookChecks(asc, Check);
+                RunAttributeSetInheritanceChecks(asc, Check);
             }
             catch (Exception e)
             {
@@ -598,6 +600,92 @@ namespace Test.Editor
             UnityEngine.Object.DestroyImmediate(damage30);
             UnityEngine.Object.DestroyImmediate(damage40);
             UnityEngine.Object.DestroyImmediate(healthBuff);
+        }
+
+        // ── L. AttributeSet 상속 ──
+        // 핸들은 필드를 선언한 Set을 가리키고, ASC는 그 Set이거나 파생인 등록 인스턴스에서 값을 찾는다.
+        private static void RunAttributeSetInheritanceChecks(AbilitySystemComponent asc, Action<string, bool> check)
+        {
+            ReadOnlySpan<GameplayAttributeHandle> collected = AttributeSet.GetAttributesFromSetClass(typeof(InheritChildSet));
+            check("수집 — 자식 필드 먼저, 부모 private 필드 포함: Stamina, Health, _armor", collected.Length == 3 && collected[0] == InheritChildSet.StaminaAttribute && collected[1] == InheritBaseSet.HealthAttribute && collected[2] == InheritBaseSet.ArmorAttribute);
+
+            bool resolved = GameplayAttributeHandle.TryCreate(typeof(InheritChildSet), nameof(InheritBaseSet.Health), out GameplayAttributeHandle healthFromChild);
+            check("자식 타입으로 찾은 부모 필드 핸들 == 부모 정적 핸들", resolved && healthFromChild == InheritBaseSet.HealthAttribute);
+
+            InheritChildSet child = new InheritChildSet();
+            child.Health = new AttributeData(10f, 10f);
+            check("파생 Set 등록 성공", asc.AddSpawnedAttribute(child));
+            check("부모 핸들로 파생 인스턴스 읽기 — Health 10", asc.HasAttributeSetForAttribute(InheritBaseSet.HealthAttribute) && Approx(asc.GetAttributeCurrentValue(InheritBaseSet.HealthAttribute), 10f));
+
+            SetBase(asc, InheritBaseSet.ArmorAttribute, 5f);
+            check("부모 private 필드 쓰기·읽기 — Armor Base 5, 인스턴스 필드에도 반영", Approx(asc.GetAttributeBaseValue(InheritBaseSet.ArmorAttribute), 5f) && Approx(child.GetArmor().GetBaseValue(), 5f));
+
+            InheritSiblingSet sibling = new InheritSiblingSet();
+            check("어트리뷰트를 선언한 부모를 공유하는 두 번째 Set 등록 거부(에러 로그 1줄은 의도)", !asc.AddSpawnedAttribute(sibling));
+            check("거부 뒤에도 부모 핸들은 먼저 등록된 Set을 가리킴 — Health 10", Approx(asc.GetAttributeCurrentValue(InheritBaseSet.HealthAttribute), 10f));
+
+            asc.RemoveAttributeSet(sibling);
+            check("등록 안 된 Set 해제는 등록된 Set에 영향 없음 — Health 10", asc.HasAttributeSetForAttribute(InheritBaseSet.HealthAttribute) && Approx(asc.GetAttributeCurrentValue(InheritBaseSet.HealthAttribute), 10f));
+
+            asc.RemoveAttributeSet(child);
+            check("해제 뒤 부모 핸들의 Set 없음", !asc.HasAttributeSetForAttribute(InheritBaseSet.HealthAttribute));
+            check("해제 뒤 부모를 공유하는 Set 등록 성공", asc.AddSpawnedAttribute(sibling));
+            asc.RemoveAttributeSet(sibling);
+
+            FieldlessBaseChildA fieldlessA = new FieldlessBaseChildA();
+            FieldlessBaseChildB fieldlessB = new FieldlessBaseChildB();
+            check("어트리뷰트 없는 부모를 공유하는 Set 둘 등록 성공", asc.AddSpawnedAttribute(fieldlessA) && asc.AddSpawnedAttribute(fieldlessB));
+            check("같은 인스턴스 재등록 거부", !asc.AddSpawnedAttribute(fieldlessA));
+            asc.RemoveAttributeSet(fieldlessA);
+            asc.RemoveAttributeSet(fieldlessB);
+
+            ReadOnlySpan<GameplayAttributeHandle> hidden = AttributeSet.GetAttributesFromSetClass(typeof(HidingChildSet));
+            bool hidingHealthOnly = hidden.Length == 2 && hidden[0].AttributeSetType == typeof(HidingChildSet) && hidden[0].FieldName == nameof(HidingChildSet.Health) && hidden[1] == InheritBaseSet.ArmorAttribute;
+            check("이름 가림 — 가려진 부모 Health는 빠지고 자식 Health·부모 _armor만(에러 로그 1줄은 의도)", hidingHealthOnly);
+        }
+
+        private abstract class InheritBaseSet : AttributeSet
+        {
+            public static readonly GameplayAttributeHandle HealthAttribute = GameplayAttributeHandle.Create<InheritBaseSet>(nameof(Health));
+            public static readonly GameplayAttributeHandle ArmorAttribute = GameplayAttributeHandle.Create<InheritBaseSet>(nameof(_armor));
+
+            public AttributeData Health;
+            [SerializeField] private AttributeData _armor;
+
+            public AttributeData GetArmor()
+            {
+                return _armor;
+            }
+        }
+
+        private sealed class InheritChildSet : InheritBaseSet
+        {
+            public static readonly GameplayAttributeHandle StaminaAttribute = GameplayAttributeHandle.Create<InheritChildSet>(nameof(Stamina));
+
+            public AttributeData Stamina;
+        }
+
+        private sealed class InheritSiblingSet : InheritBaseSet
+        {
+        }
+
+        private sealed class HidingChildSet : InheritBaseSet
+        {
+            public new AttributeData Health;
+        }
+
+        private abstract class FieldlessBaseSet : AttributeSet
+        {
+        }
+
+        private sealed class FieldlessBaseChildA : FieldlessBaseSet
+        {
+            public AttributeData Mana;
+        }
+
+        private sealed class FieldlessBaseChildB : FieldlessBaseSet
+        {
+            public AttributeData Rage;
         }
 
         private class ClampedAttributeSet : AttributeSet

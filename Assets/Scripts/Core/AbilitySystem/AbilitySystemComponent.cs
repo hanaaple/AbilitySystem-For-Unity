@@ -11,7 +11,7 @@ namespace Core.AbilitySystem
 {
     public class AbilitySystemComponent : MonoBehaviour
     {
-        private readonly Dictionary<Type, AttributeSet> _spawnedAttributeSets = new();
+        private readonly HashSet<AttributeSet> _spawnedAttributeSets = new();
 
         // 활성 GE의 소유·수명·실행·집계 + 반응성 aggregator를 이 컨테이너가 맡는다. ASC는 공개 API 위임 래퍼와 AttributeSet 저장만 남긴다.
         private ActiveGameplayEffectsContainer _activeGameplayEffectsContainer;
@@ -87,7 +87,6 @@ namespace Core.AbilitySystem
         {
             DestroyActiveState();
 
-            // C#엔 강제 무효화(UE MarkAsGarbage)가 없어 ASC가 더는 내주지 않게 목록에서만 뺀다.
             _spawnedAttributeSets.Clear();
         }
 
@@ -274,33 +273,54 @@ namespace Core.AbilitySystem
             return abilityInstance;
         }
 
+        /// <summary>Set을 등록한다. 이미 등록된 인스턴스이거나, 이 Set의 어트리뷰트를 이미 등록된 다른 Set이 가지고 있으면 거부하고 false.</summary>
         public bool AddSpawnedAttribute(AttributeSet set)
         {
-            if (!_spawnedAttributeSets.TryAdd(set.GetType(), set))
+            if (_spawnedAttributeSets.Contains(set))
             {
                 return false;
             }
 
+            // 핸들 하나가 두 인스턴스를 가리키면 값·aggregator가 갈린다 — 같은 타입이거나 어트리뷰트를 선언한 부모 Set을 공유하는 경우
+            foreach (GameplayAttributeHandle attribute in AttributeSet.GetAttributesFromSetClass(set.GetType()))
+            {
+                AttributeSet registered = GetAttributeSet(attribute);
+                if (registered != null)
+                {
+                    Debug.LogError($"{set.GetType().Name} 등록 거부: 어트리뷰트 {attribute}를 이미 등록된 {registered.GetType().Name}이 가지고 있다");
+                    return false;
+                }
+            }
+
+            _spawnedAttributeSets.Add(set);
             set.SetOwner(this);
             return true;
         }
 
         public void RemoveAttributeSet(AttributeSet set)
         {
-            _spawnedAttributeSets.Remove(set.GetType());
+            _spawnedAttributeSets.Remove(set);
         }
 
-        /// <summary>등록된 AttributeSet 전부(읽기 전용).</summary>
         /// <remarks>UE: UAbilitySystemComponent::GetSpawnedAttributes</remarks>
         public IReadOnlyCollection<AttributeSet> GetSpawnedAttributes()
         {
-            return _spawnedAttributeSets.Values;
+            return _spawnedAttributeSets;
         }
 
-        /// <summary>핸들이 가리키는 AttributeSet 타입(<see cref="GameplayAttributeHandle.AttributeSetType"/>)의 인스턴스를 반환한다. 미등록이면 null.</summary>
+        /// <summary>핸들의 필드를 가진 Set 인스턴스(<see cref="GameplayAttributeHandle.AttributeSetType"/>이거나 그 파생)를 반환한다. 미등록이면 null.</summary>
+        /// <remarks>UE: UAbilitySystemComponent::GetAttributeSubobject</remarks>
         internal AttributeSet GetAttributeSet(GameplayAttributeHandle handle)
         {
-            return _spawnedAttributeSets.GetValueOrDefault(handle.AttributeSetType);
+            foreach (AttributeSet set in _spawnedAttributeSets)
+            {
+                if (handle.CanAccess(set))
+                {
+                    return set;
+                }
+            }
+
+            return null;
         }
 
         public float GetAttributeBaseValue(GameplayAttributeHandle handle)
@@ -675,11 +695,6 @@ namespace Core.AbilitySystem
         internal void OnMagnitudeDependencyChange(ActiveGameplayEffectHandle handle, AttributeAggregator changedAggregator)
         {
             _activeGameplayEffectsContainer.OnMagnitudeDependencyChange(handle, changedAggregator);
-        }
-
-        internal bool HasAttributeField(GameplayAttributeHandle handle)
-        {
-            return _spawnedAttributeSets.TryGetValue(handle.AttributeSetType, out AttributeSet set) && handle.CanAccess(set);
         }
 
         public bool HasAttributeSetForAttribute(GameplayAttributeHandle attributeHandle)

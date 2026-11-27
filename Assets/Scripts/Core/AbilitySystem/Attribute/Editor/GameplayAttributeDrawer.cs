@@ -93,7 +93,7 @@ namespace Core.AbilitySystem.Attribute.Editor
                 return cached;
             }
 
-            string[] names = AttributeReflectionUtility.GetAttributeDataFields(setType)
+            string[] names = AttributeSet.GetAttributeDataFields(setType)
                 .Select(f => f.Name)
                 .ToArray();
 

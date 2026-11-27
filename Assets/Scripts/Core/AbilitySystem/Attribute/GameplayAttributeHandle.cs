@@ -76,7 +76,8 @@ namespace Core.AbilitySystem.Attribute
 
         internal bool CanAccess(AttributeSet attributeSet)
         {
-            return IsValid && attributeSet != null && attributeSet.GetType() == AttributeSetType;
+            // 부모 Set이 선언한 필드는 파생 인스턴스에서도 같은 오프셋에 있다
+            return IsValid && AttributeSetType.IsInstanceOfType(attributeSet);
         }
 
         internal float GetBaseValue(AttributeSet attributeSet)

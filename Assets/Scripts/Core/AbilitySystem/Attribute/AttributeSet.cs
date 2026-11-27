@@ -10,6 +10,7 @@ namespace Core.AbilitySystem.Attribute
     public abstract class AttributeSet
     {
         private static readonly Dictionary<Type, GameplayAttributeHandle[]> AttributesBySetType = new();
+        private static readonly Dictionary<Type, FieldInfo[]> AttributeDataFieldsBySetType = new();
 
         private AbilitySystemComponent _owner;
 
@@ -51,29 +52,80 @@ namespace Core.AbilitySystem.Attribute
         {
         }
 
-        /// <summary>AttributeSet이 가진 어트리뷰트(공개이거나 [SerializeField]인 AttributeData 필드)를 선언 순서대로 attributes에 더한다.</summary>
+        /// <summary>AttributeSet이 가진 어트리뷰트를 부모 Set 것까지 반환한다. 순서는 <see cref="GetAttributeDataFields"/>.</summary>
         /// <remarks>UE: UAttributeSet::GetAttributesFromSetClass</remarks>
-        public static void GetAttributesFromSetClass(Type attributeSetType, List<GameplayAttributeHandle> attributes)
+        public static ReadOnlySpan<GameplayAttributeHandle> GetAttributesFromSetClass(Type attributeSetType)
         {
+            // 타입별 캐시 배열을 복사 없이 내주므로 호출측이 고치지 못하게 읽기 전용으로 감싼다
             if (attributeSetType == null)
             {
-                return;
+                return ReadOnlySpan<GameplayAttributeHandle>.Empty;
             }
 
             if (!AttributesBySetType.TryGetValue(attributeSetType, out GameplayAttributeHandle[] handles))
             {
-                // 에디터 AttributeReflectionUtility.GetAttributeDataFields와 같은 필드 규칙 — 한쪽을 바꾸면 다른 쪽도
-                handles = attributeSetType
-                    .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                    .Where(field => typeof(AttributeData).IsAssignableFrom(field.FieldType) && (field.IsPublic || field.GetCustomAttribute<SerializeField>() != null))
-                    .OrderBy(field => field.MetadataToken)
-                    .Select(field => GameplayAttributeHandle.TryCreate(attributeSetType, field.Name, out GameplayAttributeHandle handle) ? handle : default)
+                // 핸들은 필드를 선언한 Set 기준이라, 어느 파생 Set에서 모아도 부모 필드는 같은 핸들이 된다
+                handles = GetAttributeDataFields(attributeSetType)
+                    .Select(field => GameplayAttributeHandle.TryCreate(field.DeclaringType, field.Name, out GameplayAttributeHandle handle) ? handle : default)
                     .Where(handle => handle.IsValid)
                     .ToArray();
                 AttributesBySetType[attributeSetType] = handles;
             }
 
-            attributes.AddRange(handles);
+            return handles;
+        }
+
+        /// <summary>
+        /// 어트리뷰트 필드(공개이거나 [SerializeField]인 AttributeData)를 부모 Set 것까지 모은다. 자식 Set 필드가 먼저, 같은 Set 안에선 선언 순서.
+        /// 부모 어트리뷰트를 같은 이름의 필드로 가리면 에셋의 (Set 타입, 필드명)으로 부모 쪽을 가리킬 수 없어, 에러를 내고 가려진 필드를 뺀다.
+        /// </summary>
+        internal static FieldInfo[] GetAttributeDataFields(Type attributeSetType)
+        {
+            if (attributeSetType == null || !attributeSetType.IsSubclassOf(typeof(AttributeSet)))
+            {
+                return Array.Empty<FieldInfo>();
+            }
+
+            if (AttributeDataFieldsBySetType.TryGetValue(attributeSetType, out FieldInfo[] cached))
+            {
+                return cached;
+            }
+
+            var fields = new List<FieldInfo>();
+            var descendantFieldNames = new HashSet<string>();
+            for (Type type = attributeSetType; type != typeof(AttributeSet); type = type.BaseType)
+            {
+                // 부모 private 필드는 파생 타입의 GetFields에 안 나와 Set마다 DeclaredOnly로 모은다. MetadataToken은 같은 타입 안에서 선언 순서
+                FieldInfo[] declaredFields = type
+                    .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                    .OrderBy(field => field.MetadataToken)
+                    .ToArray();
+
+                foreach (FieldInfo field in declaredFields)
+                {
+                    if (!IsAttributeDataField(field))
+                    {
+                        continue;
+                    }
+
+                    if (descendantFieldNames.Contains(field.Name))
+                    {
+                        Debug.LogError($"{attributeSetType.Name}: 파생 Set의 같은 이름 필드가 {type.Name}.{field.Name} 어트리뷰트를 가린다 — 가려진 필드는 어트리뷰트에서 빠진다");
+                        continue;
+                    }
+
+                    fields.Add(field);
+                }
+
+                foreach (FieldInfo field in declaredFields)
+                {
+                    descendantFieldNames.Add(field.Name);
+                }
+            }
+
+            FieldInfo[] result = fields.ToArray();
+            AttributeDataFieldsBySetType[attributeSetType] = result;
+            return result;
         }
 
         internal void SetOwner(AbilitySystemComponent abilitySystemComponent)
@@ -84,6 +136,11 @@ namespace Core.AbilitySystem.Attribute
         public void SetBaseValue(GameplayAttributeHandle attributeHandle, float newValue)
         {
             _owner.SetAttributeBaseValue(attributeHandle, newValue);
+        }
+
+        private static bool IsAttributeDataField(FieldInfo field)
+        {
+            return field.FieldType == typeof(AttributeData) && (field.IsPublic || field.GetCustomAttribute<SerializeField>() != null);
         }
     }
 }
