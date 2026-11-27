@@ -35,7 +35,7 @@ Unity MCP가 연결돼 있으면 게임 동작 변경은 유저에게 확인을 
     ├── dev/ (공개 개발자용 — 개발 방향·코드 컨벤션·개발 도구·git 규약)
     ├── project/ (외부 공개용 — 데모·아키텍처)
     │   └── architecture/
-    └── temp/ (로컬 전용 — 폴더째 gitignore. NOW.md 재개 메모·STUDY-TODO 등)
+    └── local/ (로컬 전용 — 폴더째 gitignore. NOW.md 재개 메모·STUDY-TODO 등)
 ```
 - 각 파일을 확인 시, Root로부터 해당 경로까지의 `HARNESS.md`(폴더 안)·`<폴더>.harness.md`(폴더 옆)·`<파일>.harness.md`(파일 옆)를 우선하여 따른다.
 - 현재 필요하지 않은 문서를 미리 열지 않는다.

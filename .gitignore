@@ -102,7 +102,7 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
 # Local-only working files (NOW.md 재개 메모·STUDY-TODO 등 — 각 작업 환경이 자기 것을 유지, 미공유)
-dev-docs/temp/
+dev-docs/local/
 
 # Claude Code local settings (personal, machine-specific)
 .claude/settings.local.json
